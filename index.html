@@ -53,45 +53,11 @@
     font-family: 'SF Mono', ui-monospace, monospace;
   }
 
-  /* Summary bar */
-  .summary-bar {
-    width: 100%; max-width: 420px;
-    padding: 20px 0 8px;
-    animation: fadeIn 0.5s ease 0.05s both;
-  }
-  .summary-inner {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 16px 20px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.05);
-    transition: all 0.4s ease;
-  }
-  .summary-inner.all-done {
-    background: rgba(52,211,153,0.08);
-    border-color: rgba(52,211,153,0.2);
-  }
-  .summary-label { font-size: 14px; color: rgba(255,255,255,0.5); font-weight: 500; }
-  .summary-right { display: flex; gap: 6px; align-items: center; }
-  .summary-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: rgba(255,255,255,0.12);
-    transition: all 0.3s ease;
-  }
-  .summary-dot.completed { background: #34D399; }
-  .summary-dot.running { box-shadow: 0 0 8px var(--dot-color); background: var(--dot-color); }
-  .summary-count {
-    font-size: 14px; font-weight: 600;
-    font-family: 'SF Mono', ui-monospace, monospace;
-    margin-left: 8px; color: #fff;
-  }
-  .summary-count.all-done { color: #34D399; }
-
   /* Timer cards container */
   .timers {
     width: 100%; max-width: 420px;
     display: flex; flex-direction: column; gap: 14px;
-    padding: 12px 0 24px;
+    padding: 20px 0 24px;
   }
 
   /* Individual card */
@@ -125,10 +91,19 @@
   }
   .card-label.running { animation: pulse 2s ease-in-out infinite; }
   .card-label.completed { color: #34D399 !important; }
+
+  .card-top-right { display: flex; align-items: center; gap: 10px; }
   .card-duration {
     font-size: 12px; color: rgba(255,255,255,0.3);
     font-family: 'SF Mono', ui-monospace, monospace;
   }
+  .card-counter {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 13px; color: rgba(255,255,255,0.4);
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-weight: 600;
+  }
+  .card-counter .counter-num { color: rgba(255,255,255,0.6); }
 
   /* Circular progress */
   .ring-wrap {
@@ -206,18 +181,6 @@
   <div class="header-date" id="headerDate"></div>
 </div>
 
-<div class="summary-bar">
-  <div class="summary-inner" id="summaryInner">
-    <span class="summary-label" id="summaryLabel">Fortschritt</span>
-    <div class="summary-right">
-      <div class="summary-dot" id="dot0"></div>
-      <div class="summary-dot" id="dot1"></div>
-      <div class="summary-dot" id="dot2"></div>
-      <span class="summary-count" id="summaryCount">0/3</span>
-    </div>
-  </div>
-</div>
-
 <div class="timers" id="timersContainer"></div>
 
 <div class="reset-all">
@@ -226,21 +189,83 @@
 
 <script>
 const CONFIG = [
-  { id:'meditate', label:'Meditieren', emoji:'🧘', minutes:30, color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', glow:'rgba(139,92,246,0.25)' },
-  { id:'short', label:'Kurzer Block', emoji:'⚡', minutes:60, color:'#F59E0B', bg:'rgba(245,158,11,0.08)', glow:'rgba(245,158,11,0.25)' },
-  { id:'long', label:'Langer Block', emoji:'🔥', minutes:150, color:'#06B6D4', bg:'rgba(6,182,212,0.08)', glow:'rgba(6,182,212,0.25)' },
+  { id:'meditate', label:'Meditieren', emoji:'🧘', counterEmoji:'🧘', minutes:30, color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', glow:'rgba(139,92,246,0.25)' },
+  { id:'short', label:'Kurzer Block', emoji:'⚡', counterEmoji:'⚡', minutes:60, color:'#F59E0B', bg:'rgba(245,158,11,0.08)', glow:'rgba(245,158,11,0.25)' },
+  { id:'long', label:'Langer Block', emoji:'🔥', counterEmoji:'🔥', minutes:150, color:'#06B6D4', bg:'rgba(6,182,212,0.08)', glow:'rgba(6,182,212,0.25)' },
 ];
 
-const CIRC = 2 * Math.PI * 68.5; // radius = (150-13)/2 = 68.5
+const CIRC = 2 * Math.PI * 68.5;
 
-let timers = CONFIG.map(c => ({
-  total: c.minutes * 60,
-  remaining: c.minutes * 60,
-  running: false,
-  completed: false,
-  startedAt: null,
-  snapshot: c.minutes * 60,
-}));
+// --- localStorage helpers ---
+function saveState() {
+  const state = timers.map(t => ({
+    remaining: t.remaining,
+    running: t.running,
+    completed: t.completed,
+    startedAt: t.startedAt,
+    snapshot: t.snapshot,
+  }));
+  localStorage.setItem('focusTimers', JSON.stringify(state));
+}
+
+function loadCounters() {
+  try { return JSON.parse(localStorage.getItem('focusCounters')) || CONFIG.map(() => 0); }
+  catch { return CONFIG.map(() => 0); }
+}
+
+function saveCounters() {
+  localStorage.setItem('focusCounters', JSON.stringify(counters));
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('focusTimers'));
+    if (!saved || saved.length !== CONFIG.length) return null;
+    return saved;
+  } catch { return null; }
+}
+
+// --- Init state ---
+let counters = loadCounters();
+
+let timers;
+const saved = loadState();
+if (saved) {
+  timers = CONFIG.map((c, i) => {
+    const s = saved[i];
+    const t = {
+      total: c.minutes * 60,
+      remaining: s.remaining,
+      running: s.running,
+      completed: s.completed,
+      startedAt: s.startedAt,
+      snapshot: s.snapshot,
+    };
+    // If it was running, recalculate remaining based on elapsed time since startedAt
+    if (t.running && t.startedAt) {
+      const elapsed = Math.floor((Date.now() - t.startedAt) / 1000);
+      t.remaining = Math.max(0, t.snapshot - elapsed);
+      if (t.remaining <= 0) {
+        t.remaining = 0;
+        t.running = false;
+        t.completed = true;
+        t.startedAt = null;
+        counters[i]++;
+        saveCounters();
+      }
+    }
+    return t;
+  });
+} else {
+  timers = CONFIG.map(c => ({
+    total: c.minutes * 60,
+    remaining: c.minutes * 60,
+    running: false,
+    completed: false,
+    startedAt: null,
+    snapshot: c.minutes * 60,
+  }));
+}
 
 let tickInterval = null;
 
@@ -269,7 +294,10 @@ function buildCards() {
           <span class="card-emoji">${c.emoji}</span>
           <span class="card-label" id="label${i}" style="color:${c.color}">${c.label}</span>
         </div>
-        <span class="card-duration">${fmtMin(c.minutes)}</span>
+        <div class="card-top-right">
+          <span class="card-duration">${fmtMin(c.minutes)}</span>
+          <span class="card-counter" id="counter${i}">${c.counterEmoji} <span class="counter-num">${counters[i]}</span></span>
+        </div>
       </div>
       <div class="ring-wrap">
         <div class="ring-container">
@@ -298,6 +326,7 @@ function updateCard(i) {
   const ring = document.getElementById(`ring${i}`);
   const center = document.getElementById(`center${i}`);
   const actions = document.getElementById(`actions${i}`);
+  const counter = document.getElementById(`counter${i}`);
 
   // Card state class
   card.className = 'timer-card' + (t.completed ? ' state-completed' : t.running ? ' state-running' : '');
@@ -306,6 +335,9 @@ function updateCard(i) {
   // Label
   label.className = 'card-label' + (t.running ? ' running' : '') + (t.completed ? ' completed' : '');
   if (!t.completed) label.style.color = c.color;
+
+  // Counter
+  counter.innerHTML = `${c.counterEmoji} <span class="counter-num">${counters[i]}</span>`;
 
   // Ring progress
   const progress = (t.total - t.remaining) / t.total;
@@ -344,28 +376,8 @@ function updateCard(i) {
   }
 }
 
-function updateSummary() {
-  const done = timers.filter(t => t.completed).length;
-  const allDone = done === timers.length;
-  const inner = document.getElementById('summaryInner');
-  const label = document.getElementById('summaryLabel');
-  const count = document.getElementById('summaryCount');
-
-  inner.className = 'summary-inner' + (allDone ? ' all-done' : '');
-  label.textContent = allDone ? 'Alles geschafft! 💪' : 'Fortschritt';
-  count.textContent = `${done}/${timers.length}`;
-  count.className = 'summary-count' + (allDone ? ' all-done' : '');
-
-  timers.forEach((t, i) => {
-    const dot = document.getElementById(`dot${i}`);
-    dot.className = 'summary-dot' + (t.completed ? ' completed' : t.running ? ' running' : '');
-    dot.style.setProperty('--dot-color', CONFIG[i].color);
-  });
-}
-
 function updateAll() {
   timers.forEach((_, i) => updateCard(i));
-  updateSummary();
 }
 
 // --- Timer logic ---
@@ -375,6 +387,7 @@ function startTimer(i) {
   timers[i].snapshot = timers[i].remaining;
   ensureTick();
   updateAll();
+  saveState();
 }
 
 function pauseTimer(i) {
@@ -386,6 +399,7 @@ function pauseTimer(i) {
   timers[i].running = false;
   timers[i].startedAt = null;
   updateAll();
+  saveState();
 }
 
 function completeTimer(i) {
@@ -393,7 +407,10 @@ function completeTimer(i) {
   timers[i].completed = true;
   timers[i].remaining = 0;
   timers[i].startedAt = null;
+  counters[i]++;
+  saveCounters();
   updateAll();
+  saveState();
 }
 
 function resetTimer(i) {
@@ -403,6 +420,7 @@ function resetTimer(i) {
   timers[i].snapshot = timers[i].total;
   timers[i].startedAt = null;
   updateAll();
+  saveState();
 }
 
 function resetAll() {
@@ -414,6 +432,7 @@ function resetAll() {
     timers[i].startedAt = null;
   });
   updateAll();
+  saveState();
 }
 
 function tick() {
@@ -430,9 +449,11 @@ function tick() {
           t.running = false;
           t.completed = true;
           t.startedAt = null;
+          counters[i]++;
+          saveCounters();
         }
         updateCard(i);
-        updateSummary();
+        saveState();
       }
     }
   });
@@ -446,6 +467,9 @@ function ensureTick() {
   if (tickInterval) return;
   tickInterval = setInterval(tick, 250);
 }
+
+// Resume running timers on load
+if (timers.some(t => t.running)) ensureTick();
 
 // --- Init ---
 buildCards();
