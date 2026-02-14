@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Focus">
+<meta name="theme-color" content="#000000">
+<title>Focus Blocks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: #000;
+    color: #fff;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 20px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .header {
+    width: 100%; max-width: 420px;
+    padding-top: max(64px, env(safe-area-inset-top, 20px) + 44px);
+    padding-bottom: 8px;
+    text-align: center;
+    animation: fadeIn 0.5s ease both;
+  }
+  .header-title {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 6px;
+  }
+  .header-date {
+    font-size: 13px; color: rgba(255,255,255,0.25);
+    font-family: 'SF Mono', ui-monospace, monospace;
+  }
+
+  /* Summary bar */
+  .summary-bar {
+    width: 100%; max-width: 420px;
+    padding: 20px 0 8px;
+    animation: fadeIn 0.5s ease 0.05s both;
+  }
+  .summary-inner {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.4s ease;
+  }
+  .summary-inner.all-done {
+    background: rgba(52,211,153,0.08);
+    border-color: rgba(52,211,153,0.2);
+  }
+  .summary-label { font-size: 14px; color: rgba(255,255,255,0.5); font-weight: 500; }
+  .summary-right { display: flex; gap: 6px; align-items: center; }
+  .summary-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    transition: all 0.3s ease;
+  }
+  .summary-dot.completed { background: #34D399; }
+  .summary-dot.running { box-shadow: 0 0 8px var(--dot-color); background: var(--dot-color); }
+  .summary-count {
+    font-size: 14px; font-weight: 600;
+    font-family: 'SF Mono', ui-monospace, monospace;
+    margin-left: 8px; color: #fff;
+  }
+  .summary-count.all-done { color: #34D399; }
+
+  /* Timer cards container */
+  .timers {
+    width: 100%; max-width: 420px;
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 12px 0 24px;
+  }
+
+  /* Individual card */
+  .timer-card {
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+    animation: fadeIn 0.5s ease both;
+  }
+  .timer-card:nth-child(1) { animation-delay: 0.1s; }
+  .timer-card:nth-child(2) { animation-delay: 0.17s; }
+  .timer-card:nth-child(3) { animation-delay: 0.24s; }
+
+  .timer-card.state-running { box-shadow: 0 0 60px -20px var(--glow); }
+  .timer-card.state-completed {
+    background: rgba(52,211,153,0.06) !important;
+    border-color: rgba(52,211,153,0.25) !important;
+  }
+
+  .card-top {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 4px;
+  }
+  .card-top-left { display: flex; align-items: center; gap: 8px; }
+  .card-emoji { font-size: 20px; }
+  .card-label {
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .card-label.running { animation: pulse 2s ease-in-out infinite; }
+  .card-label.completed { color: #34D399 !important; }
+  .card-duration {
+    font-size: 12px; color: rgba(255,255,255,0.3);
+    font-family: 'SF Mono', ui-monospace, monospace;
+  }
+
+  /* Circular progress */
+  .ring-wrap {
+    display: flex; justify-content: center;
+    padding: 20px 0;
+  }
+  .ring-container { position: relative; width: 150px; height: 150px; }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 7; }
+  .ring-progress {
+    fill: none; stroke-width: 7; stroke-linecap: round;
+    transition: stroke-dashoffset 0.4s ease, stroke 0.3s ease;
+  }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-time {
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 36px; font-weight: 500;
+    letter-spacing: 1px; color: #fff;
+  }
+  .ring-status {
+    font-size: 11px; color: rgba(255,255,255,0.35);
+    margin-top: 2px; font-weight: 600; letter-spacing: 1px;
+  }
+  .ring-check {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+  }
+  .ring-check-label { font-size: 12px; color: #34D399; font-weight: 500; }
+
+  /* Buttons */
+  .card-actions { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; padding: 14px 0; border-radius: 14px;
+    border: none; font-family: inherit;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s ease; letter-spacing: -0.01em;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-start { color: #fff; }
+  .btn-pause { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.8); }
+  .btn-complete { background: #34D399; color: #000; }
+  .btn-done-display {
+    background: rgba(52,211,153,0.1); color: #34D399;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    cursor: default;
+  }
+  .btn-undo, .btn-reset {
+    flex: 0 0 56px; background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* Reset all */
+  .reset-all {
+    padding-bottom: max(60px, env(safe-area-inset-bottom, 20px) + 40px);
+    animation: fadeIn 0.5s ease 0.35s both;
+  }
+  .reset-all button {
+    background: none; border: none;
+    color: rgba(255,255,255,0.2);
+    font-size: 13px; font-weight: 500;
+    font-family: inherit; cursor: pointer;
+    padding: 12px 24px;
+  }
+  .reset-all button:active { opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Focus Blocks</div>
+  <div class="header-date" id="headerDate"></div>
+</div>
+
+<div class="summary-bar">
+  <div class="summary-inner" id="summaryInner">
+    <span class="summary-label" id="summaryLabel">Fortschritt</span>
+    <div class="summary-right">
+      <div class="summary-dot" id="dot0"></div>
+      <div class="summary-dot" id="dot1"></div>
+      <div class="summary-dot" id="dot2"></div>
+      <span class="summary-count" id="summaryCount">0/3</span>
+    </div>
+  </div>
+</div>
+
+<div class="timers" id="timersContainer"></div>
+
+<div class="reset-all">
+  <button onclick="resetAll()">Alles zurücksetzen</button>
+</div>
+
+<script>
+const CONFIG = [
+  { id:'meditate', label:'Meditieren', emoji:'🧘', minutes:30, color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', glow:'rgba(139,92,246,0.25)' },
+  { id:'short', label:'Kurzer Block', emoji:'⚡', minutes:60, color:'#F59E0B', bg:'rgba(245,158,11,0.08)', glow:'rgba(245,158,11,0.25)' },
+  { id:'long', label:'Langer Block', emoji:'🔥', minutes:150, color:'#06B6D4', bg:'rgba(6,182,212,0.08)', glow:'rgba(6,182,212,0.25)' },
+];
+
+const CIRC = 2 * Math.PI * 68.5; // radius = (150-13)/2 = 68.5
+
+let timers = CONFIG.map(c => ({
+  total: c.minutes * 60,
+  remaining: c.minutes * 60,
+  running: false,
+  completed: false,
+  startedAt: null,
+  snapshot: c.minutes * 60,
+}));
+
+let tickInterval = null;
+
+// --- Helpers ---
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmt(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+}
+function fmtMin(min) {
+  if (min >= 60) { const h = Math.floor(min/60), r = min%60; return r > 0 ? `${h} Std ${r} Min` : `${h} Std`; }
+  return `${min} Min`;
+}
+
+// --- Date ---
+document.getElementById('headerDate').textContent =
+  new Date().toLocaleDateString('de-CH', { weekday:'long', day:'numeric', month:'long' });
+
+// --- Build DOM once ---
+function buildCards() {
+  const container = document.getElementById('timersContainer');
+  container.innerHTML = CONFIG.map((c, i) => `
+    <div class="timer-card" id="card${i}" style="background:${c.bg};--glow:${c.glow}">
+      <div class="card-top">
+        <div class="card-top-left">
+          <span class="card-emoji">${c.emoji}</span>
+          <span class="card-label" id="label${i}" style="color:${c.color}">${c.label}</span>
+        </div>
+        <span class="card-duration">${fmtMin(c.minutes)}</span>
+      </div>
+      <div class="ring-wrap">
+        <div class="ring-container">
+          <svg class="ring-svg" width="150" height="150">
+            <circle class="ring-bg" cx="75" cy="75" r="68.5"/>
+            <circle class="ring-progress" id="ring${i}" cx="75" cy="75" r="68.5"
+              stroke="${c.color}"
+              stroke-dasharray="${CIRC}"
+              stroke-dashoffset="${CIRC}"/>
+          </svg>
+          <div class="ring-center" id="center${i}">
+            <div class="ring-time" id="time${i}">${fmt(c.minutes * 60)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-actions" id="actions${i}"></div>
+    </div>
+  `).join('');
+}
+
+// --- Update only what changed ---
+function updateCard(i) {
+  const t = timers[i], c = CONFIG[i];
+  const card = document.getElementById(`card${i}`);
+  const label = document.getElementById(`label${i}`);
+  const ring = document.getElementById(`ring${i}`);
+  const center = document.getElementById(`center${i}`);
+  const actions = document.getElementById(`actions${i}`);
+
+  // Card state class
+  card.className = 'timer-card' + (t.completed ? ' state-completed' : t.running ? ' state-running' : '');
+  if (!t.completed) card.style.background = c.bg;
+
+  // Label
+  label.className = 'card-label' + (t.running ? ' running' : '') + (t.completed ? ' completed' : '');
+  if (!t.completed) label.style.color = c.color;
+
+  // Ring progress
+  const progress = (t.total - t.remaining) / t.total;
+  const offset = CIRC - (t.completed ? 1 : progress) * CIRC;
+  ring.setAttribute('stroke-dashoffset', offset);
+  ring.setAttribute('stroke', t.completed ? '#34D399' : c.color);
+
+  // Center content
+  if (t.completed) {
+    center.innerHTML = `
+      <div class="ring-check">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div class="ring-check-label">Erledigt</div>
+      </div>`;
+  } else {
+    let statusHtml = t.running ? '<div class="ring-status">LÄUFT</div>' : '';
+    center.innerHTML = `<div class="ring-time">${fmt(t.remaining)}</div>${statusHtml}`;
+  }
+
+  // Buttons
+  if (t.completed) {
+    actions.innerHTML = `
+      <div class="btn btn-done-display">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Abgeschlossen
+      </div>
+      <button class="btn btn-undo" onclick="resetTimer(${i})">↩</button>`;
+  } else if (t.running) {
+    actions.innerHTML = `
+      <button class="btn btn-pause" onclick="pauseTimer(${i})">Pause</button>
+      <button class="btn btn-complete" onclick="completeTimer(${i})">Fertig</button>`;
+  } else {
+    let resetBtn = t.remaining < t.total ? `<button class="btn btn-reset" onclick="resetTimer(${i})">↩</button>` : '';
+    actions.innerHTML = `
+      <button class="btn btn-start" onclick="startTimer(${i})" style="background:${c.color}">Start</button>${resetBtn}`;
+  }
+}
+
+function updateSummary() {
+  const done = timers.filter(t => t.completed).length;
+  const allDone = done === timers.length;
+  const inner = document.getElementById('summaryInner');
+  const label = document.getElementById('summaryLabel');
+  const count = document.getElementById('summaryCount');
+
+  inner.className = 'summary-inner' + (allDone ? ' all-done' : '');
+  label.textContent = allDone ? 'Alles geschafft! 💪' : 'Fortschritt';
+  count.textContent = `${done}/${timers.length}`;
+  count.className = 'summary-count' + (allDone ? ' all-done' : '');
+
+  timers.forEach((t, i) => {
+    const dot = document.getElementById(`dot${i}`);
+    dot.className = 'summary-dot' + (t.completed ? ' completed' : t.running ? ' running' : '');
+    dot.style.setProperty('--dot-color', CONFIG[i].color);
+  });
+}
+
+function updateAll() {
+  timers.forEach((_, i) => updateCard(i));
+  updateSummary();
+}
+
+// --- Timer logic ---
+function startTimer(i) {
+  timers[i].running = true;
+  timers[i].startedAt = Date.now();
+  timers[i].snapshot = timers[i].remaining;
+  ensureTick();
+  updateAll();
+}
+
+function pauseTimer(i) {
+  if (timers[i].startedAt) {
+    const elapsed = Math.floor((Date.now() - timers[i].startedAt) / 1000);
+    timers[i].remaining = Math.max(0, timers[i].snapshot - elapsed);
+    timers[i].snapshot = timers[i].remaining;
+  }
+  timers[i].running = false;
+  timers[i].startedAt = null;
+  updateAll();
+}
+
+function completeTimer(i) {
+  timers[i].running = false;
+  timers[i].completed = true;
+  timers[i].remaining = 0;
+  timers[i].startedAt = null;
+  updateAll();
+}
+
+function resetTimer(i) {
+  timers[i].running = false;
+  timers[i].completed = false;
+  timers[i].remaining = timers[i].total;
+  timers[i].snapshot = timers[i].total;
+  timers[i].startedAt = null;
+  updateAll();
+}
+
+function resetAll() {
+  timers.forEach((_, i) => {
+    timers[i].running = false;
+    timers[i].completed = false;
+    timers[i].remaining = timers[i].total;
+    timers[i].snapshot = timers[i].total;
+    timers[i].startedAt = null;
+  });
+  updateAll();
+}
+
+function tick() {
+  let anyRunning = false;
+  timers.forEach((t, i) => {
+    if (t.running && t.startedAt) {
+      anyRunning = true;
+      const elapsed = Math.floor((Date.now() - t.startedAt) / 1000);
+      const newR = Math.max(0, t.snapshot - elapsed);
+      if (newR !== t.remaining) {
+        t.remaining = newR;
+        if (newR <= 0) {
+          t.remaining = 0;
+          t.running = false;
+          t.completed = true;
+          t.startedAt = null;
+        }
+        updateCard(i);
+        updateSummary();
+      }
+    }
+  });
+  if (!anyRunning && tickInterval) {
+    clearInterval(tickInterval);
+    tickInterval = null;
+  }
+}
+
+function ensureTick() {
+  if (tickInterval) return;
+  tickInterval = setInterval(tick, 250);
+}
+
+// --- Init ---
+buildCards();
+updateAll();
+</script>
+</body>
+</html>
