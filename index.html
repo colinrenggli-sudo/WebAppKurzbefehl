@@ -77,16 +77,6 @@
   }
   .task-right { display: flex; align-items: center; gap: 10px; }
 
-  /* Edit button */
-  .edit-btn {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: rgba(255,255,255,0.06); border: none;
-    color: rgba(255,255,255,0.3); font-size: 13px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-  }
-  .edit-btn:active { background: rgba(255,255,255,0.12); }
-
   /* Checkbox */
   .checkbox {
     width: 32px; height: 32px; border-radius: 50%;
@@ -98,16 +88,9 @@
   .checkbox svg { opacity: 0; transition: opacity 0.2s ease; }
   .checkbox.checked svg { opacity: 1; }
 
-  /* Subtask arrow */
-  .subtask-arrow {
-    color: rgba(255,255,255,0.25); font-size: 18px;
-    transition: transform 0.3s; flex-shrink: 0;
-  }
-  .subtask-arrow.open { transform: rotate(180deg); }
-  .subtask-progress {
-    font-size: 12px; color: rgba(255,255,255,0.35);
+  .subtask-badge {
+    font-size: 11px; color: rgba(255,255,255,0.3);
     font-family: 'SF Mono', ui-monospace, monospace; font-weight: 600;
-    margin-right: 4px;
   }
 
   /* Subtask list */
@@ -142,18 +125,45 @@
   .mini-check svg { opacity: 0; transition: opacity 0.15s; }
   .mini-check.checked svg { opacity: 1; }
 
-  /* Add button */
+  /* Bottom action bar */
+  .bottom-bar {
+    width: 100%; max-width: 420px;
+    display: flex; gap: 10px;
+    padding-bottom: max(40px, env(safe-area-inset-bottom, 20px) + 20px);
+    animation: fadeIn 0.4s ease both;
+  }
   .add-btn {
-    width: 100%; max-width: 420px; border-radius: 24px;
-    padding: 20px; border: 2px dashed rgba(255,255,255,0.08);
+    flex: 1; border-radius: 24px;
+    padding: 18px; border: 2px dashed rgba(255,255,255,0.08);
     background: none; color: rgba(255,255,255,0.25);
     font-size: 15px; font-weight: 600; font-family: inherit;
     cursor: pointer; display: flex; align-items: center;
-    justify-content: center; gap: 8px;
-    transition: all 0.2s; animation: fadeIn 0.4s ease both;
-    margin-bottom: max(40px, env(safe-area-inset-bottom, 20px) + 20px);
+    justify-content: center; gap: 8px; transition: all 0.2s;
   }
   .add-btn:active { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+  .manage-btn {
+    border-radius: 24px; padding: 18px 20px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.3);
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 6px; transition: all 0.2s;
+  }
+  .manage-btn:active { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); }
+
+  /* Edit picker modal */
+  .edit-picker-list {
+    padding: 0; list-style: none;
+  }
+  .edit-picker-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer; -webkit-user-select: none; user-select: none;
+  }
+  .edit-picker-item:last-child { border-bottom: none; }
+  .edit-picker-item:active { opacity: 0.6; }
+  .edit-picker-emoji { font-size: 24px; }
+  .edit-picker-label { font-size: 16px; font-weight: 600; }
 
   /* Modal overlay */
   .modal-overlay {
@@ -293,7 +303,22 @@
 </div>
 
 <div class="tasks" id="tasksContainer"></div>
-<button class="add-btn" onclick="openModal()">＋ Neuer Task</button>
+
+<div class="bottom-bar">
+  <button class="add-btn" onclick="openModal()">＋ Neuer Task</button>
+  <button class="manage-btn" onclick="openEditPicker()">✎</button>
+</div>
+
+<!-- Edit picker overlay -->
+<div class="modal-overlay" id="editPickerOverlay" onclick="closeEditPicker()"></div>
+<div class="modal" id="editPickerModal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <span class="modal-title">Task bearbeiten</span>
+    <button class="modal-close" onclick="closeEditPicker()">✕</button>
+  </div>
+  <div class="edit-picker-list" id="editPickerList"></div>
+</div>
 
 <!-- Modal overlay -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
@@ -472,19 +497,12 @@ function render() {
     card.style.background = t.completed ? '' : t.bg;
     card.id = 'card' + i;
 
-    let rightHtml = '';
-    if (hasSubtasks) {
-      rightHtml = `
-        <button class="edit-btn" onclick="event.stopPropagation(); openModal(${i})">✎</button>
-        <span class="subtask-progress">${doneCount}/${totalCount}</span>
-        <span class="subtask-arrow${isOpen ? ' open' : ''}">▼</span>`;
-    } else {
-      rightHtml = `
-        <button class="edit-btn" onclick="event.stopPropagation(); openModal(${i})">✎</button>
-        <div class="checkbox${t.completed ? ' checked' : ''}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>`;
-    }
+    const subLabel = hasSubtasks ? `<span class="subtask-badge">${doneCount}/${totalCount}</span>` : '';
+    const rightHtml = `
+      ${subLabel}
+      <div class="checkbox${t.completed ? ' checked' : ''}" id="check${i}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>`;
 
     let subtaskHtml = '';
     if (hasSubtasks) {
@@ -567,9 +585,9 @@ function toggleSubtask(taskIdx, subIdx) {
 }
 
 function triggerConfettiOnCard(i) {
-  const card = document.getElementById('card' + i);
-  if (!card) return;
-  const rect = card.getBoundingClientRect();
+  const check = document.getElementById('check' + i);
+  if (!check) return;
+  const rect = check.getBoundingClientRect();
   fireConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
 }
 
@@ -715,6 +733,24 @@ function selectColor(el, color) {
   document.querySelectorAll('.color-option').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
   el.dataset.colorValue = color;
+}
+
+// --- Edit picker ---
+function openEditPicker() {
+  const list = document.getElementById('editPickerList');
+  list.innerHTML = tasks.map((t, i) =>
+    `<div class="edit-picker-item" onclick="closeEditPicker(); setTimeout(() => openModal(${i}), 300)">
+      <span class="edit-picker-emoji">${t.emoji}</span>
+      <span class="edit-picker-label" style="color:${t.color}">${t.label}</span>
+    </div>`
+  ).join('');
+  document.getElementById('editPickerOverlay').classList.add('visible');
+  document.getElementById('editPickerModal').classList.add('visible');
+}
+
+function closeEditPicker() {
+  document.getElementById('editPickerOverlay').classList.remove('visible');
+  document.getElementById('editPickerModal').classList.remove('visible');
 }
 
 // --- Init ---
