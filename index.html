@@ -15,15 +15,9 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-    background: #000;
-    color: #fff;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0 20px;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    background: #000; color: #fff;
+    min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+    padding: 0 20px; -webkit-font-smoothing: antialiased; overflow-x: hidden;
   }
 
   @keyframes fadeIn {
@@ -31,103 +25,267 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
+  canvas#confettiCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+
   .header {
     width: 100%; max-width: 420px;
     padding-top: max(64px, env(safe-area-inset-top, 20px) + 44px);
-    padding-bottom: 8px;
-    text-align: center;
+    padding-bottom: 8px; text-align: center;
     animation: fadeIn 0.5s ease both;
   }
   .header-title {
-    font-size: 12px; font-weight: 600;
-    letter-spacing: 3px; text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-    margin-bottom: 6px;
+    font-size: 12px; font-weight: 600; letter-spacing: 3px;
+    text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 6px;
   }
   .header-date {
     font-size: 13px; color: rgba(255,255,255,0.25);
     font-family: 'SF Mono', ui-monospace, monospace;
   }
 
-  /* Task cards container */
   .tasks {
     width: 100%; max-width: 420px;
     display: flex; flex-direction: column; gap: 14px;
     padding: 20px 0 24px;
   }
 
-  /* Individual card */
+  /* Task card */
   .task-card {
-    border-radius: 24px;
-    padding: 28px 24px;
+    border-radius: 24px; padding: 24px;
     border: 1px solid rgba(255,255,255,0.06);
     transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-    animation: fadeIn 0.5s ease both;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    -webkit-user-select: none;
-    user-select: none;
+    animation: fadeIn 0.4s ease both;
+    -webkit-user-select: none; user-select: none;
   }
-  .task-card:nth-child(1) { animation-delay: 0.1s; }
-  .task-card:nth-child(2) { animation-delay: 0.17s; }
-  .task-card:nth-child(3) { animation-delay: 0.24s; }
-
-  .task-card:active { transform: scale(0.98); }
-
   .task-card.completed {
     background: rgba(52,211,153,0.06) !important;
     border-color: rgba(52,211,153,0.25) !important;
   }
 
+  .task-header {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer;
+  }
+  .task-header:active { opacity: 0.8; }
   .task-left { display: flex; align-items: center; gap: 14px; }
   .task-emoji { font-size: 28px; }
-  .task-info { display: flex; flex-direction: column; gap: 4px; }
-  .task-label {
-    font-size: 17px; font-weight: 600;
-    transition: color 0.3s;
-  }
-  .task-label.completed { color: #34D399; }
+  .task-info { display: flex; flex-direction: column; gap: 3px; }
+  .task-label { font-size: 17px; font-weight: 600; transition: color 0.3s; }
+  .task-label.completed { color: #34D399 !important; }
   .task-counter {
     font-size: 12px; color: rgba(255,255,255,0.3);
-    font-family: 'SF Mono', ui-monospace, monospace;
-    font-weight: 500;
+    font-family: 'SF Mono', ui-monospace, monospace; font-weight: 500;
   }
+  .task-right { display: flex; align-items: center; gap: 10px; }
 
-  .task-right { display: flex; align-items: center; }
+  /* Edit button */
+  .edit-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,255,255,0.06); border: none;
+    color: rgba(255,255,255,0.3); font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .edit-btn:active { background: rgba(255,255,255,0.12); }
 
   /* Checkbox */
   .checkbox {
-    width: 32px; height: 32px;
-    border-radius: 50%;
+    width: 32px; height: 32px; border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.15);
     display: flex; align-items: center; justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease; flex-shrink: 0;
   }
-  .checkbox.checked {
-    background: #34D399;
-    border-color: #34D399;
-  }
+  .checkbox.checked { background: #34D399; border-color: #34D399; }
   .checkbox svg { opacity: 0; transition: opacity 0.2s ease; }
   .checkbox.checked svg { opacity: 1; }
 
-  /* Reset all */
-  .reset-all {
-    padding-bottom: max(60px, env(safe-area-inset-bottom, 20px) + 40px);
-    animation: fadeIn 0.5s ease 0.35s both;
+  /* Subtask arrow */
+  .subtask-arrow {
+    color: rgba(255,255,255,0.25); font-size: 18px;
+    transition: transform 0.3s; flex-shrink: 0;
   }
-  .reset-all button {
-    background: none; border: none;
-    color: rgba(255,255,255,0.2);
-    font-size: 13px; font-weight: 500;
-    font-family: inherit; cursor: pointer;
-    padding: 12px 24px;
+  .subtask-arrow.open { transform: rotate(180deg); }
+  .subtask-progress {
+    font-size: 12px; color: rgba(255,255,255,0.35);
+    font-family: 'SF Mono', ui-monospace, monospace; font-weight: 600;
+    margin-right: 4px;
   }
-  .reset-all button:active { opacity: 0.5; }
+
+  /* Subtask list */
+  .subtask-list {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease, margin-top 0.3s ease, padding 0.3s ease;
+    margin-top: 0;
+  }
+  .subtask-list.open { margin-top: 16px; max-height: 600px; }
+  .subtask-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+  }
+  .subtask-item:last-child { border-bottom: none; }
+  .subtask-item:active { opacity: 0.7; }
+  .subtask-name {
+    font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.75);
+    transition: all 0.2s;
+  }
+  .subtask-name.done {
+    color: #34D399; text-decoration: line-through;
+    text-decoration-color: rgba(52,211,153,0.4);
+  }
+  .mini-check {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .mini-check.checked { background: #34D399; border-color: #34D399; }
+  .mini-check svg { opacity: 0; transition: opacity 0.15s; }
+  .mini-check.checked svg { opacity: 1; }
+
+  /* Add button */
+  .add-btn {
+    width: 100%; max-width: 420px; border-radius: 24px;
+    padding: 20px; border: 2px dashed rgba(255,255,255,0.08);
+    background: none; color: rgba(255,255,255,0.25);
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+    transition: all 0.2s; animation: fadeIn 0.4s ease both;
+    margin-bottom: max(40px, env(safe-area-inset-bottom, 20px) + 20px);
+  }
+  .add-btn:active { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 50; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.visible { opacity: 1; pointer-events: all; }
+
+  /* Modal */
+  .modal {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #1C1C1E; border-radius: 20px 20px 0 0;
+    z-index: 60; transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.32,0.72,0,1);
+    max-height: 85vh; overflow-y: auto;
+    padding: 0 24px max(30px, env(safe-area-inset-bottom, 20px));
+  }
+  .modal.visible { transform: translateY(0); }
+  .modal-handle {
+    width: 36px; height: 5px; border-radius: 3px;
+    background: rgba(255,255,255,0.2); margin: 10px auto 0;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0 16px;
+  }
+  .modal-title { font-size: 20px; font-weight: 700; }
+  .modal-close {
+    background: rgba(255,255,255,0.1); border: none;
+    color: rgba(255,255,255,0.6); width: 32px; height: 32px;
+    border-radius: 50%; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .form-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+    margin-bottom: 8px; margin-top: 20px;
+  }
+  .form-input {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+    color: #fff; font-size: 16px; font-family: inherit;
+    outline: none;
+  }
+  .form-input:focus { border-color: rgba(255,255,255,0.2); }
+  .form-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  /* Emoji picker */
+  .emoji-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .emoji-option {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(255,255,255,0.06); border: 2px solid transparent;
+    font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .emoji-option.selected { border-color: #34D399; background: rgba(52,211,153,0.15); }
+  .emoji-option:active { transform: scale(0.9); }
+
+  /* Color picker */
+  .color-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .color-option {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid transparent; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+  .color-option.selected { border-color: #fff; transform: scale(1.15); }
+  .color-option:active { transform: scale(0.9); }
+
+  /* Subtask form */
+  .subtask-form { display: flex; gap: 8px; }
+  .subtask-form input { flex: 1; }
+  .subtask-add-btn {
+    padding: 14px 16px; border-radius: 14px;
+    background: rgba(255,255,255,0.1); border: none;
+    color: #fff; font-size: 14px; font-weight: 600;
+    font-family: inherit; cursor: pointer; white-space: nowrap;
+  }
+  .subtask-add-btn:active { opacity: 0.7; }
+
+  .subtask-edit-list { margin-top: 10px; }
+  .subtask-edit-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .subtask-edit-item:last-child { border-bottom: none; }
+  .subtask-edit-name { font-size: 15px; color: rgba(255,255,255,0.7); }
+  .subtask-remove {
+    background: none; border: none; color: rgba(255,255,255,0.25);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+  }
+  .subtask-remove:active { color: #F43F5E; }
+
+  /* Counter edit */
+  .counter-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .counter-btn {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,0.08); border: none;
+    color: #fff; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .counter-btn:active { background: rgba(255,255,255,0.15); }
+  .counter-value {
+    font-size: 20px; font-weight: 700; min-width: 30px; text-align: center;
+    font-family: 'SF Mono', ui-monospace, monospace;
+  }
+
+  /* Action buttons */
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; padding-bottom: 8px; }
+  .btn-save {
+    flex: 1; padding: 16px; border-radius: 16px;
+    background: #34D399; color: #000; border: none;
+    font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .btn-save:active { opacity: 0.8; }
+  .btn-delete {
+    padding: 16px 20px; border-radius: 16px;
+    background: rgba(244,63,94,0.15); color: #F43F5E; border: none;
+    font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .btn-delete:active { opacity: 0.8; }
 </style>
 </head>
 <body>
+
+<canvas id="confettiCanvas"></canvas>
 
 <div class="header">
   <div class="header-title">Focus Blocks</div>
@@ -135,104 +293,432 @@
 </div>
 
 <div class="tasks" id="tasksContainer"></div>
+<button class="add-btn" onclick="openModal()">＋ Neuer Task</button>
 
-<div class="reset-all">
-  <button onclick="resetAll()">Alles zurücksetzen</button>
+<!-- Modal overlay -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+
+<!-- Modal -->
+<div class="modal" id="modal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <span class="modal-title" id="modalTitle">Neuer Task</span>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+
+  <div class="form-label">Emoji</div>
+  <div class="emoji-grid" id="emojiGrid"></div>
+
+  <div class="form-label">Name</div>
+  <input class="form-input" id="inputName" placeholder="Task-Name..." maxlength="30">
+
+  <div class="form-label">Farbe</div>
+  <div class="color-grid" id="colorGrid"></div>
+
+  <div class="form-label">Subtasks (optional)</div>
+  <div class="subtask-form">
+    <input class="form-input" id="inputSubtask" placeholder="Subtask hinzufügen...">
+    <button class="subtask-add-btn" onclick="addSubtaskToForm()">+</button>
+  </div>
+  <div class="subtask-edit-list" id="subtaskEditList"></div>
+
+  <div class="form-label" id="counterLabel" style="display:none">Absolviert</div>
+  <div class="counter-row" id="counterRow" style="display:none">
+    <button class="counter-btn" onclick="adjustCounter(-1)">−</button>
+    <span class="counter-value" id="counterValue">0</span>
+    <button class="counter-btn" onclick="adjustCounter(1)">+</button>
+  </div>
+
+  <div class="modal-actions">
+    <button class="btn-save" onclick="saveTask()">Speichern</button>
+    <button class="btn-delete" id="btnDelete" style="display:none" onclick="deleteTask()">Löschen</button>
+  </div>
 </div>
 
 <script>
-const CONFIG = [
-  { id:'meditate', label:'Meditieren', emoji:'🧘', color:'#8B5CF6', bg:'rgba(139,92,246,0.08)' },
-  { id:'neighbor', label:'Nachbars Dilemma', emoji:'🔭', color:'#F59E0B', bg:'rgba(245,158,11,0.08)' },
-  { id:'work', label:'Crazy Work', emoji:'🔥', color:'#06B6D4', bg:'rgba(6,182,212,0.08)' },
+// --- Config ---
+const EMOJIS = ['🧘','🔭','🔥','🤸','📚','💪','🎯','🏃','🧠','💻','🎨','🎵','✍️','🏋️','🚀','☕','🌅','💤'];
+const COLORS = [
+  { color:'#8B5CF6', bg:'rgba(139,92,246,0.08)' },
+  { color:'#F59E0B', bg:'rgba(245,158,11,0.08)' },
+  { color:'#06B6D4', bg:'rgba(6,182,212,0.08)' },
+  { color:'#10B981', bg:'rgba(16,185,129,0.08)' },
+  { color:'#EC4899', bg:'rgba(236,72,153,0.08)' },
+  { color:'#F43F5E', bg:'rgba(244,63,94,0.08)' },
 ];
+
+const DEFAULT_TASKS = [
+  { id:'meditate', label:'Meditieren', emoji:'🧘', color:'#8B5CF6', bg:'rgba(139,92,246,0.08)', completed:false, counter:0, subtasks:[] },
+  { id:'neighbor', label:'Nachbars Dilemma', emoji:'🔭', color:'#F59E0B', bg:'rgba(245,158,11,0.08)', completed:false, counter:0, subtasks:[] },
+  { id:'work', label:'Crazy Work', emoji:'🔥', color:'#06B6D4', bg:'rgba(6,182,212,0.08)', completed:false, counter:0, subtasks:[] },
+  { id:'stretches', label:'Stretches', emoji:'🤸', color:'#10B981', bg:'rgba(16,185,129,0.08)', completed:false, counter:0,
+    subtasks:[
+      { name:'Hamstring Stretch', completed:false },
+      { name:'Hip Flexor', completed:false },
+      { name:'Quad Stretch', completed:false },
+      { name:'Shoulder Stretch', completed:false },
+      { name:'Cat-Cow', completed:false },
+    ]
+  },
+];
+
+// --- State ---
+let tasks = loadTasks();
+let openAccordion = null; // index of open accordion
+let editingIndex = null; // null = creating, number = editing
+let formSubtasks = [];
+let formCounter = 0;
 
 // --- localStorage ---
 function loadTasks() {
   try {
-    const saved = JSON.parse(localStorage.getItem('focusTasks'));
-    if (saved && saved.length === CONFIG.length) return saved;
+    const saved = JSON.parse(localStorage.getItem('focusTasksV2'));
+    if (saved && saved.length > 0) return saved;
   } catch {}
-  return CONFIG.map(() => false);
+  return JSON.parse(JSON.stringify(DEFAULT_TASKS));
 }
 
 function saveTasks() {
-  localStorage.setItem('focusTasks', JSON.stringify(tasks));
+  localStorage.setItem('focusTasksV2', JSON.stringify(tasks));
 }
 
-function loadCounters() {
-  try { return JSON.parse(localStorage.getItem('focusCounters')) || CONFIG.map(() => 0); }
-  catch { return CONFIG.map(() => 0); }
+// --- Daily reset ---
+function checkDailyReset() {
+  const today = new Date().toDateString();
+  const lastReset = localStorage.getItem('focusLastReset');
+  if (lastReset !== today) {
+    tasks.forEach(t => {
+      t.completed = false;
+      if (t.subtasks) t.subtasks.forEach(s => s.completed = false);
+    });
+    saveTasks();
+    localStorage.setItem('focusLastReset', today);
+  }
 }
-
-function saveCounters() {
-  localStorage.setItem('focusCounters', JSON.stringify(counters));
-}
-
-// --- State ---
-let tasks = loadTasks();
-let counters = loadCounters();
+checkDailyReset();
 
 // --- Date ---
 document.getElementById('headerDate').textContent =
   new Date().toLocaleDateString('de-CH', { weekday:'long', day:'numeric', month:'long' });
 
-// --- Build DOM ---
-function buildCards() {
-  const container = document.getElementById('tasksContainer');
-  container.innerHTML = CONFIG.map((c, i) => `
-    <div class="task-card${tasks[i] ? ' completed' : ''}" id="card${i}" style="background:${c.bg}" onclick="toggleTask(${i})">
-      <div class="task-left">
-        <span class="task-emoji">${c.emoji}</span>
-        <div class="task-info">
-          <span class="task-label${tasks[i] ? ' completed' : ''}" id="label${i}" style="color:${tasks[i] ? '#34D399' : c.color}">${c.label}</span>
-          <span class="task-counter" id="counter${i}">${counters[i]}× absolviert</span>
-        </div>
-      </div>
-      <div class="task-right">
-        <div class="checkbox${tasks[i] ? ' checked' : ''}" id="check${i}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
+// --- Confetti ---
+const cCanvas = document.getElementById('confettiCanvas');
+const cCtx = cCanvas.getContext('2d');
+let cParticles = [];
+let cAnimId = null;
+function resizeCanvas() { cCanvas.width = window.innerWidth; cCanvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-function toggleTask(i) {
-  tasks[i] = !tasks[i];
-  if (tasks[i]) {
-    counters[i]++;
-    saveCounters();
+const CONFETTI_COLORS = ['#34D399','#8B5CF6','#F59E0B','#06B6D4','#EC4899','#F43F5E','#A78BFA','#FBBF24'];
+
+function fireConfetti(x, y) {
+  cParticles = [];
+  for (let i = 0; i < 120; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 3 + Math.random() * 9;
+    cParticles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 4,
+      size: 4 + Math.random() * 5,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 12,
+      gravity: 0.12 + Math.random() * 0.08,
+      opacity: 1,
+      shape: Math.random() > 0.5 ? 'rect' : 'circle',
+    });
   }
-  saveTasks();
-  updateCard(i);
+  if (cAnimId) cancelAnimationFrame(cAnimId);
+  animateConfetti();
 }
 
-function updateCard(i) {
-  const c = CONFIG[i];
-  const card = document.getElementById(`card${i}`);
-  const label = document.getElementById(`label${i}`);
-  const check = document.getElementById(`check${i}`);
-  const counter = document.getElementById(`counter${i}`);
-
-  card.className = 'task-card' + (tasks[i] ? ' completed' : '');
-  if (!tasks[i]) card.style.background = c.bg;
-
-  label.className = 'task-label' + (tasks[i] ? ' completed' : '');
-  label.style.color = tasks[i] ? '#34D399' : c.color;
-
-  check.className = 'checkbox' + (tasks[i] ? ' checked' : '');
-  counter.textContent = `${counters[i]}× absolviert`;
+function animateConfetti() {
+  cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+  let alive = false;
+  cParticles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += p.gravity; p.vx *= 0.99;
+    p.rotation += p.rotSpeed; p.opacity -= 0.009;
+    if (p.opacity <= 0) return;
+    alive = true;
+    cCtx.save();
+    cCtx.translate(p.x, p.y);
+    cCtx.rotate(p.rotation * Math.PI / 180);
+    cCtx.globalAlpha = p.opacity;
+    cCtx.fillStyle = p.color;
+    if (p.shape === 'rect') cCtx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+    else { cCtx.beginPath(); cCtx.arc(0, 0, p.size/2, 0, Math.PI*2); cCtx.fill(); }
+    cCtx.restore();
+  });
+  if (alive) cAnimId = requestAnimationFrame(animateConfetti);
 }
 
-function resetAll() {
-  tasks = CONFIG.map(() => false);
+function haptic() { try { navigator.vibrate(10); } catch {} }
+
+// --- Render ---
+function render() {
+  const container = document.getElementById('tasksContainer');
+  container.innerHTML = '';
+  tasks.forEach((t, i) => {
+    const hasSubtasks = t.subtasks && t.subtasks.length > 0;
+    const isOpen = openAccordion === i;
+    const doneCount = hasSubtasks ? t.subtasks.filter(s => s.completed).length : 0;
+    const totalCount = hasSubtasks ? t.subtasks.length : 0;
+
+    const card = document.createElement('div');
+    card.className = 'task-card' + (t.completed ? ' completed' : '');
+    card.style.background = t.completed ? '' : t.bg;
+    card.id = 'card' + i;
+
+    let rightHtml = '';
+    if (hasSubtasks) {
+      rightHtml = `
+        <button class="edit-btn" onclick="event.stopPropagation(); openModal(${i})">✎</button>
+        <span class="subtask-progress">${doneCount}/${totalCount}</span>
+        <span class="subtask-arrow${isOpen ? ' open' : ''}">▼</span>`;
+    } else {
+      rightHtml = `
+        <button class="edit-btn" onclick="event.stopPropagation(); openModal(${i})">✎</button>
+        <div class="checkbox${t.completed ? ' checked' : ''}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>`;
+    }
+
+    let subtaskHtml = '';
+    if (hasSubtasks) {
+      const items = t.subtasks.map((s, si) => `
+        <div class="subtask-item" onclick="event.stopPropagation(); toggleSubtask(${i}, ${si})">
+          <span class="subtask-name${s.completed ? ' done' : ''}">${s.name}</span>
+          <div class="mini-check${s.completed ? ' checked' : ''}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>`).join('');
+      subtaskHtml = `<div class="subtask-list${isOpen ? ' open' : ''}">${items}</div>`;
+    }
+
+    card.innerHTML = `
+      <div>
+        <div class="task-header" onclick="handleTaskClick(${i})">
+          <div class="task-left">
+            <span class="task-emoji">${t.emoji}</span>
+            <div class="task-info">
+              <span class="task-label${t.completed ? ' completed' : ''}" style="color:${t.completed ? '#34D399' : t.color}">${t.label}</span>
+              <span class="task-counter">${t.counter}× absolviert</span>
+            </div>
+          </div>
+          <div class="task-right">${rightHtml}</div>
+        </div>
+        ${subtaskHtml}
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+// --- Task interactions ---
+function handleTaskClick(i) {
+  const t = tasks[i];
+  const hasSubtasks = t.subtasks && t.subtasks.length > 0;
+
+  if (hasSubtasks) {
+    if (t.completed) {
+      // Reopen: uncheck all subtasks, uncomplete task
+      t.completed = false;
+      t.subtasks.forEach(s => s.completed = false);
+      openAccordion = i;
+      saveTasks(); render();
+    } else {
+      openAccordion = openAccordion === i ? null : i;
+      render();
+    }
+  } else {
+    // Simple toggle
+    const wasCompleted = t.completed;
+    t.completed = !t.completed;
+    if (t.completed) {
+      t.counter++;
+      haptic();
+      saveTasks(); render();
+      triggerConfettiOnCard(i);
+    } else {
+      saveTasks(); render();
+    }
+  }
+}
+
+function toggleSubtask(taskIdx, subIdx) {
+  const t = tasks[taskIdx];
+  t.subtasks[subIdx].completed = !t.subtasks[subIdx].completed;
+  haptic();
+
+  // Check if all done
+  const allDone = t.subtasks.every(s => s.completed);
+  if (allDone) {
+    t.completed = true;
+    t.counter++;
+    openAccordion = null;
+    saveTasks(); render();
+    setTimeout(() => triggerConfettiOnCard(taskIdx), 300);
+  } else {
+    t.completed = false;
+    saveTasks(); render();
+  }
+}
+
+function triggerConfettiOnCard(i) {
+  const card = document.getElementById('card' + i);
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
+  fireConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+
+// --- Modal ---
+function openModal(index) {
+  editingIndex = typeof index === 'number' ? index : null;
+  const isEdit = editingIndex !== null;
+  const t = isEdit ? tasks[editingIndex] : null;
+
+  document.getElementById('modalTitle').textContent = isEdit ? 'Task bearbeiten' : 'Neuer Task';
+  document.getElementById('inputName').value = isEdit ? t.label : '';
+  document.getElementById('btnDelete').style.display = isEdit ? '' : 'none';
+  document.getElementById('counterLabel').style.display = isEdit ? '' : 'none';
+  document.getElementById('counterRow').style.display = isEdit ? 'flex' : 'none';
+
+  formSubtasks = isEdit && t.subtasks ? t.subtasks.map(s => s.name) : [];
+  formCounter = isEdit ? t.counter : 0;
+  document.getElementById('counterValue').textContent = formCounter;
+
+  // Build emoji grid
+  const selEmoji = isEdit ? t.emoji : EMOJIS[0];
+  document.getElementById('emojiGrid').innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-option${e === selEmoji ? ' selected' : ''}" onclick="selectEmoji(this, '${e}')">${e}</div>`
+  ).join('');
+
+  // Build color grid
+  const selColor = isEdit ? t.color : COLORS[0].color;
+  document.getElementById('colorGrid').innerHTML = COLORS.map(c =>
+    `<div class="color-option${c.color === selColor ? ' selected' : ''}" style="background:${c.color}" data-color-value="${c.color}" onclick="selectColor(this, '${c.color}')"></div>`
+  ).join('');
+
+  renderFormSubtasks();
+  document.getElementById('inputSubtask').value = '';
+  document.getElementById('modalOverlay').classList.add('visible');
+  document.getElementById('modal').classList.add('visible');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('visible');
+  document.getElementById('modal').classList.remove('visible');
+  editingIndex = null;
+}
+
+function selectEmoji(el, emoji) {
+  document.querySelectorAll('.emoji-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function addSubtaskToForm() {
+  const input = document.getElementById('inputSubtask');
+  const name = input.value.trim();
+  if (!name) return;
+  formSubtasks.push(name);
+  input.value = '';
+  renderFormSubtasks();
+}
+
+function removeFormSubtask(idx) {
+  formSubtasks.splice(idx, 1);
+  renderFormSubtasks();
+}
+
+function renderFormSubtasks() {
+  document.getElementById('subtaskEditList').innerHTML = formSubtasks.map((s, i) =>
+    `<div class="subtask-edit-item">
+      <span class="subtask-edit-name">${s}</span>
+      <button class="subtask-remove" onclick="removeFormSubtask(${i})">✕</button>
+    </div>`
+  ).join('');
+}
+
+function adjustCounter(delta) {
+  formCounter = Math.max(0, formCounter + delta);
+  document.getElementById('counterValue').textContent = formCounter;
+}
+
+function saveTask() {
+  const name = document.getElementById('inputName').value.trim();
+  if (!name) { document.getElementById('inputName').focus(); return; }
+
+  const selEmoji = document.querySelector('.emoji-option.selected');
+  const selColor = document.querySelector('.color-option.selected');
+  const emoji = selEmoji ? selEmoji.textContent : '🎯';
+  const colorHex = selColor ? selColor.dataset.colorValue : COLORS[0].color;
+  const colorObj = COLORS.find(c => c.color === colorHex) || COLORS[0];
+  const finalColor = colorObj.color;
+  const finalBg = colorObj.bg;
+
+  if (editingIndex !== null) {
+    // Update existing
+    const t = tasks[editingIndex];
+    t.label = name;
+    t.emoji = emoji;
+    t.color = finalColor;
+    t.bg = finalBg;
+    t.counter = formCounter;
+    // Update subtasks: keep completion state for existing ones
+    const oldNames = t.subtasks ? t.subtasks.map(s => s.name) : [];
+    t.subtasks = formSubtasks.map(sName => {
+      const oldIdx = oldNames.indexOf(sName);
+      return { name: sName, completed: oldIdx >= 0 ? t.subtasks[oldIdx].completed : false };
+    });
+    // If subtasks changed, re-evaluate completion
+    if (t.subtasks.length > 0) {
+      t.completed = t.subtasks.every(s => s.completed);
+    }
+  } else {
+    // Create new
+    tasks.push({
+      id: 'task_' + Date.now(),
+      label: name,
+      emoji,
+      color: finalColor,
+      bg: finalBg,
+      completed: false,
+      counter: 0,
+      subtasks: formSubtasks.map(s => ({ name: s, completed: false })),
+    });
+  }
+
   saveTasks();
-  CONFIG.forEach((_, i) => updateCard(i));
+  closeModal();
+  render();
+}
+
+function deleteTask() {
+  if (editingIndex === null) return;
+  if (!confirm('Task "' + tasks[editingIndex].label + '" wirklich löschen?')) return;
+  tasks.splice(editingIndex, 1);
+  if (openAccordion === editingIndex) openAccordion = null;
+  else if (openAccordion > editingIndex) openAccordion--;
+  saveTasks();
+  closeModal();
+  render();
+}
+
+// Handle enter key in subtask input
+document.getElementById('inputSubtask').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addSubtaskToForm(); }
+});
+
+function selectColor(el, color) {
+  document.querySelectorAll('.color-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  el.dataset.colorValue = color;
 }
 
 // --- Init ---
-buildCards();
+render();
 </script>
 </body>
 </html>
