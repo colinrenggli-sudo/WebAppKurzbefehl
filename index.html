@@ -159,11 +159,29 @@
     display: flex; align-items: center; gap: 14px;
     padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
     cursor: pointer; -webkit-user-select: none; user-select: none;
+    transition: transform 0.25s cubic-bezier(0.2,0.8,0.2,1);
   }
   .edit-picker-item:last-child { border-bottom: none; }
   .edit-picker-item:active { opacity: 0.6; }
+  .edit-picker-item.dragging {
+    position: relative; z-index: 10;
+    background: rgba(52,211,153,0.12);
+    border-radius: 14px; padding: 16px 12px;
+    border-bottom-color: transparent;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(52,211,153,0.15);
+    transform: scale(1.03);
+    transition: box-shadow 0.2s, background 0.2s;
+  }
+  .edit-picker-item.dragging:active { opacity: 1; }
   .edit-picker-emoji { font-size: 24px; }
-  .edit-picker-label { font-size: 16px; font-weight: 600; }
+  .edit-picker-label { font-size: 16px; font-weight: 600; flex: 1; }
+  .edit-picker-drag {
+    background: none; border: none; color: rgba(255,255,255,0.2);
+    font-size: 18px; cursor: grab; padding: 4px 8px;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: none; margin-left: auto;
+  }
+  .edit-picker-drag:active { cursor: grabbing; color: rgba(255,255,255,0.5); }
 
   /* Modal overlay */
   .modal-overlay {
@@ -889,21 +907,144 @@ function selectColor(el, color) {
 }
 
 // --- Edit picker ---
+let taskDragIdx = null;
+let taskDragStartY = 0;
+let taskDragItemH = 0;
+let taskDragEl = null;
+
 function openEditPicker() {
-  const list = document.getElementById('editPickerList');
-  list.innerHTML = tasks.map((t, i) =>
-    `<div class="edit-picker-item" onclick="closeEditPicker(); setTimeout(() => openModal(${i}), 300)">
-      <span class="edit-picker-emoji">${t.emoji}</span>
-      <span class="edit-picker-label" style="color:${t.color}">${t.label}</span>
-    </div>`
-  ).join('');
+  renderEditPicker();
   document.getElementById('editPickerOverlay').classList.add('visible');
   document.getElementById('editPickerModal').classList.add('visible');
+}
+
+function renderEditPicker() {
+  const list = document.getElementById('editPickerList');
+  list.innerHTML = tasks.map((t, i) =>
+    `<div class="edit-picker-item" data-tidx="${i}" onclick="onPickerItemTap(${i})">
+      <span class="edit-picker-emoji">${t.emoji}</span>
+      <span class="edit-picker-label" style="color:${t.color}">${t.label}</span>
+      <span class="edit-picker-drag" data-tdrag="${i}">⠿</span>
+    </div>`
+  ).join('');
+  initTaskDragHandles();
+}
+
+function onPickerItemTap(i) {
+  // Only open edit if not dragging
+  if (taskDragIdx !== null) return;
+  closeEditPicker();
+  setTimeout(() => openModal(i), 300);
 }
 
 function closeEditPicker() {
   document.getElementById('editPickerOverlay').classList.remove('visible');
   document.getElementById('editPickerModal').classList.remove('visible');
+}
+
+function initTaskDragHandles() {
+  document.querySelectorAll('.edit-picker-drag').forEach(handle => {
+    handle.addEventListener('touchstart', onTaskDragStart, { passive: false });
+    handle.addEventListener('mousedown', onTaskDragStartMouse);
+  });
+}
+
+function onTaskDragStartMouse(e) {
+  e.stopPropagation();
+  taskDragIdx = parseInt(e.target.dataset.tdrag);
+  taskDragStartY = e.clientY;
+  setupTaskDrag();
+  document.addEventListener('mousemove', onTaskDragMoveMouse);
+  document.addEventListener('mouseup', onTaskDragEnd);
+}
+
+function onTaskDragStart(e) {
+  e.preventDefault(); e.stopPropagation();
+  taskDragIdx = parseInt(e.target.dataset.tdrag);
+  taskDragStartY = e.touches[0].clientY;
+  setupTaskDrag();
+  document.addEventListener('touchmove', onTaskDragMove, { passive: false });
+  document.addEventListener('touchend', onTaskDragEnd);
+}
+
+function setupTaskDrag() {
+  const items = document.querySelectorAll('.edit-picker-item');
+  if (items.length === 0) return;
+  taskDragItemH = items[0].getBoundingClientRect().height;
+  taskDragEl = items[taskDragIdx];
+  taskDragEl.classList.add('dragging');
+  taskDragEl.style.transition = 'box-shadow 0.2s, background 0.2s';
+  haptic();
+}
+
+function onTaskDragMove(e) { e.preventDefault(); handleTaskDragMove(e.touches[0].clientY); }
+function onTaskDragMoveMouse(e) { handleTaskDragMove(e.clientY); }
+
+function handleTaskDragMove(clientY) {
+  if (taskDragIdx === null || !taskDragEl) return;
+  const diff = clientY - taskDragStartY;
+  taskDragEl.style.transform = `scale(1.03) translateY(${diff}px)`;
+
+  const threshold = taskDragItemH * 0.5;
+  if (diff > threshold && taskDragIdx < tasks.length - 1) {
+    swapTaskItems(taskDragIdx, taskDragIdx + 1);
+    taskDragIdx++;
+    taskDragStartY = clientY;
+    haptic();
+  } else if (diff < -threshold && taskDragIdx > 0) {
+    swapTaskItems(taskDragIdx, taskDragIdx - 1);
+    taskDragIdx--;
+    taskDragStartY = clientY;
+    haptic();
+  }
+}
+
+function swapTaskItems(fromIdx, toIdx) {
+  // Swap in tasks array
+  const tmp = tasks[fromIdx];
+  tasks[fromIdx] = tasks[toIdx];
+  tasks[toIdx] = tmp;
+
+  // Update openAccordion if needed
+  if (openAccordion === fromIdx) openAccordion = toIdx;
+  else if (openAccordion === toIdx) openAccordion = fromIdx;
+
+  // Swap DOM nodes
+  const list = document.getElementById('editPickerList');
+  const items = Array.from(list.children);
+  const otherItem = items[toIdx];
+  if (otherItem) {
+    const direction = toIdx > fromIdx ? -1 : 1;
+    otherItem.style.transition = 'none';
+    otherItem.style.transform = `translateY(${direction * taskDragItemH}px)`;
+    requestAnimationFrame(() => {
+      otherItem.style.transition = 'transform 0.25s cubic-bezier(0.2,0.8,0.2,1)';
+      otherItem.style.transform = 'translateY(0)';
+    });
+    if (toIdx > fromIdx) {
+      list.insertBefore(taskDragEl, otherItem.nextSibling);
+    } else {
+      list.insertBefore(taskDragEl, otherItem);
+    }
+  }
+}
+
+function onTaskDragEnd() {
+  if (taskDragEl) {
+    taskDragEl.style.transition = 'all 0.25s cubic-bezier(0.2,0.8,0.2,1)';
+    taskDragEl.style.transform = 'scale(1) translateY(0)';
+    taskDragEl.classList.remove('dragging');
+  }
+  taskDragIdx = null;
+  taskDragEl = null;
+  document.removeEventListener('touchmove', onTaskDragMove);
+  document.removeEventListener('touchend', onTaskDragEnd);
+  document.removeEventListener('mousemove', onTaskDragMoveMouse);
+  document.removeEventListener('mouseup', onTaskDragEnd);
+  // Save new order & re-render
+  saveTasks();
+  render();
+  setTimeout(() => renderEditPicker(), 300);
 }
 
 // --- Init ---
