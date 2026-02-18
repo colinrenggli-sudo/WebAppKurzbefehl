@@ -330,29 +330,37 @@
   }
   .btn-delete:active { opacity: 0.8; }
 
-  /* Wiki section */
-  .wiki-divider {
+  /* Tab bar */
+  .tab-bar {
     width: 100%; max-width: 420px;
-    display: flex; align-items: center; gap: 12px;
-    padding: 8px 0 16px;
+    display: flex; gap: 4px;
+    background: rgba(255,255,255,0.04); border-radius: 14px; padding: 4px;
+    margin-top: 12px;
     animation: fadeIn 0.4s ease both;
   }
-  .wiki-divider::before, .wiki-divider::after {
-    content: ''; flex: 1; height: 1px;
-    background: rgba(255,255,255,0.06);
+  .tab {
+    flex: 1; padding: 10px; border-radius: 10px;
+    background: none; border: none; color: rgba(255,255,255,0.35);
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
   }
-  .wiki-divider-text {
-    font-size: 11px; font-weight: 600; letter-spacing: 2px;
-    text-transform: uppercase; color: rgba(255,255,255,0.2);
-    white-space: nowrap;
-  }
+  .tab.active { background: rgba(255,255,255,0.08); color: #fff; }
+  .tab:active { opacity: 0.7; }
 
+  /* Views */
+  .view { display: none; width: 100%; max-width: 420px; flex-direction: column; }
+  .view.active { display: flex; }
+
+  /* Wiki cards */
   .wiki-container {
-    width: 100%; max-width: 420px;
     display: flex; flex-direction: column; gap: 14px;
-    padding-bottom: 24px;
+    padding: 20px 0 24px;
   }
-
+  .wiki-intro {
+    font-size: 13px; color: rgba(255,255,255,0.3); line-height: 1.5;
+    padding: 0 4px;
+  }
   .wiki-card {
     border-radius: 24px; padding: 24px;
     border: 1px solid rgba(255,255,255,0.06);
@@ -364,15 +372,14 @@
     background: rgba(52,211,153,0.06) !important;
     border-color: rgba(52,211,153,0.25) !important;
   }
-
   .wiki-header {
     display: flex; align-items: center; justify-content: space-between;
     cursor: pointer;
   }
   .wiki-header:active { opacity: 0.8; }
-  .wiki-desc {
-    font-size: 13px; color: rgba(255,255,255,0.35);
-    margin-top: 4px; line-height: 1.4;
+  .wiki-term {
+    font-size: 12px; color: rgba(255,255,255,0.3);
+    margin-top: 3px; font-weight: 500;
   }
 
   .wiki-step-list {
@@ -381,7 +388,6 @@
     margin-top: 0;
   }
   .wiki-step-list.open { margin-top: 16px; max-height: 800px; }
-
   .wiki-step {
     display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
     padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -408,16 +414,24 @@
   <div class="header-date" id="headerDate"></div>
 </div>
 
-<div class="tasks" id="tasksContainer"></div>
-
-<div class="wiki-divider">
-  <span class="wiki-divider-text">ADHS Strategien</span>
+<div class="tab-bar">
+  <button class="tab active" id="tabTasks" onclick="switchTab('tasks')">Tasks</button>
+  <button class="tab" id="tabWiki" onclick="switchTab('wiki')">Strategien</button>
 </div>
-<div class="wiki-container" id="wikiContainer"></div>
 
-<div class="bottom-bar">
-  <button class="add-btn" onclick="openModal()">＋ Neuer Task</button>
-  <button class="manage-btn" onclick="openEditPicker()">✎</button>
+<div class="view active" id="viewTasks">
+  <div class="tasks" id="tasksContainer"></div>
+  <div class="bottom-bar">
+    <button class="add-btn" onclick="openModal()">＋ Neuer Task</button>
+    <button class="manage-btn" onclick="openEditPicker()">✎</button>
+  </div>
+</div>
+
+<div class="view" id="viewWiki">
+  <div class="wiki-container">
+    <div class="wiki-intro">Erkenne dein aktuelles Muster und arbeite die passenden Schritte durch.</div>
+    <div id="wikiContainer"></div>
+  </div>
 </div>
 
 <!-- Edit picker overlay -->
@@ -1240,8 +1254,8 @@ function renderWiki() {
           <div class="task-left">
             <span class="task-emoji">${p.emoji}</span>
             <div class="task-info">
-              <span class="task-label${state.completed ? ' completed' : ''}" style="color:${state.completed ? '#34D399' : p.color}">${p.label}</span>
-              <div class="wiki-desc">${p.desc}</div>
+              <span class="task-label${state.completed ? ' completed' : ''}" style="color:${state.completed ? '#34D399' : p.color}">${p.desc}</span>
+              <div class="wiki-term">${p.label}</div>
             </div>
           </div>
           <div class="task-right">
@@ -1296,6 +1310,14 @@ function toggleWikiStep(pi, si) {
     state.completed = false;
     saveWikiState(); renderWiki();
   }
+}
+
+// --- Tab switching ---
+function switchTab(tab) {
+  document.getElementById('viewTasks').classList.toggle('active', tab === 'tasks');
+  document.getElementById('viewWiki').classList.toggle('active', tab === 'wiki');
+  document.getElementById('tabTasks').classList.toggle('active', tab === 'tasks');
+  document.getElementById('tabWiki').classList.toggle('active', tab === 'wiki');
 }
 
 // --- Init ---
