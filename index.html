@@ -269,10 +269,9 @@
   }
   .subtask-remove:active { color: #F43F5E; }
   .subtask-edit-item.dragging {
-    opacity: 0.4;
-  }
-  .subtask-edit-item.drag-over {
-    border-top: 2px solid #34D399;
+    background: rgba(52,211,153,0.1);
+    border-radius: 10px;
+    border-bottom-color: transparent;
   }
 
   /* Counter edit */
@@ -679,10 +678,10 @@ function renderFormSubtasks() {
 }
 
 // --- Touch drag & drop for subtasks ---
-let dragIdx = null;
+let dragCurrentIdx = null;
 let dragStartY = 0;
-let dragItems = [];
 let dragItemHeight = 0;
+let dragLastSwap = -1;
 
 function initDragHandles() {
   document.querySelectorAll('.subtask-drag').forEach(handle => {
@@ -692,8 +691,9 @@ function initDragHandles() {
 }
 
 function onDragStartMouse(e) {
-  dragIdx = parseInt(e.target.dataset.drag);
+  dragCurrentIdx = parseInt(e.target.dataset.drag);
   dragStartY = e.clientY;
+  dragLastSwap = dragCurrentIdx;
   setupDrag();
   document.addEventListener('mousemove', onDragMoveMouse);
   document.addEventListener('mouseup', onDragEnd);
@@ -701,17 +701,18 @@ function onDragStartMouse(e) {
 
 function onDragStart(e) {
   e.preventDefault();
-  dragIdx = parseInt(e.target.dataset.drag);
+  dragCurrentIdx = parseInt(e.target.dataset.drag);
   dragStartY = e.touches[0].clientY;
+  dragLastSwap = dragCurrentIdx;
   setupDrag();
   document.addEventListener('touchmove', onDragMove, { passive: false });
   document.addEventListener('touchend', onDragEnd);
 }
 
 function setupDrag() {
-  dragItems = Array.from(document.querySelectorAll('.subtask-edit-item'));
-  if (dragItems.length > 0) dragItemHeight = dragItems[0].getBoundingClientRect().height;
-  dragItems[dragIdx]?.classList.add('dragging');
+  const items = document.querySelectorAll('.subtask-edit-item');
+  if (items.length > 0) dragItemHeight = items[0].getBoundingClientRect().height;
+  items[dragCurrentIdx]?.classList.add('dragging');
   haptic();
 }
 
@@ -725,29 +726,33 @@ function onDragMoveMouse(e) {
 }
 
 function handleDragMove(clientY) {
-  if (dragIdx === null) return;
+  if (dragCurrentIdx === null) return;
   const diff = clientY - dragStartY;
-  const steps = Math.round(diff / dragItemHeight);
-  const newIdx = Math.max(0, Math.min(formSubtasks.length - 1, dragIdx + steps));
+  const threshold = dragItemHeight * 0.6;
 
-  dragItems.forEach(item => item.classList.remove('drag-over'));
-  if (newIdx !== dragIdx) {
-    dragItems[newIdx]?.classList.add('drag-over');
+  if (diff > threshold && dragCurrentIdx < formSubtasks.length - 1) {
+    // Swap down
+    const tmp = formSubtasks[dragCurrentIdx];
+    formSubtasks[dragCurrentIdx] = formSubtasks[dragCurrentIdx + 1];
+    formSubtasks[dragCurrentIdx + 1] = tmp;
+    dragCurrentIdx++;
+    dragStartY = clientY;
+    haptic();
+    renderFormSubtasks();
+  } else if (diff < -threshold && dragCurrentIdx > 0) {
+    // Swap up
+    const tmp = formSubtasks[dragCurrentIdx];
+    formSubtasks[dragCurrentIdx] = formSubtasks[dragCurrentIdx - 1];
+    formSubtasks[dragCurrentIdx - 1] = tmp;
+    dragCurrentIdx--;
+    dragStartY = clientY;
+    haptic();
+    renderFormSubtasks();
   }
 }
 
-function onDragEnd(e) {
-  const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-  const diff = clientY - dragStartY;
-  const steps = Math.round(diff / dragItemHeight);
-  const newIdx = Math.max(0, Math.min(formSubtasks.length - 1, dragIdx + steps));
-
-  if (newIdx !== dragIdx) {
-    const item = formSubtasks.splice(dragIdx, 1)[0];
-    formSubtasks.splice(newIdx, 0, item);
-  }
-
-  dragIdx = null;
+function onDragEnd() {
+  dragCurrentIdx = null;
   document.removeEventListener('touchmove', onDragMove);
   document.removeEventListener('touchend', onDragEnd);
   document.removeEventListener('mousemove', onDragMoveMouse);
