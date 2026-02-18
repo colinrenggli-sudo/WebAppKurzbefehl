@@ -268,10 +268,17 @@
     font-size: 18px; cursor: pointer; padding: 4px 8px;
   }
   .subtask-remove:active { color: #F43F5E; }
+  .subtask-edit-item {
+    transition: transform 0.25s cubic-bezier(0.2,0.8,0.2,1);
+  }
   .subtask-edit-item.dragging {
-    background: rgba(52,211,153,0.1);
-    border-radius: 10px;
+    position: relative; z-index: 10;
+    background: rgba(52,211,153,0.12);
+    border-radius: 14px;
     border-bottom-color: transparent;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(52,211,153,0.15);
+    transform: scale(1.04);
+    transition: box-shadow 0.2s, background 0.2s;
   }
 
   /* Counter edit */
@@ -677,11 +684,12 @@ function renderFormSubtasks() {
   initDragHandles();
 }
 
-// --- Touch drag & drop for subtasks ---
+// --- Touch drag & drop for subtasks (iOS Lift & Drag) ---
 let dragCurrentIdx = null;
 let dragStartY = 0;
 let dragItemHeight = 0;
-let dragLastSwap = -1;
+let dragOffsetY = 0;
+let dragElement = null;
 
 function initDragHandles() {
   document.querySelectorAll('.subtask-drag').forEach(handle => {
@@ -693,7 +701,6 @@ function initDragHandles() {
 function onDragStartMouse(e) {
   dragCurrentIdx = parseInt(e.target.dataset.drag);
   dragStartY = e.clientY;
-  dragLastSwap = dragCurrentIdx;
   setupDrag();
   document.addEventListener('mousemove', onDragMoveMouse);
   document.addEventListener('mouseup', onDragEnd);
@@ -703,7 +710,6 @@ function onDragStart(e) {
   e.preventDefault();
   dragCurrentIdx = parseInt(e.target.dataset.drag);
   dragStartY = e.touches[0].clientY;
-  dragLastSwap = dragCurrentIdx;
   setupDrag();
   document.addEventListener('touchmove', onDragMove, { passive: false });
   document.addEventListener('touchend', onDragEnd);
@@ -711,8 +717,14 @@ function onDragStart(e) {
 
 function setupDrag() {
   const items = document.querySelectorAll('.subtask-edit-item');
-  if (items.length > 0) dragItemHeight = items[0].getBoundingClientRect().height;
-  items[dragCurrentIdx]?.classList.add('dragging');
+  if (items.length === 0) return;
+  dragItemHeight = items[0].getBoundingClientRect().height;
+  dragElement = items[dragCurrentIdx];
+  dragOffsetY = 0;
+  // Apply lift effect
+  dragElement.classList.add('dragging');
+  // Disable transitions on dragged item for smooth following
+  dragElement.style.transition = 'box-shadow 0.2s, background 0.2s';
   haptic();
 }
 
@@ -726,38 +738,82 @@ function onDragMoveMouse(e) {
 }
 
 function handleDragMove(clientY) {
-  if (dragCurrentIdx === null) return;
+  if (dragCurrentIdx === null || !dragElement) return;
   const diff = clientY - dragStartY;
-  const threshold = dragItemHeight * 0.6;
+
+  // Move dragged element visually following the finger
+  dragOffsetY = diff;
+  dragElement.style.transform = `scale(1.04) translateY(${diff}px)`;
+
+  const threshold = dragItemHeight * 0.5;
 
   if (diff > threshold && dragCurrentIdx < formSubtasks.length - 1) {
     // Swap down
-    const tmp = formSubtasks[dragCurrentIdx];
-    formSubtasks[dragCurrentIdx] = formSubtasks[dragCurrentIdx + 1];
-    formSubtasks[dragCurrentIdx + 1] = tmp;
+    swapItems(dragCurrentIdx, dragCurrentIdx + 1);
     dragCurrentIdx++;
     dragStartY = clientY;
+    dragOffsetY = 0;
     haptic();
-    renderFormSubtasks();
   } else if (diff < -threshold && dragCurrentIdx > 0) {
     // Swap up
-    const tmp = formSubtasks[dragCurrentIdx];
-    formSubtasks[dragCurrentIdx] = formSubtasks[dragCurrentIdx - 1];
-    formSubtasks[dragCurrentIdx - 1] = tmp;
+    swapItems(dragCurrentIdx, dragCurrentIdx - 1);
     dragCurrentIdx--;
     dragStartY = clientY;
+    dragOffsetY = 0;
     haptic();
-    renderFormSubtasks();
   }
 }
 
+function swapItems(fromIdx, toIdx) {
+  // Swap in data
+  const tmp = formSubtasks[fromIdx];
+  formSubtasks[fromIdx] = formSubtasks[toIdx];
+  formSubtasks[toIdx] = tmp;
+
+  // Animate the non-dragged item shifting
+  const items = document.querySelectorAll('.subtask-edit-item');
+  const otherItem = items[toIdx];
+  if (otherItem) {
+    const direction = toIdx > fromIdx ? -1 : 1;
+    otherItem.style.transform = `translateY(${direction * dragItemHeight}px)`;
+    requestAnimationFrame(() => {
+      otherItem.style.transition = 'transform 0.25s cubic-bezier(0.2,0.8,0.2,1)';
+      otherItem.style.transform = 'translateY(0)';
+    });
+  }
+
+  // Re-render after transition, keeping dragged state
+  setTimeout(() => {
+    const wasDragging = dragCurrentIdx !== null;
+    renderFormSubtasks();
+    if (wasDragging) {
+      const newItems = document.querySelectorAll('.subtask-edit-item');
+      dragElement = newItems[dragCurrentIdx];
+      if (dragElement) {
+        dragElement.classList.add('dragging');
+        dragElement.style.transition = 'box-shadow 0.2s, background 0.2s';
+        dragElement.style.transform = 'scale(1.04) translateY(0px)';
+      }
+    }
+  }, 30);
+}
+
 function onDragEnd() {
+  if (dragElement) {
+    // Settle animation: scale back to normal
+    dragElement.style.transition = 'all 0.25s cubic-bezier(0.2,0.8,0.2,1)';
+    dragElement.style.transform = 'scale(1) translateY(0)';
+    dragElement.classList.remove('dragging');
+  }
   dragCurrentIdx = null;
+  dragElement = null;
+  dragOffsetY = 0;
   document.removeEventListener('touchmove', onDragMove);
   document.removeEventListener('touchend', onDragEnd);
   document.removeEventListener('mousemove', onDragMoveMouse);
   document.removeEventListener('mouseup', onDragEnd);
-  renderFormSubtasks();
+  // Final clean render after settle
+  setTimeout(() => renderFormSubtasks(), 280);
 }
 
 function adjustCounter(delta) {
