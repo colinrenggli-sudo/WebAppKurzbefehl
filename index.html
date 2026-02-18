@@ -329,6 +329,74 @@
     font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer;
   }
   .btn-delete:active { opacity: 0.8; }
+
+  /* Wiki section */
+  .wiki-divider {
+    width: 100%; max-width: 420px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0 16px;
+    animation: fadeIn 0.4s ease both;
+  }
+  .wiki-divider::before, .wiki-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+  .wiki-divider-text {
+    font-size: 11px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(255,255,255,0.2);
+    white-space: nowrap;
+  }
+
+  .wiki-container {
+    width: 100%; max-width: 420px;
+    display: flex; flex-direction: column; gap: 14px;
+    padding-bottom: 24px;
+  }
+
+  .wiki-card {
+    border-radius: 24px; padding: 24px;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+    animation: fadeIn 0.4s ease both;
+    -webkit-user-select: none; user-select: none;
+  }
+  .wiki-card.completed {
+    background: rgba(52,211,153,0.06) !important;
+    border-color: rgba(52,211,153,0.25) !important;
+  }
+
+  .wiki-header {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer;
+  }
+  .wiki-header:active { opacity: 0.8; }
+  .wiki-desc {
+    font-size: 13px; color: rgba(255,255,255,0.35);
+    margin-top: 4px; line-height: 1.4;
+  }
+
+  .wiki-step-list {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease, margin-top 0.3s ease;
+    margin-top: 0;
+  }
+  .wiki-step-list.open { margin-top: 16px; max-height: 800px; }
+
+  .wiki-step {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+  }
+  .wiki-step:last-child { border-bottom: none; }
+  .wiki-step:active { opacity: 0.7; }
+  .wiki-step-text {
+    font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.75);
+    transition: all 0.2s; flex: 1; line-height: 1.4;
+  }
+  .wiki-step-text.done {
+    color: #34D399; text-decoration: line-through;
+    text-decoration-color: rgba(52,211,153,0.4);
+  }
 </style>
 </head>
 <body>
@@ -341,6 +409,11 @@
 </div>
 
 <div class="tasks" id="tasksContainer"></div>
+
+<div class="wiki-divider">
+  <span class="wiki-divider-text">ADHS Strategien</span>
+</div>
+<div class="wiki-container" id="wikiContainer"></div>
 
 <div class="bottom-bar">
   <button class="add-btn" onclick="openModal()">＋ Neuer Task</button>
@@ -455,6 +528,17 @@ function checkDailyReset() {
       if (t.subtasks) t.subtasks.forEach(s => s.completed = false);
     });
     saveTasks();
+    // Reset wiki steps too (counters preserved)
+    try {
+      const ws = JSON.parse(localStorage.getItem('focusWikiState'));
+      if (ws) {
+        Object.keys(ws).forEach(k => {
+          ws[k].steps = ws[k].steps.map(() => false);
+          ws[k].completed = false;
+        });
+        localStorage.setItem('focusWikiState', JSON.stringify(ws));
+      }
+    } catch {}
     localStorage.setItem('focusLastReset', today);
   }
 }
@@ -1047,8 +1131,176 @@ function onTaskDragEnd() {
   setTimeout(() => renderEditPicker(), 300);
 }
 
+// --- Wiki: ADHS Strategien ---
+const WIKI_PROBLEMS = [
+  {
+    id: 'transition',
+    emoji: '🧠',
+    label: 'Zustandswechsel-Widerstand',
+    desc: 'Du weisst was zu tun ist, kannst aber nicht starten',
+    color: '#8B5CF6',
+    bg: 'rgba(139,92,246,0.08)',
+    steps: [
+      'Definiere nur den kleinsten ersten Schritt – nicht mehr',
+      'Öffne nur die App oder Datei – nicht arbeiten',
+      'Mach 5 tiefe Atemzüge vor dem Start',
+      'Kurz aufspringen und den Körper schütteln',
+      'Beobachte: "Interessant, da ist wieder der Widerstand"',
+    ]
+  },
+  {
+    id: 'reactance',
+    emoji: '🔒',
+    label: 'Psychologische Reaktanz',
+    desc: 'Aufgabe fühlt sich wie Pflicht an, Gehirn rebelliert',
+    color: '#F59E0B',
+    bg: 'rgba(245,158,11,0.08)',
+    steps: [
+      'Sage: "Ich entscheide mich für..." statt "Ich muss..."',
+      'Setze einen freiwilligen Sprint-Timer (8 Min)',
+      'Ruf jemanden an oder arbeite im Café (Body Double)',
+      'Schreibe nur den Titel oder ersten Satz',
+    ]
+  },
+  {
+    id: 'dopamine',
+    emoji: '🔄',
+    label: 'Dopamin-Antizipations-Loop',
+    desc: 'Planen fühlt sich besser an als Starten',
+    color: '#06B6D4',
+    bg: 'rgba(6,182,212,0.08)',
+    steps: [
+      'Stoppe das Planen – starte sofort den ersten Schritt',
+      'Beobachte ohne Urteil: "Da ist der Loop"',
+      'Kaltes Wasser ins Gesicht oder kurz bewegen',
+      'Setze künstliche Dringlichkeit mit einem Timer',
+    ]
+  },
+];
+
+let wikiState = loadWikiState();
+let openWikiAccordion = null;
+
+function loadWikiState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('focusWikiState'));
+    if (saved) return saved;
+  } catch {}
+  // Init: all steps unchecked
+  const state = {};
+  WIKI_PROBLEMS.forEach(p => {
+    state[p.id] = { steps: p.steps.map(() => false), completed: false, counter: 0 };
+  });
+  return state;
+}
+
+function saveWikiState() {
+  localStorage.setItem('focusWikiState', JSON.stringify(wikiState));
+}
+
+function resetWikiDaily() {
+  WIKI_PROBLEMS.forEach(p => {
+    if (wikiState[p.id]) {
+      wikiState[p.id].steps = p.steps.map(() => false);
+      wikiState[p.id].completed = false;
+    }
+  });
+  saveWikiState();
+}
+
+function renderWiki() {
+  const container = document.getElementById('wikiContainer');
+  container.innerHTML = '';
+  WIKI_PROBLEMS.forEach((p, pi) => {
+    const state = wikiState[p.id] || { steps: p.steps.map(() => false), completed: false, counter: 0 };
+    // Ensure state has all steps
+    while (state.steps.length < p.steps.length) state.steps.push(false);
+    wikiState[p.id] = state;
+
+    const isOpen = openWikiAccordion === pi;
+    const doneCount = state.steps.filter(Boolean).length;
+    const totalCount = p.steps.length;
+
+    const card = document.createElement('div');
+    card.className = 'wiki-card' + (state.completed ? ' completed' : '');
+    card.style.background = state.completed ? '' : p.bg;
+    card.id = 'wikicard' + pi;
+
+    const stepItems = p.steps.map((s, si) => `
+      <div class="wiki-step" onclick="event.stopPropagation(); toggleWikiStep(${pi}, ${si})">
+        <span class="wiki-step-text${state.steps[si] ? ' done' : ''}">${s}</span>
+        <div class="mini-check${state.steps[si] ? ' checked' : ''}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>`).join('');
+
+    card.innerHTML = `
+      <div>
+        <div class="wiki-header" onclick="handleWikiClick(${pi})">
+          <div class="task-left">
+            <span class="task-emoji">${p.emoji}</span>
+            <div class="task-info">
+              <span class="task-label${state.completed ? ' completed' : ''}" style="color:${state.completed ? '#34D399' : p.color}">${p.label}</span>
+              <div class="wiki-desc">${p.desc}</div>
+            </div>
+          </div>
+          <div class="task-right">
+            <span class="subtask-badge">${doneCount}/${totalCount}</span>
+            <div class="checkbox${state.completed ? ' checked' : ''}" id="wikicheck${pi}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="wiki-step-list${isOpen ? ' open' : ''}">${stepItems}</div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function handleWikiClick(pi) {
+  const p = WIKI_PROBLEMS[pi];
+  const state = wikiState[p.id];
+
+  if (state.completed) {
+    // Reopen: reset steps
+    state.completed = false;
+    state.steps = p.steps.map(() => false);
+    openWikiAccordion = pi;
+    saveWikiState(); renderWiki();
+  } else {
+    openWikiAccordion = openWikiAccordion === pi ? null : pi;
+    renderWiki();
+  }
+}
+
+function toggleWikiStep(pi, si) {
+  const p = WIKI_PROBLEMS[pi];
+  const state = wikiState[p.id];
+  state.steps[si] = !state.steps[si];
+  haptic();
+
+  const allDone = state.steps.every(Boolean);
+  if (allDone) {
+    state.completed = true;
+    state.counter++;
+    openWikiAccordion = null;
+    saveWikiState(); renderWiki();
+    setTimeout(() => {
+      const check = document.getElementById('wikicheck' + pi);
+      if (check) {
+        const rect = check.getBoundingClientRect();
+        fireConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
+    }, 300);
+  } else {
+    state.completed = false;
+    saveWikiState(); renderWiki();
+  }
+}
+
 // --- Init ---
 render();
+renderWiki();
 </script>
 </body>
 </html>
