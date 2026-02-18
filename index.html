@@ -256,18 +256,24 @@
   .subtask-edit-item:last-child { border-bottom: none; }
   .subtask-edit-name { font-size: 15px; color: rgba(255,255,255,0.7); flex: 1; }
   .subtask-edit-actions { display: flex; align-items: center; gap: 2px; }
-  .subtask-move {
+  .subtask-drag {
     background: none; border: none; color: rgba(255,255,255,0.2);
-    font-size: 16px; cursor: pointer; padding: 4px 6px;
+    font-size: 18px; cursor: grab; padding: 4px 8px;
     display: flex; align-items: center; justify-content: center;
+    touch-action: none;
   }
-  .subtask-move:active { color: rgba(255,255,255,0.6); }
-  .subtask-move.disabled { opacity: 0.15; pointer-events: none; }
+  .subtask-drag:active { cursor: grabbing; color: rgba(255,255,255,0.5); }
   .subtask-remove {
     background: none; border: none; color: rgba(255,255,255,0.25);
     font-size: 18px; cursor: pointer; padding: 4px 8px;
   }
   .subtask-remove:active { color: #F43F5E; }
+  .subtask-edit-item.dragging {
+    opacity: 0.4;
+  }
+  .subtask-edit-item.drag-over {
+    border-top: 2px solid #34D399;
+  }
 
   /* Counter edit */
   .counter-row {
@@ -659,25 +665,93 @@ function removeFormSubtask(idx) {
 }
 
 function renderFormSubtasks() {
-  const len = formSubtasks.length;
-  document.getElementById('subtaskEditList').innerHTML = formSubtasks.map((s, i) =>
-    `<div class="subtask-edit-item">
+  const list = document.getElementById('subtaskEditList');
+  list.innerHTML = formSubtasks.map((s, i) =>
+    `<div class="subtask-edit-item" data-idx="${i}">
       <span class="subtask-edit-name">${s}</span>
       <div class="subtask-edit-actions">
-        <button class="subtask-move${i === 0 ? ' disabled' : ''}" onclick="moveFormSubtask(${i}, -1)">▲</button>
-        <button class="subtask-move${i === len - 1 ? ' disabled' : ''}" onclick="moveFormSubtask(${i}, 1)">▼</button>
+        <span class="subtask-drag" data-drag="${i}">⠿</span>
         <button class="subtask-remove" onclick="removeFormSubtask(${i})">✕</button>
       </div>
     </div>`
   ).join('');
+  initDragHandles();
 }
 
-function moveFormSubtask(idx, dir) {
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= formSubtasks.length) return;
-  const tmp = formSubtasks[idx];
-  formSubtasks[idx] = formSubtasks[newIdx];
-  formSubtasks[newIdx] = tmp;
+// --- Touch drag & drop for subtasks ---
+let dragIdx = null;
+let dragStartY = 0;
+let dragItems = [];
+let dragItemHeight = 0;
+
+function initDragHandles() {
+  document.querySelectorAll('.subtask-drag').forEach(handle => {
+    handle.addEventListener('touchstart', onDragStart, { passive: false });
+    handle.addEventListener('mousedown', onDragStartMouse);
+  });
+}
+
+function onDragStartMouse(e) {
+  dragIdx = parseInt(e.target.dataset.drag);
+  dragStartY = e.clientY;
+  setupDrag();
+  document.addEventListener('mousemove', onDragMoveMouse);
+  document.addEventListener('mouseup', onDragEnd);
+}
+
+function onDragStart(e) {
+  e.preventDefault();
+  dragIdx = parseInt(e.target.dataset.drag);
+  dragStartY = e.touches[0].clientY;
+  setupDrag();
+  document.addEventListener('touchmove', onDragMove, { passive: false });
+  document.addEventListener('touchend', onDragEnd);
+}
+
+function setupDrag() {
+  dragItems = Array.from(document.querySelectorAll('.subtask-edit-item'));
+  if (dragItems.length > 0) dragItemHeight = dragItems[0].getBoundingClientRect().height;
+  dragItems[dragIdx]?.classList.add('dragging');
+  haptic();
+}
+
+function onDragMove(e) {
+  e.preventDefault();
+  handleDragMove(e.touches[0].clientY);
+}
+
+function onDragMoveMouse(e) {
+  handleDragMove(e.clientY);
+}
+
+function handleDragMove(clientY) {
+  if (dragIdx === null) return;
+  const diff = clientY - dragStartY;
+  const steps = Math.round(diff / dragItemHeight);
+  const newIdx = Math.max(0, Math.min(formSubtasks.length - 1, dragIdx + steps));
+
+  dragItems.forEach(item => item.classList.remove('drag-over'));
+  if (newIdx !== dragIdx) {
+    dragItems[newIdx]?.classList.add('drag-over');
+  }
+}
+
+function onDragEnd(e) {
+  const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+  const diff = clientY - dragStartY;
+  const steps = Math.round(diff / dragItemHeight);
+  const newIdx = Math.max(0, Math.min(formSubtasks.length - 1, dragIdx + steps));
+
+  if (newIdx !== dragIdx) {
+    const item = formSubtasks.splice(dragIdx, 1)[0];
+    formSubtasks.splice(newIdx, 0, item);
+  }
+
+  dragIdx = null;
+  document.removeEventListener('touchmove', onDragMove);
+  document.removeEventListener('touchend', onDragEnd);
+  document.removeEventListener('mousemove', onDragMoveMouse);
+  document.removeEventListener('mouseup', onDragEnd);
   renderFormSubtasks();
 }
 
