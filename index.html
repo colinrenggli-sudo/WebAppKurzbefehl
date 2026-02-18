@@ -254,7 +254,15 @@
     padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
   }
   .subtask-edit-item:last-child { border-bottom: none; }
-  .subtask-edit-name { font-size: 15px; color: rgba(255,255,255,0.7); }
+  .subtask-edit-name { font-size: 15px; color: rgba(255,255,255,0.7); flex: 1; }
+  .subtask-edit-actions { display: flex; align-items: center; gap: 2px; }
+  .subtask-move {
+    background: none; border: none; color: rgba(255,255,255,0.2);
+    font-size: 16px; cursor: pointer; padding: 4px 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .subtask-move:active { color: rgba(255,255,255,0.6); }
+  .subtask-move.disabled { opacity: 0.15; pointer-events: none; }
   .subtask-remove {
     background: none; border: none; color: rgba(255,255,255,0.25);
     font-size: 18px; cursor: pointer; padding: 4px 8px;
@@ -651,12 +659,26 @@ function removeFormSubtask(idx) {
 }
 
 function renderFormSubtasks() {
+  const len = formSubtasks.length;
   document.getElementById('subtaskEditList').innerHTML = formSubtasks.map((s, i) =>
     `<div class="subtask-edit-item">
       <span class="subtask-edit-name">${s}</span>
-      <button class="subtask-remove" onclick="removeFormSubtask(${i})">✕</button>
+      <div class="subtask-edit-actions">
+        <button class="subtask-move${i === 0 ? ' disabled' : ''}" onclick="moveFormSubtask(${i}, -1)">▲</button>
+        <button class="subtask-move${i === len - 1 ? ' disabled' : ''}" onclick="moveFormSubtask(${i}, 1)">▼</button>
+        <button class="subtask-remove" onclick="removeFormSubtask(${i})">✕</button>
+      </div>
     </div>`
   ).join('');
+}
+
+function moveFormSubtask(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= formSubtasks.length) return;
+  const tmp = formSubtasks[idx];
+  formSubtasks[idx] = formSubtasks[newIdx];
+  formSubtasks[newIdx] = tmp;
+  renderFormSubtasks();
 }
 
 function adjustCounter(delta) {
