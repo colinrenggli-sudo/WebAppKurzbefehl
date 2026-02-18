@@ -770,32 +770,28 @@ function swapItems(fromIdx, toIdx) {
   formSubtasks[fromIdx] = formSubtasks[toIdx];
   formSubtasks[toIdx] = tmp;
 
-  // Animate the non-dragged item shifting
-  const items = document.querySelectorAll('.subtask-edit-item');
+  // Swap DOM nodes instead of re-rendering (keeps drag alive)
+  const list = document.getElementById('subtaskEditList');
+  const items = Array.from(list.children);
   const otherItem = items[toIdx];
+
   if (otherItem) {
+    // Animate other item shifting
     const direction = toIdx > fromIdx ? -1 : 1;
+    otherItem.style.transition = 'none';
     otherItem.style.transform = `translateY(${direction * dragItemHeight}px)`;
     requestAnimationFrame(() => {
       otherItem.style.transition = 'transform 0.25s cubic-bezier(0.2,0.8,0.2,1)';
       otherItem.style.transform = 'translateY(0)';
     });
-  }
 
-  // Re-render after transition, keeping dragged state
-  setTimeout(() => {
-    const wasDragging = dragCurrentIdx !== null;
-    renderFormSubtasks();
-    if (wasDragging) {
-      const newItems = document.querySelectorAll('.subtask-edit-item');
-      dragElement = newItems[dragCurrentIdx];
-      if (dragElement) {
-        dragElement.classList.add('dragging');
-        dragElement.style.transition = 'box-shadow 0.2s, background 0.2s';
-        dragElement.style.transform = 'scale(1.04) translateY(0px)';
-      }
+    // Actually swap DOM positions
+    if (toIdx > fromIdx) {
+      list.insertBefore(dragElement, otherItem.nextSibling);
+    } else {
+      list.insertBefore(dragElement, otherItem);
     }
-  }, 30);
+  }
 }
 
 function onDragEnd() {
@@ -812,8 +808,8 @@ function onDragEnd() {
   document.removeEventListener('touchend', onDragEnd);
   document.removeEventListener('mousemove', onDragMoveMouse);
   document.removeEventListener('mouseup', onDragEnd);
-  // Final clean render after settle
-  setTimeout(() => renderFormSubtasks(), 280);
+  // Clean re-render after settle animation to sync data-idx attributes
+  setTimeout(() => renderFormSubtasks(), 300);
 }
 
 function adjustCounter(delta) {
