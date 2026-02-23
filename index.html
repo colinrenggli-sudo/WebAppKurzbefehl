@@ -41,6 +41,25 @@
     font-size: 13px; color: rgba(255,255,255,0.25);
     font-family: 'SF Mono', ui-monospace, monospace;
   }
+  .header-progress {
+    margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .progress-bar-track {
+    width: 100%; max-width: 200px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.08); overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 2px;
+    background: #34D399; transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  .progress-text {
+    font-size: 11px; color: rgba(255,255,255,0.3);
+    font-family: 'SF Mono', ui-monospace, monospace; font-weight: 500;
+  }
+  .progress-motivation {
+    font-size: 12px; color: rgba(52,211,153,0.6); font-weight: 500;
+    margin-top: 2px; transition: opacity 0.3s;
+  }
 
   .tasks {
     width: 100%; max-width: 420px;
@@ -412,6 +431,13 @@
 <div class="header">
   <div class="header-title">Focus Blocks</div>
   <div class="header-date" id="headerDate"></div>
+  <div class="header-progress">
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+    </div>
+    <span class="progress-text" id="progressText">0 / 0 erledigt</span>
+    <span class="progress-motivation" id="progressMotivation"></span>
+  </div>
 </div>
 
 <div class="tab-bar">
@@ -618,6 +644,47 @@ function animateConfetti() {
 
 function haptic() { try { navigator.vibrate(10); } catch {} }
 
+// --- Task Progress Tracker ---
+function getTaskProgress() {
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.completed).length;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  // Berechne auch Subtask-Fortschritt für granulärere Anzeige
+  let totalSubtasks = 0;
+  let completedSubtasks = 0;
+  tasks.forEach(t => {
+    if (t.subtasks && t.subtasks.length > 0) {
+      totalSubtasks += t.subtasks.length;
+      completedSubtasks += t.subtasks.filter(s => s.completed).length;
+    }
+  });
+
+  return { total, completed, percent, totalSubtasks, completedSubtasks };
+}
+
+function getMotivationText(progress) {
+  const { percent, completed, total } = progress;
+  if (total === 0) return '';
+  if (percent === 100) return '🎉 Alles geschafft – starker Tag!';
+  if (percent >= 75) return '🔥 Fast fertig, zieh es durch!';
+  if (percent >= 50) return '💪 Halbzeit – weiter so!';
+  if (percent >= 25) return '🚀 Guter Start, dranbleiben!';
+  if (completed > 0) return '✨ Erster Schritt gemacht!';
+  return '🧘 Bereit für den Tag?';
+}
+
+function updateProgressBar() {
+  const progress = getTaskProgress();
+  const fillEl = document.getElementById('progressBarFill');
+  const textEl = document.getElementById('progressText');
+  const motivEl = document.getElementById('progressMotivation');
+
+  if (fillEl) fillEl.style.width = progress.percent + '%';
+  if (textEl) textEl.textContent = progress.completed + ' / ' + progress.total + ' erledigt · ' + progress.percent + '%';
+  if (motivEl) motivEl.textContent = getMotivationText(progress);
+}
+
 // --- Render ---
 function render() {
   const container = document.getElementById('tasksContainer');
@@ -668,6 +735,7 @@ function render() {
       </div>`;
     container.appendChild(card);
   });
+  updateProgressBar();
 }
 
 // --- Task interactions ---
