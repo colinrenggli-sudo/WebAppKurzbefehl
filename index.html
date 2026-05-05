@@ -777,6 +777,11 @@
       <span>Erinnerung</span>
       <span class="todo-notif-status" id="todoNotifStatus">aus</span>
     </div>
+    <div class="todo-notif-bar" onclick="openDataMenu()">
+      <span class="todo-notif-icon">☁️</span>
+      <span>Cloud-Sync &amp; Backup</span>
+      <span class="todo-notif-status" id="cloudSyncStatus">lokal</span>
+    </div>
     <div class="todo-add-bar">
       <input class="todo-add-input" id="todoQuickInput" placeholder="Neues To-Do…" maxlength="120">
       <button class="todo-add-btn" onclick="quickAddTodo()">+</button>
@@ -819,6 +824,32 @@
   <div class="modal-actions">
     <button class="btn-save" onclick="saveTodoEdit()">Speichern</button>
     <button class="btn-delete" onclick="deleteTodoFromEdit()">Löschen</button>
+  </div>
+</div>
+
+<!-- Data / Cloud-Sync Modal -->
+<div class="modal-overlay" id="dataMenuOverlay" onclick="closeDataMenu()"></div>
+<div class="modal" id="dataMenuModal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <span class="modal-title">Cloud-Sync &amp; Backup</span>
+    <button class="modal-close" onclick="closeDataMenu()">✕</button>
+  </div>
+
+  <div class="form-label" style="margin-top:8px">Cloud-Sync</div>
+  <div class="notif-hint" id="syncStatus" style="margin-top:0">Nicht angemeldet – Daten nur auf diesem Gerät.</div>
+  <button class="btn-save" id="syncBtn" onclick="handleSyncBtn()" style="width:100%; margin-top:10px">Mit Google anmelden</button>
+
+  <div class="form-label">Manuelles Backup</div>
+  <div class="notif-hint" style="margin-top:0">
+    Sichert Tasks, To-Dos, Einstellungen und Verlauf als JSON-Datei. Import überschreibt bestehende Daten dieses Geräts.
+  </div>
+  <button class="btn-save" onclick="exportData()" style="width:100%; margin-top:10px">📤 Daten als Datei exportieren</button>
+  <button class="btn-save" onclick="document.getElementById('importFileInput').click()" style="width:100%; background:rgba(255,255,255,0.1); color:#fff; margin-top:8px">📥 Datei importieren…</button>
+  <input type="file" id="importFileInput" accept="application/json,.json" style="display:none" onchange="importDataFromInput(this)">
+
+  <div class="modal-actions">
+    <button class="btn-save" onclick="closeDataMenu()" style="background:rgba(255,255,255,0.08); color:#fff">Schliessen</button>
   </div>
 </div>
 
@@ -902,6 +933,10 @@
     <button class="btn-delete" id="btnDelete" style="display:none" onclick="deleteTask()">Löschen</button>
   </div>
 </div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
 <script>
 // --- Config ---
@@ -2130,6 +2165,64 @@ function deleteTodoFromEdit() {
   closeTodoEdit();
 }
 
+// --- Data backup ---
+const BACKUP_KEYS = ['focusTasksV2', 'focusTodosV1', 'focusTodoSettingsV1', 'focusHistory', 'focusLastReset'];
+
+function openDataMenu() {
+  document.getElementById('dataMenuOverlay').classList.add('visible');
+  document.getElementById('dataMenuModal').classList.add('visible');
+}
+function closeDataMenu() {
+  document.getElementById('dataMenuOverlay').classList.remove('visible');
+  document.getElementById('dataMenuModal').classList.remove('visible');
+}
+
+function exportData() {
+  const payload = { app: 'focus-blocks', version: 1, exportedAt: new Date().toISOString(), data: {} };
+  for (const k of BACKUP_KEYS) {
+    const raw = localStorage.getItem(k);
+    if (raw === null) continue;
+    try { payload.data[k] = JSON.parse(raw); }
+    catch { payload.data[k] = raw; }
+  }
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const stamp = new Date().toISOString().slice(0,10);
+  a.download = `focus-blocks-backup-${stamp}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function importDataFromInput(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const payload = JSON.parse(String(e.target.result));
+      if (!payload || typeof payload !== 'object' || !payload.data) throw new Error('Datei hat falsches Format');
+      const keys = Object.keys(payload.data).filter(k => BACKUP_KEYS.includes(k));
+      if (keys.length === 0) throw new Error('Keine bekannten Daten gefunden');
+      const ok = confirm('Bestehende Daten dieses Geräts werden überschrieben. Fortfahren?');
+      if (!ok) { input.value = ''; return; }
+      for (const k of keys) {
+        const v = payload.data[k];
+        localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+      }
+      input.value = '';
+      alert('Import erfolgreich. App wird neu geladen.');
+      location.reload();
+    } catch (err) {
+      input.value = '';
+      alert('Import fehlgeschlagen: ' + (err && err.message ? err.message : 'ungültig'));
+    }
+  };
+  reader.readAsText(file);
+}
+
 // --- Notifications ---
 function getNotifPermLabel() {
   if (!('Notification' in window)) return 'vom Browser nicht unterstützt';
@@ -2282,6 +2375,231 @@ function checkNotifOnOpen() {
     if (v && v.classList.contains('active')) renderTodos();
   }, 60 * 1000);
 })();
+
+// =====================================================
+// === Firebase Cloud Sync =============================
+// =====================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDNNZSZn-YUp6PyNnf_h_PoqerxtC6bJfQ",
+  authDomain: "focus-blocks-43c7e.firebaseapp.com",
+  projectId: "focus-blocks-43c7e",
+  storageBucket: "focus-blocks-43c7e.firebasestorage.app",
+  messagingSenderId: "938980650298",
+  appId: "1:938980650298:web:4e55fb726df72f7d677403"
+};
+
+let fbApp = null, fbAuth = null, fbDb = null, fbProvider = null;
+let currentUser = null;
+let cloudUnsub = null;
+let suppressCloudWrite = false;
+let cloudWriteTimer = null;
+let initialSyncDone = false;
+
+function isMobileLike() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+
+function userDocRef(user) {
+  return fbDb.collection('users').doc(user.uid).collection('state').doc('main');
+}
+
+function gatherLocalState() {
+  return {
+    tasks: tasks,
+    todos: todos,
+    todoSettings: todoSettings,
+    taskHistory: loadHistory(),
+    updatedAt: Date.now(),
+  };
+}
+
+function applyCloudState(data) {
+  if (!data) return;
+  suppressCloudWrite = true;
+  try {
+    if (Array.isArray(data.tasks)) {
+      tasks = data.tasks;
+      localStorage.setItem('focusTasksV2', JSON.stringify(tasks));
+    }
+    if (Array.isArray(data.todos)) {
+      todos = data.todos;
+      localStorage.setItem(TODO_KEY, JSON.stringify(todos));
+    }
+    if (data.todoSettings && typeof data.todoSettings === 'object') {
+      todoSettings = Object.assign({ notifyEnabled:false, notifyTime:'09:00', lastNotifiedDate:null }, data.todoSettings);
+      localStorage.setItem(TODO_SETTINGS_KEY, JSON.stringify(todoSettings));
+    }
+    if (data.taskHistory && typeof data.taskHistory === 'object') {
+      localStorage.setItem('focusHistory', JSON.stringify(data.taskHistory));
+    }
+    try { render(); } catch(e) {}
+    try { renderTodos(); } catch(e) {}
+    try { renderProgress(); } catch(e) {}
+    try { refreshNotifUI(); } catch(e) {}
+  } finally {
+    setTimeout(() => { suppressCloudWrite = false; }, 250);
+  }
+}
+
+function localHasUserData() {
+  if (todos.length > 0) return true;
+  try { if (Object.keys(loadHistory()).length > 0) return true; } catch {}
+  for (const t of tasks) {
+    if ((t.counter || 0) > 0) return true;
+    if (t.completed) return true;
+    if (t.subtasks && t.subtasks.some(s => s.completed)) return true;
+  }
+  // Customized task list (different from defaults)
+  if (tasks.length !== DEFAULT_TASKS.length) return true;
+  return false;
+}
+
+function cloudStateHasData(data) {
+  if (!data) return false;
+  if (Array.isArray(data.tasks) && data.tasks.length > 0) return true;
+  if (Array.isArray(data.todos) && data.todos.length > 0) return true;
+  if (data.taskHistory && Object.keys(data.taskHistory).length > 0) return true;
+  return false;
+}
+
+async function startCloudSync(user) {
+  const ref = userDocRef(user);
+  initialSyncDone = false;
+  try {
+    const snap = await ref.get();
+    const cloudData = snap.exists ? snap.data() : null;
+    const cloudHas = cloudStateHasData(cloudData);
+    const localHas = localHasUserData();
+    if (cloudHas && localHas) {
+      const useCloud = confirm(
+        'Cloud-Daten gefunden.\n\n' +
+        'OK = Cloud-Daten verwenden (lokale Daten dieses Geräts werden ersetzt)\n' +
+        'Abbrechen = Lokale Daten dieses Geräts in die Cloud hochladen (Cloud-Daten werden überschrieben)'
+      );
+      if (useCloud) applyCloudState(cloudData);
+      else await ref.set(gatherLocalState());
+    } else if (cloudHas) {
+      applyCloudState(cloudData);
+    } else {
+      await ref.set(gatherLocalState());
+    }
+    initialSyncDone = true;
+  } catch (e) {
+    console.error('Initial sync failed:', e);
+    alert('Cloud-Sync fehlgeschlagen: ' + (e && e.message ? e.message : e));
+    refreshSyncUI();
+    return;
+  }
+  cloudUnsub = ref.onSnapshot(snap => {
+    if (!snap.exists || !initialSyncDone) return;
+    if (suppressCloudWrite) return;
+    applyCloudState(snap.data());
+  }, err => console.error('Snapshot error:', err));
+  refreshSyncUI();
+}
+
+function pushToCloud() {
+  if (!currentUser || !fbDb || suppressCloudWrite) return;
+  if (!initialSyncDone) return;
+  if (cloudWriteTimer) clearTimeout(cloudWriteTimer);
+  cloudWriteTimer = setTimeout(() => {
+    cloudWriteTimer = null;
+    userDocRef(currentUser).set(gatherLocalState())
+      .catch(e => console.error('Cloud write failed:', e));
+  }, 600);
+}
+
+async function signInWithGoogle() {
+  if (!fbAuth) { alert('Cloud noch nicht bereit, gleich nochmal versuchen.'); return; }
+  try {
+    if (isMobileLike()) {
+      await fbAuth.signInWithRedirect(fbProvider);
+    } else {
+      await fbAuth.signInWithPopup(fbProvider);
+    }
+  } catch (e) {
+    alert('Anmeldung fehlgeschlagen: ' + (e && e.message ? e.message : e));
+  }
+}
+async function signOutCloud() {
+  if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+  initialSyncDone = false;
+  try { await fbAuth.signOut(); } catch(e) {}
+}
+function handleSyncBtn() {
+  if (currentUser) signOutCloud();
+  else signInWithGoogle();
+}
+function handleAuthChange(user) {
+  currentUser = user || null;
+  refreshSyncUI();
+  if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+  if (user) startCloudSync(user);
+}
+
+function refreshSyncUI() {
+  const btn = document.getElementById('syncBtn');
+  const status = document.getElementById('syncStatus');
+  const pill = document.getElementById('cloudSyncStatus');
+  if (btn) {
+    if (currentUser) {
+      btn.textContent = 'Abmelden';
+      btn.style.background = 'rgba(244,63,94,0.15)';
+      btn.style.color = '#F43F5E';
+    } else {
+      btn.textContent = 'Mit Google anmelden';
+      btn.style.background = '';
+      btn.style.color = '';
+    }
+  }
+  if (status) {
+    if (currentUser) {
+      const name = currentUser.email || currentUser.displayName || 'angemeldet';
+      status.textContent = '✓ Live-Sync aktiv · ' + name;
+      status.style.color = '#34D399';
+      status.style.borderColor = 'rgba(52,211,153,0.25)';
+    } else {
+      status.textContent = 'Nicht angemeldet – Daten nur auf diesem Gerät.';
+      status.style.color = '';
+      status.style.borderColor = '';
+    }
+  }
+  if (pill) {
+    if (currentUser) { pill.textContent = '✓ Cloud'; pill.classList.add('on'); }
+    else { pill.textContent = 'lokal'; pill.classList.remove('on'); }
+  }
+}
+
+function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    console.warn('Firebase SDK nicht geladen.');
+    return;
+  }
+  try {
+    fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+    fbAuth = firebase.auth();
+    fbDb = firebase.firestore();
+    fbProvider = new firebase.auth.GoogleAuthProvider();
+    fbAuth.onAuthStateChanged(handleAuthChange);
+    fbAuth.getRedirectResult().catch(e => console.error('Redirect result error:', e));
+  } catch (e) {
+    console.error('Firebase init failed:', e);
+  }
+}
+
+// Wrap save functions to push to cloud
+const _saveTasksOrig = saveTasks;
+saveTasks = function() { _saveTasksOrig(); pushToCloud(); };
+const _saveTodosOrig = saveTodosList;
+saveTodosList = function() { _saveTodosOrig(); pushToCloud(); };
+const _saveTodoSettingsOrig = saveTodoSettings;
+saveTodoSettings = function() { _saveTodoSettingsOrig(); pushToCloud(); };
+const _saveHistoryOrig = saveHistory;
+saveHistory = function(h) { _saveHistoryOrig(h); pushToCloud(); };
+
+initFirebase();
+refreshSyncUI();
 
 // --- Init ---
 render();
