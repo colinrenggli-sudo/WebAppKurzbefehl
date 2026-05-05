@@ -508,6 +508,192 @@
   .history-badge.partial {
     background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4);
   }
+
+  /* === To-Do view === */
+  .todos-wrap {
+    display: flex; flex-direction: column;
+    padding: 16px 0 24px;
+  }
+  .todo-add-bar {
+    display: flex; gap: 8px; margin-bottom: 8px;
+  }
+  .todo-add-input {
+    flex: 1; padding: 14px 16px; border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff; font-size: 16px; font-family: inherit; outline: none;
+  }
+  .todo-add-input:focus { border-color: rgba(255,255,255,0.2); }
+  .todo-add-input::placeholder { color: rgba(255,255,255,0.25); }
+  .todo-add-btn {
+    width: 50px; border-radius: 14px;
+    background: #34D399; color: #000; border: none;
+    font-size: 24px; font-weight: 700; font-family: inherit;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .todo-add-btn:active { opacity: 0.8; }
+
+  .todo-notif-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; margin-bottom: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px; color: rgba(255,255,255,0.55);
+    cursor: pointer; transition: background 0.2s;
+  }
+  .todo-notif-bar:active { background: rgba(255,255,255,0.06); }
+  .todo-notif-icon { font-size: 14px; }
+  .todo-notif-status {
+    margin-left: auto;
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 12px; color: rgba(255,255,255,0.35);
+  }
+  .todo-notif-status.on { color: #34D399; }
+
+  .todo-list {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .todo-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    animation: fadeIn 0.3s ease both;
+    transition: background 0.2s, border-color 0.2s, opacity 0.3s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .todo-item.completed {
+    background: rgba(52,211,153,0.05);
+    border-color: rgba(52,211,153,0.15);
+    opacity: 0.65;
+  }
+  .todo-item.overdue {
+    border-color: rgba(244,63,94,0.25);
+    background: rgba(244,63,94,0.04);
+  }
+  .todo-checkbox {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; cursor: pointer; transition: all 0.2s;
+  }
+  .todo-checkbox.checked { background: #34D399; border-color: #34D399; }
+  .todo-checkbox svg { opacity: 0; transition: opacity 0.15s; }
+  .todo-checkbox.checked svg { opacity: 1; }
+  .todo-checkbox:active { transform: scale(0.9); }
+
+  .todo-content {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 3px;
+    cursor: pointer;
+  }
+  .todo-content:active { opacity: 0.7; }
+  .todo-title {
+    font-size: 15px; font-weight: 600; color: #fff;
+    word-break: break-word; line-height: 1.3;
+  }
+  .todo-title.done {
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.45); font-weight: 500;
+  }
+  .todo-meta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .todo-due {
+    font-size: 11px; padding: 2px 8px; border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.55);
+    font-weight: 600; font-family: 'SF Mono', ui-monospace, monospace;
+  }
+  .todo-due.overdue { background: rgba(244,63,94,0.14); color: #F43F5E; }
+  .todo-due.today   { background: rgba(245,158,11,0.14); color: #F59E0B; }
+  .todo-due.future  { background: rgba(139,92,246,0.14); color: #A78BFA; }
+  .todo-note-preview {
+    font-size: 12px; color: rgba(255,255,255,0.4);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .todo-edit-btn {
+    background: none; border: none;
+    color: rgba(255,255,255,0.3); font-size: 16px;
+    padding: 6px 8px; cursor: pointer; flex-shrink: 0;
+    font-family: inherit;
+  }
+  .todo-edit-btn:active { color: rgba(255,255,255,0.65); }
+
+  .todo-section-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 18px 0 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: rgba(255,255,255,0.32);
+  }
+  .todo-section-divider::before,
+  .todo-section-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .todo-empty {
+    text-align: center; padding: 50px 20px;
+    color: rgba(255,255,255,0.3); font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* Notif settings rows */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 15px; color: rgba(255,255,255,0.85); }
+  .toggle-sub { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .toggle-switch {
+    width: 50px; height: 30px; border-radius: 15px;
+    background: rgba(255,255,255,0.1); position: relative;
+    cursor: pointer; transition: background 0.25s; flex-shrink: 0;
+  }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; transition: transform 0.25s;
+  }
+  .toggle-switch.on { background: #34D399; }
+  .toggle-switch.on::after { transform: translateX(20px); }
+  .time-input {
+    font-family: inherit; font-size: 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff; border-radius: 10px; padding: 8px 12px;
+    outline: none; color-scheme: dark;
+  }
+  .form-textarea {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff; font-size: 15px; font-family: inherit;
+    outline: none; resize: vertical; min-height: 70px;
+  }
+  .form-textarea:focus { border-color: rgba(255,255,255,0.2); }
+  .form-textarea::placeholder { color: rgba(255,255,255,0.25); }
+  .form-date {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff; font-size: 16px; font-family: inherit;
+    outline: none; color-scheme: dark;
+  }
+  .form-date:focus { border-color: rgba(255,255,255,0.2); }
+
+  .notif-hint {
+    font-size: 12px; color: rgba(255,255,255,0.35);
+    line-height: 1.45; margin-top: 14px;
+    padding: 12px; border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
 </style>
 </head>
 <body>
@@ -529,6 +715,7 @@
 <div class="tab-bar">
   <button class="tab active" id="tabTasks" onclick="switchTab('tasks')">Tasks</button>
   <button class="tab" id="tabWiki" onclick="switchTab('wiki')">Fortschritt</button>
+  <button class="tab" id="tabTodos" onclick="switchTab('todos')">To-Dos</button>
 </div>
 
 <div class="view active" id="viewTasks">
@@ -541,6 +728,71 @@
 
 <div class="view" id="viewWiki">
   <div class="progress-container" id="progressContainer"></div>
+</div>
+
+<div class="view" id="viewTodos">
+  <div class="todos-wrap">
+    <div class="todo-notif-bar" onclick="openNotifSettings()">
+      <span class="todo-notif-icon">🔔</span>
+      <span>Erinnerung</span>
+      <span class="todo-notif-status" id="todoNotifStatus">aus</span>
+    </div>
+    <div class="todo-add-bar">
+      <input class="todo-add-input" id="todoQuickInput" placeholder="Neues To-Do…" maxlength="120">
+      <button class="todo-add-btn" onclick="quickAddTodo()">+</button>
+    </div>
+    <div class="todo-list" id="todosList"></div>
+  </div>
+</div>
+
+<!-- To-Do Edit Modal -->
+<div class="modal-overlay" id="todoEditOverlay" onclick="closeTodoEdit()"></div>
+<div class="modal" id="todoEditModal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <span class="modal-title">To-Do bearbeiten</span>
+    <button class="modal-close" onclick="closeTodoEdit()">✕</button>
+  </div>
+  <div class="form-label">Titel</div>
+  <input class="form-input" id="todoEditTitle" placeholder="Titel…" maxlength="120">
+  <div class="form-label">Fälligkeit (optional)</div>
+  <input class="form-date" id="todoEditDate" type="date">
+  <div class="form-label">Notiz (optional)</div>
+  <textarea class="form-textarea" id="todoEditNote" placeholder="Notiz…" maxlength="500"></textarea>
+  <div class="modal-actions">
+    <button class="btn-save" onclick="saveTodoEdit()">Speichern</button>
+    <button class="btn-delete" onclick="deleteTodoFromEdit()">Löschen</button>
+  </div>
+</div>
+
+<!-- Notification Settings Modal -->
+<div class="modal-overlay" id="notifSettingsOverlay" onclick="closeNotifSettings()"></div>
+<div class="modal" id="notifSettingsModal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <span class="modal-title">Erinnerung</span>
+    <button class="modal-close" onclick="closeNotifSettings()">✕</button>
+  </div>
+  <div class="toggle-row">
+    <div>
+      <div class="toggle-label">Tägliche Erinnerung</div>
+      <div class="toggle-sub" id="notifPermStatus">—</div>
+    </div>
+    <div class="toggle-switch" id="notifToggle" onclick="toggleNotif()"></div>
+  </div>
+  <div class="toggle-row">
+    <div>
+      <div class="toggle-label">Uhrzeit</div>
+      <div class="toggle-sub">Wann du erinnert werden möchtest</div>
+    </div>
+    <input class="time-input" id="notifTime" type="time" onchange="changeNotifTime(this.value)">
+  </div>
+  <div class="notif-hint">
+    Hinweis: Eine Erinnerung erscheint, wenn offene oder heute fällige To-Dos vorhanden sind. Damit Benachrichtigungen zuverlässig erscheinen, installiere die App (Zur Startseite hinzufügen) und öffne sie regelmässig.
+  </div>
+  <div class="modal-actions">
+    <button class="btn-save" onclick="closeNotifSettings()">Fertig</button>
+  </div>
 </div>
 
 <!-- Edit picker overlay -->
@@ -1530,14 +1782,330 @@ saveTasks = function() {
 function switchTab(tab) {
   document.getElementById('viewTasks').classList.toggle('active', tab === 'tasks');
   document.getElementById('viewWiki').classList.toggle('active', tab === 'wiki');
+  document.getElementById('viewTodos').classList.toggle('active', tab === 'todos');
   document.getElementById('tabTasks').classList.toggle('active', tab === 'tasks');
   document.getElementById('tabWiki').classList.toggle('active', tab === 'wiki');
+  document.getElementById('tabTodos').classList.toggle('active', tab === 'todos');
   if (tab === 'wiki') renderProgress();
+  if (tab === 'todos') renderTodos();
 }
+
+// =====================================================
+// === To-Do List ======================================
+// =====================================================
+const TODO_KEY = 'focusTodosV1';
+const TODO_SETTINGS_KEY = 'focusTodoSettingsV1';
+let todos = loadTodos();
+let todoSettings = loadTodoSettings();
+let editingTodoId = null;
+let notifTimer = null;
+
+function loadTodos() {
+  try { return JSON.parse(localStorage.getItem(TODO_KEY)) || []; } catch { return []; }
+}
+function saveTodosList() { localStorage.setItem(TODO_KEY, JSON.stringify(todos)); }
+function loadTodoSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(TODO_SETTINGS_KEY));
+    if (s && typeof s === 'object') return Object.assign({ notifyEnabled:false, notifyTime:'09:00', lastNotifiedDate:null }, s);
+  } catch {}
+  return { notifyEnabled:false, notifyTime:'09:00', lastNotifiedDate:null };
+}
+function saveTodoSettings() { localStorage.setItem(TODO_SETTINGS_KEY, JSON.stringify(todoSettings)); }
+
+function newTodoId() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayISO() {
+  const d = new Date(); d.setHours(0,0,0,0);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function isPastDate(s)   { return !!s && s < todayISO(); }
+function isTodayDate(s)  { return !!s && s === todayISO(); }
+function isFutureDate(s) { return !!s && s > todayISO(); }
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addTodo(title) {
+  const v = (title || '').trim();
+  if (!v) return;
+  todos.unshift({
+    id: newTodoId(),
+    title: v,
+    note: '',
+    dueDate: null,
+    completed: false,
+    completedAt: null,
+    createdAt: new Date().toISOString(),
+  });
+  saveTodosList();
+  renderTodos();
+}
+
+function toggleTodoDone(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  t.completed = !t.completed;
+  t.completedAt = t.completed ? new Date().toISOString() : null;
+  haptic();
+  saveTodosList();
+  renderTodos();
+}
+
+function deleteTodoById(id) {
+  todos = todos.filter(x => x.id !== id);
+  saveTodosList();
+  renderTodos();
+}
+
+function quickAddTodo() {
+  const input = document.getElementById('todoQuickInput');
+  if (!input) return;
+  addTodo(input.value);
+  input.value = '';
+  input.focus();
+}
+
+function formatDueLabel(s) {
+  if (!s) return '';
+  const today = todayISO();
+  const t = new Date(); t.setDate(t.getDate() + 1);
+  const tom = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  if (s === today) return 'Heute';
+  if (s === tom)   return 'Morgen';
+  const [y,m,d] = s.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString('de-CH', { day:'numeric', month:'short' });
+}
+
+function renderTodoItem(t) {
+  let dueHtml = '';
+  if (t.dueDate && !t.completed) {
+    let cls = 'future';
+    if (isPastDate(t.dueDate)) cls = 'overdue';
+    else if (isTodayDate(t.dueDate)) cls = 'today';
+    dueHtml = `<span class="todo-due ${cls}">${escHtml(formatDueLabel(t.dueDate))}</span>`;
+  }
+  const noteShort = t.note ? escHtml(t.note.replace(/\s+/g,' ').slice(0,60)) + (t.note.length > 60 ? '…' : '') : '';
+  const noteHtml = noteShort ? `<span class="todo-note-preview">${noteShort}</span>` : '';
+  const metaHtml = (dueHtml || noteHtml) ? `<div class="todo-meta">${dueHtml}${noteHtml}</div>` : '';
+  const itemCls = ['todo-item'];
+  if (t.completed) itemCls.push('completed');
+  else if (isPastDate(t.dueDate)) itemCls.push('overdue');
+  return `
+    <div class="${itemCls.join(' ')}" data-id="${t.id}">
+      <div class="todo-checkbox ${t.completed ? 'checked' : ''}" onclick="event.stopPropagation(); toggleTodoDone('${t.id}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="todo-content" onclick="openTodoEdit('${t.id}')">
+        <span class="todo-title ${t.completed ? 'done' : ''}">${escHtml(t.title)}</span>
+        ${metaHtml}
+      </div>
+      <button class="todo-edit-btn" onclick="event.stopPropagation(); openTodoEdit('${t.id}')">✎</button>
+    </div>`;
+}
+
+function renderTodos() {
+  const container = document.getElementById('todosList');
+  if (!container) return;
+
+  const active = [];
+  const scheduled = [];
+  const done = [];
+  for (const t of todos) {
+    if (t.completed) done.push(t);
+    else if (isFutureDate(t.dueDate)) scheduled.push(t);
+    else active.push(t);
+  }
+
+  active.sort((a, b) => {
+    const rank = x => isPastDate(x.dueDate) ? 0 : (isTodayDate(x.dueDate) ? 1 : 2);
+    const ra = rank(a), rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+  scheduled.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  done.sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+
+  if (todos.length === 0) {
+    container.innerHTML = '<div class="todo-empty">Noch keine To-Dos.<br>Tippe oben einen Titel ein und drücke +.</div>';
+    return;
+  }
+
+  let html = '';
+  if (active.length > 0)    html += active.map(renderTodoItem).join('');
+  if (scheduled.length > 0) html += '<div class="todo-section-divider">📅 Geplant</div>' + scheduled.map(renderTodoItem).join('');
+  if (done.length > 0)      html += '<div class="todo-section-divider">✓ Erledigt</div>' + done.map(renderTodoItem).join('');
+  container.innerHTML = html;
+}
+
+// --- Edit modal ---
+function openTodoEdit(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  editingTodoId = id;
+  document.getElementById('todoEditTitle').value = t.title || '';
+  document.getElementById('todoEditDate').value = t.dueDate || '';
+  document.getElementById('todoEditNote').value = t.note || '';
+  document.getElementById('todoEditOverlay').classList.add('visible');
+  document.getElementById('todoEditModal').classList.add('visible');
+}
+function closeTodoEdit() {
+  editingTodoId = null;
+  document.getElementById('todoEditOverlay').classList.remove('visible');
+  document.getElementById('todoEditModal').classList.remove('visible');
+}
+function saveTodoEdit() {
+  if (!editingTodoId) return;
+  const t = todos.find(x => x.id === editingTodoId);
+  if (!t) return closeTodoEdit();
+  const title = document.getElementById('todoEditTitle').value.trim();
+  if (!title) return;
+  t.title = title;
+  t.dueDate = document.getElementById('todoEditDate').value || null;
+  t.note = document.getElementById('todoEditNote').value.trim();
+  saveTodosList();
+  renderTodos();
+  closeTodoEdit();
+}
+function deleteTodoFromEdit() {
+  if (!editingTodoId) return;
+  deleteTodoById(editingTodoId);
+  closeTodoEdit();
+}
+
+// --- Notifications ---
+function getNotifPermLabel() {
+  if (!('Notification' in window)) return 'vom Browser nicht unterstützt';
+  if (Notification.permission === 'granted') return 'Erlaubt';
+  if (Notification.permission === 'denied')  return 'In den Browser-Einstellungen blockiert';
+  return 'Erlaubnis nötig';
+}
+async function ensureNotifPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try { const r = await Notification.requestPermission(); return r === 'granted'; }
+  catch { return false; }
+}
+function openNotifSettings() {
+  document.getElementById('notifSettingsOverlay').classList.add('visible');
+  document.getElementById('notifSettingsModal').classList.add('visible');
+  refreshNotifUI();
+}
+function closeNotifSettings() {
+  document.getElementById('notifSettingsOverlay').classList.remove('visible');
+  document.getElementById('notifSettingsModal').classList.remove('visible');
+}
+function refreshNotifUI() {
+  const tEl = document.getElementById('notifToggle');
+  const timeEl = document.getElementById('notifTime');
+  const permEl = document.getElementById('notifPermStatus');
+  if (tEl) tEl.classList.toggle('on', !!todoSettings.notifyEnabled);
+  if (timeEl) timeEl.value = todoSettings.notifyTime || '09:00';
+  if (permEl) permEl.textContent = getNotifPermLabel();
+  const bar = document.getElementById('todoNotifStatus');
+  if (bar) {
+    const live = todoSettings.notifyEnabled && ('Notification' in window) && Notification.permission === 'granted';
+    bar.textContent = live ? (todoSettings.notifyTime || '09:00') : 'aus';
+    bar.classList.toggle('on', live);
+  }
+}
+async function toggleNotif() {
+  if (!todoSettings.notifyEnabled) {
+    const ok = await ensureNotifPermission();
+    if (!ok) {
+      alert('Bitte Benachrichtigungen in den Browser-/System-Einstellungen erlauben.');
+      refreshNotifUI();
+      return;
+    }
+    todoSettings.notifyEnabled = true;
+  } else {
+    todoSettings.notifyEnabled = false;
+  }
+  saveTodoSettings();
+  refreshNotifUI();
+  scheduleNextNotification();
+}
+function changeNotifTime(v) {
+  todoSettings.notifyTime = v || '09:00';
+  saveTodoSettings();
+  refreshNotifUI();
+  scheduleNextNotification();
+}
+function buildNotifBody() {
+  const overdue  = todos.filter(t => !t.completed && isPastDate(t.dueDate)).length;
+  const todayDue = todos.filter(t => !t.completed && isTodayDate(t.dueDate)).length;
+  const totalOpen = todos.filter(t => !t.completed).length;
+  if (totalOpen === 0) return null;
+  const parts = [];
+  if (overdue)  parts.push(overdue  + ' überfällig');
+  if (todayDue) parts.push(todayDue + ' heute fällig');
+  if (parts.length === 0) parts.push(totalOpen + ' offen');
+  return parts.join(' · ');
+}
+function tryFireDailyNotif() {
+  if (!todoSettings.notifyEnabled) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const [hh, mm] = (todoSettings.notifyTime || '09:00').split(':').map(Number);
+  const target = new Date(now); target.setHours(hh, mm, 0, 0);
+  if (now < target) return;
+  const today = todayISO();
+  if (todoSettings.lastNotifiedDate === today) return;
+  const body = buildNotifBody();
+  if (!body) return;
+  try {
+    new Notification('To-Do Erinnerung', { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'focus-todo-daily' });
+    todoSettings.lastNotifiedDate = today;
+    saveTodoSettings();
+  } catch {}
+}
+function scheduleNextNotification() {
+  if (notifTimer) { clearTimeout(notifTimer); notifTimer = null; }
+  if (!todoSettings.notifyEnabled) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const [hh, mm] = (todoSettings.notifyTime || '09:00').split(':').map(Number);
+  let target = new Date(now); target.setHours(hh, mm, 0, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+  const delay = Math.min(Math.max(target - now, 1000), 24*60*60*1000);
+  notifTimer = setTimeout(() => {
+    tryFireDailyNotif();
+    scheduleNextNotification();
+  }, delay);
+}
+function checkNotifOnOpen() {
+  tryFireDailyNotif();
+  scheduleNextNotification();
+}
+
+// --- Setup ---
+(function setupTodos() {
+  const input = document.getElementById('todoQuickInput');
+  if (input) {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); quickAddTodo(); }
+    });
+  }
+  refreshNotifUI();
+  checkNotifOnOpen();
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkNotifOnOpen();
+  });
+  // Re-render at midnight rollover so date labels stay correct
+  setInterval(() => {
+    const v = document.getElementById('viewTodos');
+    if (v && v.classList.contains('active')) renderTodos();
+  }, 60 * 1000);
+})();
 
 // --- Init ---
 render();
 renderProgress();
+renderTodos();
 </script>
 </body>
 </html>
