@@ -679,13 +679,53 @@
   .form-textarea:focus { border-color: rgba(255,255,255,0.2); }
   .form-textarea::placeholder { color: rgba(255,255,255,0.25); }
   .form-date {
-    width: 100%; padding: 14px 16px; border-radius: 14px;
+    padding: 10px 12px; border-radius: 12px;
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.08);
-    color: #fff; font-size: 16px; font-family: inherit;
+    color: #fff; font-size: 14px; font-family: inherit;
     outline: none; color-scheme: dark;
+    min-width: 0; max-width: 100%;
   }
   .form-date:focus { border-color: rgba(255,255,255,0.2); }
+
+  /* Chip selectors (due / time-of-day) */
+  .chip-row {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .chip {
+    padding: 8px 12px; border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .chip:active { opacity: 0.7; }
+  .chip.selected {
+    background: rgba(52,211,153,0.15);
+    border-color: rgba(52,211,153,0.6);
+    color: #34D399;
+  }
+  .chip-date-wrap {
+    position: relative;
+    display: inline-flex; align-items: center;
+  }
+  .chip-date-wrap input[type="date"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+    color-scheme: dark;
+  }
+  .form-section-hidden { display: none !important; }
+
+  .todo-tod-pill {
+    font-size: 11px; padding: 2px 7px; border-radius: 6px;
+    background: rgba(139,92,246,0.14); color: #A78BFA;
+    font-weight: 600; font-family: 'SF Mono', ui-monospace, monospace;
+  }
 
   .notif-hint {
     font-size: 12px; color: rgba(255,255,255,0.35);
@@ -756,7 +796,24 @@
   <div class="form-label">Titel</div>
   <input class="form-input" id="todoEditTitle" placeholder="Titel…" maxlength="120">
   <div class="form-label">Fälligkeit (optional)</div>
-  <input class="form-date" id="todoEditDate" type="date">
+  <div class="chip-row" id="dueChips">
+    <button class="chip" type="button" data-due="none">Ohne</button>
+    <button class="chip" type="button" data-due="today">Heute</button>
+    <button class="chip" type="button" data-due="tomorrow">Morgen</button>
+    <button class="chip" type="button" data-due="day-after">Übermorgen</button>
+    <span class="chip-date-wrap">
+      <button class="chip" type="button" id="customDateChip" data-due="custom">📅 <span id="customDateLabel">Datum…</span></button>
+      <input type="date" id="todoEditDate">
+    </span>
+  </div>
+  <div class="form-label form-section-hidden" id="todLabel">Tageszeit (optional)</div>
+  <div class="chip-row form-section-hidden" id="todChips">
+    <button class="chip" type="button" data-tod="">—</button>
+    <button class="chip" type="button" data-tod="morning">🌅 Früh</button>
+    <button class="chip" type="button" data-tod="midday">☀️ Mittags</button>
+    <button class="chip" type="button" data-tod="afternoon">🌤️ Nachmittags</button>
+    <button class="chip" type="button" data-tod="evening">🌙 Abends</button>
+  </div>
   <div class="form-label">Notiz (optional)</div>
   <textarea class="form-textarea" id="todoEditNote" placeholder="Notiz…" maxlength="500"></textarea>
   <div class="modal-actions">
@@ -1814,18 +1871,41 @@ function loadTodoSettings() {
 function saveTodoSettings() { localStorage.setItem(TODO_SETTINGS_KEY, JSON.stringify(todoSettings)); }
 
 function newTodoId() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function todayISO() {
-  const d = new Date(); d.setHours(0,0,0,0);
+function isoOf(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
+function todayISO() { const d = new Date(); d.setHours(0,0,0,0); return isoOf(d); }
+function offsetISO(days) { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+days); return isoOf(d); }
 function isPastDate(s)   { return !!s && s < todayISO(); }
 function isTodayDate(s)  { return !!s && s === todayISO(); }
 function isFutureDate(s) { return !!s && s > todayISO(); }
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const TIME_OF_DAY = [
+  { id: 'morning',   label: 'Morgens',     short: 'früh',         emoji: '🌅' },
+  { id: 'midday',    label: 'Mittags',     short: 'mittags',      emoji: '☀️' },
+  { id: 'afternoon', label: 'Nachmittags', short: 'nachmittags',  emoji: '🌤️' },
+  { id: 'evening',   label: 'Abends',      short: 'abends',       emoji: '🌙' },
+];
+function todInfo(id) { return TIME_OF_DAY.find(t => t.id === id) || null; }
+function todRank(id) {
+  const idx = ['morning','midday','afternoon','evening'].indexOf(id);
+  return idx === -1 ? 99 : idx;
+}
+
+function dayLabel(s) {
+  if (!s) return '';
+  const today = todayISO();
+  if (s === today) return 'Heute';
+  if (s === offsetISO(1)) return 'Morgen';
+  if (s === offsetISO(2)) return 'Übermorgen';
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('de-CH', { weekday:'long', day:'numeric', month:'short' });
 }
 
 function addTodo(title) {
@@ -1836,6 +1916,7 @@ function addTodo(title) {
     title: v,
     note: '',
     dueDate: null,
+    timeOfDay: null,
     completed: false,
     completedAt: null,
     createdAt: new Date().toISOString(),
@@ -1868,25 +1949,22 @@ function quickAddTodo() {
   input.focus();
 }
 
-function formatDueLabel(s) {
-  if (!s) return '';
-  const today = todayISO();
-  const t = new Date(); t.setDate(t.getDate() + 1);
-  const tom = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
-  if (s === today) return 'Heute';
-  if (s === tom)   return 'Morgen';
-  const [y,m,d] = s.split('-').map(Number);
-  const dt = new Date(y, m-1, d);
-  return dt.toLocaleDateString('de-CH', { day:'numeric', month:'short' });
-}
-
-function renderTodoItem(t) {
+function renderTodoItem(t, opts) {
+  opts = opts || {};
   let dueHtml = '';
-  if (t.dueDate && !t.completed) {
-    let cls = 'future';
-    if (isPastDate(t.dueDate)) cls = 'overdue';
-    else if (isTodayDate(t.dueDate)) cls = 'today';
-    dueHtml = `<span class="todo-due ${cls}">${escHtml(formatDueLabel(t.dueDate))}</span>`;
+  if (!t.completed) {
+    if (opts.hideDayChip) {
+      // Day is in the section divider; only show time-of-day if any
+      const tod = todInfo(t.timeOfDay);
+      if (tod) dueHtml = `<span class="todo-tod-pill">${tod.emoji} ${escHtml(tod.label)}</span>`;
+    } else if (t.dueDate) {
+      let cls = 'future';
+      if (isPastDate(t.dueDate)) cls = 'overdue';
+      else if (isTodayDate(t.dueDate)) cls = 'today';
+      const tod = todInfo(t.timeOfDay);
+      const todLabel = tod ? ' ' + tod.short : '';
+      dueHtml = `<span class="todo-due ${cls}">${escHtml(dayLabel(t.dueDate) + todLabel)}</span>`;
+    }
   }
   const noteShort = t.note ? escHtml(t.note.replace(/\s+/g,' ').slice(0,60)) + (t.note.length > 60 ? '…' : '') : '';
   const noteHtml = noteShort ? `<span class="todo-note-preview">${noteShort}</span>` : '';
@@ -1924,10 +2002,26 @@ function renderTodos() {
     const rank = x => isPastDate(x.dueDate) ? 0 : (isTodayDate(x.dueDate) ? 1 : 2);
     const ra = rank(a), rb = rank(b);
     if (ra !== rb) return ra - rb;
+    const ta = todRank(a.timeOfDay), tb = todRank(b.timeOfDay);
+    if (ta !== tb) return ta - tb;
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
-  scheduled.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   done.sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+
+  // Group scheduled by day, sort by time-of-day within each day
+  const byDay = {};
+  for (const t of scheduled) {
+    if (!byDay[t.dueDate]) byDay[t.dueDate] = [];
+    byDay[t.dueDate].push(t);
+  }
+  const orderedDays = Object.keys(byDay).sort();
+  for (const d of orderedDays) {
+    byDay[d].sort((a, b) => {
+      const ta = todRank(a.timeOfDay), tb = todRank(b.timeOfDay);
+      if (ta !== tb) return ta - tb;
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    });
+  }
 
   if (todos.length === 0) {
     container.innerHTML = '<div class="todo-empty">Noch keine To-Dos.<br>Tippe oben einen Titel ein und drücke +.</div>';
@@ -1935,20 +2029,79 @@ function renderTodos() {
   }
 
   let html = '';
-  if (active.length > 0)    html += active.map(renderTodoItem).join('');
-  if (scheduled.length > 0) html += '<div class="todo-section-divider">📅 Geplant</div>' + scheduled.map(renderTodoItem).join('');
-  if (done.length > 0)      html += '<div class="todo-section-divider">✓ Erledigt</div>' + done.map(renderTodoItem).join('');
+  if (active.length > 0) html += active.map(t => renderTodoItem(t)).join('');
+  for (const day of orderedDays) {
+    html += `<div class="todo-section-divider">📅 ${escHtml(dayLabel(day))}</div>`;
+    html += byDay[day].map(t => renderTodoItem(t, { hideDayChip: true })).join('');
+  }
+  if (done.length > 0) html += '<div class="todo-section-divider">✓ Erledigt</div>' + done.map(t => renderTodoItem(t)).join('');
   container.innerHTML = html;
 }
 
 // --- Edit modal ---
+let formDueDate = null;
+let formTimeOfDay = null;
+
+function setFormDueDate(s) {
+  formDueDate = s || null;
+  if (!formDueDate) formTimeOfDay = null;
+  refreshDueChips();
+  refreshTodChips();
+}
+function setFormTimeOfDay(id) {
+  formTimeOfDay = id || null;
+  refreshTodChips();
+}
+function refreshDueChips() {
+  const chips = document.querySelectorAll('#dueChips .chip');
+  const today = todayISO();
+  const tom = offsetISO(1);
+  const dayAfter = offsetISO(2);
+  chips.forEach(c => {
+    const k = c.getAttribute('data-due');
+    let match = false;
+    if (k === 'none')      match = !formDueDate;
+    else if (k === 'today')     match = formDueDate === today;
+    else if (k === 'tomorrow')  match = formDueDate === tom;
+    else if (k === 'day-after') match = formDueDate === dayAfter;
+    else if (k === 'custom')    match = !!formDueDate && formDueDate !== today && formDueDate !== tom && formDueDate !== dayAfter;
+    c.classList.toggle('selected', match);
+  });
+  // Update custom date label
+  const lbl = document.getElementById('customDateLabel');
+  if (lbl) {
+    const isCustom = !!formDueDate && formDueDate !== today && formDueDate !== tom && formDueDate !== dayAfter;
+    lbl.textContent = isCustom ? dayLabel(formDueDate) : 'Datum…';
+  }
+}
+function refreshTodChips() {
+  const todLbl = document.getElementById('todLabel');
+  const todChipsEl = document.getElementById('todChips');
+  if (formDueDate) {
+    todLbl.classList.remove('form-section-hidden');
+    todChipsEl.classList.remove('form-section-hidden');
+  } else {
+    todLbl.classList.add('form-section-hidden');
+    todChipsEl.classList.add('form-section-hidden');
+  }
+  document.querySelectorAll('#todChips .chip').forEach(c => {
+    const k = c.getAttribute('data-tod') || '';
+    c.classList.toggle('selected', (formTimeOfDay || '') === k);
+  });
+}
+
 function openTodoEdit(id) {
   const t = todos.find(x => x.id === id);
   if (!t) return;
   editingTodoId = id;
   document.getElementById('todoEditTitle').value = t.title || '';
-  document.getElementById('todoEditDate').value = t.dueDate || '';
   document.getElementById('todoEditNote').value = t.note || '';
+  formDueDate = t.dueDate || null;
+  formTimeOfDay = t.timeOfDay || null;
+  const dateInput = document.getElementById('todoEditDate');
+  dateInput.value = formDueDate || '';
+  refreshDueChips();
+  refreshTodChips();
   document.getElementById('todoEditOverlay').classList.add('visible');
   document.getElementById('todoEditModal').classList.add('visible');
 }
@@ -1964,7 +2117,8 @@ function saveTodoEdit() {
   const title = document.getElementById('todoEditTitle').value.trim();
   if (!title) return;
   t.title = title;
-  t.dueDate = document.getElementById('todoEditDate').value || null;
+  t.dueDate = formDueDate || null;
+  t.timeOfDay = t.dueDate ? (formTimeOfDay || null) : null;
   t.note = document.getElementById('todoEditNote').value.trim();
   saveTodosList();
   renderTodos();
@@ -2090,6 +2244,33 @@ function checkNotifOnOpen() {
       if (e.key === 'Enter') { e.preventDefault(); quickAddTodo(); }
     });
   }
+  // Due chips
+  document.querySelectorAll('#dueChips .chip').forEach(chip => {
+    chip.addEventListener('click', e => {
+      const k = chip.getAttribute('data-due');
+      if (k === 'custom') return; // handled by date input
+      e.preventDefault();
+      if (k === 'none') setFormDueDate(null);
+      else if (k === 'today') setFormDueDate(todayISO());
+      else if (k === 'tomorrow') setFormDueDate(offsetISO(1));
+      else if (k === 'day-after') setFormDueDate(offsetISO(2));
+      const inp = document.getElementById('todoEditDate');
+      if (inp) inp.value = formDueDate || '';
+    });
+  });
+  // Custom date input
+  const dateInp = document.getElementById('todoEditDate');
+  if (dateInp) {
+    dateInp.addEventListener('change', () => setFormDueDate(dateInp.value || null));
+  }
+  // Time-of-day chips
+  document.querySelectorAll('#todChips .chip').forEach(chip => {
+    chip.addEventListener('click', e => {
+      e.preventDefault();
+      const k = chip.getAttribute('data-tod') || '';
+      setFormTimeOfDay(k || null);
+    });
+  });
   refreshNotifUI();
   checkNotifOnOpen();
   document.addEventListener('visibilitychange', () => {
