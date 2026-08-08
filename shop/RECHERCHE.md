@@ -59,7 +59,9 @@ Rich Snippets – Sterne, Preis, Verfügbarkeit – heben die Klickrate messbar 
 
 ### Vor dem Livegang
 
-1. Eigene Domain eintragen, alle `shop.example.ch`-Platzhalter ersetzen.
+1. Bei eigener Domain die URLs in `index.html`, `sitemap.xml` und `robots.txt`
+   ersetzen – aktuell zeigen Canonical, Open Graph und JSON-LD auf die
+   GitHub-Pages-Adresse, unter der der Shop live ist.
 2. **Eine indexierbare URL pro Trikot.** Statisch generierte Produktseiten mit
    eigenem `Product`-Schema. Hash-Routen wie `#/trikot/...` werden von Google
    nicht als eigenständige Seiten indexiert – sie sind in der Demo nur für

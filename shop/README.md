@@ -64,7 +64,8 @@ Beispiel-Servercode: [`RECHERCHE.md`](RECHERCHE.md).
 
 ## Was vor dem Livegang noch nötig ist
 
-- Eigene Domain eintragen und alle `shop.example.ch`-Platzhalter ersetzen
+- Bei eigener Domain die URLs in `index.html`, `sitemap.xml` und `robots.txt`
+  ersetzen (aktuell die GitHub-Pages-Adresse)
 - Pro Trikot eine statisch generierte, indexierbare Produktseite
 - Echte Produktfotos statt der generierten Trikot-Grafiken
 - Impressum, Datenschutzerklärung und AGB mit echten Angaben füllen

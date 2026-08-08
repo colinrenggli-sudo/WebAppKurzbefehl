@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ELF11 Trikot Shop – Sitemap (Demo). Vor Livegang: Domain ersetzen,
-     im Livebetrieb aus Produktdaten generieren. -->
+<!-- ELF11 Trikot Shop – Sitemap. Aktuell auf die GitHub-Pages-Adresse gesetzt.
+     Bei eigener Domain hier und in index.html ersetzen; im Livebetrieb aus
+     den Produktdaten generieren. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://shop.example.ch/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://shop.example.ch/#/kategorie/retro</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://shop.example.ch/#/kategorie/national</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/zuerich-heim-1986</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/basel-auswaerts-1989</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/milano-classico-1994</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/muenchen-heim-1974</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/amsterdam-heim-1995</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/brasil-tribute-1982</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/azzurri-classic-1990</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/albiceleste-1986</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/bern-heim-1998</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://shop.example.ch/#/trikot/elf11-pitch-edition</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/kategorie/retro</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/kategorie/national</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/zuerich-heim-1986</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/basel-auswaerts-1989</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/milano-classico-1994</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/muenchen-heim-1974</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/amsterdam-heim-1995</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/brasil-tribute-1982</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/azzurri-classic-1990</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/albiceleste-1986</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/bern-heim-1998</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://colinrenggli-sudo.github.io/WebAppKurzbefehl/shop/#/trikot/elf11-pitch-edition</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>
