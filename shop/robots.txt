@@ -1,0 +1,6 @@
+# ELF11 Trikot Shop – robots.txt
+# Vor Livegang: Domain in Sitemap-URL anpassen
+User-agent: *
+Allow: /
+
+Sitemap: https://shop.example.ch/sitemap.xml

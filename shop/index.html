@@ -1,0 +1,1830 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<!-- ==================================================================
+     ELF11 TRIKOT SHOP — lauffähige Demo
+     Retro-Fussballtrikots · Apple-HIG-Design · SEO-Vollausbau · Stripe
+     ------------------------------------------------------------------
+     Bewusst als eine einzige, self-contained Datei gebaut: keine
+     externen Requests, damit die Demo überall sofort läuft (GitHub
+     Pages, lokal per Doppelklick) und die Core Web Vitals top sind.
+     Stripe-Anbindung: siehe STRIPE_CONFIG im Script + shop/RECHERCHE.md
+     ================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ELF11 – Retro Fussballtrikots kaufen | Trikot Shop Schweiz</title>
+
+<!-- ===================== SEO: Meta ===================== -->
+<meta name="description" content="Retro-Fussballtrikots der 70er bis 90er – Klassiker aus Zürich, Basel, Mailand &amp; mehr. Versand aus der Schweiz, Gratisversand ab CHF 100, 30 Tage Rückgabe.">
+<meta name="keywords" content="Retro Trikot, Fussballtrikot kaufen, Vintage Trikot Schweiz, Nationaltrikot, Trikot Shop">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<link rel="canonical" href="https://shop.example.ch/">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ELF11">
+<meta name="format-detection" content="telephone=no">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ELF11 Trikot Shop">
+<meta property="og:title" content="ELF11 – Retro Fussballtrikots kaufen">
+<meta property="og:description" content="Klassische Fussballtrikots der 70er–90er. Versand aus der Schweiz, Gratisversand ab CHF 100.">
+<meta property="og:url" content="https://shop.example.ch/">
+<meta property="og:locale" content="de_CH">
+<meta property="og:image" content="https://shop.example.ch/og-image.jpg">
+<meta property="og:image:alt" content="Retro-Fussballtrikots von ELF11">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ELF11 – Retro Fussballtrikots kaufen">
+<meta name="twitter:description" content="Klassische Fussballtrikots der 70er–90er. Versand aus der Schweiz.">
+
+<!-- ===================== SEO: Strukturierte Daten (JSON-LD) =====================
+     Statisch im Head, damit Such- und KI-Crawler sie ohne JavaScript lesen.
+     Im Livebetrieb aus derselben Produktquelle generieren (Build-Step). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "OnlineStore",
+  "name": "ELF11 Trikot Shop",
+  "url": "https://shop.example.ch/",
+  "logo": "https://shop.example.ch/icon-512.png",
+  "description": "Retro-Fussballtrikots der 70er bis 90er, versandt aus der Schweiz.",
+  "currenciesAccepted": "CHF",
+  "paymentAccepted": "Kreditkarte, Apple Pay, TWINT",
+  "address": { "@type": "PostalAddress", "streetAddress": "Musterstrasse 1", "postalCode": "8000", "addressLocality": "Zürich", "addressCountry": "CH" },
+  "contactPoint": { "@type": "ContactPoint", "email": "hallo@shop.example.ch", "contactType": "customer service", "availableLanguage": ["de"] }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "ELF11 Trikot Shop",
+  "url": "https://shop.example.ch/",
+  "inLanguage": "de-CH",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": { "@type": "EntryPoint", "urlTemplate": "https://shop.example.ch/?q={search_term_string}" },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Retro Fussballtrikots",
+  "numberOfItems": 10,
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "item": { "@type": "Product", "name": "Zürich Retro Heim 1986", "sku": "ELF11-ZRH-86", "url": "https://shop.example.ch/#/trikot/zuerich-heim-1986", "description": "Klassisches Heimtrikot im Stil der Saison 1986 – weiss-blau längsgestreift.", "brand": { "@type": "Brand", "name": "ELF11" }, "material": "Baumwoll-Piqué", "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "127", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "79.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/zuerich-heim-1986", "shippingDetails": { "@type": "OfferShippingDetails", "shippingRate": { "@type": "MonetaryAmount", "value": "4.90", "currency": "CHF" }, "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "CH" } }, "hasMerchantReturnPolicy": { "@type": "MerchantReturnPolicy", "applicableCountry": "CH", "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow", "merchantReturnDays": 30, "returnMethod": "https://schema.org/ReturnByMail", "returnFees": "https://schema.org/FreeReturn" } } } },
+    { "@type": "ListItem", "position": 2, "item": { "@type": "Product", "name": "Basel Auswärts 1989", "sku": "ELF11-BAS-89", "url": "https://shop.example.ch/#/trikot/basel-auswaerts-1989", "description": "Auswärtsklassiker in Rot-Blau, halbiert im Stil der späten 80er.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.7", "reviewCount": "89", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "79.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/basel-auswaerts-1989" } } },
+    { "@type": "ListItem", "position": 3, "item": { "@type": "Product", "name": "Milano Classico 1994", "sku": "ELF11-MIL-94", "url": "https://shop.example.ch/#/trikot/milano-classico-1994", "description": "Rot-schwarz gestreifter Klassiker der Serie-A-Ära 1994.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "203", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "89.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/milano-classico-1994" } } },
+    { "@type": "ListItem", "position": 4, "item": { "@type": "Product", "name": "München Heim 1974", "sku": "ELF11-MUC-74", "url": "https://shop.example.ch/#/trikot/muenchen-heim-1974", "description": "Ikonisches rotes Heimtrikot im Stil des WM-Jahres 1974.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "156", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "84.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/muenchen-heim-1974" } } },
+    { "@type": "ListItem", "position": 5, "item": { "@type": "Product", "name": "Amsterdam Heim 1995", "sku": "ELF11-AMS-95", "url": "https://shop.example.ch/#/trikot/amsterdam-heim-1995", "description": "Weisses Trikot mit rotem Mittelband – Champions-League-Jahrgang 1995.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "174", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "89.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/amsterdam-heim-1995" } } },
+    { "@type": "ListItem", "position": 6, "item": { "@type": "Product", "name": "Brasil Tribute 1982", "sku": "ELF11-BRA-82", "url": "https://shop.example.ch/#/trikot/brasil-tribute-1982", "description": "Gelbes Nationaltrikot mit grünem Kragen – Hommage an die Seleção von 1982.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "241", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "74.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/brasil-tribute-1982" } } },
+    { "@type": "ListItem", "position": 7, "item": { "@type": "Product", "name": "Azzurri Classic 1990", "sku": "ELF11-ITA-90", "url": "https://shop.example.ch/#/trikot/azzurri-classic-1990", "description": "Azurblaues Nationaltrikot im Stil der Notti Magiche 1990.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.7", "reviewCount": "118", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "74.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/azzurri-classic-1990" } } },
+    { "@type": "ListItem", "position": 8, "item": { "@type": "Product", "name": "Albiceleste 1986", "sku": "ELF11-ARG-86", "url": "https://shop.example.ch/#/trikot/albiceleste-1986", "description": "Himmelblau-weiss gestreiftes Nationaltrikot – WM-Jahrgang 1986.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "312", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "84.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/albiceleste-1986" } } },
+    { "@type": "ListItem", "position": 9, "item": { "@type": "Product", "name": "Bern Heim 1998", "sku": "ELF11-BRN-98", "url": "https://shop.example.ch/#/trikot/bern-heim-1998", "description": "Gelb-schwarz quergestreiftes Heimtrikot im Stil der Saison 1998.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.6", "reviewCount": "64", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "69.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/bern-heim-1998" } } },
+    { "@type": "ListItem", "position": 10, "item": { "@type": "Product", "name": "ELF11 Pitch Edition", "sku": "ELF11-PITCH-01", "url": "https://shop.example.ch/#/trikot/elf11-pitch-edition", "description": "Limitierte Eigenkollektion in Rasengrün mit Chevron-Muster.", "brand": { "@type": "Brand", "name": "ELF11" }, "aggregateRating": { "@type": "AggregateRating", "ratingValue": "5.0", "reviewCount": "27", "bestRating": "5" }, "offers": { "@type": "Offer", "price": "59.90", "priceCurrency": "CHF", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "url": "https://shop.example.ch/#/trikot/elf11-pitch-edition" } } }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Shop", "item": "https://shop.example.ch/" },
+    { "@type": "ListItem", "position": 2, "name": "Retro Trikots", "item": "https://shop.example.ch/#/kategorie/retro" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Wie lange dauert der Versand?", "acceptedAnswer": { "@type": "Answer", "text": "Mit B-Post Economy 2–3 Werktage, mit A-Post Priority am nächsten Werktag. Versand erfolgt aus der Schweiz, ab CHF 100 Bestellwert gratis." } },
+    { "@type": "Question", "name": "Wie fallen die Trikots aus?", "acceptedAnswer": { "@type": "Answer", "text": "Alle Trikots sind Regular Fit und fallen normal aus. Wer es weiter mag, wählt eine Grösse grösser. Die Grössentabelle mit Brustweite und Länge findest du auf jeder Produktseite." } },
+    { "@type": "Question", "name": "Kann ich ein Trikot zurückgeben?", "acceptedAnswer": { "@type": "Answer", "text": "Ja, du hast 30 Tage kostenloses Rückgaberecht. Das Trikot muss ungetragen und mit Etikett zurückkommen. Die Rückerstattung erfolgt innert 5 Werktagen nach Eingang." } },
+    { "@type": "Question", "name": "Welche Zahlungsmittel werden akzeptiert?", "acceptedAnswer": { "@type": "Answer", "text": "Kredit- und Debitkarten (Visa, Mastercard, Amex), Apple Pay, Google Pay und TWINT. Die Zahlung wird sicher über Stripe abgewickelt, Kartendaten erreichen unsere Server nie." } },
+    { "@type": "Question", "name": "Sind das Originaltrikots?", "acceptedAnswer": { "@type": "Answer", "text": "Unsere Trikots sind eigenständige Retro-Designs im Stil klassischer Jahrgänge, keine Lizenzprodukte der Vereine. Dadurch bleiben sie bezahlbar und in allen Grössen verfügbar." } }
+  ]
+}
+</script>
+
+<style>
+/* ===================== Design Tokens (Apple HIG Systemfarben) =====================
+   Drei Theme-Zustände: :root = Hell · prefers-color-scheme: dark (ohne
+   explizites data-theme="light") · data-theme="dark" erzwingt Dunkel. */
+:root {
+  --bg: #F2F2F7;
+  --bg-elevated: #FFFFFF;
+  --bg-inset: #E7E7EC;
+  --label: #1C1C1E;
+  --label-2: rgba(60,60,67,0.62);
+  --label-3: rgba(60,60,67,0.34);
+  --separator: rgba(60,60,67,0.14);
+  --tint: #0A7C4A;
+  --tint-strong: #08693F;
+  --tint-soft: rgba(10,124,74,0.12);
+  --on-tint: #FFFFFF;
+  --blue: #007AFF;
+  --red: #D70015;
+  --red-soft: rgba(215,0,21,0.12);
+  --orange: #C2410C;
+  --star: #E08600;
+  --fill-quaternary: rgba(120,120,128,0.09);
+  --fill-tertiary: rgba(120,120,128,0.14);
+  --bar-blur: rgba(249,249,249,0.82);
+  --shadow: 0 8px 28px rgba(0,0,0,0.10);
+  --sheet-shadow: 0 -10px 40px rgba(0,0,0,0.18);
+  --radius: 14px;
+  --pay-bg: #000000;
+  --pay-fg: #FFFFFF;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;
+    --bg-elevated: #1C1C1E;
+    --bg-inset: #2C2C2E;
+    --label: #F2F2F7;
+    --label-2: rgba(235,235,245,0.62);
+    --label-3: rgba(235,235,245,0.32);
+    --separator: rgba(84,84,88,0.58);
+    --tint: #30D158;
+    --tint-strong: #3DDC66;
+    --tint-soft: rgba(48,209,88,0.16);
+    --on-tint: #04250F;
+    --blue: #0A84FF;
+    --red: #FF453A;
+    --red-soft: rgba(255,69,58,0.16);
+    --orange: #FF9F0A;
+    --star: #FF9F0A;
+    --fill-quaternary: rgba(120,120,128,0.18);
+    --fill-tertiary: rgba(120,120,128,0.24);
+    --bar-blur: rgba(22,22,24,0.80);
+    --shadow: 0 8px 28px rgba(0,0,0,0.55);
+    --sheet-shadow: 0 -10px 40px rgba(0,0,0,0.60);
+    --pay-bg: #FFFFFF;
+    --pay-fg: #000000;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --bg-elevated: #1C1C1E;
+  --bg-inset: #2C2C2E;
+  --label: #F2F2F7;
+  --label-2: rgba(235,235,245,0.62);
+  --label-3: rgba(235,235,245,0.32);
+  --separator: rgba(84,84,88,0.58);
+  --tint: #30D158;
+  --tint-strong: #3DDC66;
+  --tint-soft: rgba(48,209,88,0.16);
+  --on-tint: #04250F;
+  --blue: #0A84FF;
+  --red: #FF453A;
+  --red-soft: rgba(255,69,58,0.16);
+  --orange: #FF9F0A;
+  --star: #FF9F0A;
+  --fill-quaternary: rgba(120,120,128,0.18);
+  --fill-tertiary: rgba(120,120,128,0.24);
+  --bar-blur: rgba(22,22,24,0.80);
+  --shadow: 0 8px 28px rgba(0,0,0,0.55);
+  --sheet-shadow: 0 -10px 40px rgba(0,0,0,0.60);
+  --pay-bg: #FFFFFF;
+  --pay-fg: #000000;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--label);
+  font-size: 17px;
+  line-height: 1.45;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+input, select, textarea { font: inherit; color: var(--label); }
+img, svg { max-width: 100%; display: block; }
+a { color: var(--tint); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+/* Muss nach den Layout-Klassen greifen: display:grid/flex würde [hidden] sonst überstimmen. */
+[hidden] { display: none !important; }
+
+/* ===================== App-Shell ===================== */
+.app { max-width: 1040px; margin: 0 auto; padding: 0 16px calc(104px + env(safe-area-inset-bottom)); }
+
+.navbar {
+  position: sticky; top: 0; z-index: 40;
+  margin: 0 -16px; padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
+  background: var(--bar-blur);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid transparent;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 50px; transition: border-color 0.2s;
+}
+.navbar.condensed { border-bottom-color: var(--separator); }
+.nav-title {
+  font-size: 17px; font-weight: 600; opacity: 0; transition: opacity 0.2s;
+  position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none;
+}
+.navbar.condensed .nav-title { opacity: 1; }
+.nav-brand { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
+.nav-brand .mark {
+  width: 24px; height: 24px; border-radius: 6px; background: var(--tint); color: var(--on-tint);
+  display: grid; place-items: center; font-size: 11px; font-weight: 800;
+}
+.icon-btn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--tint); }
+.icon-btn:active { background: var(--fill-quaternary); }
+
+.large-title { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; padding: 14px 0 2px; text-wrap: balance; }
+.subtitle { color: var(--label-2); font-size: 15px; padding-bottom: 14px; max-width: 52ch; }
+
+/* Vertrauens-Leiste */
+.trust-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;
+}
+.trust {
+  background: var(--bg-elevated); border-radius: 12px; padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+}
+.trust svg { width: 19px; height: 19px; color: var(--tint); }
+.trust .t { font-size: 11.5px; font-weight: 600; line-height: 1.2; }
+.trust .d { font-size: 10.5px; color: var(--label-2); line-height: 1.2; }
+
+/* Suche */
+.search-wrap { position: relative; margin-bottom: 12px; }
+.search-wrap > svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--label-2); pointer-events: none; }
+.search {
+  width: 100%; border: 0; border-radius: 10px; background: var(--fill-tertiary);
+  padding: 10px 36px 10px 32px; font-size: 17px;
+}
+.search::placeholder { color: var(--label-2); }
+.search-clear {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; border-radius: 50%; background: var(--label-3); color: var(--bg-elevated);
+  display: grid; place-items: center; font-size: 13px; font-weight: 700; line-height: 1;
+}
+
+/* Segmented Control */
+.segmented { display: flex; background: var(--fill-tertiary); border-radius: 9px; padding: 2px; margin-bottom: 10px; }
+.segmented button {
+  flex: 1; padding: 7px 4px; border-radius: 7px; font-size: 13px; font-weight: 500;
+  color: var(--label); white-space: nowrap; min-height: 34px; transition: background 0.18s;
+}
+.segmented button[aria-pressed="true"] { background: var(--bg-elevated); box-shadow: 0 1px 4px rgba(0,0,0,0.13); font-weight: 600; }
+
+.toolbar-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.result-count { font-size: 13px; color: var(--label-2); }
+.sort-select {
+  border: 0; background: var(--fill-tertiary); border-radius: 8px;
+  padding: 7px 10px; font-size: 13px; font-weight: 500;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+}
+
+/* ===================== Produkt-Grid ===================== */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (min-width: 620px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 900px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+
+.card {
+  background: var(--bg-elevated); border-radius: var(--radius); overflow: hidden;
+  position: relative; display: flex; flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.card:hover { box-shadow: var(--shadow); }
+.card:active { transform: scale(0.975); }
+.card-open { display: block; width: 100%; text-align: left; padding: 0; }
+.thumb { background: var(--bg-inset); aspect-ratio: 1 / 1.02; display: grid; place-items: center; padding: 14px; }
+.thumb svg { width: 84%; height: auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.16)); }
+.card .meta { padding: 10px 12px 13px; display: flex; flex-direction: column; gap: 3px; }
+.card .name { font-size: 14px; font-weight: 600; line-height: 1.25; }
+.card .rating { font-size: 11px; color: var(--label-2); display: flex; align-items: center; gap: 4px; }
+.stars { color: var(--star); letter-spacing: 0.5px; }
+.card .price-row { display: flex; align-items: baseline; gap: 6px; margin-top: 3px; }
+.card .price { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.compare { font-size: 12px; color: var(--label-3); text-decoration: line-through; font-variant-numeric: tabular-nums; }
+.badge {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+  background: var(--tint); color: var(--on-tint); letter-spacing: 0.2px;
+}
+.badge.sale { background: var(--red); color: #fff; }
+.badge.new { background: var(--blue); color: #fff; }
+.fav-btn {
+  position: absolute; top: 5px; right: 5px; z-index: 2;
+  width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--label-2);
+  transition: transform 0.18s cubic-bezier(0.2,1.6,0.4,1);
+}
+.fav-btn.active { color: var(--red); transform: scale(1.08); }
+.fav-btn svg { width: 20px; height: 20px; }
+
+/* FAQ */
+.faq-section { margin-top: 34px; }
+.section-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+.section-sub { color: var(--label-2); font-size: 14px; margin-bottom: 12px; }
+.faq-item { background: var(--bg-elevated); overflow: hidden; }
+.faq-item + .faq-item { border-top: 0.5px solid var(--separator); }
+.faq-item summary {
+  padding: 13px 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; min-height: 44px;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: ""; width: 8px; height: 8px; flex: none;
+  border-right: 2px solid var(--label-3); border-bottom: 2px solid var(--label-3);
+  transform: rotate(45deg); transition: transform 0.2s; margin-right: 3px;
+}
+.faq-item[open] summary::after { transform: rotate(225deg); }
+.faq-item .answer { padding: 0 14px 14px; font-size: 14.5px; color: var(--label-2); max-width: 62ch; }
+
+/* ===================== Sheets ===================== */
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.42);
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
+  max-width: 640px; margin: 0 auto;
+  background: var(--bg); border-radius: 16px 16px 0 0; box-shadow: var(--sheet-shadow);
+  transform: translateY(102%); transition: transform 0.34s cubic-bezier(0.32,0.72,0,1);
+  max-height: calc(100dvh - 36px); display: flex; flex-direction: column;
+  visibility: hidden;
+}
+.sheet.open { transform: translateY(0); visibility: visible; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--label-3); margin: 8px auto 0; flex: none; }
+.sheet-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px; flex: none; }
+.sheet-head h2 { font-size: 17px; font-weight: 600; flex: 1; text-align: center; padding-left: 30px; }
+.sheet-close {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--fill-tertiary); flex: none;
+  display: grid; place-items: center; color: var(--label-2); font-size: 14px; font-weight: 700; line-height: 1; order: 2;
+}
+.sheet-body { overflow-y: auto; padding: 0 16px calc(20px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+
+/* Produktdetail */
+.pd-hero { position: relative; background: var(--bg-inset); border-radius: var(--radius); display: grid; place-items: center; padding: 24px; margin-bottom: 12px; }
+.pd-hero svg { width: min(58%, 250px); height: auto; filter: drop-shadow(0 10px 18px rgba(0,0,0,0.20)); }
+.view-toggle {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; background: var(--bar-blur); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-radius: 8px; padding: 2px; box-shadow: 0 1px 6px rgba(0,0,0,0.14);
+}
+.view-toggle button { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--label-2); min-height: 30px; }
+.view-toggle button[aria-pressed="true"] { background: var(--bg-elevated); color: var(--label); }
+.pd-name { font-size: 22px; font-weight: 700; letter-spacing: -0.35px; text-wrap: balance; }
+.pd-sub { color: var(--label-2); font-size: 14px; margin: 3px 0 10px; }
+.pd-price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.pd-price { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.4px; }
+.pd-save { font-size: 11.5px; font-weight: 700; color: var(--red); background: var(--red-soft); padding: 3px 8px; border-radius: 999px; }
+.pd-vat { font-size: 12.5px; color: var(--label-2); margin-bottom: 8px; }
+
+.field-label { font-size: 12.5px; font-weight: 600; color: var(--label-2); text-transform: uppercase; letter-spacing: 0.5px; margin: 18px 0 8px; }
+.label-row { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 8px; }
+.label-row .field-label { margin: 0; }
+.link-btn { font-size: 13px; font-weight: 600; color: var(--tint); padding: 4px; }
+
+.size-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.size-btn {
+  min-width: 54px; min-height: 44px; padding: 0 10px; border-radius: 10px;
+  background: var(--bg-elevated); border: 1.5px solid var(--separator);
+  font-weight: 600; font-size: 15px; transition: border-color 0.15s, background 0.15s;
+}
+.size-btn[aria-pressed="true"] { border-color: var(--tint); background: var(--tint-soft); color: var(--tint); }
+.size-btn:disabled { opacity: 0.34; text-decoration: line-through; cursor: not-allowed; }
+.stock-note { font-size: 13px; margin-top: 8px; font-weight: 500; }
+.stock-note.low { color: var(--orange); }
+.stock-note.ok { color: var(--tint); }
+
+.qty-stepper { display: inline-flex; align-items: center; background: var(--fill-tertiary); border-radius: 10px; }
+.qty-stepper button { width: 44px; height: 40px; font-size: 19px; font-weight: 500; color: var(--tint); }
+.qty-stepper button:disabled { color: var(--label-3); cursor: default; }
+.qty-stepper .qty { min-width: 32px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.pd-desc { font-size: 15px; max-width: 62ch; }
+.spec-list { list-style: none; }
+.spec-list li { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 0.5px solid var(--separator); font-size: 14px; }
+.spec-list li:last-child { border-bottom: 0; }
+.spec-list li > span:first-child { color: var(--label-2); flex: none; }
+.spec-list li > span:last-child { text-align: right; }
+
+.review { padding: 12px 14px; }
+.review .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 3px; }
+.review .who { font-size: 14px; font-weight: 600; }
+.review .when { font-size: 12px; color: var(--label-3); }
+.review .stars { font-size: 12px; }
+.review .text { font-size: 14px; color: var(--label-2); max-width: 60ch; }
+.verified { font-size: 11px; font-weight: 600; color: var(--tint); }
+
+.rel-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scroll-snap-type: x mandatory; }
+.rel-card { flex: 0 0 128px; scroll-snap-align: start; background: var(--bg-elevated); border-radius: 12px; overflow: hidden; text-align: left; }
+.rel-card .thumb { aspect-ratio: 1 / 1; padding: 10px; }
+.rel-card .rel-meta { padding: 8px 10px 10px; }
+.rel-card .rel-name { font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+.rel-card .rel-price { font-size: 12.5px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+.cta-bar { position: sticky; bottom: 0; padding: 12px 0 6px; background: linear-gradient(to top, var(--bg) 72%, transparent); }
+.btn-primary {
+  width: 100%; min-height: 50px; border-radius: 13px; background: var(--tint); color: var(--on-tint);
+  font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.12s ease, opacity 0.12s;
+}
+.btn-primary:active:not(:disabled) { transform: scale(0.985); opacity: 0.92; }
+.btn-primary:disabled { opacity: 0.42; cursor: default; }
+.btn-secondary {
+  width: 100%; min-height: 48px; border-radius: 13px; background: var(--tint-soft);
+  color: var(--tint); font-size: 17px; font-weight: 600; margin-top: 8px;
+}
+.btn-plain { width: 100%; min-height: 44px; color: var(--tint); font-size: 16px; font-weight: 500; margin-top: 4px; }
+
+/* ===================== Listen ===================== */
+.inset-group { background: var(--bg-elevated); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; }
+.inset-group > * + * { border-top: 0.5px solid var(--separator); }
+.row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 44px; width: 100%; text-align: left; }
+.row .row-label { flex: 1; font-size: 16px; }
+.row .row-detail { color: var(--label-2); font-size: 15px; }
+.chevron { color: var(--label-3); flex: none; }
+.row-icon { width: 29px; height: 29px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
+.row-icon svg { width: 17px; height: 17px; }
+
+.cart-item { display: flex; gap: 12px; padding: 12px 14px; align-items: center; }
+.cart-thumb { width: 66px; height: 66px; border-radius: 10px; background: var(--bg-inset); display: grid; place-items: center; padding: 6px; flex: none; }
+.cart-thumb svg { width: 92%; height: auto; }
+.cart-info { flex: 1; min-width: 0; }
+.cart-info .name { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.cart-info .variant { font-size: 13px; color: var(--label-2); }
+.cart-info .price { font-size: 14px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.cart-remove { color: var(--red); font-size: 13px; font-weight: 500; padding: 5px 0; }
+.cart-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+
+.summary-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 14px; font-size: 15px; }
+.summary-row > span:last-child { font-variant-numeric: tabular-nums; }
+.summary-row.total { font-weight: 700; font-size: 17px; padding-top: 10px; padding-bottom: 12px; }
+.muted { color: var(--label-2); }
+.ship-progress-wrap { padding: 4px 14px 12px; }
+.ship-progress { height: 6px; border-radius: 3px; background: var(--fill-tertiary); overflow: hidden; }
+.ship-progress > i { display: block; height: 100%; background: var(--tint); border-radius: 3px; transition: width 0.4s cubic-bezier(0.32,0.72,0,1); }
+.ship-progress-note { font-size: 12.5px; color: var(--label-2); margin-top: 6px; }
+.ship-progress-note b { color: var(--tint); }
+
+.empty-state { text-align: center; padding: 56px 20px; color: var(--label-2); }
+.empty-state .glyph { width: 58px; height: 58px; margin: 0 auto 14px; color: var(--label-3); }
+.empty-state h3 { color: var(--label); font-size: 19px; font-weight: 600; margin-bottom: 5px; }
+.empty-state p { font-size: 15px; max-width: 34ch; margin: 0 auto; }
+
+/* ===================== Checkout ===================== */
+.steps { display: flex; gap: 6px; margin: 2px 0 8px; }
+.steps .step { flex: 1; height: 4px; border-radius: 2px; background: var(--fill-tertiary); transition: background 0.3s; }
+.steps .step.done { background: var(--tint); }
+.step-label { font-size: 12.5px; color: var(--label-2); margin-bottom: 14px; font-weight: 500; }
+
+.form-group { background: var(--bg-elevated); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
+.form-group > * + * { border-top: 0.5px solid var(--separator); }
+.form-field { display: flex; flex-direction: column; padding: 8px 14px 10px; }
+.form-field label { font-size: 12px; color: var(--label-2); margin-bottom: 1px; }
+.form-field input { border: 0; background: none; font-size: 16px; padding: 2px 0; width: 100%; }
+.form-field input::placeholder { color: var(--label-3); }
+.form-field.invalid { background: var(--red-soft); }
+.form-field.invalid label { color: var(--red); }
+.field-split { display: grid; grid-template-columns: 1fr 1fr; }
+.field-split .form-field + .form-field { border-top: 0; border-left: 0.5px solid var(--separator); }
+
+.ship-option { display: flex; align-items: center; gap: 12px; padding: 12px 14px; width: 100%; text-align: left; min-height: 60px; }
+.radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--label-3); flex: none; display: grid; place-items: center; transition: border-color 0.15s; }
+.ship-option[aria-pressed="true"] .radio { border-color: var(--tint); }
+.ship-option[aria-pressed="true"] .radio::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--tint); }
+.ship-info { flex: 1; }
+.ship-info .t { font-size: 15px; font-weight: 600; display: block; }
+.ship-info .d { font-size: 13px; color: var(--label-2); }
+.ship-price { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; flex: none; }
+
+.demo-note {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--tint-soft); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px;
+}
+.demo-note b { font-variant-numeric: tabular-nums; }
+.demo-note .hd { color: var(--tint); font-weight: 700; }
+.demo-note svg { width: 18px; height: 18px; color: var(--tint); flex: none; margin-top: 1px; }
+
+.pay-tiles { display: grid; gap: 8px; }
+.applepay-btn {
+  width: 100%; min-height: 50px; border-radius: 13px; background: var(--pay-bg); color: var(--pay-fg);
+  font-size: 19px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.applepay-btn .apple-mark { width: 21px; height: 21px; margin-top: -2px; }
+.twint-btn {
+  width: 100%; min-height: 50px; border-radius: 13px; background: #1A1A1A; color: #fff;
+  font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.twint-btn .tw-dot { width: 15px; height: 15px; border-radius: 50%; background: #FF6B00; box-shadow: 9px 0 0 -1px #000, 9px 0 0 0 #FF6B00; margin-right: 9px; }
+.pay-divider { display: flex; align-items: center; gap: 12px; color: var(--label-3); font-size: 12px; margin: 16px 0 12px; }
+.pay-divider::before, .pay-divider::after { content: ""; flex: 1; height: 0.5px; background: var(--separator); }
+.card-error { color: var(--red); font-size: 13px; font-weight: 500; padding: 6px 2px 2px; min-height: 22px; }
+.card-brands { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.card-brand { font-size: 9.5px; font-weight: 800; letter-spacing: 0.3px; padding: 2px 5px; border-radius: 3px; background: var(--fill-tertiary); color: var(--label-2); }
+
+.checkbox-row { display: flex; gap: 11px; align-items: flex-start; padding: 12px 14px; width: 100%; text-align: left; }
+.checkbox {
+  width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--label-3); flex: none;
+  display: grid; place-items: center; margin-top: 1px; color: transparent; transition: background 0.15s, border-color 0.15s;
+}
+.checkbox-row[aria-pressed="true"] .checkbox { background: var(--tint); border-color: var(--tint); color: var(--on-tint); }
+.checkbox svg { width: 13px; height: 13px; }
+.checkbox-row .cb-text { font-size: 13.5px; color: var(--label-2); line-height: 1.4; }
+.checkbox-row .cb-text u { color: var(--tint); text-decoration: none; font-weight: 600; }
+
+.spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2.5px solid rgba(128,128,128,0.35); border-top-color: currentColor;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.success-wrap { text-align: center; padding: 26px 10px 6px; }
+.success-check {
+  width: 78px; height: 78px; margin: 0 auto 18px; border-radius: 50%;
+  background: var(--tint); color: var(--on-tint); display: grid; place-items: center;
+  animation: pop 0.5s cubic-bezier(0.2,1.7,0.4,1);
+}
+.success-check svg { width: 38px; height: 38px; }
+@keyframes pop { from { transform: scale(0.35); opacity: 0; } }
+.order-no { font-size: 13px; color: var(--label-2); margin-top: 8px; line-height: 1.6; }
+.order-no b { color: var(--label); font-variant-numeric: tabular-nums; }
+
+/* ===================== Tab-Bar ===================== */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  background: var(--bar-blur);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid var(--separator);
+  display: flex; justify-content: center; gap: 4px;
+  padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+}
+.tab {
+  flex: 1; max-width: 130px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--label-2); font-size: 10px; font-weight: 500; padding: 4px 0 2px; min-height: 46px; position: relative;
+}
+.tab svg { width: 25px; height: 25px; }
+.tab[aria-current="page"] { color: var(--tint); }
+.tab-badge {
+  position: absolute; top: 1px; right: calc(50% - 23px);
+  background: var(--red); color: #fff; font-size: 11px; font-weight: 700;
+  min-width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===================== Toast ===================== */
+.toast {
+  position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(16px);
+  background: var(--bg-elevated); color: var(--label);
+  border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 600;
+  box-shadow: var(--shadow); z-index: 70; opacity: 0; pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s; display: flex; gap: 8px; align-items: center;
+  max-width: calc(100vw - 32px);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tint); flex: none; }
+
+.view { display: none; }
+.view.active { display: block; animation: fadein 0.22s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } }
+
+.doc-body { font-size: 15px; max-width: 64ch; }
+.doc-body h3 { font-size: 16px; font-weight: 700; margin: 20px 0 6px; color: var(--label); }
+.doc-body p { color: var(--label-2); margin-bottom: 10px; }
+.doc-body ul { padding-left: 20px; margin-bottom: 10px; }
+.doc-body li { color: var(--label-2); margin-bottom: 6px; }
+.doc-body b { color: var(--label); }
+.doc-body code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+  background: var(--fill-tertiary); padding: 1px 5px; border-radius: 5px; color: var(--label);
+}
+.size-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.size-table th, .size-table td { text-align: left; padding: 9px 10px; border-bottom: 0.5px solid var(--separator); }
+.size-table th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--label-2); font-weight: 600; }
+.size-table tr:last-child td { border-bottom: 0; }
+.table-wrap { overflow-x: auto; background: var(--bg-elevated); border-radius: var(--radius); }
+.footer-note { font-size: 12px; color: var(--label-3); text-align: center; padding: 22px 0 6px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="app" id="appRoot">
+  <header class="navbar" id="navbar">
+    <div class="nav-brand"><span class="mark" aria-hidden="true">11</span><span>ELF11</span></div>
+    <span class="nav-title" id="navTitle">Trikots</span>
+    <button class="icon-btn" id="themeToggle" aria-label="Erscheinungsbild wechseln">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="21" height="21" aria-hidden="true"><circle cx="12" cy="12" r="4.3"></circle><path d="M12 2.6v2.3M12 19.1v2.3M2.6 12h2.3M19.1 12h2.3M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" stroke-linecap="round"></path></svg>
+    </button>
+  </header>
+
+  <!-- ============ Shop ============ -->
+  <main id="view-shop" class="view active">
+    <h1 class="large-title">Trikots</h1>
+    <p class="subtitle">Retro-Klassiker der 70er bis 90er, neu aufgelegt. Versand aus der Schweiz.</p>
+
+    <div class="trust-row">
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M2.5 7.5h11v9h-11z"></path><path d="M13.5 10.5h4l4 3.5v2.5h-8z"></path><circle cx="6.5" cy="18.5" r="1.8"></circle><circle cx="17" cy="18.5" r="1.8"></circle></svg>
+        <span class="t">Gratis ab CHF 100</span><span class="d">Versand aus der CH</span>
+      </div>
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.6 6" stroke-linecap="round"></path><path d="M20.5 3.5v4.2h-4.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <span class="t">30 Tage Rückgabe</span><span class="d">Kostenlos</span>
+      </div>
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"></rect><path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9" stroke-linecap="round"></path></svg>
+        <span class="t">Sichere Zahlung</span><span class="d">Stripe · TWINT</span>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 4.5 4.5" stroke-linecap="round"></path></svg>
+      <input class="search" id="searchInput" type="search" placeholder="Trikot, Stadt oder Jahr suchen" aria-label="Trikots durchsuchen" autocomplete="off">
+      <button class="search-clear" id="searchClear" aria-label="Suche löschen" hidden>✕</button>
+    </div>
+
+    <div class="segmented" role="group" aria-label="Kategorie filtern" id="catSeg">
+      <button type="button" data-cat="all" aria-pressed="true">Alle</button>
+      <button type="button" data-cat="retro" aria-pressed="false">Club-Retro</button>
+      <button type="button" data-cat="national" aria-pressed="false">Nationalteams</button>
+      <button type="button" data-cat="special" aria-pressed="false">Editionen</button>
+    </div>
+
+    <div class="toolbar-row">
+      <span class="result-count" id="resultCount"></span>
+      <label class="visually-hidden" for="sortSelect">Sortieren nach</label>
+      <select class="sort-select" id="sortSelect">
+        <option value="popular">Beliebteste</option>
+        <option value="new">Neuheiten</option>
+        <option value="priceAsc">Preis aufsteigend</option>
+        <option value="priceDesc">Preis absteigend</option>
+        <option value="rating">Beste Bewertung</option>
+      </select>
+    </div>
+
+    <div class="grid" id="productGrid"></div>
+    <div class="empty-state" id="noResults" hidden>
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"></circle><path d="m15.6 15.6 5 5" stroke-linecap="round"></path></svg>
+      <h3>Nichts gefunden</h3>
+      <p>Für diese Suche haben wir kein Trikot. Probier einen anderen Begriff oder eine andere Kategorie.</p>
+    </div>
+
+    <section class="faq-section" aria-labelledby="faqTitle">
+      <h2 class="section-title" id="faqTitle">Häufige Fragen</h2>
+      <p class="section-sub">Die fünf Fragen, die uns am meisten erreichen.</p>
+      <div class="inset-group" id="faqList"></div>
+    </section>
+
+    <p class="footer-note">ELF11 Trikot Shop · Demo-Version<br>Alle Vereins- und Produktnamen sind fiktive Demo-Inhalte ohne Lizenzbezug.</p>
+  </main>
+
+  <!-- ============ Favoriten ============ -->
+  <main id="view-favs" class="view">
+    <h1 class="large-title">Favoriten</h1>
+    <p class="subtitle">Deine gemerkten Trikots – bleiben auch nach dem Neuladen gespeichert.</p>
+    <div class="grid" id="favGrid"></div>
+    <div class="empty-state" id="favEmpty" hidden>
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 20s-7-4.3-9-9c-1.2-2.9.6-6.3 3.8-6.6C9 4.1 10.9 5.3 12 7c1.1-1.7 3-2.9 5.2-2.6 3.2.3 5 3.7 3.8 6.6-2 4.7-9 9-9 9Z" stroke-linejoin="round"></path></svg>
+      <h3>Noch keine Favoriten</h3>
+      <p>Tippe bei einem Trikot auf das Herz, dann findest du es hier wieder.</p>
+      <button class="btn-secondary" style="max-width:240px;margin:20px auto 0" data-goto="shop">Zum Shop</button>
+    </div>
+  </main>
+
+  <!-- ============ Warenkorb ============ -->
+  <main id="view-cart" class="view">
+    <h1 class="large-title">Warenkorb</h1>
+    <p class="subtitle" id="cartSubtitle">&nbsp;</p>
+    <div id="cartContent"></div>
+  </main>
+
+  <!-- ============ Mehr ============ -->
+  <main id="view-more" class="view">
+    <h1 class="large-title">Mehr</h1>
+    <p class="subtitle">Shop-Infos, technischer Stand und Rechtliches.</p>
+
+    <p class="field-label">Status dieser Demo</p>
+    <div class="inset-group">
+      <div class="row">
+        <span class="row-icon" style="background:var(--tint)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m4.5 12.5 5 5 10-11" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        <span class="row-label">SEO-Ausbau</span><span class="row-detail">Meta + 5× JSON-LD</span>
+      </div>
+      <div class="row">
+        <span class="row-icon" style="background:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"></rect><path d="M3 10.5h18"></path></svg></span>
+        <span class="row-label">Stripe</span><span class="row-detail" id="stripeStatus">Demo-Modus</span>
+      </div>
+      <div class="row">
+        <span class="row-icon" style="background:var(--label-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3.5 5 6.5v5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9v-5Z" stroke-linejoin="round"></path></svg></span>
+        <span class="row-label">Daten</span><span class="row-detail">Lokal im Browser</span>
+      </div>
+    </div>
+
+    <p class="field-label">Shop-Informationen</p>
+    <div class="inset-group" id="infoList"></div>
+
+    <p class="field-label">Rechtliches</p>
+    <div class="inset-group" id="legalList"></div>
+
+    <p class="field-label">Demo zurücksetzen</p>
+    <div class="inset-group">
+      <button class="row" id="resetDemo" type="button">
+        <span class="row-icon" style="background:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 11.2A1.8 1.8 0 0 0 9.1 20h5.8a1.8 1.8 0 0 0 1.8-1.8L17.5 7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        <span class="row-label">Warenkorb &amp; Favoriten löschen</span>
+        <svg class="chevron" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m1.5 1.5 5 5.5-5 5.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+    </div>
+
+    <p class="footer-note">ELF11 Trikot Shop · Demo-Version 2.0<br>Gebaut nach den Apple Human Interface Guidelines.</p>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Hauptnavigation">
+  <button class="tab" type="button" data-view="shop" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5.5 9 7 4.5h10L18.5 9v10a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19Z" stroke-linejoin="round"></path><path d="M9 12a3 3 0 0 0 6 0" stroke-linecap="round"></path></svg>
+    <span>Shop</span>
+  </button>
+  <button class="tab" type="button" data-view="favs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 20s-7-4.3-9-9c-1.2-2.9.6-6.3 3.8-6.6C9 4.1 10.9 5.3 12 7c1.1-1.7 3-2.9 5.2-2.6 3.2.3 5 3.7 3.8 6.6-2 4.7-9 9-9 9Z" stroke-linejoin="round"></path></svg>
+    <span>Favoriten</span>
+  </button>
+  <button class="tab" type="button" data-view="cart">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 4.5h2.3l2.4 11.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.3L21 8.2H6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9.6" cy="20" r="1.4" fill="currentColor" stroke="none"></circle><circle cx="17.4" cy="20" r="1.4" fill="currentColor" stroke="none"></circle></svg>
+    <span>Warenkorb</span>
+    <span class="tab-badge" id="cartBadge" hidden>0</span>
+  </button>
+  <button class="tab" type="button" data-view="more">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"></circle></svg>
+    <span>Mehr</span>
+  </button>
+</nav>
+
+<div class="sheet-backdrop" id="backdrop"></div>
+
+<section class="sheet" id="productSheet" role="dialog" aria-modal="true" aria-labelledby="productSheetTitle" tabindex="-1">
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head"><h2 id="productSheetTitle">Trikot</h2><button class="sheet-close" type="button" data-close aria-label="Schliessen">✕</button></div>
+  <div class="sheet-body" id="productSheetBody"></div>
+</section>
+
+<section class="sheet" id="checkoutSheet" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" tabindex="-1">
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head"><h2 id="checkoutTitle">Kasse</h2><button class="sheet-close" type="button" data-close aria-label="Schliessen">✕</button></div>
+  <div class="sheet-body" id="checkoutSheetBody"></div>
+</section>
+
+<section class="sheet" id="docSheet" role="dialog" aria-modal="true" aria-labelledby="docTitle" tabindex="-1">
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head"><h2 id="docTitle">Information</h2><button class="sheet-close" type="button" data-close aria-label="Schliessen">✕</button></div>
+  <div class="sheet-body doc-body" id="docBody"></div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="toastMsg"></span></div>
+
+<script>
+"use strict";
+
+/* ===================================================================
+   STRIPE-KONFIGURATION
+   -------------------------------------------------------------------
+   Ohne Konfiguration läuft der Shop im DEMO-MODUS: der komplette
+   Zahlungsfluss wird simuliert, es wird nichts belastet.
+   Testkarten wie bei echtem Stripe:
+     4242 4242 4242 4242 → Zahlung erfolgreich
+     4000 0000 0000 0002 → Karte abgelehnt
+
+   Echte Zahlungen aktivieren – zwei Wege:
+
+   A) OHNE BACKEND (Schnellstart): Stripe Payment Links.
+      Pro Trikot im Stripe-Dashboard einen Payment Link erstellen und
+      hier unter paymentLinks eintragen. Der Kauf-Button leitet dann
+      auf Stripes gehostete Kasse (Karte, Apple Pay, TWINT).
+
+   B) MIT BACKEND: Stripe Checkout Sessions.
+      publishableKey + checkoutEndpoint setzen. Der Endpunkt erhält
+      { items: [...] } und gibt { url } der Checkout Session zurück.
+
+   Schritt für Schritt inkl. Servercode: shop/RECHERCHE.md
+   =================================================================== */
+const STRIPE_CONFIG = {
+  publishableKey: "",
+  checkoutEndpoint: "",
+  paymentLinks: {}
+};
+
+/* ===================== Stammdaten ===================== */
+const SIZES = ["S", "M", "L", "XL", "XXL"];
+const FREE_SHIPPING_FROM = 100;
+const SHIPPING = { economy: { label: "B-Post Economy", desc: "2–3 Werktage", price: 4.90 },
+                   priority: { label: "A-Post Priority", desc: "Nächster Werktag", price: 9.90 } };
+
+const PRODUCTS = [
+  { id: "zuerich-heim-1986", name: "Zürich Retro Heim 1986", sub: "Heimtrikot · Saison 1986", sku: "ELF11-ZRH-86",
+    cat: "retro", price: 79.90, compareAt: null, rating: 4.8, reviews: 127, badge: "Bestseller", pop: 95, isNew: false,
+    stock: { S: 12, M: 8, L: 3, XL: 6, XXL: 0 },
+    design: { base: "#FFFFFF", accent: "#1B4FA0", pattern: "stripes", collar: "#1B4FA0", number: "10", name: "MEIER" },
+    desc: "Das Heimtrikot im Stil der Saison 1986: weiss-blau längsgestreift, mit Schnürkragen-Optik und gewobenem Retro-Emblem. Schwerer Piqué-Stoff wie damals, geschnitten für heute.",
+    reviewList: [
+      { who: "Marco B.", stars: 5, when: "vor 2 Wochen", text: "Stoff ist deutlich schwerer als bei modernen Trikots – genau so soll das sein. Grösse M passt wie erwartet." },
+      { who: "Sandra K.", stars: 5, when: "vor 1 Monat", text: "Als Geschenk gekauft, kam in zwei Tagen. Die Streifen sind gewoben, nicht gedruckt. Top Qualität." }
+    ] },
+  { id: "basel-auswaerts-1989", name: "Basel Auswärts 1989", sub: "Auswärtstrikot · Saison 1989", sku: "ELF11-BAS-89",
+    cat: "retro", price: 79.90, compareAt: 94.90, rating: 4.7, reviews: 89, badge: "Sale", pop: 78, isNew: false,
+    stock: { S: 5, M: 14, L: 9, XL: 2, XXL: 4 },
+    design: { base: "#C8102E", accent: "#123B8F", pattern: "halves", collar: "#FFFFFF", number: "7", name: "FREI" },
+    desc: "Der Auswärtsklassiker der späten Achtziger: rot-blau halbiert, mit weissem Kontrastkragen. Ein Trikot, das man nicht zweimal erklären muss.",
+    reviewList: [
+      { who: "Tobias R.", stars: 5, when: "vor 3 Wochen", text: "Die geteilte Farbe sieht live noch besser aus als auf den Bildern. Sitzt gut, fällt normal aus." },
+      { who: "Nina S.", stars: 4, when: "vor 2 Monaten", text: "Sehr schön verarbeitet. Ich hätte mir den Kragen einen Tick steifer gewünscht, sonst top." }
+    ] },
+  { id: "milano-classico-1994", name: "Milano Classico 1994", sub: "Heimtrikot · Saison 1994", sku: "ELF11-MIL-94",
+    cat: "retro", price: 89.90, compareAt: null, rating: 4.9, reviews: 203, badge: "Bestseller", pop: 99, isNew: false,
+    stock: { S: 0, M: 6, L: 11, XL: 7, XXL: 3 },
+    design: { base: "#C8102E", accent: "#111111", pattern: "stripes", collar: "#FFFFFF", number: "9", name: "BARESI" },
+    desc: "Rot-schwarz gestreift, enger Streifenrhythmus, weisser Polokragen: der Klassiker der Serie-A-Ära 1994 und eines der elegantesten Trikots seiner Zeit.",
+    reviewList: [
+      { who: "Luca D.", stars: 5, when: "vor 1 Woche", text: "Mein drittes Trikot hier und das schönste. Der Kragen liegt sauber, nichts kratzt." },
+      { who: "Peter H.", stars: 5, when: "vor 6 Wochen", text: "Nach fünf Wäschen keine Farbe verloren. Genau das erwarte ich bei dem Preis." }
+    ] },
+  { id: "muenchen-heim-1974", name: "München Heim 1974", sub: "Heimtrikot · WM-Jahr 1974", sku: "ELF11-MUC-74",
+    cat: "retro", price: 84.90, compareAt: null, rating: 4.8, reviews: 156, badge: null, pop: 88, isNew: false,
+    stock: { S: 7, M: 10, L: 8, XL: 5, XXL: 2 },
+    design: { base: "#D2122E", accent: "#FFFFFF", pattern: "solid", collar: "#FFFFFF", number: "5", name: "BECK" },
+    desc: "Ikonisches rotes Heimtrikot im Stil des WM-Jahres 1974. Reduziert, kantig, zeitlos – mit weissen Akzenten an Kragen und Ärmelabschluss.",
+    reviewList: [
+      { who: "Andreas W.", stars: 5, when: "vor 2 Wochen", text: "Schlichtes Rot, sehr sattes Rot. Wirkt hochwertiger als der Preis vermuten lässt." },
+      { who: "Jürg M.", stars: 4, when: "vor 1 Monat", text: "Passt gut, Ärmel könnten für meinen Geschmack einen Zentimeter kürzer sein." }
+    ] },
+  { id: "amsterdam-heim-1995", name: "Amsterdam Heim 1995", sub: "Heimtrikot · Saison 1995", sku: "ELF11-AMS-95",
+    cat: "retro", price: 89.90, compareAt: null, rating: 4.9, reviews: 174, badge: null, pop: 91, isNew: false,
+    stock: { S: 4, M: 9, L: 12, XL: 6, XXL: 1 },
+    design: { base: "#FFFFFF", accent: "#D2122E", pattern: "band", collar: "#111111", number: "4", name: "DE BOER" },
+    desc: "Weiss mit breitem rotem Mittelband – der Champions-League-Jahrgang 1995. Ein Stück Fussballgeschichte, das man anziehen kann.",
+    reviewList: [
+      { who: "Kevin T.", stars: 5, when: "vor 5 Tagen", text: "Das rote Band ist perfekt mittig, sauber vernäht. Sehr zufrieden." },
+      { who: "Michelle A.", stars: 5, when: "vor 3 Monaten", text: "Weiss bleibt auch nach mehreren Wäschen weiss. Kaufe sicher nochmal." }
+    ] },
+  { id: "brasil-tribute-1982", name: "Brasil Tribute 1982", sub: "Nationaltrikot · WM 1982", sku: "ELF11-BRA-82",
+    cat: "national", price: 74.90, compareAt: null, rating: 4.8, reviews: 241, badge: null, pop: 93, isNew: false,
+    stock: { S: 9, M: 15, L: 14, XL: 8, XXL: 5 },
+    design: { base: "#FFD400", accent: "#009739", pattern: "solid", collar: "#009739", number: "10", name: "ZICO" },
+    desc: "Gelb mit grünem Kragen – Hommage an die vielleicht schönste Mannschaft, die nie Weltmeister wurde: die Seleção von 1982.",
+    reviewList: [
+      { who: "Rafael C.", stars: 5, when: "vor 1 Woche", text: "Das Gelb ist genau der richtige Ton, nicht zu grell. Sehr angenehm zu tragen im Sommer." },
+      { who: "Simon L.", stars: 5, when: "vor 2 Monaten", text: "Leichter als die anderen Trikots hier, dafür perfekt für warme Tage." }
+    ] },
+  { id: "azzurri-classic-1990", name: "Azzurri Classic 1990", sub: "Nationaltrikot · WM 1990", sku: "ELF11-ITA-90",
+    cat: "national", price: 74.90, compareAt: null, rating: 4.7, reviews: 118, badge: null, pop: 80, isNew: false,
+    stock: { S: 6, M: 7, L: 4, XL: 0, XXL: 3 },
+    design: { base: "#1B4FA0", accent: "#FFFFFF", pattern: "solid", collar: "#FFFFFF", number: "15", name: "SCHILLACI" },
+    desc: "Azurblau wie die Notti Magiche: das Nationaltrikot im Stil der Heim-WM 1990, mit dezentem weissem V-Kragen.",
+    reviewList: [
+      { who: "Gianni P.", stars: 5, when: "vor 3 Wochen", text: "Das Blau trifft den Ton von 1990 erstaunlich genau. Sehr schöner V-Ausschnitt." },
+      { who: "Daniel F.", stars: 4, when: "vor 5 Wochen", text: "Gute Qualität. Fällt bei mir minim knapper aus als das Milano-Trikot." }
+    ] },
+  { id: "albiceleste-1986", name: "Albiceleste 1986", sub: "Nationaltrikot · WM 1986", sku: "ELF11-ARG-86",
+    cat: "national", price: 84.90, compareAt: null, rating: 4.9, reviews: 312, badge: "Bestseller", pop: 100, isNew: false,
+    stock: { S: 11, M: 13, L: 10, XL: 9, XXL: 6 },
+    design: { base: "#FFFFFF", accent: "#75AADB", pattern: "stripes", collar: "#0A2240", number: "10", name: "DIEGO" },
+    desc: "Himmelblau-weiss gestreift – der Jahrgang der «Hand Gottes» und des Jahrhundert-Solos. Das wohl berühmteste Nationaltrikot überhaupt.",
+    reviewList: [
+      { who: "Martin Z.", stars: 5, when: "vor 4 Tagen", text: "Kam schnell, sass sofort. Die Streifenbreite stimmt mit dem Original überein." },
+      { who: "Ana G.", stars: 5, when: "vor 6 Wochen", text: "Habe lange nach einer guten Retro-Version gesucht. Diese ist die beste, die ich hatte." }
+    ] },
+  { id: "bern-heim-1998", name: "Bern Heim 1998", sub: "Heimtrikot · Saison 1998", sku: "ELF11-BRN-98",
+    cat: "retro", price: 69.90, compareAt: 79.90, rating: 4.6, reviews: 64, badge: "Sale", pop: 60, isNew: false,
+    stock: { S: 8, M: 5, L: 7, XL: 4, XXL: 2 },
+    design: { base: "#FFC900", accent: "#111111", pattern: "hoops", collar: "#111111", number: "11", name: "STREIT" },
+    desc: "Gelb-schwarz quergestreift im Stil der Saison 1998 – laut, stolz und auf hundert Meter erkennbar.",
+    reviewList: [
+      { who: "Res B.", stars: 5, when: "vor 2 Wochen", text: "Gäubschwarz wie es sein muss. Die Querstreifen sind sauber ausgerichtet." },
+      { who: "Fabienne H.", stars: 4, when: "vor 7 Wochen", text: "Schönes Trikot, gutes Preis-Leistungs-Verhältnis. Etwas kürzer geschnitten." }
+    ] },
+  { id: "elf11-pitch-edition", name: "ELF11 Pitch Edition", sub: "Eigenkollektion · Limitiert auf 300", sku: "ELF11-PITCH-01",
+    cat: "special", price: 59.90, compareAt: null, rating: 5.0, reviews: 27, badge: "Neu", pop: 70, isNew: true,
+    stock: { S: 3, M: 4, L: 2, XL: 3, XXL: 1 },
+    design: { base: "#0A7C4A", accent: "#0B3D26", pattern: "chevron", collar: "#FFFFFF", number: "11", name: "ELF11" },
+    desc: "Unsere limitierte Eigenkollektion in Rasengrün mit Chevron-Muster. Jedes Stück nummeriert, nur 300 Stück, exklusiv hier.",
+    reviewList: [
+      { who: "Yves D.", stars: 5, when: "vor 1 Woche", text: "Nummer 47 von 300. Das Chevron-Muster ist subtiler als auf den Fotos – gefällt mir." },
+      { who: "Lea M.", stars: 5, when: "vor 3 Wochen", text: "Endlich mal ein Retro-Look, der nicht von einem Verein kopiert ist. Sehr eigenständig." }
+    ] }
+];
+
+const SIZE_TABLE = [
+  { size: "S", chest: "96–100", length: "68", sleeve: "20" },
+  { size: "M", chest: "100–106", length: "71", sleeve: "21" },
+  { size: "L", chest: "106–112", length: "74", sleeve: "22" },
+  { size: "XL", chest: "112–118", length: "77", sleeve: "23" },
+  { size: "XXL", chest: "118–124", length: "80", sleeve: "24" }
+];
+
+const FAQS = [
+  { q: "Wie lange dauert der Versand?", a: "Mit B-Post Economy 2–3 Werktage, mit A-Post Priority am nächsten Werktag. Wir versenden aus der Schweiz, ab CHF 100 Bestellwert gratis." },
+  { q: "Wie fallen die Trikots aus?", a: "Alle Trikots sind Regular Fit und fallen normal aus. Wer es weiter mag, wählt eine Grösse grösser. Die vollständige Grössentabelle findest du auf jeder Produktseite." },
+  { q: "Kann ich ein Trikot zurückgeben?", a: "Ja, du hast 30 Tage kostenloses Rückgaberecht. Das Trikot muss ungetragen und mit Etikett zurückkommen, die Rückerstattung erfolgt innert 5 Werktagen nach Eingang." },
+  { q: "Welche Zahlungsmittel werden akzeptiert?", a: "Kredit- und Debitkarten, Apple Pay, Google Pay und TWINT. Die Zahlung läuft über Stripe – Kartendaten erreichen unsere Server nie." },
+  { q: "Sind das Originaltrikots?", a: "Unsere Trikots sind eigenständige Retro-Designs im Stil klassischer Jahrgänge, keine Lizenzprodukte der Vereine. Dadurch bleiben sie bezahlbar und in allen Grössen verfügbar." }
+];
+
+/* ===================== Helfer ===================== */
+const $ = (sel) => document.querySelector(sel);
+const CHF = (n) => "CHF " + n.toFixed(2);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const byId = (id) => PRODUCTS.find((p) => p.id === id);
+const starStr = (n) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
+
+/* ===================== Trikot-Grafik ===================== */
+let svgSeq = 0;
+function jerseySVG(d, opts) {
+  const back = opts && opts.back;
+  const uid = "jp" + (++svgSeq);
+  let pattern;
+  if (d.pattern === "stripes") {
+    let bars = "";
+    for (let i = 0; i < 10; i += 2) bars += '<rect x="' + (i * 20) + '" y="0" width="20" height="240" fill="' + d.accent + '"/>';
+    pattern = '<pattern id="' + uid + '" width="200" height="240" patternUnits="userSpaceOnUse"><rect width="200" height="240" fill="' + d.base + '"/>' + bars + "</pattern>";
+  } else if (d.pattern === "hoops") {
+    let bars = "";
+    for (let i = 0; i < 12; i += 2) bars += '<rect x="0" y="' + (i * 20) + '" width="200" height="20" fill="' + d.accent + '"/>';
+    pattern = '<pattern id="' + uid + '" width="200" height="240" patternUnits="userSpaceOnUse"><rect width="200" height="240" fill="' + d.base + '"/>' + bars + "</pattern>";
+  } else if (d.pattern === "halves") {
+    pattern = '<pattern id="' + uid + '" width="200" height="240" patternUnits="userSpaceOnUse"><rect width="100" height="240" fill="' + d.base + '"/><rect x="100" width="100" height="240" fill="' + d.accent + '"/></pattern>';
+  } else if (d.pattern === "band") {
+    pattern = '<pattern id="' + uid + '" width="200" height="240" patternUnits="userSpaceOnUse"><rect width="200" height="240" fill="' + d.base + '"/><rect x="72" width="56" height="240" fill="' + d.accent + '"/></pattern>';
+  } else if (d.pattern === "chevron") {
+    pattern = '<pattern id="' + uid + '" width="200" height="60" patternUnits="userSpaceOnUse"><rect width="200" height="60" fill="' + d.base + '"/><path d="M0 42 L100 12 L200 42 L200 60 L100 30 L0 60 Z" fill="' + d.accent + '" opacity="0.5"/></pattern>';
+  } else {
+    pattern = '<pattern id="' + uid + '" width="200" height="240" patternUnits="userSpaceOnUse"><rect width="200" height="240" fill="' + d.base + '"/></pattern>';
+  }
+  const lightBase = ["#FFFFFF", "#FFD400", "#FFC900"].indexOf(d.base) >= 0;
+  const inkColor = lightBase && (d.pattern === "solid" || d.pattern === "band") ? d.accent : "#FFFFFF";
+  const ink = (d.base === "#FFFFFF" && d.pattern === "stripes") ? "#0A2240" : inkColor;
+  const body = '<path d="M63 14 L84 6 Q100 16 116 6 L137 14 L172 34 L160 74 L138 64 L138 168 Q100 180 62 168 L62 64 L40 74 L28 34 Z" fill="url(#' + uid + ')" stroke="rgba(0,0,0,0.28)" stroke-width="2.5" stroke-linejoin="round"></path>';
+  const collar = '<path d="M84 6 Q100 16 116 6 L120 12 Q100 24 80 12 Z" fill="' + d.collar + '" stroke="rgba(0,0,0,0.25)" stroke-width="1.5"></path>';
+  const seams = '<path d="M28 34 L40 74 L62 64" fill="none" stroke="rgba(0,0,0,0.16)" stroke-width="2"></path><path d="M172 34 L160 74 L138 64" fill="none" stroke="rgba(0,0,0,0.16)" stroke-width="2"></path>';
+  let ornament;
+  if (back) {
+    ornament =
+      '<text x="100" y="58" text-anchor="middle" font-family="Arial Black, Arial Narrow, Arial, sans-serif" font-size="17" font-weight="800" letter-spacing="2" fill="' + ink + '">' + esc(d.name) + "</text>" +
+      '<text x="100" y="140" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="76" font-weight="900" fill="' + ink + '" stroke="rgba(0,0,0,0.22)" stroke-width="1.4">' + esc(d.number) + "</text>";
+  } else {
+    ornament =
+      '<text x="100" y="118" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="50" font-weight="900" fill="' + ink + '" stroke="rgba(0,0,0,0.2)" stroke-width="1">' + esc(d.number) + "</text>" +
+      '<circle cx="70" cy="46" r="8" fill="none" stroke="' + ink + '" stroke-width="2" opacity="0.85"></circle>' +
+      '<text x="70" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="800" fill="' + ink + '" opacity="0.85">11</text>';
+  }
+  return '<svg viewBox="0 0 200 190" role="img" aria-hidden="true" focusable="false"><defs>' + pattern + "</defs>" + body + collar + seams + ornament + "</svg>";
+}
+
+/* ===================== Persistenter Zustand ===================== */
+function readStore(key, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(key) || "null"); return v === null ? fallback : v; }
+  catch (e) { return fallback; }
+}
+function writeStore(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* Private Mode: nur Session */ }
+}
+let cart = readStore("elf11.cart", []);
+let favs = readStore("elf11.favs", []);
+function saveCart() { writeStore("elf11.cart", cart); updateCartUI(); }
+function saveFavs() { writeStore("elf11.favs", favs); }
+
+let currentCat = "all", currentSort = "popular", searchTerm = "";
+let currentProduct = null, selectedSize = null, selectedQty = 1, showBack = false;
+let checkoutStep = 1, agbAccepted = false;
+const order = { email: "", firstname: "", lastname: "", street: "", zip: "", city: "", shipping: "economy" };
+
+/* ===================== Katalog ===================== */
+function totalStock(p) { return SIZES.reduce((sum, s) => sum + (p.stock[s] || 0), 0); }
+
+function visibleProducts() {
+  const q = searchTerm;
+  const list = PRODUCTS.filter((p) =>
+    (currentCat === "all" || p.cat === currentCat) &&
+    (!q || (p.name + " " + p.sub + " " + p.desc).toLowerCase().indexOf(q) >= 0)
+  );
+  const sorters = {
+    priceAsc: (a, b) => a.price - b.price,
+    priceDesc: (a, b) => b.price - a.price,
+    rating: (a, b) => b.rating - a.rating || b.reviews - a.reviews,
+    new: (a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0) || b.pop - a.pop,
+    popular: (a, b) => b.pop - a.pop
+  };
+  return list.sort(sorters[currentSort] || sorters.popular);
+}
+
+function cardHTML(p) {
+  const isFav = favs.indexOf(p.id) >= 0;
+  const badgeClass = p.badge === "Sale" ? "sale" : p.badge === "Neu" ? "new" : "";
+  const badge = p.badge ? '<span class="badge ' + badgeClass + '">' + esc(p.badge) + "</span>" : "";
+  const compare = p.compareAt ? '<span class="compare">' + CHF(p.compareAt) + "</span>" : "";
+  return '<article class="card">' + badge +
+    '<button class="fav-btn' + (isFav ? " active" : "") + '" type="button" data-fav="' + p.id + '" aria-pressed="' + isFav + '" aria-label="' + esc(p.name) + (isFav ? " aus Favoriten entfernen" : " zu Favoriten hinzufügen") + '">' +
+      '<svg viewBox="0 0 24 24" fill="' + (isFav ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.3-9-9c-1.2-2.9.6-6.3 3.8-6.6C9 4.1 10.9 5.3 12 7c1.1-1.7 3-2.9 5.2-2.6 3.2.3 5 3.7 3.8 6.6-2 4.7-9 9-9 9Z" stroke-linejoin="round"></path></svg>' +
+    "</button>" +
+    '<button class="card-open" type="button" data-open="' + p.id + '">' +
+      '<span class="thumb">' + jerseySVG(p.design) + "</span>" +
+      '<span class="meta">' +
+        '<span class="name">' + esc(p.name) + "</span>" +
+        '<span class="rating"><span class="stars" aria-hidden="true">' + starStr(p.rating) + "</span> " + p.rating.toFixed(1) + " (" + p.reviews + ")</span>" +
+        '<span class="price-row"><span class="price">' + CHF(p.price) + "</span>" + compare + "</span>" +
+      "</span>" +
+    "</button></article>";
+}
+
+function renderGrid() {
+  const list = visibleProducts();
+  $("#productGrid").innerHTML = list.map(cardHTML).join("");
+  $("#resultCount").textContent = list.length + (list.length === 1 ? " Trikot" : " Trikots");
+  $("#noResults").hidden = list.length > 0;
+  $("#productGrid").hidden = list.length === 0;
+}
+function renderFavs() {
+  const list = PRODUCTS.filter((p) => favs.indexOf(p.id) >= 0);
+  $("#favGrid").innerHTML = list.map(cardHTML).join("");
+  $("#favEmpty").hidden = list.length > 0;
+}
+function renderFaq() {
+  $("#faqList").innerHTML = FAQS.map((f) =>
+    '<details class="faq-item"><summary>' + esc(f.q) + '</summary><div class="answer">' + esc(f.a) + "</div></details>"
+  ).join("");
+}
+
+/* ===================== Sheet-Verwaltung (Stack, Fokusfalle, Routing) ===================== */
+const sheetStack = [];
+let lastFocused = null;
+
+function focusables(el) {
+  return Array.prototype.filter.call(
+    el.querySelectorAll('button, [href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])'),
+    (n) => !n.disabled && n.offsetParent !== null
+  );
+}
+function openSheetUI(id) {
+  const el = document.getElementById(id);
+  if (sheetStack.indexOf(id) >= 0) return;
+  if (!sheetStack.length) {
+    lastFocused = document.activeElement;
+    document.body.style.overflow = "hidden";
+    $("#appRoot").setAttribute("inert", "");
+    document.querySelector(".tabbar").setAttribute("inert", "");
+  }
+  el.style.zIndex = String(61 + sheetStack.length * 2);
+  $("#backdrop").style.zIndex = String(60 + sheetStack.length * 2);
+  sheetStack.push(id);
+  $("#backdrop").classList.add("open");
+  el.classList.add("open");
+  el.scrollTop = 0;
+  const body = el.querySelector(".sheet-body");
+  if (body) body.scrollTop = 0;
+  window.setTimeout(() => { el.focus(); }, 60);
+}
+function closeTopSheet(fromHistory) {
+  const id = sheetStack.pop();
+  if (!id) return;
+  document.getElementById(id).classList.remove("open");
+  if (!sheetStack.length) {
+    $("#backdrop").classList.remove("open");
+    document.body.style.overflow = "";
+    $("#appRoot").removeAttribute("inert");
+    document.querySelector(".tabbar").removeAttribute("inert");
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  } else {
+    $("#backdrop").style.zIndex = String(60 + (sheetStack.length - 1) * 2);
+  }
+  if (id === "productSheet" && !fromHistory && location.hash.indexOf("#/trikot/") === 0) history.back();
+}
+function closeAllSheets() { while (sheetStack.length) closeTopSheet(true); }
+
+document.addEventListener("keydown", (e) => {
+  if (!sheetStack.length) return;
+  if (e.key === "Escape") { e.preventDefault(); closeTopSheet(false); return; }
+  if (e.key !== "Tab") return;
+  const top = document.getElementById(sheetStack[sheetStack.length - 1]);
+  const items = focusables(top);
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && (document.activeElement === first || document.activeElement === top)) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+$("#backdrop").addEventListener("click", () => closeTopSheet(false));
+document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => closeTopSheet(false)));
+
+/* ===================== Produktdetail ===================== */
+function openProduct(id, push) {
+  const p = byId(id);
+  if (!p) return;
+  currentProduct = p; selectedSize = null; selectedQty = 1; showBack = false;
+  renderProductSheet();
+  if (push !== false) {
+    const target = "#/trikot/" + id;
+    if (location.hash !== target) history.pushState({ product: id }, "", target);
+  }
+  openSheetUI("productSheet");
+}
+
+function renderProductSheet() {
+  const p = currentProduct;
+  const stockTotal = totalStock(p);
+  const compare = p.compareAt
+    ? '<span class="compare">' + CHF(p.compareAt) + '</span><span class="pd-save">−' + Math.round((1 - p.price / p.compareAt) * 100) + "%</span>" : "";
+  const related = PRODUCTS.filter((x) => x.id !== p.id && x.cat === p.cat).slice(0, 4);
+  const relatedFallback = related.length ? related : PRODUCTS.filter((x) => x.id !== p.id).slice(0, 4);
+
+  $("#productSheetTitle").textContent = p.name;
+  $("#productSheetBody").innerHTML =
+    '<div class="pd-hero">' + jerseySVG(p.design, { back: showBack }) +
+      '<div class="view-toggle" role="group" aria-label="Ansicht">' +
+        '<button type="button" data-side="front" aria-pressed="' + (!showBack) + '">Vorne</button>' +
+        '<button type="button" data-side="back" aria-pressed="' + showBack + '">Hinten</button>' +
+      "</div>" +
+    "</div>" +
+    '<h2 class="pd-name">' + esc(p.name) + "</h2>" +
+    '<p class="pd-sub">' + esc(p.sub) + ' · <span class="stars" aria-hidden="true">★</span> ' + p.rating.toFixed(1) + " · " + p.reviews + " Bewertungen</p>" +
+    '<div class="pd-price-row"><span class="pd-price">' + CHF(p.price) + "</span>" + compare + "</div>" +
+    '<p class="pd-vat">inkl. MwSt. · Gratisversand ab ' + CHF(FREE_SHIPPING_FROM) + "</p>" +
+
+    '<div class="label-row"><span class="field-label">Grösse</span><button class="link-btn" type="button" id="sizeGuideBtn">Grössentabelle</button></div>' +
+    '<div class="size-row" id="sizeRow" role="group" aria-label="Grösse wählen">' +
+      SIZES.map((s) => {
+        const n = p.stock[s] || 0;
+        return '<button class="size-btn" type="button" data-size="' + s + '" aria-pressed="false"' + (n === 0 ? " disabled" : "") +
+          ' aria-label="Grösse ' + s + (n === 0 ? ", ausverkauft" : "") + '">' + s + "</button>";
+      }).join("") +
+    "</div>" +
+    '<p class="stock-note" id="stockNote" aria-live="polite">' +
+      (stockTotal > 0 ? "Auf Lager · Lieferung in 1–3 Werktagen" : "Momentan ausverkauft") + "</p>" +
+
+    '<p class="field-label">Menge</p>' +
+    '<div class="qty-stepper" role="group" aria-label="Menge">' +
+      '<button type="button" id="qtyMinus" aria-label="Menge verringern" disabled>−</button>' +
+      '<span class="qty" id="qtyVal" aria-live="polite">1</span>' +
+      '<button type="button" id="qtyPlus" aria-label="Menge erhöhen">+</button>' +
+    "</div>" +
+
+    '<p class="field-label">Beschreibung</p>' +
+    '<p class="pd-desc">' + esc(p.desc) + "</p>" +
+
+    '<p class="field-label">Details</p>' +
+    '<div class="inset-group"><ul class="spec-list" style="padding:2px 14px">' +
+      "<li><span>Artikelnummer</span><span>" + esc(p.sku) + "</span></li>" +
+      "<li><span>Material</span><span>100 % Baumwoll-Piqué, 220 g/m²</span></li>" +
+      "<li><span>Passform</span><span>Regular Fit, fällt normal aus</span></li>" +
+      "<li><span>Pflege</span><span>30 °C, auf links waschen</span></li>" +
+      "<li><span>Lieferung</span><span>1–3 Werktage (Schweiz)</span></li>" +
+      "<li><span>Rückgabe</span><span>30 Tage kostenlos</span></li>" +
+    "</ul></div>" +
+
+    '<p class="field-label">Bewertungen</p>' +
+    '<div class="inset-group">' +
+      p.reviewList.map((r) =>
+        '<div class="review"><div class="head"><span class="who">' + esc(r.who) + ' <span class="verified">· Verifizierter Kauf</span></span><span class="when">' + esc(r.when) + "</span></div>" +
+        '<div class="stars" aria-label="' + r.stars + " von 5 Sternen\">" + starStr(r.stars) + "</div>" +
+        '<p class="text">' + esc(r.text) + "</p></div>"
+      ).join("") +
+    "</div>" +
+
+    '<p class="field-label">Passt auch dazu</p>' +
+    '<div class="rel-scroll">' +
+      relatedFallback.map((r) =>
+        '<button class="rel-card" type="button" data-open="' + r.id + '">' +
+          '<span class="thumb">' + jerseySVG(r.design) + "</span>" +
+          '<span class="rel-meta"><span class="rel-name">' + esc(r.name) + '</span><span class="rel-price">' + CHF(r.price) + "</span></span>" +
+        "</button>"
+      ).join("") +
+    "</div>" +
+
+    '<div class="cta-bar"><button class="btn-primary" type="button" id="addToCartBtn" disabled>' +
+      (stockTotal > 0 ? "Grösse wählen" : "Ausverkauft") + "</button></div>";
+
+  const stepper = () => {
+    $("#qtyVal").textContent = String(selectedQty);
+    $("#qtyMinus").disabled = selectedQty <= 1;
+    const max = selectedSize ? Math.min(5, p.stock[selectedSize]) : 5;
+    $("#qtyPlus").disabled = selectedQty >= max;
+    if (selectedSize) $("#addToCartBtn").textContent = "In den Warenkorb · " + CHF(p.price * selectedQty);
+  };
+
+  $("#sizeRow").addEventListener("click", (e) => {
+    const b = e.target.closest(".size-btn");
+    if (!b || b.disabled) return;
+    document.querySelectorAll("#sizeRow .size-btn").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    selectedSize = b.dataset.size;
+    selectedQty = 1;
+    const n = p.stock[selectedSize];
+    const note = $("#stockNote");
+    note.className = "stock-note " + (n <= 3 ? "low" : "ok");
+    note.textContent = n <= 3 ? "Nur noch " + n + " Stück in Grösse " + selectedSize : "Grösse " + selectedSize + " auf Lager · Lieferung in 1–3 Werktagen";
+    $("#addToCartBtn").disabled = false;
+    stepper();
+  });
+  $("#qtyMinus").addEventListener("click", () => { selectedQty = Math.max(1, selectedQty - 1); stepper(); });
+  $("#qtyPlus").addEventListener("click", () => {
+    const max = selectedSize ? Math.min(5, p.stock[selectedSize]) : 5;
+    selectedQty = Math.min(max, selectedQty + 1); stepper();
+  });
+  $("#addToCartBtn").addEventListener("click", () => {
+    if (!selectedSize) return;
+    addToCart(p.id, selectedSize, selectedQty);
+    closeTopSheet(false);
+    toast(p.name + " (" + selectedSize + ") liegt im Warenkorb");
+  });
+  $("#sizeGuideBtn").addEventListener("click", () => openDoc(DOCS.groessen));
+  $("#productSheetBody").querySelector(".view-toggle").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-side]");
+    if (!b) return;
+    const wantBack = b.dataset.side === "back";
+    if (wantBack === showBack) return;
+    showBack = wantBack;
+    const hero = $("#productSheetBody").querySelector(".pd-hero");
+    const old = hero.querySelector("svg");
+    old.outerHTML = jerseySVG(p.design, { back: showBack });
+    hero.querySelectorAll("button[data-side]").forEach((x) => x.setAttribute("aria-pressed", String((x.dataset.side === "back") === showBack)));
+  });
+}
+
+/* ===================== Warenkorb ===================== */
+function addToCart(id, size, qty) {
+  const line = cart.find((i) => i.id === id && i.size === size);
+  const max = Math.min(5, byId(id).stock[size]);
+  if (line) line.qty = Math.min(max, line.qty + qty);
+  else cart.push({ id: id, size: size, qty: Math.min(max, qty) });
+  saveCart();
+}
+function totals() {
+  let subtotal = 0, count = 0;
+  cart.forEach((i) => {
+    const p = byId(i.id);
+    if (p) { subtotal += p.price * i.qty; count += i.qty; }
+  });
+  /* Gratisversand gilt nur für die Standardzustellung – Priority kostet immer Aufpreis. */
+  const free = count === 0 || (order.shipping === "economy" && subtotal >= FREE_SHIPPING_FROM);
+  const shipping = free ? 0 : SHIPPING[order.shipping].price;
+  return { subtotal: subtotal, shipping: shipping, total: subtotal + shipping, count: count };
+}
+function updateCartUI() {
+  const t = totals();
+  const badge = $("#cartBadge");
+  badge.hidden = t.count === 0;
+  badge.textContent = String(t.count);
+  renderCartView();
+}
+function renderCartView() {
+  const t = totals();
+  $("#cartSubtitle").textContent = t.count === 0
+    ? "Noch nichts drin."
+    : t.count + (t.count === 1 ? " Artikel · " : " Artikel · ") + CHF(t.total);
+
+  if (!cart.length) {
+    $("#cartContent").innerHTML =
+      '<div class="empty-state">' +
+        '<svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 4.5h2.3l2.4 11.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.3L21 8.2H6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9.6" cy="20" r="1.4"></circle><circle cx="17.4" cy="20" r="1.4"></circle></svg>' +
+        "<h3>Dein Warenkorb ist leer</h3>" +
+        "<p>Stöbere im Shop und leg dein Lieblingstrikot hinein.</p>" +
+        '<button class="btn-secondary" style="max-width:240px;margin:20px auto 0" type="button" data-goto="shop">Zum Shop</button>' +
+      "</div>";
+    return;
+  }
+  const items = cart.map((i, idx) => {
+    const p = byId(i.id);
+    if (!p) return "";
+    const max = Math.min(5, p.stock[i.size]);
+    return '<div class="cart-item">' +
+      '<span class="cart-thumb">' + jerseySVG(p.design) + "</span>" +
+      '<div class="cart-info"><div class="name">' + esc(p.name) + "</div>" +
+        '<div class="variant">Grösse ' + esc(i.size) + " · " + CHF(p.price) + "</div>" +
+        '<div class="price">' + CHF(p.price * i.qty) + "</div>" +
+        '<button class="cart-remove" type="button" data-remove="' + idx + '">Entfernen</button></div>' +
+      '<div class="cart-side"><div class="qty-stepper">' +
+        '<button type="button" data-qty="' + idx + '" data-delta="-1" aria-label="Weniger" ' + (i.qty <= 1 ? "disabled" : "") + ">−</button>" +
+        '<span class="qty">' + i.qty + "</span>" +
+        '<button type="button" data-qty="' + idx + '" data-delta="1" aria-label="Mehr" ' + (i.qty >= max ? "disabled" : "") + ">+</button>" +
+      "</div></div></div>";
+  }).join("");
+
+  const missing = Math.max(0, FREE_SHIPPING_FROM - t.subtotal);
+  const pct = Math.min(100, (t.subtotal / FREE_SHIPPING_FROM) * 100);
+  $("#cartContent").innerHTML =
+    '<div class="inset-group">' + items + "</div>" +
+    '<div class="inset-group"><div>' +
+      '<div class="summary-row"><span class="muted">Zwischensumme</span><span>' + CHF(t.subtotal) + "</span></div>" +
+      '<div class="summary-row"><span class="muted">Versand</span><span>' + (t.shipping === 0 ? "Gratis" : CHF(t.shipping)) + "</span></div>" +
+      '<div class="summary-row total"><span>Total</span><span>' + CHF(t.total) + "</span></div>" +
+      '<div class="summary-row" style="padding-top:0"><span class="muted" style="font-size:12.5px">Alle Preise inkl. MwSt.</span><span></span></div>' +
+      '<div class="ship-progress-wrap"><div class="ship-progress"><i style="width:' + pct + '%"></i></div>' +
+        '<p class="ship-progress-note">' + (missing > 0 ? "Noch <b>" + CHF(missing) + "</b> bis zum Gratisversand" : "<b>Gratisversand erreicht</b> – schön gemacht.") + "</p></div>" +
+    "</div></div>" +
+    '<button class="btn-primary" type="button" id="checkoutBtn">Zur Kasse · ' + CHF(t.total) + "</button>" +
+    '<p class="footer-note">Sichere Zahlung mit Stripe · Karte, Apple Pay, TWINT</p>';
+}
+
+/* ===================== Checkout ===================== */
+function startCheckout() {
+  if (!cart.length) return;
+  /* Echtbetrieb A: Payment Link (nur sinnvoll bei einer Position) */
+  if (cart.length === 1 && STRIPE_CONFIG.paymentLinks[cart[0].id]) {
+    window.location.href = STRIPE_CONFIG.paymentLinks[cart[0].id];
+    return;
+  }
+  /* Echtbetrieb B: Checkout Session über eigenes Backend */
+  if (STRIPE_CONFIG.publishableKey && STRIPE_CONFIG.checkoutEndpoint) {
+    toast("Stripe Checkout wird geöffnet …");
+    fetch(STRIPE_CONFIG.checkoutEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: cart.map((i) => ({ id: i.id, size: i.size, qty: i.qty })) })
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d && d.url) window.location.href = d.url; else throw new Error("keine URL"); })
+      .catch(() => toast("Stripe nicht erreichbar – Demo-Kasse wird geöffnet"));
+    return;
+  }
+  checkoutStep = 1; agbAccepted = false;
+  renderCheckout();
+  openSheetUI("checkoutSheet");
+}
+
+function stepsHTML(label) {
+  return '<div class="steps" aria-hidden="true">' +
+    '<div class="step' + (checkoutStep >= 1 ? " done" : "") + '"></div>' +
+    '<div class="step' + (checkoutStep >= 2 ? " done" : "") + '"></div>' +
+    '<div class="step' + (checkoutStep >= 3 ? " done" : "") + '"></div></div>' +
+    '<p class="step-label">Schritt ' + checkoutStep + " von 3 · " + label + "</p>";
+}
+
+function renderCheckout() {
+  const body = $("#checkoutSheetBody");
+  const t = totals();
+
+  if (checkoutStep === 1) {
+    $("#checkoutTitle").textContent = "Lieferadresse";
+    body.innerHTML = stepsHTML("Adresse") +
+      '<div class="form-group"><div class="form-field"><label for="f-email">E-Mail für die Bestätigung</label>' +
+        '<input id="f-email" type="email" autocomplete="email" inputmode="email" placeholder="max@example.ch" value="' + esc(order.email) + '"></div></div>' +
+      '<div class="form-group">' +
+        '<div class="field-split">' +
+          '<div class="form-field"><label for="f-first">Vorname</label><input id="f-first" autocomplete="given-name" placeholder="Max" value="' + esc(order.firstname) + '"></div>' +
+          '<div class="form-field"><label for="f-last">Nachname</label><input id="f-last" autocomplete="family-name" placeholder="Muster" value="' + esc(order.lastname) + '"></div>' +
+        "</div>" +
+        '<div class="form-field"><label for="f-street">Strasse und Nummer</label><input id="f-street" autocomplete="street-address" placeholder="Musterstrasse 1" value="' + esc(order.street) + '"></div>' +
+        '<div class="field-split">' +
+          '<div class="form-field"><label for="f-zip">PLZ</label><input id="f-zip" inputmode="numeric" autocomplete="postal-code" placeholder="8000" value="' + esc(order.zip) + '"></div>' +
+          '<div class="form-field"><label for="f-city">Ort</label><input id="f-city" autocomplete="address-level2" placeholder="Zürich" value="' + esc(order.city) + '"></div>' +
+        "</div>" +
+      "</div>" +
+      '<button class="btn-primary" type="button" id="toStep2">Weiter zum Versand</button>';
+
+    $("#toStep2").addEventListener("click", () => {
+      const map = { email: "f-email", firstname: "f-first", lastname: "f-last", street: "f-street", zip: "f-zip", city: "f-city" };
+      let firstBad = null;
+      Object.keys(map).forEach((key) => {
+        const el = document.getElementById(map[key]);
+        const val = el.value.trim();
+        order[key] = val;
+        let ok = val.length > 0;
+        if (key === "email") ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val);
+        if (key === "zip") ok = /^\d{4,5}$/.test(val);
+        el.closest(".form-field").classList.toggle("invalid", !ok);
+        if (!ok && !firstBad) firstBad = el;
+      });
+      if (firstBad) { firstBad.focus(); toast("Bitte die markierten Felder prüfen"); return; }
+      checkoutStep = 2; renderCheckout();
+    });
+
+  } else if (checkoutStep === 2) {
+    $("#checkoutTitle").textContent = "Versand";
+    const freeNow = t.subtotal >= FREE_SHIPPING_FROM;
+    body.innerHTML = stepsHTML("Versandart") +
+      '<div class="form-group" id="shipOptions">' +
+        Object.keys(SHIPPING).map((key) => {
+          const s = SHIPPING[key];
+          const priceLabel = (freeNow && key === "economy") ? "Gratis" : CHF(s.price);
+          return '<button class="ship-option" type="button" data-ship="' + key + '" aria-pressed="' + (order.shipping === key) + '">' +
+            '<span class="radio" aria-hidden="true"></span>' +
+            '<span class="ship-info"><span class="t">' + s.label + '</span><span class="d">' + s.desc + "</span></span>" +
+            '<span class="ship-price">' + priceLabel + "</span></button>";
+        }).join("") +
+      "</div>" +
+      '<div class="inset-group"><div>' +
+        '<div class="summary-row"><span class="muted">Lieferung an</span><span>' + esc(order.firstname + " " + order.lastname) + "</span></div>" +
+        '<div class="summary-row"><span class="muted">Adresse</span><span>' + esc(order.street + ", " + order.zip + " " + order.city) + "</span></div>" +
+      "</div></div>" +
+      '<button class="btn-primary" type="button" id="toStep3">Weiter zur Zahlung</button>' +
+      '<button class="btn-plain" type="button" id="backTo1">Zurück zur Adresse</button>';
+
+    $("#shipOptions").addEventListener("click", (e) => {
+      const b = e.target.closest(".ship-option");
+      if (!b) return;
+      order.shipping = b.dataset.ship;
+      renderCheckout();
+      updateCartUI();
+    });
+    $("#toStep3").addEventListener("click", () => { checkoutStep = 3; renderCheckout(); });
+    $("#backTo1").addEventListener("click", () => { checkoutStep = 1; renderCheckout(); });
+
+  } else {
+    $("#checkoutTitle").textContent = "Zahlung";
+    const t3 = totals();
+    body.innerHTML = stepsHTML("Zahlung") +
+      '<div class="demo-note">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M9 3.5h6M10.5 3.5v6.2L5.8 18a2 2 0 0 0 1.7 3h9a2 2 0 0 0 1.7-3l-4.7-8.3V3.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>' +
+        '<span><span class="hd">Stripe Demo-Modus.</span> Es wird nichts belastet. Testkarte <b>4242 4242 4242 4242</b>, Datum in der Zukunft, beliebiger CVC. Mit <b>4000 0000 0000 0002</b> siehst du eine abgelehnte Karte.</span>' +
+      "</div>" +
+      '<div class="inset-group"><div>' +
+        '<div class="summary-row"><span class="muted">Zwischensumme</span><span>' + CHF(t3.subtotal) + "</span></div>" +
+        '<div class="summary-row"><span class="muted">Versand · ' + SHIPPING[order.shipping].label + "</span><span>" + (t3.shipping === 0 ? "Gratis" : CHF(t3.shipping)) + "</span></div>" +
+        '<div class="summary-row total"><span>Zu zahlen</span><span>' + CHF(t3.total) + "</span></div>" +
+      "</div></div>" +
+
+      '<div class="pay-tiles">' +
+        '<button class="applepay-btn" type="button" id="applePayBtn" aria-label="Mit Apple Pay bezahlen">' +
+          '<svg class="apple-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 12.54c-.02-2.1 1.72-3.1 1.8-3.15-.98-1.43-2.5-1.63-3.04-1.65-1.29-.13-2.52.76-3.18.76-.66 0-1.67-.74-2.75-.72-1.41.02-2.72.82-3.44 2.08-1.47 2.55-.38 6.32 1.05 8.39.7 1.01 1.53 2.15 2.62 2.11 1.05-.04 1.45-.68 2.72-.68s1.63.68 2.74.66c1.13-.02 1.85-1.03 2.54-2.05.8-1.17 1.13-2.31 1.15-2.37-.03-.01-2.2-.84-2.21-3.38ZM15.1 6.3c.58-.7.97-1.68.86-2.65-.83.03-1.84.55-2.44 1.25-.53.62-1 1.61-.87 2.56.93.07 1.87-.47 2.45-1.16Z"/></svg>' +
+          "<span>Pay</span></button>" +
+        '<button class="twint-btn" type="button" id="twintBtn"><span class="tw-dot" aria-hidden="true"></span><span>Mit TWINT bezahlen</span></button>' +
+      "</div>" +
+      '<div class="pay-divider">oder mit Karte</div>' +
+      '<div class="form-group">' +
+        '<div class="form-field"><label for="cc-num">Kartennummer</label><input id="cc-num" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19"></div>' +
+        '<div class="field-split">' +
+          '<div class="form-field"><label for="cc-exp">Gültig bis</label><input id="cc-exp" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/JJ" maxlength="5"></div>' +
+          '<div class="form-field"><label for="cc-cvc">CVC</label><input id="cc-cvc" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4"></div>' +
+        "</div>" +
+      "</div>" +
+      '<div class="form-group"><button class="checkbox-row" type="button" id="agbBtn" aria-pressed="' + agbAccepted + '">' +
+        '<span class="checkbox" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="m4.5 12.5 5 5 10-11" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>' +
+        '<span class="cb-text">Ich habe die <u>AGB</u> und die <u>Datenschutzerklärung</u> gelesen und akzeptiere sie.</span>' +
+      "</button></div>" +
+      '<div class="card-error" id="cardError" role="alert"></div>' +
+      '<button class="btn-primary" type="button" id="payBtn">' + CHF(t3.total) + " bezahlen</button>" +
+      '<button class="btn-plain" type="button" id="backTo2">Zurück zum Versand</button>' +
+      '<p class="footer-note">Im Livebetrieb verarbeitet Stripe die Zahlung.<br>Kartendaten erreichen unseren Server nie.</p>';
+
+    const num = $("#cc-num"), exp = $("#cc-exp"), cvc = $("#cc-cvc");
+    num.addEventListener("input", () => {
+      num.value = num.value.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+    });
+    exp.addEventListener("input", () => {
+      const v = exp.value.replace(/\D/g, "").slice(0, 4);
+      exp.value = v.length > 2 ? v.slice(0, 2) + "/" + v.slice(2) : v;
+    });
+    cvc.addEventListener("input", () => { cvc.value = cvc.value.replace(/\D/g, "").slice(0, 4); });
+    $("#agbBtn").addEventListener("click", () => {
+      agbAccepted = !agbAccepted;
+      $("#agbBtn").setAttribute("aria-pressed", String(agbAccepted));
+      if (agbAccepted) $("#cardError").textContent = "";
+    });
+    $("#applePayBtn").addEventListener("click", () => pay("applepay"));
+    $("#twintBtn").addEventListener("click", () => pay("twint"));
+    $("#payBtn").addEventListener("click", () => pay("card"));
+    $("#backTo2").addEventListener("click", () => { checkoutStep = 2; renderCheckout(); });
+  }
+}
+
+function luhnOK(digits) {
+  if (digits.length < 13) return false;
+  let sum = 0, alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = Number(digits.charAt(i));
+    if (alt) { n *= 2; if (n > 9) n -= 9; }
+    sum += n; alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
+function pay(method) {
+  const err = $("#cardError");
+  err.textContent = "";
+  if (!agbAccepted) {
+    err.textContent = "Bitte AGB und Datenschutzerklärung bestätigen.";
+    $("#agbBtn").focus();
+    return;
+  }
+  let declined = false;
+  if (method === "card") {
+    const digits = $("#cc-num").value.replace(/\D/g, "");
+    const expV = $("#cc-exp").value;
+    const cvcV = $("#cc-cvc").value;
+    if (!luhnOK(digits)) { err.textContent = "Diese Kartennummer stimmt nicht. Für die Demo: 4242 4242 4242 4242."; $("#cc-num").focus(); return; }
+    const m = expV.match(/^(\d{2})\/(\d{2})$/);
+    if (!m || Number(m[1]) < 1 || Number(m[1]) > 12) { err.textContent = "Ablaufdatum als MM/JJ eingeben, zum Beispiel 12/28."; $("#cc-exp").focus(); return; }
+    const now = new Date();
+    const expDate = new Date(2000 + Number(m[2]), Number(m[1]), 0);
+    if (expDate < now) { err.textContent = "Diese Karte ist abgelaufen."; $("#cc-exp").focus(); return; }
+    if (cvcV.length < 3) { err.textContent = "CVC eingeben – die 3 Ziffern auf der Kartenrückseite."; $("#cc-cvc").focus(); return; }
+    if (digits === "4000000000000002") declined = true;
+  }
+
+  const btn = method === "applepay" ? $("#applePayBtn") : method === "twint" ? $("#twintBtn") : $("#payBtn");
+  const allBtns = [$("#applePayBtn"), $("#twintBtn"), $("#payBtn")];
+  const labels = allBtns.map((b) => b.innerHTML);
+  allBtns.forEach((b) => { b.disabled = true; });
+  btn.innerHTML = '<span class="spinner" aria-hidden="true"></span><span class="visually-hidden">Zahlung wird verarbeitet</span>';
+
+  window.setTimeout(() => {
+    if (declined) {
+      allBtns.forEach((b, i) => { b.disabled = false; b.innerHTML = labels[i]; });
+      err.textContent = "Die Karte wurde abgelehnt (Demo). Mit 4242 4242 4242 4242 klappt es.";
+      return;
+    }
+    showConfirmation(method);
+  }, method === "twint" ? 2100 : 1600);
+}
+
+function showConfirmation(method) {
+  const t = totals();
+  const orderNo = "E11-" + String(Math.floor(100000 + Math.random() * 900000));
+  const eta = new Date(Date.now() + (order.shipping === "priority" ? 1 : 3) * 86400000);
+  const etaStr = eta.toLocaleDateString("de-CH", { weekday: "long", day: "numeric", month: "long" });
+  const methodLabel = method === "applepay" ? "Apple Pay" : method === "twint" ? "TWINT" : "Karte";
+  const lines = cart.map((i) => {
+    const p = byId(i.id);
+    return p ? "<li><span>" + i.qty + "× " + esc(p.name) + " (" + esc(i.size) + ")</span><span>" + CHF(p.price * i.qty) + "</span></li>" : "";
+  }).join("");
+
+  $("#checkoutTitle").textContent = "Bestellung bestätigt";
+  $("#checkoutSheetBody").innerHTML =
+    '<div class="success-wrap">' +
+      '<div class="success-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m4.5 12.5 5 5 10-11" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>' +
+      '<h2 class="pd-name">Danke, ' + esc(order.firstname || "Fussballfan") + "!</h2>" +
+      '<p class="pd-sub">Deine Bestellung ist eingegangen.</p>' +
+      '<p class="order-no">Bestellnummer <b>' + orderNo + "</b><br>Bestätigung an " + esc(order.email) + "<br>Voraussichtlich bei dir am <b>" + etaStr + "</b></p>" +
+    "</div>" +
+    '<p class="field-label">Zusammenfassung</p>' +
+    '<div class="inset-group"><ul class="spec-list" style="padding:2px 14px">' + lines +
+      "<li><span>Versand · " + SHIPPING[order.shipping].label + "</span><span>" + (t.shipping === 0 ? "Gratis" : CHF(t.shipping)) + "</span></li>" +
+      "<li><span>Bezahlt mit</span><span>" + methodLabel + "</span></li>" +
+      '<li style="font-weight:700"><span>Total</span><span>' + CHF(t.total) + "</span></li>" +
+    "</ul></div>" +
+    '<button class="btn-primary" type="button" id="continueShopping">Weiter einkaufen</button>';
+
+  $("#continueShopping").addEventListener("click", () => { closeTopSheet(false); switchView("shop"); });
+  cart = [];
+  saveCart();
+}
+
+/* ===================== Dokumente (Info & Rechtliches) ===================== */
+const DOCS = {
+  groessen: { title: "Grössentabelle", html:
+    "<p>Alle Angaben in Zentimetern, gemessen am flach liegenden Trikot. Die Trikots sind Regular Fit und fallen normal aus – wer es weiter mag, nimmt eine Grösse grösser.</p>" +
+    '<div class="table-wrap"><table class="size-table"><thead><tr><th>Grösse</th><th>Brustweite</th><th>Länge</th><th>Ärmel</th></tr></thead><tbody>' +
+    SIZE_TABLE.map((r) => "<tr><td><b>" + r.size + "</b></td><td>" + r.chest + "</td><td>" + r.length + "</td><td>" + r.sleeve + "</td></tr>").join("") +
+    "</tbody></table></div>" +
+    "<h3>Unsicher zwischen zwei Grössen?</h3><p>Miss ein Trikot, das dir gut passt, flach liegend von Achsel zu Achsel und verdopple den Wert. Dieser Wert entspricht der Brustweite in der Tabelle.</p>" },
+
+  seo: { title: "SEO-Ausbau", html:
+    "<p>Diese Demo hat den technischen SEO-Grundausbau bereits vollständig eingebaut.</p>" +
+    "<h3>Umgesetzt</h3><ul>" +
+    "<li><b>Title und Meta Description</b> mit Kauf-Keyword und Schweiz-Bezug</li>" +
+    "<li><b>Fünf JSON-LD-Blöcke</b>: OnlineStore, WebSite mit SearchAction, ItemList mit zehn Produkten (Preis, Währung, Verfügbarkeit, Versand, Rückgabefrist, Bewertungen), BreadcrumbList und FAQPage</li>" +
+    "<li>Alle strukturierten Daten stehen <b>statisch im HTML</b> – Such- und KI-Crawler lesen sie ohne JavaScript</li>" +
+    "<li><b>Open Graph und Twitter Cards</b> für Vorschauen beim Teilen</li>" +
+    "<li><b>Canonical-URL, robots.txt und sitemap.xml</b></li>" +
+    "<li><b>Core Web Vitals</b>: eine einzige Datei, kein externer Request, keine Web-Fonts</li>" +
+    "<li>Semantisches HTML mit genau einer H1, beschreibenden Aria-Labels, sichtbarem Fokus</li>" +
+    "<li>Sichtbarer FAQ-Bereich, der zum FAQPage-Schema passt</li>" +
+    "</ul>" +
+    "<h3>Vor dem Livegang</h3><ul>" +
+    "<li>Eigene Domain eintragen und alle <code>shop.example.ch</code>-Platzhalter ersetzen</li>" +
+    "<li>Pro Trikot eine eigene statische Produktseite mit eigenem Product-Schema – Hash-Routen werden nicht als eigene Seiten indexiert</li>" +
+    "<li>Echte Produktfotos mit sprechenden Dateinamen und Alt-Texten, dazu og:image pro Produkt</li>" +
+    "<li>Google Search Console einrichten, Sitemap einreichen, Rich-Results-Test laufen lassen</li>" +
+    "<li>Kategorietexte und Ratgeber-Artikel für Longtail-Suchanfragen</li>" +
+    "<li><b>Nur echte Bewertungen</b> auszeichnen – erfundene Ratings verstossen gegen Google-Richtlinien und das UWG. Die Demo-Bewertungen vor dem Livegang ersetzen.</li>" +
+    "</ul><p>Ausführliche Recherche mit Quellen: <code>shop/RECHERCHE.md</code></p>" },
+
+  stripe: { title: "Stripe-Anbindung", html:
+    "<p>Der Checkout läuft im <b>Demo-Modus</b>: der Zahlungsfluss ist vollständig nachgebaut, es wird nichts belastet. Der Code ist so vorbereitet, dass echtes Stripe in wenigen Minuten aktiv ist.</p>" +
+    "<h3>Weg A – ohne Server</h3><ul>" +
+    "<li>Im Stripe-Dashboard pro Trikot einen <b>Payment Link</b> erstellen</li>" +
+    "<li>Links in <code>STRIPE_CONFIG.paymentLinks</code> eintragen</li>" +
+    "<li>Der Kauf-Button leitet auf Stripes gehostete Kasse – inklusive Karte, Apple Pay, Google Pay und TWINT</li>" +
+    "<li>Ideal für statisches Hosting wie GitHub Pages</li>" +
+    "</ul>" +
+    "<h3>Weg B – mit eigenem Backend</h3><ul>" +
+    "<li>Server-Endpunkt erstellt aus dem Warenkorb eine <b>Checkout Session</b></li>" +
+    "<li><code>publishableKey</code> und <code>checkoutEndpoint</code> in <code>STRIPE_CONFIG</code> setzen</li>" +
+    "<li>Webhook auf <code>checkout.session.completed</code> für Bestellbestätigung und Versand</li>" +
+    "<li>Nötig für Warenkörbe mit mehreren Artikeln und für Lagerverwaltung</li>" +
+    "</ul>" +
+    "<h3>Testkarten</h3><ul>" +
+    "<li><b>4242 4242 4242 4242</b> – Zahlung erfolgreich</li>" +
+    "<li><b>4000 0000 0000 0002</b> – Karte abgelehnt</li>" +
+    "</ul><p>Beispiel-Servercode und Schritt-für-Schritt-Anleitung: <code>shop/RECHERCHE.md</code></p>" },
+
+  versand: { title: "Versand und Rückgabe", html:
+    "<h3>Versand</h3><ul>" +
+    "<li>B-Post Economy: CHF 4.90, 2–3 Werktage</li>" +
+    "<li>A-Post Priority: CHF 9.90, nächster Werktag</li>" +
+    "<li><b>Gratisversand ab CHF 100</b> Bestellwert</li>" +
+    "<li>Versand aus der Schweiz, alle Preise inklusive MwSt.</li>" +
+    "</ul>" +
+    "<h3>Rückgabe</h3><ul>" +
+    "<li>30 Tage kostenloses Rückgaberecht, freiwillig gewährt</li>" +
+    "<li>Trikot ungetragen und mit Etikett zurücksenden</li>" +
+    "<li>Rückerstattung innert 5 Werktagen nach Eingang</li>" +
+    "</ul>" +
+    "<h3>Kontakt</h3><p>Fragen zur Bestellung: hallo@shop.example.ch – wir antworten innert eines Werktags.</p>" },
+
+  impressum: { title: "Impressum", html:
+    "<p><b>ELF11 Trikot Shop</b> (Demo)<br>Musterfirma GmbH<br>Musterstrasse 1<br>8000 Zürich, Schweiz</p>" +
+    "<p>E-Mail: hallo@shop.example.ch<br>UID: CHE-000.000.000 (Platzhalter)</p>" +
+    "<h3>Hinweis für den Livebetrieb</h3>" +
+    "<p>Nach Schweizer UWG ist ein Impressum Pflicht: vollständige Firma beziehungsweise Vor- und Nachname, physische Adresse (kein reines Postfach) und eine Kontaktmöglichkeit. Diese Platzhalter vor dem Livegang durch echte Angaben ersetzen.</p>" },
+
+  datenschutz: { title: "Datenschutz", html:
+    "<p>Platzhalter für die Demo. Das revidierte Schweizer Datenschutzgesetz (revDSG, in Kraft seit September 2023) verlangt für den Livebetrieb eine vollständige Datenschutzerklärung mit mindestens diesen Punkten:</p><ul>" +
+    "<li>Welche Daten erhoben werden – Bestell-, Zahlungs- und Nutzungsdaten – und zu welchem Zweck</li>" +
+    "<li>Weitergabe an Dritte: Stripe für die Zahlung, Versanddienstleister, Hosting</li>" +
+    "<li>Datenübermittlung ins Ausland, etwa an Stripe in den USA, und die Rechtsgrundlage dafür</li>" +
+    "<li>Rechte der betroffenen Personen: Auskunft, Berichtigung, Löschung</li>" +
+    "<li>Kontaktangaben der verantwortlichen Person</li>" +
+    "</ul><p>In dieser Demo verlassen keine Daten den Browser: Warenkorb und Favoriten liegen ausschliesslich im lokalen Speicher deines Geräts.</p>" },
+
+  agb: { title: "AGB", html:
+    "<p>Platzhalter für die Demo. Für einen Schweizer Trikot-Shop gehören diese Punkte in die AGB:</p><ul>" +
+    "<li>Vertragsabschluss: Bestellung ist der Antrag, die Bestätigung die Annahme</li>" +
+    "<li>Preise inklusive MwSt. und akzeptierte Zahlungsmittel</li>" +
+    "<li>Lieferung, Lieferfristen und Gefahrenübergang</li>" +
+    "<li><b>Rückgaberecht:</b> In der Schweiz gibt es im Onlinehandel kein gesetzliches Widerrufsrecht – ein freiwilliges Rückgaberecht wie unsere 30 Tage muss ausdrücklich geregelt sein</li>" +
+    "<li>Gewährleistung und Haftung</li>" +
+    "<li>Anwendbares Recht und Gerichtsstand</li>" +
+    "</ul><p>AGB sind in der Schweiz nicht zwingend, aber dringend empfohlen. Sie müssen vor dem Kauf leicht zugänglich sein und im Checkout bestätigt werden – genau das macht die Checkbox im Zahlungsschritt.</p>" +
+    "<p>Wer auch in die EU verkauft, muss zusätzlich EU-Recht beachten: 14 Tage Widerrufsrecht, Button-Lösung und gegebenenfalls die EU-Mehrwertsteuer.</p>" }
+};
+
+function openDoc(doc) {
+  $("#docTitle").textContent = doc.title;
+  $("#docBody").innerHTML = doc.html;
+  openSheetUI("docSheet");
+}
+function renderMoreLists() {
+  const rowHTML = (key, attr, title) =>
+    '<button class="row" type="button" data-' + attr + '="' + key + '"><span class="row-label">' + esc(title) + "</span>" +
+    '<svg class="chevron" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m1.5 1.5 5 5.5-5 5.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>';
+  $("#infoList").innerHTML = ["versand", "groessen", "seo", "stripe"].map((k) => rowHTML(k, "doc", DOCS[k].title)).join("");
+  $("#legalList").innerHTML = ["impressum", "datenschutz", "agb"].map((k) => rowHTML(k, "doc", DOCS[k].title)).join("");
+}
+
+/* ===================== Navigation ===================== */
+function switchView(view) {
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  const el = document.getElementById("view-" + view);
+  if (el) el.classList.add("active");
+  document.querySelectorAll(".tab").forEach((t) => {
+    if (t.dataset.view === view) t.setAttribute("aria-current", "page");
+    else t.removeAttribute("aria-current");
+  });
+  const titles = { shop: "Trikots", favs: "Favoriten", cart: "Warenkorb", more: "Mehr" };
+  $("#navTitle").textContent = titles[view] || "";
+  if (view === "favs") renderFavs();
+  if (view === "cart") renderCartView();
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function routeFromHash() {
+  const h = location.hash;
+  const prod = h.match(/^#\/trikot\/(.+)$/);
+  if (prod && byId(prod[1])) { switchView("shop"); openProduct(prod[1], false); return; }
+  const cat = h.match(/^#\/kategorie\/(.+)$/);
+  if (cat) {
+    const btn = document.querySelector('#catSeg button[data-cat="' + cat[1] + '"]');
+    if (btn) { switchView("shop"); setCategory(cat[1]); }
+  }
+}
+window.addEventListener("popstate", () => {
+  if (sheetStack.indexOf("productSheet") >= 0) {
+    while (sheetStack.length) closeTopSheet(true);
+  }
+  routeFromHash();
+});
+
+function setCategory(cat) {
+  currentCat = cat;
+  document.querySelectorAll("#catSeg button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.cat === cat)));
+  renderGrid();
+}
+
+/* ===================== Globale Events ===================== */
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => switchView(t.dataset.view)));
+
+document.body.addEventListener("click", (e) => {
+  const open = e.target.closest("[data-open]");
+  if (open) {
+    if (sheetStack.indexOf("productSheet") >= 0) {
+      currentProduct = byId(open.dataset.open);
+      selectedSize = null; selectedQty = 1; showBack = false;
+      renderProductSheet();
+      history.replaceState({ product: open.dataset.open }, "", "#/trikot/" + open.dataset.open);
+      $("#productSheet").querySelector(".sheet-body").scrollTop = 0;
+    } else {
+      openProduct(open.dataset.open, true);
+    }
+    return;
+  }
+  const fav = e.target.closest("[data-fav]");
+  if (fav) {
+    const id = fav.dataset.fav;
+    const i = favs.indexOf(id);
+    if (i >= 0) { favs.splice(i, 1); toast("Aus Favoriten entfernt"); }
+    else { favs.push(id); toast("Zu Favoriten hinzugefügt"); }
+    saveFavs(); renderGrid(); renderFavs();
+    return;
+  }
+  const rm = e.target.closest("[data-remove]");
+  if (rm) { cart.splice(Number(rm.dataset.remove), 1); saveCart(); toast("Artikel entfernt"); return; }
+  const q = e.target.closest("[data-qty]");
+  if (q) {
+    const line = cart[Number(q.dataset.qty)];
+    if (line) {
+      const max = Math.min(5, byId(line.id).stock[line.size]);
+      line.qty = Math.max(1, Math.min(max, line.qty + Number(q.dataset.delta)));
+      saveCart();
+    }
+    return;
+  }
+  const goto = e.target.closest("[data-goto]");
+  if (goto) { switchView(goto.dataset.goto); return; }
+  const doc = e.target.closest("[data-doc]");
+  if (doc) { openDoc(DOCS[doc.dataset.doc]); return; }
+  if (e.target.closest("#checkoutBtn")) { startCheckout(); return; }
+});
+
+$("#searchInput").addEventListener("input", (e) => {
+  searchTerm = e.target.value.trim().toLowerCase();
+  $("#searchClear").hidden = searchTerm.length === 0;
+  renderGrid();
+});
+$("#searchClear").addEventListener("click", () => {
+  $("#searchInput").value = ""; searchTerm = ""; $("#searchClear").hidden = true;
+  renderGrid(); $("#searchInput").focus();
+});
+$("#catSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b) setCategory(b.dataset.cat);
+});
+$("#sortSelect").addEventListener("change", (e) => { currentSort = e.target.value; renderGrid(); });
+$("#resetDemo").addEventListener("click", () => {
+  cart = []; favs = [];
+  saveCart(); saveFavs(); renderGrid(); renderFavs();
+  toast("Demo zurückgesetzt");
+});
+
+window.addEventListener("scroll", () => {
+  $("#navbar").classList.toggle("condensed", window.scrollY > 40);
+}, { passive: true });
+
+$("#themeToggle").addEventListener("click", () => {
+  const root = document.documentElement;
+  const cur = root.getAttribute("data-theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  let next;
+  if (!cur) next = systemDark ? "light" : "dark";
+  else if (cur === "light") next = "dark";
+  else next = null;
+  if (next) { root.setAttribute("data-theme", next); writeStore("elf11.theme", next); }
+  else { root.removeAttribute("data-theme"); writeStore("elf11.theme", null); }
+  toast(next === "dark" ? "Dunkles Erscheinungsbild" : next === "light" ? "Helles Erscheinungsbild" : "Systemeinstellung");
+});
+
+let toastTimer = null;
+function toast(msg) {
+  $("#toastMsg").textContent = msg;
+  $("#toast").classList.add("show");
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => $("#toast").classList.remove("show"), 2400);
+}
+
+/* ===================== Start ===================== */
+(function init() {
+  const savedTheme = readStore("elf11.theme", null);
+  if (savedTheme === "dark" || savedTheme === "light") document.documentElement.setAttribute("data-theme", savedTheme);
+  $("#stripeStatus").textContent =
+    (STRIPE_CONFIG.publishableKey || Object.keys(STRIPE_CONFIG.paymentLinks).length) ? "Konfiguriert" : "Demo-Modus";
+  renderGrid();
+  renderFavs();
+  renderFaq();
+  renderMoreLists();
+  updateCartUI();
+  routeFromHash();
+})();
+</script>
+</body>
+</html>
