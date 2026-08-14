@@ -1,0 +1,2811 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<!-- ==================================================================
+     RAUMWERK — Grundriss hochladen, ganze Wohnung einrichten
+     ------------------------------------------------------------------
+     Eine einzige, self-contained Datei: keine externen Requests, kein
+     Build, kein Server. Doppelklick genügt.
+
+     Ablauf: Plan hochladen → Räume werden automatisch erkannt →
+     Stil & Optionen wählen → pro Raum Visualisierung, möblierter
+     Grundriss, Moodboard und Möbelliste mit Budget.
+
+     Optional: eigener API-Key für einen fotorealistischen KI-Render.
+     Der Key bleibt im Browser (localStorage), er wird nie an uns
+     gesendet. Ohne Key läuft die App vollständig.
+     Recherche & Quellen: raumdesign/RECHERCHE.md
+     ================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RAUMWERK – Grundriss hochladen &amp; Wohnung einrichten lassen</title>
+
+<meta name="description" content="Grundriss hochladen, Stil wählen, fertige Einrichtung erhalten: möblierter Plan, Raumansicht, Moodboard und Möbelliste mit Budget für jeden Raum der Wohnung.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://colinrenggli-sudo.github.io/WebAppKurzbefehl/raumdesign/">
+<meta name="theme-color" content="#F6F4F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141210" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RAUMWERK">
+<meta name="format-detection" content="telephone=no">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RAUMWERK">
+<meta property="og:title" content="RAUMWERK – Wohnung einrichten aus dem Grundriss">
+<meta property="og:description" content="Plan hochladen, Stil wählen, komplette Einrichtung mit Möbelliste und Budget erhalten.">
+<meta property="og:locale" content="de_CH">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B4744A'/%3E%3Cpath d='M14 44V22l18-9 18 9v22' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M26 44V32h12v12' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+
+<style>
+/* ==================================================================
+   1 · Design-Tokens
+   Warme, redaktionelle Palette statt reinem Grau — passt zum Thema
+   Wohnen. Hell und Dunkel automatisch, manuell umschaltbar.
+   ================================================================== */
+:root{
+  --bg:#F6F4F1; --bg-2:#EFEBE6; --card:#FFFFFF; --card-2:#FBF9F7;
+  --txt:#1C1917; --txt-2:#57534E; --txt-3:#8A8078;
+  --sep:#E4DED7; --sep-2:#D6CEC4;
+  --tint:#B4744A; --tint-soft:#F0E2D8; --tint-txt:#8C5432;
+  --ok:#3F7A55; --ok-soft:#E3F0E7;
+  --warn:#9A6B15; --warn-soft:#F8EDD6;
+  --shadow:0 1px 2px rgba(28,25,23,.05), 0 8px 24px -12px rgba(28,25,23,.18);
+  --shadow-lg:0 2px 6px rgba(28,25,23,.06), 0 24px 60px -24px rgba(28,25,23,.28);
+  --r-s:10px; --r-m:16px; --r-l:22px; --r-xl:28px;
+  --ff:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --fd:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141210; --bg-2:#1C1917; --card:#211D1A; --card-2:#272220;
+    --txt:#F5F1EC; --txt-2:#B5ADA5; --txt-3:#857D75;
+    --sep:#332D29; --sep-2:#443C36;
+    --tint:#D9946A; --tint-soft:#3A2A20; --tint-txt:#E8B08C;
+    --ok:#74C08D; --ok-soft:#1E2E23;
+    --warn:#E0B45E; --warn-soft:#332818;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.45), 0 24px 60px -24px rgba(0,0,0,.75);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141210; --bg-2:#1C1917; --card:#211D1A; --card-2:#272220;
+  --txt:#F5F1EC; --txt-2:#B5ADA5; --txt-3:#857D75;
+  --sep:#332D29; --sep-2:#443C36;
+  --tint:#D9946A; --tint-soft:#3A2A20; --tint-txt:#E8B08C;
+  --ok:#74C08D; --ok-soft:#1E2E23;
+  --warn:#E0B45E; --warn-soft:#332818;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.45), 0 24px 60px -24px rgba(0,0,0,.75);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--txt); font-family:var(--ff);
+  font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden; padding-bottom:calc(76px + var(--safe-b));
+}
+button,input,select,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+h1,h2,h3,h4{margin:0; line-height:1.22; letter-spacing:-.015em}
+p{margin:0}
+a{color:var(--tint-txt)}
+img{max-width:100%}
+:focus-visible{outline:2.5px solid var(--tint); outline-offset:2px; border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ==================================================================
+   2 · Gerüst
+   ================================================================== */
+.wrap{max-width:1080px; margin:0 auto; padding:0 18px}
+header.top{
+  position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--sep);
+}
+.top-in{display:flex; align-items:center; gap:12px; height:56px}
+.brand{display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:.14em; font-size:14px}
+.brand svg{width:26px;height:26px;flex:none}
+.top-sp{flex:1}
+.icon-btn{
+  width:36px;height:36px;border:1px solid var(--sep);background:var(--card);border-radius:11px;
+  display:grid;place-items:center;color:var(--txt-2);transition:.15s;
+}
+.icon-btn:hover{background:var(--card-2); color:var(--txt)}
+.icon-btn svg{width:18px;height:18px}
+
+/* Schrittleiste */
+.steps{display:flex; gap:0; padding:12px 0 16px; overflow-x:auto; scrollbar-width:none}
+.steps::-webkit-scrollbar{display:none}
+.step{
+  display:flex; align-items:center; gap:8px; padding:7px 14px 7px 8px; border-radius:999px;
+  background:transparent; border:1px solid transparent; color:var(--txt-3); font-size:13.5px;
+  font-weight:600; white-space:nowrap; transition:.18s;
+}
+.step .n{
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;
+  background:var(--bg-2); color:var(--txt-3); border:1px solid var(--sep); flex:none;
+}
+.step[data-state="done"]{color:var(--txt-2)}
+.step[data-state="done"] .n{background:var(--ok-soft); color:var(--ok); border-color:transparent}
+.step[data-state="active"]{background:var(--card); border-color:var(--sep); color:var(--txt); box-shadow:var(--shadow)}
+.step[data-state="active"] .n{background:var(--tint); color:#fff; border-color:transparent}
+.step:disabled{opacity:.5; cursor:not-allowed}
+.step-sep{width:14px;height:1px;background:var(--sep-2);align-self:center;flex:none}
+
+/* Panels */
+.panel{display:none; animation:in .32s cubic-bezier(.22,.8,.3,1)}
+.panel.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.card{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l); box-shadow:var(--shadow)}
+.pad{padding:20px}
+.pad-s{padding:14px 16px}
+.eyebrow{font-size:11.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--tint-txt)}
+.h-xl{font-family:var(--fd); font-size:clamp(28px,5.2vw,40px); font-weight:600; letter-spacing:-.02em}
+.h-l{font-family:var(--fd); font-size:24px; font-weight:600}
+.h-m{font-size:17px; font-weight:680}
+.sub{color:var(--txt-2); font-size:15px; margin-top:8px; max-width:62ch}
+.tiny{font-size:12.5px; color:var(--txt-3); line-height:1.45}
+.mt{margin-top:16px}.mt-s{margin-top:9px}.mt-l{margin-top:26px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.grid{display:grid; gap:14px}
+
+/* Buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:12px 20px; border-radius:13px; border:1px solid var(--sep-2); background:var(--card);
+  font-size:15px; font-weight:640; color:var(--txt); transition:.15s; min-height:46px;
+}
+.btn:hover{background:var(--card-2); transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn.pri{background:var(--tint); border-color:var(--tint); color:#fff; box-shadow:0 6px 18px -8px var(--tint)}
+.btn.pri:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent; border-color:transparent; color:var(--tint-txt)}
+.btn.sm{padding:8px 14px; min-height:38px; font-size:13.5px; border-radius:11px}
+.btn:disabled{opacity:.45; pointer-events:none}
+.btn svg{width:17px;height:17px}
+
+/* Formularelemente */
+label.fl{display:block; font-size:13px; font-weight:650; color:var(--txt-2); margin-bottom:7px}
+.inp,select.inp{
+  width:100%; padding:11px 13px; border-radius:12px; border:1px solid var(--sep-2);
+  background:var(--card-2); color:var(--txt); font-size:15px; appearance:none;
+}
+select.inp{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A8078' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 11px center; background-size:16px; padding-right:34px;
+}
+.inp:focus{border-color:var(--tint); outline:none; box-shadow:0 0 0 3px var(--tint-soft)}
+
+/* Chips / Auswahlkacheln */
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{
+  padding:8px 14px; border-radius:999px; border:1px solid var(--sep-2); background:var(--card);
+  font-size:13.5px; font-weight:600; color:var(--txt-2); transition:.15s;
+}
+.chip:hover{border-color:var(--sep-2); background:var(--card-2)}
+.chip[aria-pressed="true"]{background:var(--tint); border-color:var(--tint); color:#fff}
+.chip .dot{width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:-1px;margin-right:7px;border:1px solid rgba(0,0,0,.14)}
+
+.tiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:12px}
+.tile{
+  text-align:left; padding:0; border-radius:var(--r-m); border:1.5px solid var(--sep);
+  background:var(--card); overflow:hidden; transition:.18s; position:relative;
+}
+.tile:hover{transform:translateY(-2px); box-shadow:var(--shadow-lg)}
+.tile[aria-pressed="true"]{border-color:var(--tint); box-shadow:0 0 0 3px var(--tint-soft)}
+.tile[aria-pressed="true"]::after{
+  content:"✓"; position:absolute; top:9px; right:9px; width:22px;height:22px;border-radius:50%;
+  background:var(--tint); color:#fff; font-size:12px; display:grid; place-items:center; font-weight:700;
+}
+.tile .sw{height:74px; display:flex}
+.tile .sw i{flex:1}
+.tile .tx{padding:10px 12px 12px}
+.tile .tx b{display:block; font-size:14.5px; font-weight:660}
+.tile .tx span{display:block; font-size:12px; color:var(--txt-3); margin-top:3px; line-height:1.35}
+
+/* Segmentierte Auswahl */
+.seg{display:inline-flex; background:var(--bg-2); border-radius:11px; padding:3px; gap:3px; border:1px solid var(--sep); flex-wrap:wrap}
+.seg button{
+  padding:7px 13px; border:none; background:transparent; border-radius:9px; font-size:13.5px;
+  font-weight:620; color:var(--txt-2); transition:.15s;
+}
+.seg button[aria-pressed="true"]{background:var(--card); color:var(--txt); box-shadow:var(--shadow)}
+
+/* Umschalter */
+.sw-row{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 0; border-bottom:1px solid var(--sep)}
+.sw-row:last-child{border-bottom:none}
+.toggle{width:50px;height:30px;border-radius:999px;background:var(--sep-2);border:none;position:relative;transition:.2s;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.toggle[aria-pressed="true"]{background:var(--ok)}
+.toggle[aria-pressed="true"]::after{transform:translateX(20px)}
+
+/* Hinweisboxen */
+.note{border-radius:var(--r-m); padding:13px 15px; font-size:13.5px; line-height:1.5; border:1px solid var(--sep)}
+.note.info{background:var(--tint-soft); border-color:transparent; color:var(--tint-txt)}
+.note.warn{background:var(--warn-soft); border-color:transparent; color:var(--warn)}
+.note.ok{background:var(--ok-soft); border-color:transparent; color:var(--ok)}
+
+/* ==================================================================
+   3 · Upload
+   ================================================================== */
+.drop{
+  border:2px dashed var(--sep-2); border-radius:var(--r-xl); padding:44px 24px; text-align:center;
+  background:var(--card-2); transition:.2s; cursor:pointer; display:block; width:100%;
+}
+.drop:hover,.drop.hot{border-color:var(--tint); background:var(--tint-soft)}
+.drop .ic{width:56px;height:56px;margin:0 auto 14px; color:var(--tint)}
+.drop b{font-size:17px; font-weight:660; display:block}
+.drop span{font-size:13.5px; color:var(--txt-3); display:block; margin-top:6px}
+
+/* ==================================================================
+   4 · Plan-Ansicht (Raumerkennung)
+   ================================================================== */
+.plan-stage{
+  position:relative; border-radius:var(--r-m); overflow:hidden; background:var(--card-2);
+  border:1px solid var(--sep); touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.plan-stage img{display:block; width:100%}
+.plan-stage svg.ov{position:absolute; inset:0; width:100%; height:100%}
+.rm-shape{cursor:pointer; transition:.15s}
+.rm-shape:hover .rm-fill{fill-opacity:.42}
+.rm-lbl{font-size:11px; font-weight:700; paint-order:stroke; stroke-width:3.4px; stroke-linejoin:round}
+
+.room-list{display:grid; gap:9px}
+.room-row{
+  display:grid; grid-template-columns:34px 1fr auto auto; gap:10px; align-items:center;
+  padding:9px 11px; border:1px solid var(--sep); border-radius:13px; background:var(--card);
+}
+.room-row.sel{border-color:var(--tint); box-shadow:0 0 0 3px var(--tint-soft)}
+.room-row .sw{width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,.12)}
+.room-row select{padding:7px 26px 7px 10px; font-size:13.5px; border-radius:9px; background-position:right 7px center}
+.room-row .a{font-size:13px; color:var(--txt-3); font-variant-numeric:tabular-nums; white-space:nowrap}
+.del{width:30px;height:30px;border-radius:9px;border:1px solid var(--sep);background:var(--card);color:var(--txt-3);display:grid;place-items:center}
+.del:hover{color:#C0392B;border-color:#C0392B}
+
+/* ==================================================================
+   5 · Ergebnis
+   ================================================================== */
+.res-nav{display:flex; gap:7px; overflow-x:auto; padding:4px 0 12px; scrollbar-width:none}
+.res-nav::-webkit-scrollbar{display:none}
+.res-tab{
+  padding:8px 15px; border-radius:11px; border:1px solid var(--sep); background:var(--card);
+  font-size:13.5px; font-weight:620; color:var(--txt-2); white-space:nowrap; flex:none;
+}
+.res-tab[aria-pressed="true"]{background:var(--txt); color:var(--bg); border-color:var(--txt)}
+
+.view-seg{display:flex; gap:4px; background:var(--bg-2); padding:4px; border-radius:12px; border:1px solid var(--sep)}
+.view-seg button{flex:1; padding:9px 8px; border:none; background:transparent; border-radius:9px; font-size:13px; font-weight:620; color:var(--txt-2)}
+.view-seg button[aria-pressed="true"]{background:var(--card); color:var(--txt); box-shadow:var(--shadow)}
+
+.scene{width:100%; display:block; border-radius:var(--r-m); overflow:hidden; background:var(--card-2)}
+.mood{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px}
+.mood .m{border-radius:13px; overflow:hidden; border:1px solid var(--sep); background:var(--card)}
+.mood .m .c{height:64px}
+.mood .m .t{padding:7px 9px}
+.mood .m .t b{display:block; font-size:12px; font-weight:650}
+.mood .m .t span{display:block; font-size:10.5px; color:var(--txt-3); margin-top:2px}
+
+table.fl-t{width:100%; border-collapse:collapse; font-size:14px}
+table.fl-t th{
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--txt-3); font-weight:700; padding:0 8px 8px; border-bottom:1px solid var(--sep);
+}
+table.fl-t td{padding:11px 8px; border-bottom:1px solid var(--sep); vertical-align:top}
+table.fl-t tr:last-child td{border-bottom:none}
+table.fl-t td.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.it-n{font-weight:620}
+.it-d{font-size:12px; color:var(--txt-3); margin-top:2px; line-height:1.4}
+.badge{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:999px; letter-spacing:.03em; vertical-align:1px; margin-left:6px}
+.badge.core{background:var(--tint-soft); color:var(--tint-txt)}
+.badge.nice{background:var(--bg-2); color:var(--txt-3)}
+.tot{display:flex; justify-content:space-between; align-items:baseline; padding:14px 8px 2px; font-weight:700}
+.tot .v{font-size:21px; font-variant-numeric:tabular-nums}
+
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:12px}
+.kpi{padding:14px 15px; border-radius:var(--r-m); background:var(--card-2); border:1px solid var(--sep)}
+.kpi .k{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--txt-3); font-weight:700}
+.kpi .v{font-size:clamp(17px,4.6vw,23px); font-weight:700; margin-top:5px; font-variant-numeric:tabular-nums; letter-spacing:-.025em; white-space:nowrap}
+.kpi .s{font-size:12px; color:var(--txt-3); margin-top:2px}
+
+.bar{height:9px; border-radius:999px; background:var(--bg-2); overflow:hidden; display:flex}
+.bar i{display:block; height:100%}
+.legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:11px; font-size:12.5px; color:var(--txt-2)}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:0}
+
+/* Modal */
+.modal{position:fixed; inset:0; z-index:200; display:none; align-items:flex-end; justify-content:center}
+.modal.on{display:flex}
+.modal .bd{position:absolute; inset:0; background:rgba(20,18,16,.5); backdrop-filter:blur(3px)}
+.modal .sheet{
+  position:relative; width:100%; max-width:560px; max-height:88vh; overflow:auto;
+  background:var(--card); border-radius:var(--r-xl) var(--r-xl) 0 0; box-shadow:var(--shadow-lg);
+  padding:22px 20px calc(24px + var(--safe-b)); animation:up .3s cubic-bezier(.22,.8,.3,1);
+}
+@keyframes up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+@media(min-width:640px){
+  .modal{align-items:center}
+  .modal .sheet{border-radius:var(--r-xl); max-height:84vh}
+}
+
+/* Fussleiste */
+.footbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:70;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-top:1px solid var(--sep); padding:11px 0 calc(11px + var(--safe-b));
+}
+.footbar .in{display:flex; align-items:center; gap:12px}
+.footbar .info{flex:1; min-width:0}
+.footbar .info b{display:block; font-size:14px; font-weight:660; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.footbar .info span{display:block; font-size:12px; color:var(--txt-3)}
+
+/* Lade-Overlay */
+.busy{position:fixed; inset:0; z-index:300; display:none; place-items:center; background:color-mix(in srgb,var(--bg) 78%,transparent); backdrop-filter:blur(6px)}
+.busy.on{display:grid}
+.busy .b-in{text-align:center; max-width:300px}
+.spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--sep-2);border-top-color:var(--tint);margin:0 auto 14px;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Druck */
+@media print{
+  header.top,.footbar,.steps,.res-nav,.view-seg,.no-print{display:none!important}
+  body{padding:0; background:#fff; color:#000}
+  .card{box-shadow:none; border-color:#ccc; break-inside:avoid}
+  .panel{display:none!important}
+  .panel.on{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================================================================
+     Kopfzeile
+     ================================================================== -->
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--tint)"/><path d="M14 44V22l18-9 18 9v22" fill="none" stroke="#fff" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M26 44V32h12v12" fill="none" stroke="#fff" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      RAUMWERK
+    </div>
+    <div class="top-sp"></div>
+    <button class="icon-btn" id="btn-theme" title="Hell / Dunkel" aria-label="Erscheinungsbild wechseln">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-settings" title="Einstellungen" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16.11 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.4 9v.09A1.65 1.65 0 0 0 21.91 10.6H22a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Schrittleiste -->
+  <nav class="steps" id="steps" aria-label="Fortschritt">
+    <button class="step" data-goto="0"><span class="n">1</span>Plan</button><span class="step-sep"></span>
+    <button class="step" data-goto="1"><span class="n">2</span>Räume</button><span class="step-sep"></span>
+    <button class="step" data-goto="2"><span class="n">3</span>Stil</button><span class="step-sep"></span>
+    <button class="step" data-goto="3"><span class="n">4</span>Ergebnis</button>
+  </nav>
+
+  <!-- ================================================================
+       Schritt 1 · Plan hochladen
+       ================================================================ -->
+  <section class="panel" id="p-0" aria-labelledby="h0">
+    <div class="eyebrow">Schritt 1 von 4</div>
+    <h1 class="h-xl mt-s" id="h0">Grundriss hochladen</h1>
+    <p class="sub">Ein Foto oder Screenshot vom Bauplan genügt. RAUMWERK erkennt die einzelnen Räume,
+      richtet jeden davon in deinem Stil ein und rechnet dir das Budget zusammen.</p>
+
+    <div class="mt-l">
+      <input type="file" id="file" accept="image/*" class="sr">
+      <button class="drop" id="drop">
+        <svg class="ic" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 34v6a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2v-6"/><path d="M24 32V8"/><path d="M15 17l9-9 9 9"/>
+        </svg>
+        <b>Plan auswählen oder hierher ziehen</b>
+        <span>PNG, JPG, WebP oder HEIC · auch ein Handyfoto vom Ausdruck</span>
+      </button>
+      <div class="row mt" style="justify-content:center">
+        <button class="btn sm" id="btn-demo">Beispielgrundriss verwenden</button>
+        <button class="btn sm ghost" id="btn-noplan">Ohne Plan starten</button>
+      </div>
+    </div>
+
+    <div class="grid mt-l" style="grid-template-columns:repeat(auto-fit,minmax(232px,1fr))">
+      <div class="card pad-s"><div class="h-m">1 · Räume erkennen</div><p class="tiny mt-s">Der Plan wird im Browser analysiert, geschlossene Flächen werden als Räume markiert. Du kannst alles korrigieren.</p></div>
+      <div class="card pad-s"><div class="h-m">2 · Stil festlegen</div><p class="tiny mt-s">14 Einrichtungsstile, Farbwelt, Materialien, Budgetstufe, Haushalt und Prioritäten.</p></div>
+      <div class="card pad-s"><div class="h-m">3 · Ergebnis erhalten</div><p class="tiny mt-s">Pro Raum eine Ansicht, ein möblierter Plan, ein Moodboard und die Möbelliste mit Preisen.</p></div>
+    </div>
+
+    <p class="tiny mt-l">Alles läuft lokal in deinem Browser. Der Plan wird nirgendwohin hochgeladen –
+      ausser du aktivierst in den Einstellungen bewusst den fotorealistischen KI-Render.</p>
+  </section>
+
+  <!-- ================================================================
+       Schritt 2 · Räume
+       ================================================================ -->
+  <section class="panel" id="p-1" aria-labelledby="h1">
+    <div class="eyebrow">Schritt 2 von 4</div>
+    <h1 class="h-xl mt-s" id="h1">Räume prüfen</h1>
+    <p class="sub">Tippe einen Raum im Plan an, um ihn auszuwählen. Stimmt die Zuordnung nicht,
+      ändere den Raumtyp in der Liste – davon hängt die spätere Einrichtung ab.</p>
+
+    <div class="grid mt-l" style="grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr)">
+      <div>
+        <div class="plan-stage" id="stage">
+          <img id="plan-img" alt="Hochgeladener Grundriss">
+          <svg class="ov" id="ov" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="row mt-s no-print">
+          <button class="btn sm" id="btn-redetect">Neu erkennen</button>
+          <button class="btn sm" id="btn-draw">Raum einzeichnen</button>
+          <button class="btn sm" id="btn-addmanual">Raum ohne Plan hinzufügen</button>
+          <span class="tiny" id="detect-hint"></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="card pad-s">
+          <label class="fl" for="in-area">Wohnfläche gesamt (m²)</label>
+          <input class="inp" id="in-area" type="number" min="10" max="900" step="1" value="95" inputmode="decimal">
+          <p class="tiny mt-s">Steht meist im Inserat oder Mietvertrag. Daraus wird der Massstab
+            berechnet – deshalb stimmen danach Möbelgrössen und Laufwege.</p>
+          <div class="mt-s">
+            <label class="fl" for="in-h">Raumhöhe</label>
+            <select class="inp" id="in-h">
+              <option value="230">2.30 m – niedrig</option>
+              <option value="250" selected>2.50 m – Standard</option>
+              <option value="270">2.70 m – hoch</option>
+              <option value="320">3.20 m + – Altbau / Loft</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="h-m mt-l">Erkannte Räume <span class="tiny" id="room-count"></span></div>
+        <div class="room-list mt-s" id="room-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       Schritt 3 · Stil & Optionen
+       ================================================================ -->
+  <section class="panel" id="p-2" aria-labelledby="h2">
+    <div class="eyebrow">Schritt 3 von 4</div>
+    <h1 class="h-xl mt-s" id="h2">Stil &amp; Optionen</h1>
+    <p class="sub">Die Auswahl gilt für die ganze Wohnung – so bleibt sie stimmig. Einzelne Räume
+      kannst du im Ergebnis nachträglich abweichend einstellen.</p>
+
+    <div class="mt-l">
+      <div class="h-m">Einrichtungsstil</div>
+      <p class="tiny mt-s" style="margin-bottom:12px">Die Farbstreifen zeigen Wand, Boden, Textil und Akzent des jeweiligen Stils.</p>
+      <div class="tiles" id="tiles-style"></div>
+    </div>
+
+    <div class="mt-l">
+      <div class="h-m">Farbwelt &amp; Helligkeit</div>
+      <p class="tiny mt-s" style="margin-bottom:12px">Verschiebt den ganzen Stil heller, wärmer oder dunkler.</p>
+      <div class="tiles" id="tiles-mood"></div>
+    </div>
+
+    <div class="grid mt-l" style="grid-template-columns:repeat(auto-fit,minmax(268px,1fr))">
+      <div class="card pad">
+        <div class="h-m">Akzentfarbe</div>
+        <p class="tiny mt-s" style="margin-bottom:11px">Kissen, Vorhänge, ein Sessel – der Farbtupfer im Raum.</p>
+        <div class="chips" id="chips-accent"></div>
+      </div>
+      <div class="card pad">
+        <div class="h-m">Holz &amp; Material</div>
+        <p class="tiny mt-s" style="margin-bottom:11px">Bestimmt Möbelfronten, Tischplatten und Beschläge.</p>
+        <div class="chips" id="chips-wood"></div>
+      </div>
+    </div>
+
+    <div class="grid mt-l" style="grid-template-columns:repeat(auto-fit,minmax(268px,1fr))">
+      <div class="card pad">
+        <div class="h-m">Budgetstufe</div>
+        <p class="tiny mt-s" style="margin-bottom:11px">Skaliert alle Preise und die Materialqualität.</p>
+        <div class="seg" id="seg-budget"></div>
+        <div class="mt">
+          <label class="fl" for="in-currency">Währung</label>
+          <select class="inp" id="in-currency">
+            <option value="CHF" selected>CHF – Schweizer Franken</option>
+            <option value="EUR">EUR – Euro</option>
+          </select>
+        </div>
+        <div class="mt">
+          <label class="fl" for="in-cap">Wunschbudget gesamt <span class="tiny" style="font-weight:500">(optional)</span></label>
+          <input class="inp" id="in-cap" type="number" min="0" step="500" placeholder="z.B. 25000" inputmode="numeric">
+          <p class="tiny mt-s">Wird überschritten, zeigt RAUMWERK, welche Posten sich streichen lassen.</p>
+        </div>
+      </div>
+
+      <div class="card pad">
+        <div class="h-m">Haushalt</div>
+        <p class="tiny mt-s" style="margin-bottom:11px">Bestimmt Sofagrösse, Anzahl Sitzplätze und Stauraum.</p>
+        <div class="seg" id="seg-house"></div>
+        <div class="mt">
+          <div class="sw-row"><div><b style="font-size:14.5px">Haustiere</b><div class="tiny">Robuste, abwaschbare Stoffe statt Bouclé</div></div><button class="toggle" id="tg-pets" aria-pressed="false" aria-label="Haustiere"></button></div>
+          <div class="sw-row"><div><b style="font-size:14.5px">Second Hand bevorzugen</b><div class="tiny">Vintage-Stücke statt Neuware, spart rund ein Drittel</div></div><button class="toggle" id="tg-vintage" aria-pressed="false" aria-label="Second Hand"></button></div>
+          <div class="sw-row"><div><b style="font-size:14.5px">Barrierearm planen</b><div class="tiny">Breitere Laufwege, weniger Stolperkanten</div></div><button class="toggle" id="tg-access" aria-pressed="false" aria-label="Barrierearm"></button></div>
+          <div class="sw-row"><div><b style="font-size:14.5px">Miete – nichts Bauliches</b><div class="tiny">Keine Wandpaneele, kein neuer Boden</div></div><button class="toggle" id="tg-rent" aria-pressed="true" aria-label="Mietwohnung"></button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card pad mt-l">
+      <div class="h-m">Das ist mir wichtig</div>
+      <p class="tiny mt-s" style="margin-bottom:12px">Mehrfachauswahl. Jede Priorität ergänzt passende Möbel in den betroffenen Räumen.</p>
+      <div class="chips" id="chips-prio"></div>
+    </div>
+
+    <div class="grid mt-l" style="grid-template-columns:repeat(auto-fit,minmax(268px,1fr))">
+      <div class="card pad">
+        <div class="h-m">Boden</div>
+        <div class="mt-s"><select class="inp" id="in-floor"></select></div>
+        <div class="h-m mt-l">Wände</div>
+        <div class="mt-s"><select class="inp" id="in-wall"></select></div>
+      </div>
+      <div class="card pad">
+        <div class="h-m">Licht</div>
+        <div class="mt-s"><select class="inp" id="in-light"></select></div>
+        <div class="h-m mt-l">Fensterlage</div>
+        <div class="mt-s"><select class="inp" id="in-orient"></select></div>
+        <p class="tiny mt-s">Nordräume bekommen wärmere Farben und mehr Lichtquellen, Südräume dürfen kühler bleiben.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       Schritt 4 · Ergebnis
+       ================================================================ -->
+  <section class="panel" id="p-3" aria-labelledby="h3">
+    <div class="eyebrow">Schritt 4 von 4</div>
+    <h1 class="h-xl mt-s" id="h3">Dein Zuhause</h1>
+    <p class="sub" id="res-sub"></p>
+
+    <div class="card pad mt-l" id="summary"></div>
+
+    <div class="res-nav mt-l" id="res-nav" role="tablist" aria-label="Räume"></div>
+    <div id="res-body"></div>
+
+    <div class="row mt-l no-print">
+      <button class="btn" id="btn-print">Als PDF sichern</button>
+      <button class="btn" id="btn-copy">Einkaufsliste kopieren</button>
+      <button class="btn" id="btn-json">Projekt exportieren</button>
+      <button class="btn ghost" id="btn-restart">Neu starten</button>
+    </div>
+  </section>
+</div>
+
+<!-- ==================================================================
+     Fussleiste
+     ================================================================== -->
+<div class="footbar no-print">
+  <div class="wrap in">
+    <button class="btn sm" id="btn-back">Zurück</button>
+    <div class="info"><b id="fb-t">Grundriss hochladen</b><span id="fb-s">Noch kein Plan gewählt</span></div>
+    <button class="btn pri" id="btn-next">Weiter</button>
+  </div>
+</div>
+
+<!-- Einstellungen -->
+<div class="modal" id="m-settings" role="dialog" aria-modal="true" aria-labelledby="ms-t">
+  <div class="bd" data-close></div>
+  <div class="sheet">
+    <h2 class="h-l" id="ms-t">Einstellungen</h2>
+    <p class="tiny mt-s">RAUMWERK funktioniert komplett ohne Konto und ohne Internet. Wer zusätzlich
+      einen fotorealistischen Render möchte, hinterlegt hier einen eigenen API-Schlüssel.</p>
+
+    <div class="mt-l">
+      <label class="fl" for="in-provider">KI-Render (optional)</label>
+      <select class="inp" id="in-provider">
+        <option value="">Aus – nur die eingebaute Raumansicht</option>
+        <option value="gemini">Google Gemini (Bildmodell)</option>
+        <option value="openai">OpenAI (gpt-image-1)</option>
+      </select>
+    </div>
+    <div class="mt" id="key-wrap" hidden>
+      <label class="fl" for="in-key">API-Schlüssel</label>
+      <input class="inp" id="in-key" type="password" autocomplete="off" spellcheck="false" placeholder="wird nur lokal gespeichert">
+      <p class="tiny mt-s" id="key-hint"></p>
+      <div class="note warn mt-s">Mit aktiviertem Render verlassen dein Raumausschnitt und die
+        Stilvorgaben den Browser Richtung Anbieter. Es fallen die Kosten deines eigenen Kontos an.</div>
+    </div>
+
+    <div class="mt-l">
+      <label class="fl" for="in-theme">Erscheinungsbild</label>
+      <select class="inp" id="in-theme">
+        <option value="auto">Automatisch (Systemeinstellung)</option>
+        <option value="light">Immer hell</option>
+        <option value="dark">Immer dunkel</option>
+      </select>
+    </div>
+
+    <div class="row mt-l" style="justify-content:flex-end">
+      <button class="btn" data-close>Fertig</button>
+    </div>
+  </div>
+</div>
+
+<!-- Raum-Feineinstellung -->
+<div class="modal" id="m-room" role="dialog" aria-modal="true" aria-labelledby="mr-t">
+  <div class="bd" data-close></div>
+  <div class="sheet" id="mr-body"></div>
+</div>
+
+<div class="busy" id="busy"><div class="b-in"><div class="spin"></div><b id="busy-t">Einen Moment</b><p class="tiny mt-s" id="busy-s"></p></div></div>
+
+<canvas id="work" class="sr"></canvas>
+
+<script>
+"use strict";
+/* ==================================================================
+   RAUMWERK · Anwendungslogik
+   ------------------------------------------------------------------
+   Aufbau:
+     A · Stammdaten (Stile, Farbwelten, Optionen, Möbelkatalog)
+     B · Hilfsfunktionen (Farbe, Format, DOM)
+     C · Raumerkennung aus dem Planbild
+     D · Einrichtungs-Engine (Auswahl, Platzierung, Preis)
+     E · Darstellung (Raumansicht, möblierter Plan, Moodboard, Liste)
+     F · Oberfläche und Zustand
+   ================================================================== */
+
+/* ============================ A · STAMMDATEN ====================== */
+
+/* Die Stilauswahl folgt dem, was in der Einrichtungsbranche 2026
+   tatsächlich nachgefragt wird – von Skandinavisch und Japandi über
+   warmen Minimalismus bis zu Maximalismus und dunklen Farbwelten.
+   Quellen und Begründung: RECHERCHE.md
+   pal = Wand · Wand-Zweitton · Boden · Holz · Polster · Akzent · Metall
+   fin = wie sich ein Material in diesem Stil konkret zeigt          */
+const STYLES = [
+  { id:"skandi", n:"Skandinavisch", tag:"Hell, funktional, viel Holz",
+    pal:{wall:"#F4F1EC", wall2:"#E6E1D8", floor:"#DFCBAE", wood:"#E0C79E", uph:"#DCD5CA", accent:"#9CA98F", metal:"#B9B4AC"},
+    fin:{uph:"Wollstoff, Naturweiss", wood:"helle Eiche, geölt", metal:"gebürsteter Stahl", rug:"Wollteppich, Naturton",
+         lamp:"Opalglas mit weissem Schirm", tex:"Leinen, ungebleicht", deco:"Keramik und Birkenholz"},
+    price:1.00, ai:"Scandinavian interior, light oak, white walls, wool textiles, soft daylight, uncluttered" },
+
+  { id:"japandi", n:"Japandi", tag:"Ruhig, reduziert, natürlich",
+    pal:{wall:"#EFEAE2", wall2:"#DED6C9", floor:"#C9AE8A", wood:"#B48D63", uph:"#CFC7B9", accent:"#6E7A6A", metal:"#3A3733"},
+    fin:{uph:"Baumwolle, Sandton", wood:"Eiche geräuchert, matt", metal:"mattschwarz", rug:"Jute, handgewebt",
+         lamp:"Reispapier-Leuchte", tex:"Leinen, Ton-in-Ton", deco:"Steingut, Bonsai, Ikebana"},
+    price:1.15, ai:"Japandi interior, low furniture, warm neutral palette, paper lantern, natural materials, serene" },
+
+  { id:"warmmin", n:"Warmer Minimalismus", tag:"Wenig Möbel, viel Wärme",
+    pal:{wall:"#EDE7DE", wall2:"#DCD2C4", floor:"#D2BB9B", wood:"#C9A578", uph:"#D8CFC1", accent:"#B08968", metal:"#A8927A"},
+    fin:{uph:"Bouclé, Creme", wood:"Massivholz, offenporig", metal:"gebürstetes Messing", rug:"Berber-Teppich, Wolle",
+         lamp:"Alabaster-Leuchte", tex:"Waschleinen, Sand", deco:"Handgeformte Keramik"},
+    price:1.25, ai:"warm minimalist interior, creamy plaster walls, boucle, travertine, soft shadows, calm" },
+
+  { id:"modern", n:"Modern Contemporary", tag:"Klare Linien, ruhige Töne",
+    pal:{wall:"#F0F0EF", wall2:"#DDDCDA", floor:"#B9B2A9", wood:"#8C7B68", uph:"#9EA2A3", accent:"#2F4858", metal:"#8E9295"},
+    fin:{uph:"Feinstruktur-Stoff, Grau", wood:"Nussbaum furniert", metal:"Edelstahl gebürstet", rug:"Kurzflor, uni",
+         lamp:"lineare LED-Leuchte", tex:"Verdunkelung, blickdicht", deco:"Grossformatige Grafik"},
+    price:1.20, ai:"contemporary interior, clean lines, low profile furniture, muted greys, architectural lighting" },
+
+  { id:"midcentury", n:"Mid-Century Modern", tag:"50er-Jahre-Klassiker, warmes Holz",
+    pal:{wall:"#EDE4D6", wall2:"#D9C7AC", floor:"#A97B4F", wood:"#8A5A32", uph:"#7C8B6E", accent:"#C2673B", metal:"#B08D4F"},
+    fin:{uph:"Wollfilz, Salbei", wood:"Teak/Nussbaum, konische Beine", metal:"Messing poliert", rug:"Teppich mit Grafikmuster",
+         lamp:"Kugelleuchte auf Bogenfuss", tex:"Baumwolle mit Retro-Print", deco:"Vasen in Senf und Rost"},
+    price:1.30, ai:"mid-century modern interior, teak furniture, tapered legs, olive and rust accents, 1960s" },
+
+  { id:"industrial", n:"Industrial Loft", tag:"Beton, Metall, Leder",
+    pal:{wall:"#B9B4AE", wall2:"#8E8A85", floor:"#7A736C", wood:"#6B4F35", uph:"#7A5136", accent:"#B5551F", metal:"#3F3F3F"},
+    fin:{uph:"Anilinleder, Cognac", wood:"Altholz, sichtbare Maserung", metal:"Rohstahl, geschwärzt", rug:"Vintage-Teppich, verwaschen",
+         lamp:"Metallschirm mit Filamentleuchtmittel", tex:"Canvas, schwer", deco:"Werkstattobjekte, Schwarzweissfotos"},
+    price:1.20, ai:"industrial loft interior, exposed concrete, black steel frames, cognac leather, factory pendant lights" },
+
+  { id:"boho", n:"Boho Organic", tag:"Naturfasern, Muster, viele Pflanzen",
+    pal:{wall:"#F2EADD", wall2:"#E1D0B8", floor:"#C79E72", wood:"#B98A56", uph:"#D6BFA4", accent:"#C1734B", metal:"#B98F5B"},
+    fin:{uph:"Baumwoll-Mix, Sand", wood:"Mango-/Akazienholz", metal:"Antikmessing", rug:"Berber/Kelim mit Muster",
+         lamp:"Rattan-Hängeleuchte", tex:"Makramee und Musselin", deco:"Korbwaren, Trockenblumen"},
+    price:1.05, ai:"bohemian organic interior, rattan, macrame, layered rugs, lots of plants, terracotta accents" },
+
+  { id:"landhaus", n:"Landhaus", tag:"Gemütlich, ländlich, hell",
+    pal:{wall:"#F5F0E6", wall2:"#DDE3D9", floor:"#C4A57E", wood:"#D8CBB4", uph:"#CBD3C6", accent:"#7C8F6F", metal:"#C0B49E"},
+    fin:{uph:"Leinen mit Karo", wood:"weiss lasiertes Massivholz", metal:"Gusseisen und Zink", rug:"Flickenteppich, Baumwolle",
+         lamp:"Emaille-Schirm", tex:"Vichykaro, Blümchen", deco:"Steingut, Trockenkräuter"},
+    price:1.10, ai:"country cottage interior, painted wood, checked linen, farmhouse table, soft green accents" },
+
+  { id:"klassisch", n:"Klassisch-elegant", tag:"Zeitlos, symmetrisch, hochwertig",
+    pal:{wall:"#EFE9DF", wall2:"#D7CDBD", floor:"#8F6B45", wood:"#5E4630", uph:"#B9AE9B", accent:"#3D5A4C", metal:"#C0A263"},
+    fin:{uph:"Samt, Champagner", wood:"dunkle Eiche, gebeizt", metal:"poliertes Messing", rug:"Orientteppich, gedämpft",
+         lamp:"Stoffschirm auf Keramikfuss", tex:"schwerer Vorhang mit Falten", deco:"Gerahmte Kunst, Bücher"},
+    price:1.45, ai:"classic elegant interior, symmetry, velvet, brass details, framed art, warm neutral palette" },
+
+  { id:"maximal", n:"Maximalismus", tag:"Farbe, Muster, Persönlichkeit",
+    pal:{wall:"#2F5147", wall2:"#7A3B4A", floor:"#8B6039", wood:"#6B4327", uph:"#A8483F", accent:"#D9A441", metal:"#C9A227"},
+    fin:{uph:"Samt, tiefes Rot", wood:"lackiertes Holz, Hochglanz", metal:"Messing, üppig", rug:"gemusterter Teppich, mehrfarbig",
+         lamp:"Skulpturale Leuchte", tex:"Blumenmuster, gross gemustert", deco:"Galerie-Wand, Fundstücke"},
+    price:1.35, ai:"maximalist interior, saturated jewel tones, pattern mixing, gallery wall, velvet, bold and layered" },
+
+  { id:"mediterran", n:"Mediterran", tag:"Kalkputz, Terrakotta, Sonne",
+    pal:{wall:"#F1E8DA", wall2:"#E3D3BC", floor:"#C08155", wood:"#A87A4C", uph:"#E2D7C5", accent:"#3E6B84", metal:"#A88C5F"},
+    fin:{uph:"Baumwollcanvas, Ecru", wood:"Olivenholz, rustikal", metal:"Schmiedeeisen", rug:"Sisal, hell",
+         lamp:"Keramik-Leuchte, glasiert", tex:"gewaschenes Leinen", deco:"Terrakotta-Krüge, Oliven"},
+    price:1.15, ai:"mediterranean interior, lime plaster walls, terracotta floor, arched forms, blue ceramic accents" },
+
+  { id:"artdeco", n:"Art Déco Glam", tag:"Samt, Messing, geometrisch",
+    pal:{wall:"#2A2E3A", wall2:"#3E4453", floor:"#6E533A", wood:"#4A3524", uph:"#2E5E52", accent:"#C9A227", metal:"#D4AF37"},
+    fin:{uph:"Samt, Smaragd", wood:"Palisander-Optik, Hochglanz", metal:"Messing, glänzend", rug:"Teppich mit Art-Déco-Muster",
+         lamp:"Rauchglas und Messing", tex:"schwerer Samtvorhang", deco:"Spiegelflächen, Marmorschalen"},
+    price:1.50, ai:"art deco interior, emerald velvet, polished brass, geometric patterns, smoked glass, glamorous" },
+
+  { id:"coastal", n:"Coastal", tag:"Weiss, Blau, luftig",
+    pal:{wall:"#F7F5F0", wall2:"#DCE6E8", floor:"#D8C7AE", wood:"#E4D9C6", uph:"#C3D2D8", accent:"#3F6D8C", metal:"#B4BCC0"},
+    fin:{uph:"Leinen-Mix, Nebelblau", wood:"gekalktes Holz", metal:"gebürstetes Nickel", rug:"Sisal mit Baumwollkante",
+         lamp:"Korb- oder Glasleuchte", tex:"leichter Voile", deco:"Treibholz, Muscheln, Streifen"},
+    price:1.15, ai:"coastal interior, white and soft blue, linen slipcovers, driftwood, airy curtains, bright" },
+
+  { id:"dark", n:"Dunkel &amp; dramatisch", tag:"Tiefe Töne, Bibliotheksstimmung",
+    pal:{wall:"#2C3330", wall2:"#3A302C", floor:"#5A4433", wood:"#3D2E22", uph:"#4A4F4A", accent:"#9A6B3F", metal:"#8A7245"},
+    fin:{uph:"Cord oder Samt, Tannengrün", wood:"dunkel gebeizte Eiche", metal:"Bronze, brüniert", rug:"dichter Wollteppich, dunkel",
+         lamp:"gerichtetes Warmlicht, Leselampen", tex:"blickdichter Samt", deco:"Bücherwand, Messingobjekte"},
+    price:1.30, ai:"dark moody interior, deep green walls, library shelving, warm pooled lighting, brass, cosy" }
+];
+
+/* Farbwelt – verschiebt jede Stilpalette in eine Richtung.
+   l = Helligkeit in %-Punkten, s = Sättigung als Faktor            */
+const MOODS = [
+  { id:"hell",  n:"Hell &amp; luftig",   tag:"Alles eine Spur heller, mehr Weiss", l:{wall:+7,floor:+5,uph:+6,wood:+4,accent:+2}, s:{all:.9},  ai:"bright and airy, high key lighting" },
+  { id:"warm",  n:"Warm &amp; erdig",    tag:"Sonnige, erdige Grundstimmung",       l:{wall:+1,floor:-2,uph:0,wood:-2,accent:0},  s:{all:1.15}, hueShift:-4, ai:"warm earthy tones, golden hour light" },
+  { id:"kuehl", n:"Kühl &amp; klar",     tag:"Grau-blaue Ruhe, sachlich",           l:{wall:+3,floor:+1,uph:+2,wood:0,accent:0},  s:{all:.72}, hueShift:+12, ai:"cool crisp tones, north light" },
+  { id:"dunkel",n:"Dunkel &amp; ruhig",  tag:"Tiefe Wände, Kokon-Gefühl",           l:{wall:-34,floor:-10,uph:-16,wood:-8,accent:+4}, s:{all:1.05}, ai:"deep moody tones, dramatic and cocooning" },
+  { id:"bunt",  n:"Farbenfroh",          tag:"Mut zur Farbe, mehr Kontrast",        l:{wall:-4,floor:0,uph:-4,wood:0,accent:+4},  s:{all:1.7},  ai:"saturated joyful colours, playful contrast" },
+  { id:"mono",  n:"Ton in Ton",          tag:"Eine Farbfamilie, viele Nuancen",     l:{wall:+4,floor:-3,uph:0,wood:-1,accent:-4}, s:{all:.5},   ai:"tonal monochrome scheme, texture over colour" }
+];
+
+const ACCENTS = [
+  { id:"auto", n:"Zum Stil passend", hex:null },
+  { id:"terra", n:"Terrakotta",  hex:"#B4744A" },
+  { id:"salbei", n:"Salbeigrün", hex:"#8A9A7B" },
+  { id:"schoko", n:"Schokobraun",hex:"#5A3E2B" },
+  { id:"petrol", n:"Petrol",     hex:"#2E5A66" },
+  { id:"senf", n:"Senfgelb",     hex:"#C79A3A" },
+  { id:"blush", n:"Altrosa",     hex:"#C99A96" },
+  { id:"wald", n:"Waldgrün",     hex:"#3F5D4A" },
+  { id:"bordeaux", n:"Bordeaux", hex:"#6E2C39" },
+  { id:"anthrazit", n:"Anthrazit",hex:"#3A3A3C" }
+];
+
+const WOODS = [
+  { id:"auto", n:"Zum Stil passend", hex:null, metal:null },
+  { id:"eiche", n:"Eiche hell",      hex:"#DCC49B", metal:"gebürsteter Stahl" },
+  { id:"nuss", n:"Nussbaum",         hex:"#6E4A2E", metal:"Messing" },
+  { id:"esche", n:"Esche weiss",     hex:"#E7DAC6", metal:"Chrom" },
+  { id:"schwarz", n:"Schwarz matt",  hex:"#2A2724", metal:"mattschwarz" },
+  { id:"rattan", n:"Rattan &amp; Natur", hex:"#C9A96A", metal:"Antikmessing" },
+  { id:"stein", n:"Stein &amp; Marmor",  hex:"#D6D0C8", metal:"gebürstetes Nickel" }
+];
+
+const BUDGETS = [
+  { id:0, n:"Sparsam",  tag:"Möbelhaus-Niveau, viel Selbstaufbau" },
+  { id:1, n:"Mittel",   tag:"Solide Marken, langlebig" },
+  { id:2, n:"Gehoben",  tag:"Designstücke, gute Materialien" },
+  { id:3, n:"Premium",  tag:"Manufaktur und Klassiker" }
+];
+
+const HOUSES = [
+  { id:"single", n:"Alleine",      seats:2, beds:1, kids:0, guest:1 },
+  { id:"paar",   n:"Zu zweit",     seats:3, beds:2, kids:0, guest:2 },
+  { id:"familie",n:"Familie",      seats:5, beds:2, kids:2, guest:2 },
+  { id:"wg",     n:"WG",           seats:4, beds:1, kids:0, guest:2 },
+  { id:"senior", n:"60 plus",      seats:3, beds:2, kids:0, guest:2 }
+];
+
+const PRIOS = [
+  { id:"homeoffice", n:"Homeoffice" },
+  { id:"gaeste", n:"Gäste bewirten" },
+  { id:"stauraum", n:"Viel Stauraum" },
+  { id:"media", n:"Fernsehen &amp; Sound" },
+  { id:"kochen", n:"Kochen" },
+  { id:"lesen", n:"Lesen" },
+  { id:"pflanzen", n:"Pflanzen" },
+  { id:"kunst", n:"Kunst an der Wand" },
+  { id:"sport", n:"Sport zuhause" },
+  { id:"musik", n:"Musik" },
+  { id:"kinder", n:"Kinder &amp; Spielen" },
+  { id:"nachhaltig", n:"Nachhaltigkeit" }
+];
+
+const FLOORS = [
+  { id:"keep", n:"Boden bleibt wie er ist", p:[0,0,0,0] },
+  { id:"parkett", n:"Parkett Eiche", p:[75,120,190,320], perM2:true },
+  { id:"vinyl", n:"Vinyl / Designboden", p:[42,68,105,165], perM2:true },
+  { id:"mikro", n:"Mikrozement, fugenlos", p:[95,140,210,330], perM2:true },
+  { id:"fliese", n:"Feinsteinzeug", p:[65,105,175,290], perM2:true },
+  { id:"teppichb", n:"Teppichboden", p:[38,62,105,180], perM2:true }
+];
+
+const WALLS = [
+  { id:"weiss", n:"Weiss gestrichen", p:[9,13,18,26], perM2:true },
+  { id:"farbe", n:"Farbig gestrichen", p:[12,17,24,34], perM2:true },
+  { id:"kalk", n:"Kalk- oder Lehmputz", p:[38,55,78,115], perM2:true },
+  { id:"tapete", n:"Tapete mit Muster", p:[26,44,72,130], perM2:true },
+  { id:"paneele", n:"Holzpaneele (Akzentwand)", p:[95,145,220,340], perM2:true, build:true }
+];
+
+const LIGHTS = [
+  { id:"warm", n:"Durchgehend warmweiss (2700 K)", ai:"warm 2700K lighting" },
+  { id:"neutral", n:"Neutralweiss (3000–4000 K)", ai:"neutral 3500K lighting" },
+  { id:"mix", n:"Gemischt: warm im Wohnbereich, neutral in Küche und Bad", ai:"mixed colour temperature lighting" },
+  { id:"smart", n:"Smart und dimmbar, Szenen pro Tageszeit", ai:"dimmable smart lighting, layered scenes", extra:[70,140,240,420] }
+];
+
+const ORIENTS = [
+  { id:"unbekannt", n:"Weiss ich nicht", warm:0 },
+  { id:"nord", n:"Nord – wenig direktes Licht", warm:2 },
+  { id:"ost", n:"Ost – Morgensonne", warm:1 },
+  { id:"sued", n:"Süd – den ganzen Tag hell", warm:-1 },
+  { id:"west", n:"West – Abendsonne", warm:0 }
+];
+
+/* Raumtypen. col = Markierungsfarbe im Plan, minA/maxA = plausible
+   Fläche in m², dient der automatischen Zuordnung nach Erkennung.  */
+const RTYPES = [
+  { id:"wohnen",  n:"Wohnzimmer",      col:"#B4744A", minA:14, ideal:24 },
+  { id:"wohnessen",n:"Wohn- und Essbereich", col:"#A65D3A", minA:22, ideal:34 },
+  { id:"essen",   n:"Esszimmer",       col:"#C08A5A", minA:9,  ideal:14 },
+  { id:"kueche",  n:"Küche",           col:"#4E8098", minA:5,  ideal:11 },
+  { id:"schlafen",n:"Schlafzimmer",    col:"#6E7B8B", minA:10, ideal:16 },
+  { id:"kind",    n:"Kinderzimmer",    col:"#8A9A7B", minA:8,  ideal:13 },
+  { id:"gast",    n:"Gästezimmer",     col:"#9C8AA5", minA:8,  ideal:12 },
+  { id:"buero",   n:"Arbeitszimmer",   col:"#5C7C6B", minA:6,  ideal:11 },
+  { id:"bad",     n:"Badezimmer",      col:"#5B93A8", minA:3,  ideal:7 },
+  { id:"wc",      n:"Gäste-WC",        col:"#7FA3B0", minA:1,  ideal:2.5 },
+  { id:"flur",    n:"Flur / Diele",    col:"#A09384", minA:2,  ideal:8 },
+  { id:"ankleide",n:"Ankleide",        col:"#B08968", minA:3,  ideal:6 },
+  { id:"technik", n:"Abstell- / Waschraum", col:"#8C8C8C", minA:1, ideal:5 },
+  { id:"balkon",  n:"Balkon / Terrasse",col:"#6E9A5E", minA:2,  ideal:9 },
+  { id:"ignor",   n:"Nicht einrichten", col:"#9A9A9A", minA:0,  ideal:0 }
+];
+const RT = Object.fromEntries(RTYPES.map(r=>[r.id,r]));
+
+/* ------------------------------------------------------------------
+   Möbelkatalog
+   Pro Raumtyp eine Liste. Felder:
+     id   Kennung          n    Bezeichnung (oder Funktion)
+     mat  Materialklasse – bestimmt, welche Stil-Beschreibung greift
+     cat  Kostengruppe für die Budgetaufteilung
+     w,d  Stellfläche in cm (oder Funktion) – für die Planung im Grundriss
+     p    Preis je Budgetstufe in CHF: sparsam, mittel, gehoben, premium
+     q    Stückzahl (oder Funktion)
+     need 1 = Grundausstattung, 0 = Ergänzung
+     pos  wall | center | corner | window | free  → Platzierung im Plan
+     when Bedingung; fehlt sie, kommt das Stück immer vor
+   ------------------------------------------------------------------ */
+const CAT = {
+
+wohnen:[
+ {id:"sofa", n:c=>c.a<16?"2er-Sofa":(c.house.seats>=5?"Ecksofa":"3er-Sofa"), mat:"uph", cat:"Möbel", pos:"wall",
+  w:c=>c.a<16?185:(c.house.seats>=5?285:225), d:c=>c.house.seats>=5?195:95,
+  p:[690,1690,3600,7900], need:1, note:"Das Stück, das den Raum bestimmt – hier lohnt sich das Budget am meisten."},
+ {id:"sessel", n:"Sessel", mat:"uph", cat:"Möbel", pos:"free", w:78, d:82, p:[220,590,1290,2900],
+  q:c=>c.a>=26?2:1, need:0, when:c=>c.a>=17||c.prio.has("lesen")},
+ {id:"couchtisch", n:"Couchtisch", mat:"wood", cat:"Möbel", pos:"center", w:110, d:60, p:[120,340,790,1900], need:1},
+ {id:"beistell", n:"Beistelltisch", mat:"metal", cat:"Möbel", pos:"free", w:42, d:42, p:[50,140,320,750], q:2, need:0},
+ {id:"lowboard", n:"TV-Lowboard", mat:"wood", cat:"Möbel", pos:"wall", w:180, d:42, p:[190,490,1100,2600],
+  need:0, when:c=>c.prio.has("media")||c.a>=16},
+ {id:"tv", n:c=>c.a>=24?"Fernseher 65 Zoll":"Fernseher 55 Zoll", mat:"tech", cat:"Technik", pos:"skip",
+  p:[420,750,1450,3200], need:0, when:c=>c.prio.has("media")},
+ {id:"sound", n:"Soundbar mit Subwoofer", mat:"tech", cat:"Technik", pos:"skip", p:[180,420,890,2200],
+  need:0, when:c=>c.prio.has("media")||c.prio.has("musik")},
+ {id:"regal", n:"Bücherregal", mat:"wood", cat:"Möbel", pos:"wall", w:c=>c.a>=22?200:100, d:34,
+  p:[130,390,890,2200], need:0, when:c=>c.prio.has("lesen")||c.prio.has("stauraum")},
+ {id:"sideboard", n:"Sideboard", mat:"wood", cat:"Möbel", pos:"wall", w:160, d:42, p:[280,720,1600,3900],
+  need:0, when:c=>c.prio.has("stauraum")&&c.a>=18},
+ {id:"teppich", n:c=>c.a>=22?"Teppich 200 × 300 cm":"Teppich 160 × 230 cm", mat:"rug", cat:"Textilien", pos:"under",
+  w:c=>c.a>=22?300:230, d:c=>c.a>=22?200:160, p:[180,490,1200,3200], need:1,
+  note:"Verankert die Sitzgruppe. Vorderbeine des Sofas sollten daraufstehen."},
+ {id:"pendel", n:"Deckenleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[60,190,450,1200], need:1},
+ {id:"steh", n:"Stehleuchte", mat:"lamp", cat:"Licht", pos:"corner", w:40, d:40, p:[70,220,480,1100],
+  q:c=>c.a>=22?2:1, need:1, note:"Drei Lichtquellen pro Raum sind die Faustregel – Decke, Steh-, Tischleuchte."},
+ {id:"tischl", n:"Tischleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[40,120,280,690], need:0},
+ {id:"vorhang", n:"Vorhang-Set", mat:"tex", cat:"Textilien", pos:"skip", p:[60,160,380,850],
+  q:c=>Math.max(1,Math.round(c.a/14)), need:1},
+ {id:"kissen", n:"Kissen-Set (4 Stück)", mat:"tex", cat:"Textilien", pos:"skip", p:[45,110,240,520], need:1},
+ {id:"plaid", n:"Wolldecke", mat:"tex", cat:"Textilien", pos:"skip", p:[30,80,180,390], need:0},
+ {id:"kunst", n:"Wandbild, gerahmt", mat:"deco", cat:"Deko", pos:"skip", p:[45,130,340,900],
+  q:c=>c.prio.has("kunst")?4:2, need:0},
+ {id:"spiegel", n:"Wandspiegel", mat:"deco", cat:"Deko", pos:"skip", p:[80,220,490,1200],
+  need:0, when:c=>c.a<20, note:"Macht kleine Räume optisch weiter, am besten gegenüber dem Fenster."},
+ {id:"pflanze", n:"Zimmerpflanze mit Topf", mat:"plant", cat:"Deko", pos:"corner", w:45, d:45,
+  p:[70,150,290,560], q:c=>c.prio.has("pflanzen")?4:2, need:0},
+ {id:"pouf", n:"Pouf", mat:"uph", cat:"Möbel", pos:"free", w:50, d:50, p:[60,150,340,760],
+  need:0, when:c=>c.prio.has("gaeste")}
+],
+
+essen:[
+ {id:"esstisch", n:c=>`Esstisch für ${c.seatsN} Personen`, mat:"wood", cat:"Möbel", pos:"center",
+  w:c=>c.seatsN>=6?200:(c.seatsN>=4?160:120), d:90, p:[290,790,1900,4800], need:1},
+ {id:"stuhl", n:"Esszimmerstuhl", mat:"uph", cat:"Möbel", pos:"skip", w:45, d:50,
+  p:[65,180,420,980], q:c=>c.seatsN, need:1},
+ {id:"bank", n:"Sitzbank", mat:"wood", cat:"Möbel", pos:"skip", w:160, d:40, p:[120,320,690,1500],
+  need:0, when:c=>c.house.id==="familie"},
+ {id:"pendel", n:"Pendelleuchte über dem Tisch", mat:"lamp", cat:"Licht", pos:"skip", p:[80,240,590,1500], need:1,
+  note:"Unterkante rund 75 cm über der Tischplatte, dann blendet sie nicht."},
+ {id:"buffet", n:"Sideboard / Buffet", mat:"wood", cat:"Möbel", pos:"wall", w:160, d:42,
+  p:[280,720,1600,3900], need:0, when:c=>c.a>=12||c.prio.has("stauraum")},
+ {id:"teppich", n:"Teppich unter dem Tisch", mat:"rug", cat:"Textilien", pos:"under", w:300, d:200,
+  p:[190,490,1150,2900], need:0, when:c=>c.a>=13},
+ {id:"vorhang", n:"Vorhang-Set", mat:"tex", cat:"Textilien", pos:"skip", p:[60,160,380,850], need:0},
+ {id:"geschirr", n:"Geschirr-Set für 6", mat:"deco", cat:"Ausstattung", pos:"skip", p:[80,190,420,950],
+  need:0, when:c=>c.prio.has("gaeste")},
+ {id:"kunst", n:"Wandbild, gerahmt", mat:"deco", cat:"Deko", pos:"skip", p:[45,130,340,900], q:2, need:0},
+ {id:"pflanze", n:"Zimmerpflanze mit Topf", mat:"plant", cat:"Deko", pos:"corner", w:40, d:40, p:[60,130,260,520], need:0}
+],
+
+kueche:[
+ {id:"front", n:"Küchenfronten und Griffe erneuern", mat:"wood", cat:"Bau", pos:"skip",
+  p:[900,2200,4800,11000], need:0, when:c=>!c.rent, note:"Günstigster Weg zur neuen Küche, solange der Korpus intakt ist."},
+ {id:"spritz", n:"Spritzschutz / Rückwand", mat:"stone", cat:"Bau", pos:"skip", p:[180,420,950,2400],
+  need:0, when:c=>!c.rent},
+ {id:"barhocker", n:"Barhocker", mat:"uph", cat:"Möbel", pos:"skip", w:38, d:38, p:[70,180,390,890],
+  q:2, need:0, when:c=>c.a>=9},
+ {id:"kuechentisch", n:"Kleiner Küchentisch mit 2 Stühlen", mat:"wood", cat:"Möbel", pos:"center",
+  w:80, d:80, p:[190,460,980,2200], need:0, when:c=>c.a>=11&&!c.hasEss},
+ {id:"unterbau", n:"Unterbau-Beleuchtung", mat:"lamp", cat:"Licht", pos:"skip", p:[45,110,240,520], need:1,
+  note:"Arbeitsflächen brauchen eigenes Licht, sonst steht man im eigenen Schatten."},
+ {id:"decke", n:"Deckenleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[50,150,340,780], need:1},
+ {id:"regal", n:"Wandregal / Gewürzboard", mat:"wood", cat:"Möbel", pos:"wall", w:90, d:20,
+  p:[45,130,290,650], need:0, when:c=>c.prio.has("kochen")||c.prio.has("stauraum")},
+ {id:"topf", n:"Topf- und Pfannenset", mat:"metal", cat:"Ausstattung", pos:"skip", p:[110,290,690,1600],
+  need:0, when:c=>c.prio.has("kochen")},
+ {id:"messer", n:"Messerset mit Block", mat:"metal", cat:"Ausstattung", pos:"skip", p:[70,180,420,1100],
+  need:0, when:c=>c.prio.has("kochen")},
+ {id:"kaffee", n:"Kaffeemaschine", mat:"tech", cat:"Technik", pos:"skip", p:[120,320,790,2400],
+  need:0, when:c=>c.prio.has("kochen")},
+ {id:"laeufer", n:"Küchenläufer, waschbar", mat:"rug", cat:"Textilien", pos:"under", w:200, d:70,
+  p:[45,110,230,480], need:0},
+ {id:"muell", n:"Mülltrennsystem", mat:"metal", cat:"Ausstattung", pos:"skip", p:[55,130,280,560], need:1},
+ {id:"kraeuter", n:"Kräutertöpfe am Fenster", mat:"plant", cat:"Deko", pos:"skip", p:[25,55,110,220], need:0},
+ {id:"vorratsdosen", n:"Vorratsdosen-Set", mat:"deco", cat:"Ausstattung", pos:"skip", p:[40,95,190,390],
+  need:0, when:c=>c.prio.has("stauraum")}
+],
+
+schlafen:[
+ {id:"bett", n:c=>c.house.beds>=2?"Doppelbett 180 × 200 cm":"Bett 140 × 200 cm", mat:"wood", cat:"Möbel",
+  pos:"wall", w:c=>c.house.beds>=2?190:150, d:215, p:[290,790,1800,4200], need:1},
+ {id:"matratze", n:c=>c.house.beds>=2?"Matratzen (2 ×) mit Topper":"Matratze mit Topper", mat:"uph",
+  cat:"Möbel", pos:"skip", p:[250,690,1500,3200], q:c=>c.house.beds>=2?2:1, need:1,
+  note:"Beim Schlafen wird am seltensten bereut, was hier mehr gekostet hat."},
+ {id:"nacht", n:"Nachttisch", mat:"wood", cat:"Möbel", pos:"wall", w:45, d:38, p:[60,170,390,890],
+  q:c=>c.house.beds>=2?2:1, need:1},
+ {id:"schrank", n:c=>c.a>=14?"Kleiderschrank 250 cm":"Kleiderschrank 180 cm", mat:"wood", cat:"Möbel",
+  pos:"wall", w:c=>c.a>=14?250:180, d:60, p:[420,1100,2600,6500], need:1, when:c=>!c.hasAnkleide},
+ {id:"kommode", n:"Kommode", mat:"wood", cat:"Möbel", pos:"wall", w:100, d:45, p:[180,490,1100,2600],
+  need:0, when:c=>c.prio.has("stauraum")||c.a>=15},
+ {id:"bank", n:"Bettbank", mat:"uph", cat:"Möbel", pos:"free", w:120, d:40, p:[130,340,760,1800],
+  need:0, when:c=>c.a>=16},
+ {id:"teppich", n:"Teppich neben dem Bett", mat:"rug", cat:"Textilien", pos:"under", w:230, d:160,
+  p:[120,350,850,2100], need:0},
+ {id:"bettwaesche", n:"Bettwäsche-Set (2 Garnituren)", mat:"tex", cat:"Textilien", pos:"skip",
+  p:[70,180,390,850], need:1},
+ {id:"tagesdecke", n:"Tagesdecke", mat:"tex", cat:"Textilien", pos:"skip", p:[60,150,320,720], need:0},
+ {id:"verdunkel", n:"Verdunkelungsvorhang", mat:"tex", cat:"Textilien", pos:"skip", p:[80,190,420,950], need:1,
+  note:"Im Schlafzimmer wichtiger als jede Deko – blickdicht und schallschluckend."},
+ {id:"nachtl", n:"Nachttischleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[35,95,220,520],
+  q:c=>c.house.beds>=2?2:1, need:1},
+ {id:"decke", n:"Deckenleuchte, dimmbar", mat:"lamp", cat:"Licht", pos:"skip", p:[50,160,390,950], need:1},
+ {id:"spiegel", n:"Standspiegel", mat:"deco", cat:"Deko", pos:"corner", w:50, d:35, p:[80,220,490,1200], need:0},
+ {id:"kunst", n:"Wandbild über dem Bett", mat:"deco", cat:"Deko", pos:"skip", p:[45,130,340,900], need:0},
+ {id:"pflanze", n:"Zimmerpflanze mit Topf", mat:"plant", cat:"Deko", pos:"corner", w:40, d:40,
+  p:[50,110,220,420], need:0, when:c=>c.prio.has("pflanzen")}
+],
+
+kind:[
+ {id:"bett", n:"Kinder- / Jugendbett 90 × 200 cm", mat:"wood", cat:"Möbel", pos:"wall", w:100, d:210,
+  p:[190,480,1100,2400], need:1},
+ {id:"matratze", n:"Kindermatratze", mat:"uph", cat:"Möbel", pos:"skip", p:[130,290,590,1200], need:1},
+ {id:"schrank", n:"Kleiderschrank", mat:"wood", cat:"Möbel", pos:"wall", w:150, d:58,
+  p:[290,720,1600,3600], need:1},
+ {id:"schreibtisch", n:"Mitwachsender Schreibtisch", mat:"wood", cat:"Möbel", pos:"window", w:120, d:60,
+  p:[140,390,890,1900], need:1},
+ {id:"stuhl", n:"Kinderdrehstuhl", mat:"uph", cat:"Möbel", pos:"skip", w:45, d:45, p:[80,190,420,890], need:1},
+ {id:"regal", n:"Regal mit Aufbewahrungsboxen", mat:"wood", cat:"Möbel", pos:"wall", w:110, d:38,
+  p:[110,290,650,1400], need:1},
+ {id:"spielteppich", n:"Spielteppich, waschbar", mat:"rug", cat:"Textilien", pos:"under", w:200, d:150,
+  p:[70,180,390,820], need:1},
+ {id:"decke", n:"Deckenleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[45,130,290,650], need:1},
+ {id:"nachtlicht", n:"Nachtlicht", mat:"lamp", cat:"Licht", pos:"skip", p:[20,45,95,180], need:1},
+ {id:"schreibl", n:"Schreibtischleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[35,90,190,420], need:1},
+ {id:"verdunkel", n:"Verdunkelungsvorhang", mat:"tex", cat:"Textilien", pos:"skip", p:[70,160,340,720], need:1},
+ {id:"bettwaesche", n:"Kinderbettwäsche (2 Sets)", mat:"tex", cat:"Textilien", pos:"skip", p:[45,100,190,390], need:1},
+ {id:"wanddeko", n:"Wanddeko / Poster-Set", mat:"deco", cat:"Deko", pos:"skip", p:[30,80,170,340], need:0},
+ {id:"boxen", n:"Aufbewahrungsboxen (6 Stück)", mat:"deco", cat:"Ausstattung", pos:"skip", p:[40,90,180,340], need:1},
+ {id:"sicherung", n:"Kindersicherung: Kippschutz und Steckdosen", mat:"metal", cat:"Ausstattung", pos:"skip",
+  p:[35,60,95,150], need:1, note:"Hohe Möbel im Kinderzimmer gehören zwingend an die Wand geschraubt."}
+],
+
+buero:[
+ {id:"tisch", n:c=>c.budget>=2?"Höhenverstellbarer Schreibtisch":"Schreibtisch 140 × 70 cm", mat:"wood",
+  cat:"Möbel", pos:"window", w:140, d:70, p:[180,490,1290,2900], need:1},
+ {id:"stuhl", n:"Ergonomischer Bürostuhl", mat:"uph", cat:"Möbel", pos:"skip", w:65, d:65,
+  p:[190,520,1200,2400], need:1, note:"Der Stuhl ist der Posten, an dem man am wenigsten sparen sollte."},
+ {id:"monitor", n:"Monitor 27 Zoll mit Halterung", mat:"tech", cat:"Technik", pos:"skip",
+  p:[260,480,950,1900], need:1},
+ {id:"schreibl", n:"Schreibtischleuchte, blendfrei", mat:"lamp", cat:"Licht", pos:"skip", p:[45,120,290,690], need:1},
+ {id:"decke", n:"Deckenleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[50,150,340,780], need:1},
+ {id:"container", n:"Rollcontainer", mat:"wood", cat:"Möbel", pos:"free", w:42, d:55, p:[90,220,480,1050], need:0},
+ {id:"regal", n:"Aktenregal", mat:"wood", cat:"Möbel", pos:"wall", w:80, d:35, p:[110,290,650,1500], need:1},
+ {id:"akustik", n:"Akustikbild / Schallabsorber", mat:"tex", cat:"Ausstattung", pos:"skip", p:[70,180,390,850],
+  need:0, when:c=>c.prio.has("homeoffice")},
+ {id:"teppich", n:"Teppich", mat:"rug", cat:"Textilien", pos:"under", w:200, d:140, p:[90,240,560,1300], need:0},
+ {id:"kabel", n:"Kabelmanagement-Set", mat:"metal", cat:"Ausstattung", pos:"skip", p:[25,55,110,210], need:1},
+ {id:"sessel", n:"Lesesessel", mat:"uph", cat:"Möbel", pos:"corner", w:75, d:80, p:[220,560,1200,2600],
+  need:0, when:c=>c.a>=12},
+ {id:"pflanze", n:"Zimmerpflanze mit Topf", mat:"plant", cat:"Deko", pos:"corner", w:40, d:40, p:[55,120,240,460], need:0},
+ {id:"kunst", n:"Wandbild, gerahmt", mat:"deco", cat:"Deko", pos:"skip", p:[45,120,290,690], need:0}
+],
+
+gast:[
+ {id:"bett", n:c=>c.a<10?"Schlafsofa":"Gästebett 140 × 200 cm", mat:"uph", cat:"Möbel", pos:"wall",
+  w:150, d:210, p:[390,890,1900,4200], need:1},
+ {id:"matratze", n:"Matratze", mat:"uph", cat:"Möbel", pos:"skip", p:[190,450,950,2100], need:1},
+ {id:"nacht", n:"Nachttisch", mat:"wood", cat:"Möbel", pos:"wall", w:40, d:35, p:[55,150,340,780], need:1},
+ {id:"schrank", n:"Kleiderschrank, schmal", mat:"wood", cat:"Möbel", pos:"wall", w:100, d:58,
+  p:[250,620,1400,3200], need:1},
+ {id:"leuchte", n:"Deckenleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[45,140,320,720], need:1},
+ {id:"nachtl", n:"Nachttischleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[35,90,200,450], need:1},
+ {id:"vorhang", n:"Verdunkelungsvorhang", mat:"tex", cat:"Textilien", pos:"skip", p:[70,170,380,820], need:1},
+ {id:"bettwaesche", n:"Gästebettwäsche und Handtücher", mat:"tex", cat:"Textilien", pos:"skip", p:[70,160,340,720], need:1},
+ {id:"teppich", n:"Teppich", mat:"rug", cat:"Textilien", pos:"under", w:200, d:140, p:[90,240,560,1300], need:0},
+ {id:"kunst", n:"Wandbild, gerahmt", mat:"deco", cat:"Deko", pos:"skip", p:[45,120,290,690], need:0},
+ {id:"schreibtisch", n:"Kleiner Sekretär", mat:"wood", cat:"Möbel", pos:"window", w:100, d:50,
+  p:[150,380,850,1900], need:0, when:c=>c.prio.has("homeoffice")}
+],
+
+bad:[
+ {id:"spiegelschrank", n:"Spiegelschrank mit Licht", mat:"metal", cat:"Möbel", pos:"skip",
+  p:[190,420,890,2100], need:1},
+ {id:"unterschrank", n:"Waschtisch-Unterschrank", mat:"wood", cat:"Möbel", pos:"wall", w:80, d:45,
+  p:[160,390,890,2200], need:1},
+ {id:"regal", n:"Badregal oder Rollwagen", mat:"metal", cat:"Möbel", pos:"corner", w:40, d:35,
+  p:[55,130,290,650], need:1},
+ {id:"handtuch", n:"Handtuch-Set", mat:"tex", cat:"Textilien", pos:"skip", p:[55,130,280,620],
+  q:c=>Math.max(1,c.house.beds), need:1},
+ {id:"badteppich", n:"Badteppich, waschbar", mat:"rug", cat:"Textilien", pos:"under", w:120, d:70,
+  p:[30,70,150,320], need:1},
+ {id:"duschwand", n:"Duschwand aus Glas", mat:"stone", cat:"Bau", pos:"skip", p:[290,650,1400,3200],
+  need:0, when:c=>!c.rent},
+ {id:"duschvorhang", n:"Duschvorhang", mat:"tex", cat:"Textilien", pos:"skip", p:[25,55,110,220],
+  need:0, when:c=>c.rent},
+ {id:"spiegell", n:"Spiegelbeleuchtung", mat:"lamp", cat:"Licht", pos:"skip", p:[60,150,340,780], need:1,
+  note:"Licht seitlich vom Spiegel schmeichelt, Licht von oben wirft Schatten."},
+ {id:"halter", n:"Handtuchhalter und Haken", mat:"metal", cat:"Ausstattung", pos:"skip", p:[35,80,180,390], need:1},
+ {id:"seife", n:"Seifenspender und Becher", mat:"deco", cat:"Deko", pos:"skip", p:[25,55,120,260], need:1},
+ {id:"waeschekorb", n:"Wäschekorb", mat:"deco", cat:"Ausstattung", pos:"corner", w:40, d:40,
+  p:[35,80,170,360], need:1},
+ {id:"duschkopf", n:"Regendusche-Kopf", mat:"metal", cat:"Ausstattung", pos:"skip", p:[55,130,290,690], need:0},
+ {id:"pflanze", n:"Pflanze für feuchte Räume", mat:"plant", cat:"Deko", pos:"corner", w:30, d:30,
+  p:[35,70,140,280], need:0}
+],
+
+wc:[
+ {id:"spiegel", n:"Spiegel mit Ablage", mat:"deco", cat:"Möbel", pos:"skip", p:[80,190,420,950], need:1},
+ {id:"leuchte", n:"Wandleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[45,110,240,560], need:1},
+ {id:"regal", n:"Schmales Regal", mat:"wood", cat:"Möbel", pos:"corner", w:30, d:25, p:[45,110,240,520], need:0},
+ {id:"handtuch", n:"Gästehandtücher", mat:"tex", cat:"Textilien", pos:"skip", p:[30,70,150,320], need:1},
+ {id:"seife", n:"Seifenspender", mat:"deco", cat:"Deko", pos:"skip", p:[20,45,95,190], need:1},
+ {id:"tapete", n:"Mustertapete als Blickfang", mat:"tex", cat:"Bau", pos:"skip", p:[90,190,390,850],
+  need:0, when:c=>!c.rent, note:"Kleine Räume vertragen mehr Mut – das WC ist der beste Ort dafür."},
+ {id:"pflanze", n:"Kleine Pflanze", mat:"plant", cat:"Deko", pos:"skip", p:[25,50,100,190], need:0}
+],
+
+flur:[
+ {id:"garderobe", n:"Garderobe mit Haken", mat:"wood", cat:"Möbel", pos:"wall", w:100, d:30,
+  p:[90,240,560,1300], need:1},
+ {id:"schuhschrank", n:"Schuhschrank", mat:"wood", cat:"Möbel", pos:"wall", w:100, d:32,
+  p:[120,320,720,1600], need:1},
+ {id:"spiegel", n:"Ganzkörperspiegel", mat:"deco", cat:"Deko", pos:"wall", w:60, d:8,
+  p:[80,220,490,1200], need:1, note:"Im Flur der wichtigste Trick: Spiegel gegenüber der Lichtquelle."},
+ {id:"konsole", n:"Konsolentisch", mat:"wood", cat:"Möbel", pos:"wall", w:100, d:32,
+  p:[110,290,690,1600], need:0, when:c=>c.a>=6},
+ {id:"bank", n:"Sitzbank zum Schuhe anziehen", mat:"uph", cat:"Möbel", pos:"wall", w:90, d:38,
+  p:[90,230,520,1200], need:0, when:c=>c.a>=5},
+ {id:"laeufer", n:"Läufer", mat:"rug", cat:"Textilien", pos:"under", w:200, d:80, p:[60,150,340,780], need:1},
+ {id:"decke", n:"Deckenleuchte", mat:"lamp", cat:"Licht", pos:"skip", p:[50,140,320,720], need:1},
+ {id:"nachtorient", n:"Orientierungslicht mit Bewegungsmelder", mat:"lamp", cat:"Licht", pos:"skip",
+  p:[25,55,120,240], need:0},
+ {id:"schluessel", n:"Schlüsselboard", mat:"metal", cat:"Ausstattung", pos:"skip", p:[20,50,110,240], need:1},
+ {id:"fussmatte", n:"Fussmatte", mat:"rug", cat:"Ausstattung", pos:"skip", p:[20,45,95,190], need:1},
+ {id:"kunst", n:"Bilderleiste mit Rahmen", mat:"deco", cat:"Deko", pos:"skip", p:[45,120,280,650], need:0}
+],
+
+ankleide:[
+ {id:"system", n:"Offenes Schranksystem", mat:"wood", cat:"Möbel", pos:"wall", w:200, d:55,
+  p:[420,980,2200,5200], need:1},
+ {id:"stange", n:"Zusätzliche Kleiderstange", mat:"metal", cat:"Möbel", pos:"wall", w:120, d:40,
+  p:[60,150,320,720], need:1},
+ {id:"schuhregal", n:"Schuhregal", mat:"wood", cat:"Möbel", pos:"wall", w:80, d:32, p:[90,220,480,1100], need:1},
+ {id:"spiegel", n:"Ganzkörperspiegel", mat:"deco", cat:"Deko", pos:"wall", w:60, d:8, p:[80,220,490,1200], need:1},
+ {id:"hocker", n:"Hocker", mat:"uph", cat:"Möbel", pos:"free", w:40, d:40, p:[50,120,260,590], need:0},
+ {id:"licht", n:"Schrankbeleuchtung mit Sensor", mat:"lamp", cat:"Licht", pos:"skip", p:[45,110,240,520], need:1},
+ {id:"decke", n:"Deckenleuchte, farbecht", mat:"lamp", cat:"Licht", pos:"skip", p:[50,140,320,720], need:1,
+  note:"Hoher Farbwiedergabeindex (CRI 90+), sonst stimmen die Farben der Kleidung nicht."},
+ {id:"boxen", n:"Aufbewahrungsboxen", mat:"deco", cat:"Ausstattung", pos:"skip", p:[40,90,190,390], need:1},
+ {id:"teppich", n:"Kleiner Teppich", mat:"rug", cat:"Textilien", pos:"under", w:140, d:80, p:[50,130,290,650], need:0}
+],
+
+technik:[
+ {id:"regal", n:"Regalsystem, belastbar", mat:"metal", cat:"Möbel", pos:"wall", w:120, d:45,
+  p:[110,260,520,1100], need:1},
+ {id:"boxen", n:"Aufbewahrungsboxen (10 Stück)", mat:"deco", cat:"Ausstattung", pos:"skip", p:[50,110,220,420], need:1},
+ {id:"waeschekorb", n:"Wäschesortierer", mat:"deco", cat:"Ausstattung", pos:"corner", w:50, d:40,
+  p:[45,95,190,380], need:1},
+ {id:"trockner", n:"Wäschetrockner-Gestell", mat:"metal", cat:"Ausstattung", pos:"free", w:70, d:60,
+  p:[35,80,160,320], need:1},
+ {id:"leuchte", n:"Deckenleuchte mit Bewegungsmelder", mat:"lamp", cat:"Licht", pos:"skip", p:[35,80,170,340], need:1},
+ {id:"buegel", n:"Bügelbrett und Bügeleisen", mat:"metal", cat:"Ausstattung", pos:"skip", p:[60,130,260,520], need:0},
+ {id:"erhoehung", n:"Sockel für die Waschmaschine", mat:"metal", cat:"Ausstattung", pos:"skip",
+  p:[70,150,290,520], need:0, when:c=>!c.rent}
+],
+
+balkon:[
+ {id:"lounge", n:c=>c.a>=8?"Outdoor-Lounge-Set":"Zwei Balkonstühle mit Tisch", mat:"uph", cat:"Möbel",
+  pos:"wall", w:c=>c.a>=8?200:120, d:80, p:[290,750,1700,4200], need:1},
+ {id:"beistell", n:"Beistelltisch, wetterfest", mat:"metal", cat:"Möbel", pos:"free", w:45, d:45,
+  p:[45,110,240,520], need:0},
+ {id:"outdoorteppich", n:"Outdoor-Teppich", mat:"rug", cat:"Textilien", pos:"under", w:200, d:140,
+  p:[50,120,260,560], need:1},
+ {id:"kuebel", n:"Pflanzkübel, bepflanzt", mat:"plant", cat:"Deko", pos:"corner", w:40, d:40,
+  p:[60,130,260,520], q:3, need:1},
+ {id:"sicht", n:"Sichtschutz", mat:"tex", cat:"Ausstattung", pos:"skip", p:[60,140,290,650], need:1},
+ {id:"schirm", n:"Sonnenschirm oder Markise", mat:"tex", cat:"Ausstattung", pos:"corner", w:50, d:50,
+  p:[90,250,620,1600], need:0},
+ {id:"lichterkette", n:"Wetterfeste Lichterkette", mat:"lamp", cat:"Licht", pos:"skip", p:[25,55,120,250], need:1},
+ {id:"laterne", n:"Laterne oder Akkuleuchte", mat:"lamp", cat:"Licht", pos:"corner", w:20, d:20,
+  p:[30,75,160,340], q:2, need:0},
+ {id:"auflagen", n:"Sitzauflagen mit Box", mat:"tex", cat:"Textilien", pos:"skip", p:[70,160,340,720], need:0}
+]
+};
+/* Wohn- und Essbereich = Wohnzimmer plus Esstisch-Gruppe */
+CAT.wohnessen = CAT.wohnen.concat(CAT.essen.filter(i=>["esstisch","stuhl","pendel","buffet"].includes(i.id))
+  .map(i=>Object.assign({},i,{id:"e_"+i.id})));
+
+/* ============================ B · HILFSMITTEL ===================== */
+const $  = (s,r)=>(r||document).querySelector(s);
+const $$ = (s,r)=>Array.from((r||document).querySelectorAll(s));
+const el = (t,c,h)=>{const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;};
+const clamp = (v,a,b)=>v<a?a:(v>b?b:v);
+/* Aus den Stammdaten kommen HTML-Entitäten – für Klartext-Ausgaben (Kopieren,
+   Export, KI-Prompt) müssen sie wieder aufgelöst werden. */
+const plain = s=>String(s).replace(/&amp;/g,"&").replace(/&nbsp;/g," ").replace(/&#39;/g,"'");
+
+/* --- Farbe ------------------------------------------------------- */
+function hex2hsl(hex){
+  const m = hex.replace("#","");
+  const r = parseInt(m.substr(0,2),16)/255, g = parseInt(m.substr(2,2),16)/255, b = parseInt(m.substr(4,2),16)/255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b); let h=0, s=0; const l=(mx+mn)/2;
+  if(mx!==mn){
+    const d = mx-mn;
+    s = l>.5 ? d/(2-mx-mn) : d/(mx+mn);
+    h = mx===r ? (g-b)/d + (g<b?6:0) : mx===g ? (b-r)/d+2 : (r-g)/d+4;
+    h *= 60;
+  }
+  return [h, s*100, l*100];
+}
+function hsl2hex(h,s,l){
+  h=((h%360)+360)%360; s=clamp(s,0,100)/100; l=clamp(l,0,100)/100;
+  const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+  let r,g,b;
+  if(h<60){[r,g,b]=[c,x,0];} else if(h<120){[r,g,b]=[x,c,0];} else if(h<180){[r,g,b]=[0,c,x];}
+  else if(h<240){[r,g,b]=[0,x,c];} else if(h<300){[r,g,b]=[x,0,c];} else {[r,g,b]=[c,0,x];}
+  const t=v=>Math.round((v+m)*255).toString(16).padStart(2,"0");
+  return "#"+t(r)+t(g)+t(b);
+}
+function shift(hex,dl,fs,dh){
+  const [h,s,l]=hex2hsl(hex);
+  return hsl2hex(h+(dh||0), s*(fs==null?1:fs), l+(dl||0));
+}
+const lighten=(hex,n)=>shift(hex,n);
+const darken =(hex,n)=>shift(hex,-n);
+function mix(a,b,t){
+  const pa=[1,3,5].map(i=>parseInt(a.replace("#","").substr(i-1,2),16));
+  const pb=[1,3,5].map(i=>parseInt(b.replace("#","").substr(i-1,2),16));
+  return "#"+pa.map((v,i)=>Math.round(v+(pb[i]-v)*t).toString(16).padStart(2,"0")).join("");
+}
+const isDarkC = hex => hex2hsl(hex)[2] < 52;
+const onC = hex => isDarkC(hex) ? "#FFFFFF" : "#1C1917";
+
+/* --- Format ------------------------------------------------------ */
+const EUR_FACTOR = 0.94;   // grober Umrechnungswert, siehe RECHERCHE.md
+function money(chf){
+  const cur = S.currency;
+  const v = cur==="EUR" ? chf*EUR_FACTOR : chf;
+  const r = v>=2000 ? Math.round(v/10)*10 : Math.round(v);
+  return cur==="EUR" ? "€ " + r.toLocaleString("de-DE") : "CHF " + r.toLocaleString("de-CH");
+}
+const m2 = v => v.toLocaleString("de-CH",{maximumFractionDigits:1}) + " m²";
+
+/* --- Zufall mit fester Saat: gleiche Eingabe, gleiches Ergebnis --- */
+function rng(seed){
+  let x = seed>>>0 || 1;
+  return ()=>{ x^=x<<13; x>>>=0; x^=x>>17; x^=x<<5; x>>>=0; return x/4294967296; };
+}
+const hash = s => { let h=2166136261; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; };
+
+/* ============================ Zustand ============================= */
+const S = {
+  step:0, img:null, imgW:0, imgH:0,
+  labels:null, lw:0, lh:0, nextLabel:1,
+  rooms:[], sel:null,
+  totalArea:95, height:250,
+  style:"skandi", mood:"hell", accent:"auto", wood:"auto", budget:1,
+  house:"paar", prio:new Set(["stauraum","gaeste"]),
+  pets:false, vintage:false, access:false, rent:true,
+  floor:"keep", wall:"weiss", light:"mix", orient:"unbekannt",
+  currency:"CHF", cap:null,
+  provider:"", key:"", theme:"auto",
+  design:null, resRoom:-1, resView:"scene", renders:{}
+};
+
+const LS = "raumwerk.v1";
+function save(){
+  try{
+    const o = Object.assign({}, S, {prio:Array.from(S.prio), labels:null, design:null, renders:{}});
+    localStorage.setItem(LS, JSON.stringify(o));
+  }catch(e){ /* Speicher voll oder gesperrt – die App läuft trotzdem */ }
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS); if(!raw) return false;
+    const o = JSON.parse(raw);
+    Object.assign(S, o, {prio:new Set(o.prio||[]), labels:null, design:null, renders:{}});
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ============================ C · RAUMERKENNUNG =================== */
+/* Grundrisse sind fast immer dunkle Linien auf hellem Grund. Genau das
+   nutzt die Erkennung: Bild schwellwerten, Wände etwas verdicken (damit
+   Türöffnungen geschlossen werden), dann die verbliebenen hellen Inseln
+   als Räume einsammeln. Alles im Browser, ohne Server.               */
+
+const DET_MAX = 900;          // Analyse-Auflösung
+function detectRooms(imgEl){
+  const cv = $("#work"), ctx = cv.getContext("2d", {willReadFrequently:true});
+  const sc = Math.min(1, DET_MAX/Math.max(imgEl.naturalWidth, imgEl.naturalHeight));
+  const w = Math.max(1,Math.round(imgEl.naturalWidth*sc)), h = Math.max(1,Math.round(imgEl.naturalHeight*sc));
+  cv.width=w; cv.height=h;
+  ctx.drawImage(imgEl,0,0,w,h);
+  const d = ctx.getImageData(0,0,w,h).data;
+  const N = w*h;
+
+  /* 1 · Graustufen + Histogramm */
+  const gray = new Uint8Array(N), hist = new Uint32Array(256);
+  for(let i=0,p=0;i<N;i++,p+=4){
+    const a = d[p+3];
+    const g = a<40 ? 255 : (d[p]*0.299 + d[p+1]*0.587 + d[p+2]*0.114)|0;   // transparent = Hintergrund
+    gray[i]=g; hist[g]++;
+  }
+
+  /* 2 · Otsu-Schwellwert, nach beiden Seiten begrenzt: sehr helle oder
+        sehr dunkle Pläne würden sonst komplett zu Wand oder zu Raum */
+  let sum=0; for(let t=0;t<256;t++) sum+=t*hist[t];
+  let sumB=0, wB=0, best=0, thr=128;
+  for(let t=0;t<256;t++){
+    wB+=hist[t]; if(!wB) continue;
+    const wF=N-wB; if(!wF) break;
+    sumB+=t*hist[t];
+    const mB=sumB/wB, mF=(sum-sumB)/wF, between=wB*wF*(mB-mF)*(mB-mF);
+    if(between>best){best=between; thr=t;}
+  }
+  thr = clamp(thr, 95, 205);
+
+  const wall = new Uint8Array(N);
+  for(let i=0;i<N;i++) wall[i] = gray[i]<thr ? 1 : 0;
+  dilate(wall, w, h, 1);          // Haarrisse und Rasterlinien schliessen
+
+  /* 3 · Abstand jedes freien Pixels zur nächsten Wand.
+        Ein Türdurchgang ist schmal, ein Raum ist breit – genau dieser
+        Unterschied trennt später die Räume voneinander.               */
+  const dist = distanceMap(wall, w, h);
+
+  /* 4 · Den Trennwert suchen, der die meisten plausiblen Raumkerne
+        ergibt. Zu klein: alles hängt durch die Türen zusammen.
+        Zu gross: schmale Räume wie der Flur verschwinden.            */
+  const minD = Math.min(w,h);
+  const kMax = Math.max(8, Math.round(minD*0.11));
+  const kStep = Math.max(1, Math.round(minD/420));
+  let bestRun = null, dry = 0;
+  for(let k=3; k<=kMax; k+=kStep){
+    const run = coreLabels(dist, k, w, h, N);
+    if(!bestRun || run.valid > bestRun.valid) bestRun = run;   // Gleichstand: kleineres k gewinnt
+    // Sobald nichts mehr übrig bleibt, lohnt kein grösserer Trennwert
+    if(run.valid === 0 && bestRun && bestRun.valid > 0 && ++dry >= 2) break;
+  }
+  if(!bestRun || !bestRun.valid) return { labels:new Int32Array(N), w, h, comps:[] };
+
+  /* 5 · Die Kerne wieder auf die volle Raumfläche wachsen lassen,
+        damit Türnischen und Ecken zum Raum dazugehören.              */
+  const lab = growRegions(bestRun.lab, wall, w, h, N);
+
+  /* 6 · Aufräumen: Kennzahlen je Fläche, aussortieren, neu nummerieren */
+  const acc = {};
+  for(let i=0;i<N;i++){
+    const l = lab[i]; if(!l) continue;
+    const y=(i/w)|0, x=i-y*w;
+    const a = acc[l] || (acc[l]={count:0,minX:w,minY:h,maxX:0,maxY:0,touch:false});
+    a.count++;
+    if(x<a.minX)a.minX=x; if(x>a.maxX)a.maxX=x; if(y<a.minY)a.minY=y; if(y>a.maxY)a.maxY=y;
+    if(x===0||y===0||x===w-1||y===h-1) a.touch=true;
+  }
+  const keep = Object.keys(acc).map(k=>{
+    const a=acc[k];
+    return {label:+k, count:a.count, x:a.minX, y:a.minY, w:a.maxX-a.minX+1, h:a.maxY-a.minY+1, touch:a.touch};
+  }).filter(c=>{
+    const frac = c.count/N;
+    if(frac < 0.004) return false;                     // Schränke, Beschriftungen, Reste
+    if(c.touch && frac > 0.09) return false;           // die Fläche ausserhalb des Gebäudes
+    if(c.w < w*0.035 || c.h < h*0.035) return false;   // Striche
+    if(c.count/(c.w*c.h) < 0.25) return false;         // ausgefranste Formen
+    return true;
+  }).sort((a,b)=>b.count-a.count).slice(0,16);
+
+  const map = new Int32Array(bestRun.next+1).fill(0);
+  keep.forEach((c,i)=> map[c.label] = i+1);
+  for(let i=0;i<N;i++) lab[i] = lab[i] ? map[lab[i]] : 0;
+
+  return { labels:lab, w, h, comps:keep.map((c,i)=>({
+    id:i+1, areaPx:c.count, x:c.x, y:c.y, w:c.w, h:c.h
+  }))};
+}
+
+/* Näherungsweise Distanztransformation (Chamfer 3-4, zwei Durchgänge).
+   Ergebnis in Pixeln, 0 auf der Wand. */
+function distanceMap(wall, w, h){
+  const INF = 1e6, D = new Float32Array(wall.length);
+  for(let i=0;i<wall.length;i++) D[i] = wall[i] ? 0 : INF;
+  const a=3, b=4;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const i=y*w+x; if(D[i]===0) continue; let v=D[i];
+    if(x>0)         v=Math.min(v, D[i-1]+a);
+    if(y>0)         v=Math.min(v, D[i-w]+a);
+    if(x>0&&y>0)    v=Math.min(v, D[i-w-1]+b);
+    if(x<w-1&&y>0)  v=Math.min(v, D[i-w+1]+b);
+    D[i]=v;
+  }
+  for(let y=h-1;y>=0;y--) for(let x=w-1;x>=0;x--){
+    const i=y*w+x; if(D[i]===0) continue; let v=D[i];
+    if(x<w-1)         v=Math.min(v, D[i+1]+a);
+    if(y<h-1)         v=Math.min(v, D[i+w]+a);
+    if(x<w-1&&y<h-1)  v=Math.min(v, D[i+w+1]+b);
+    if(x>0&&y<h-1)    v=Math.min(v, D[i+w-1]+b);
+    D[i]=v;
+  }
+  for(let i=0;i<D.length;i++) D[i] = D[i]>=INF ? 9999 : D[i]/3;
+  return D;
+}
+
+/* Alle Pixel mit Wandabstand ≥ k zu zusammenhängenden Kernen bündeln.
+   Kerne unterhalb MIN_CORE sind keine Räume, sondern Türnischen und
+   Ausbuchtungen – sie werden verworfen, sonst zerlegen sie beim
+   Wachsen einen durchgehenden Flur in lauter Einzelstücke.          */
+const MIN_CORE = 0.0035, MIN_ROOM_CORE = 0.005;
+function coreLabels(dist, k, w, h, N){
+  const lab = new Int32Array(N);
+  const stack = new Int32Array(N);
+  const info = [null];
+  let next = 0;
+  for(let start=0; start<N; start++){
+    if(lab[start] || dist[start] < k) continue;
+    next++;
+    let sp=0; stack[sp++]=start; lab[start]=next;
+    let cnt=0, touch=false;
+    while(sp){
+      const p = stack[--sp]; cnt++;
+      const y=(p/w)|0, x=p-y*w;
+      if(x===0||y===0||x===w-1||y===h-1) touch=true;
+      if(x>0   && !lab[p-1] && dist[p-1]>=k){lab[p-1]=next; stack[sp++]=p-1;}
+      if(x<w-1 && !lab[p+1] && dist[p+1]>=k){lab[p+1]=next; stack[sp++]=p+1;}
+      if(y>0   && !lab[p-w] && dist[p-w]>=k){lab[p-w]=next; stack[sp++]=p-w;}
+      if(y<h-1 && !lab[p+w] && dist[p+w]>=k){lab[p+w]=next; stack[sp++]=p+w;}
+    }
+    info[next] = {cnt, touch};
+  }
+  // Zu kleine Kerne entfernen, brauchbare zählen
+  let valid = 0;
+  const drop = new Uint8Array(next+1);
+  for(let l=1;l<=next;l++){
+    const c = info[l];
+    if(c.cnt < N*MIN_CORE) drop[l]=1;
+    else if(c.cnt >= N*MIN_ROOM_CORE && !(c.touch && c.cnt > N*0.10)) valid++;
+  }
+  if(valid) for(let i=0;i<N;i++) if(lab[i] && drop[lab[i]]) lab[i]=0;
+  return {lab, next, valid, k};
+}
+
+/* Die Kerne gleichmässig über die freie Fläche ausbreiten, bis sie
+   aneinanderstossen – so bekommt jeder Raum seine ganze Fläche zurück. */
+function growRegions(core, wall, w, h, N){
+  const lab = Int32Array.from(core);
+  const q = new Int32Array(N);
+  let head=0, tail=0;
+  for(let i=0;i<N;i++) if(lab[i]) q[tail++]=i;
+  while(head<tail){
+    const p = q[head++], l = lab[p];
+    const y=(p/w)|0, x=p-y*w;
+    if(x>0   && !lab[p-1] && !wall[p-1]){lab[p-1]=l; q[tail++]=p-1;}
+    if(x<w-1 && !lab[p+1] && !wall[p+1]){lab[p+1]=l; q[tail++]=p+1;}
+    if(y>0   && !lab[p-w] && !wall[p-w]){lab[p-w]=l; q[tail++]=p-w;}
+    if(y<h-1 && !lab[p+w] && !wall[p+w]){lab[p+w]=l; q[tail++]=p+w;}
+  }
+  return lab;
+}
+
+/* Max-Filter in zwei Durchgängen – verdickt die Wandlinien um r Pixel */
+function dilate(mask, w, h, r){
+  const tmp = new Uint8Array(mask.length);
+  for(let y=0;y<h;y++){
+    const o=y*w;
+    for(let x=0;x<w;x++){
+      let v=0;
+      for(let k=-r;k<=r;k++){ const xx=x+k; if(xx>=0&&xx<w&&mask[o+xx]){v=1;break;} }
+      tmp[o+x]=v;
+    }
+  }
+  for(let x=0;x<w;x++){
+    for(let y=0;y<h;y++){
+      let v=0;
+      for(let k=-r;k<=r;k++){ const yy=y+k; if(yy>=0&&yy<h&&tmp[yy*w+x]){v=1;break;} }
+      mask[y*w+x]=v;
+    }
+  }
+}
+
+/* Erkannte Flächen in Raumtypen übersetzen. Reine Heuristik – deshalb
+   steht in der Oberfläche gleich daneben, dass man sie ändern kann.  */
+function guessTypes(rooms){
+  const sorted = rooms.slice().sort((a,b)=>b.m2-a.m2);
+  const used = {};
+  const take = t => { used[t]=(used[t]||0)+1; return t; };
+  sorted.forEach((r,idx)=>{
+    const ratio = Math.max(r.wCm,r.dCm)/Math.max(1,Math.min(r.wCm,r.dCm));
+    let t;
+    if(ratio > 2.9 && r.m2 < 20)                 t = "flur";
+    else if(r.m2 < 2.5)                          t = used.wc ? "technik" : "wc";
+    else if(r.m2 < 5.5)                          t = !used.bad ? "bad" : (!used.wc ? "wc" : "technik");
+    else if(!used.wohnen && !used.wohnessen)     t = r.m2 >= 30 ? "wohnessen" : "wohnen";
+    else if(!used.schlafen && r.m2 >= 9)         t = "schlafen";
+    else if(r.m2 < 7.5)                          t = !used.bad ? "bad" : (!used.ankleide ? "ankleide" : "technik");
+    else if(!used.kueche && r.m2 <= 18)          t = "kueche";
+    else if(!used.kind && r.m2 >= 8)             t = "kind";
+    else if(!used.buero && r.m2 >= 6)            t = "buero";
+    else if(!used.bad)                           t = "bad";
+    else                                         t = "gast";
+    r.type = take(t);
+  });
+  return rooms;
+}
+
+/* Fläche neu verteilen: die Summe der Pixelflächen entspricht der
+   eingegebenen Wohnfläche. Daraus folgt der Massstab in cm je Pixel. */
+function rescale(){
+  const px = S.rooms.filter(r=>!r.synth).reduce((a,r)=>a+r.areaPx,0);
+  const synthM2 = S.rooms.filter(r=>r.synth).reduce((a,r)=>a+r.m2,0);
+  const targetM2 = Math.max(5, S.totalArea - synthM2);
+  const cmPerPx = px>0 ? Math.sqrt(targetM2*10000/px) : 1;
+  S.cmPerPx = cmPerPx;
+  S.rooms.forEach(r=>{
+    if(r.synth){
+      const side = Math.sqrt(r.m2*10000);
+      r.wCm = Math.round(side*1.18); r.dCm = Math.round(side/1.18);
+      return;
+    }
+    r.m2  = +(r.areaPx*cmPerPx*cmPerPx/10000).toFixed(1);
+    r.wCm = Math.round(r.w*cmPerPx);
+    r.dCm = Math.round(r.h*cmPerPx);
+  });
+}
+
+/* ============================ D · EINRICHTUNGS-ENGINE ============= */
+
+/* Farbpalette für einen Raum: Stil → Farbwelt → persönliche Wahl →
+   Raumtyp → Himmelsrichtung. In dieser Reihenfolge, damit die eigene
+   Auswahl den Stil überstimmt und nicht umgekehrt.                  */
+function paletteFor(room){
+  const st = STYLES.find(s=>s.id===S.style);
+  const mo = MOODS.find(m=>m.id===S.mood);
+  const p = Object.assign({}, st.pal);
+
+  // 1 · Persönliche Wahl: Akzent und Holz ersetzen den Stilvorschlag
+  const ac = ACCENTS.find(a=>a.id===S.accent);
+  if(ac && ac.hex) p.accent = ac.hex;
+  const wd = WOODS.find(w=>w.id===S.wood);
+  if(wd && wd.hex){ p.wood = wd.hex; if(wd.metal) p.metalName = wd.metal; }
+
+  // 2 · Wand- und Bodenbehandlung
+  if(S.wall==="weiss")  p.wall = lighten(shift(p.wall,0,.35), 6);
+  if(S.wall==="farbe")  p.wall = mix(p.wall, p.accent, .42);
+  if(S.wall==="tapete") p.wall = mix(p.wall, p.accent, .22);
+  if(S.wall==="paneele")p.wall2 = mix(p.wood, p.wall, .35);
+  const fl = FLOORS.find(f=>f.id===S.floor);
+  if(fl && fl.id!=="keep"){
+    if(fl.id==="parkett")  p.floor = mix(p.wood, "#D8BE97", .45);
+    if(fl.id==="vinyl")    p.floor = mix(p.wood, "#CBB89C", .55);
+    if(fl.id==="mikro")    p.floor = mix("#B8B2A8", p.wall, .3);
+    if(fl.id==="fliese")   p.floor = mix("#C8C3BB", p.wall, .25);
+    if(fl.id==="teppichb") p.floor = mix(p.uph, "#A79C8C", .4);
+  }
+
+  // 3 · Farbwelt zuletzt – sie ist die stärkste Aussage und darf die
+  //     Grundtöne verschieben, sonst bliebe "Dunkel" wirkungslos.
+  for(const k of ["wall","wall2","floor","wood","uph","accent"]){
+    const dl = mo.l[k]!=null ? mo.l[k] : 0;
+    p[k] = shift(p[k], dl, mo.s.all, mo.hueShift||0);
+  }
+
+  // 4 · Raumtyp-Anpassungen
+  const t = room ? room.type : "wohnen";
+  if(t==="bad"||t==="wc"){ p.floor = mix(p.floor, "#C9C6C0", .55); p.wall = lighten(p.wall, 4); }
+  if(t==="kueche"){ p.floor = mix(p.floor, "#BFB9AF", .35); }
+  if(t==="kind"){ p.wall = lighten(p.wall, 5); p.accent = shift(p.accent, 6, 1.25); }
+  if(t==="balkon"){ p.floor = mix(p.wood, "#9C7C55", .5); p.wall = mix(p.wall, "#B7B2A9", .45); }
+  if(t==="technik"){ p.wall = lighten(shift(p.wall,0,.3), 5); }
+
+  // 5 · Himmelsrichtung: Nordräume vertragen wärmeres Licht
+  const or = ORIENTS.find(o=>o.id===S.orient);
+  if(or && or.warm>0){ p.wall = shift(p.wall, 1, 1.12, -3); p.uph = shift(p.uph, 0, 1.1, -3); }
+  if(or && or.warm<0){ p.wall = shift(p.wall, 0, .95, 3); }
+
+  p.ceiling = lighten(p.wall, isDarkC(p.wall) ? 7 : 5);
+  p.wallShade = darken(p.wall, isDarkC(p.wall) ? 4 : 7);
+  p.floorDark = darken(p.floor, 9);
+  p.line = isDarkC(p.wall) ? lighten(p.wall,16) : darken(p.wall,16);
+  p.ink = onC(p.wall);
+  p.metal = p.metal || st.pal.metal;
+  return p;
+}
+
+/* Kontext, den jede Katalogbedingung bekommt */
+function ctxFor(room){
+  const house = HOUSES.find(h=>h.id===S.house);
+  const seatsN = clamp(house.seats + (S.prio.has("gaeste")?2:0), 2, 10);
+  return {
+    a: room.m2, room, type: room.type,
+    house, seatsN, budget: S.budget, style: S.style,
+    prio: S.prio, pets:S.pets, vintage:S.vintage, access:S.access, rent:S.rent,
+    hasEss: S.rooms.some(r=>r.type==="essen"||r.type==="wohnessen"),
+    hasAnkleide: S.rooms.some(r=>r.type==="ankleide")
+  };
+}
+
+const val = (v,c)=> typeof v==="function" ? v(c) : v;
+
+/* Materialbeschreibung: aus Stil + Wahl wird ein konkreter Satz */
+function finish(mat, st, p){
+  const f = st.fin;
+  switch(mat){
+    case "uph":   return S.pets ? "strapazierfähiger, abwaschbarer Bezug" : plain(f.uph);
+    case "wood":  return plain(f.wood);
+    case "metal": return p.metalName || plain(f.metal);
+    case "rug":   return plain(f.rug);
+    case "lamp":  return plain(f.lamp);
+    case "tex":   return plain(f.tex);
+    case "deco":  return plain(f.deco);
+    case "plant": return "in Topf, Ton oder Korb";
+    case "stone": return "Naturstein- oder Keramikoptik";
+    case "tech":  return "in Schwarz, möglichst unauffällig";
+    default:      return "";
+  }
+}
+
+/* Die eigentliche Planung eines Raums */
+function designRoom(room){
+  const c  = ctxFor(room);
+  const st = STYLES.find(s=>s.id===S.style);
+  const p  = paletteFor(room);
+  const list = (CAT[room.type]||[]).filter(i=>!i.when || i.when(c));
+
+  const items = list.map(i=>{
+    const q  = Math.max(1, Math.round(val(i.q,c) ?? 1));
+    const w  = val(i.w,c) || 0, d = val(i.d,c) || 0;
+    let unit = i.p[S.budget] * st.price;
+    // Second Hand betrifft Möbel und Deko, nicht Matratzen oder Technik
+    const usedOk = !["tech"].includes(i.mat) && !["matratze","bettwaesche","handtuch","duschkopf"].includes(i.id);
+    if(S.vintage && usedOk) unit *= 0.66;
+    if(S.access && i.id==="teppich") unit *= 1.1;
+    return {
+      id:i.id, name: plain(val(i.n,c)), mat:i.mat, cat:i.cat, pos:i.pos||"free",
+      w, d, q, need:i.need, note:i.note||"",
+      fin: finish(i.mat, st, p),
+      unit: Math.round(unit), total: Math.round(unit*q)
+    };
+  });
+
+  // Bauliche Posten je Raum: Boden, Wand, Lichtsteuerung
+  const extras = [];
+  const fl = FLOORS.find(f=>f.id===S.floor);
+  if(fl && fl.perM2 && room.type!=="balkon"){
+    const t = Math.round(fl.p[S.budget]*room.m2);
+    extras.push({id:"floor", name:plain(fl.n)+", verlegt", mat:"stone", cat:"Bau", pos:"skip",
+      q:1, w:0,d:0, need:1, fin:`${m2(room.m2)} Fläche`, unit:t, total:t,
+      note:"Material und Verlegung als Richtwert je Quadratmeter."});
+  }
+  const wl = WALLS.find(w=>w.id===S.wall);
+  if(wl && !(S.rent && wl.build)){
+    const wallM2 = Math.round(2*(room.wCm+room.dCm)/100 * S.height/100 * 0.82);
+    const t = Math.round(wl.p[S.budget]*wallM2);
+    if(t>0) extras.push({id:"wall", name:plain(wl.n), mat:"stone", cat:"Bau", pos:"skip",
+      q:1, w:0,d:0, need:1, fin:`rund ${wallM2} m² Wandfläche`, unit:t, total:t});
+  }
+  const li = LIGHTS.find(l=>l.id===S.light);
+  if(li && li.extra){
+    const t = li.extra[S.budget];
+    extras.push({id:"smart", name:"Dimmer und Lichtsteuerung", mat:"tech", cat:"Technik", pos:"skip",
+      q:1, w:0,d:0, need:0, fin:"pro Raum eine Szene", unit:t, total:t});
+  }
+
+  const all = items.concat(extras);
+  const place = layoutRoom(room, all.filter(i=>i.pos!=="skip"));
+  const total = all.reduce((a,i)=>a+i.total,0);
+  const byCat = {};
+  all.forEach(i=>{ byCat[i.cat] = (byCat[i.cat]||0)+i.total; });
+
+  return { room, pal:p, items:all, place, total, byCat, style:st,
+           tip: tipFor(room, c, p) };
+}
+
+/* Ein konkreter Hinweis je Raum – das, was ein Einrichter zuerst sagen würde */
+function tipFor(room, c, p){
+  const t = room.type, a = room.m2;
+  if(t==="wohnen"||t==="wohnessen"){
+    if(a<16) return "Kleiner Wohnraum: Möbel auf Beinen statt auf dem Boden stehend wirken leichter, und ein Spiegel gegenüber dem Fenster verdoppelt das Licht.";
+    return "Sitzabstand zum Fernseher rund das Zweieinhalbfache der Bilddiagonale, zwischen Sofa und Couchtisch 40 cm. Das sind die zwei Masse, an denen Wohnzimmer meistens scheitern.";
+  }
+  if(t==="schlafen") return "Beidseitig 60 cm neben dem Bett freilassen, sonst wird das Beziehen zur Turnübung. Vorhänge dicht bis zur Decke gehängt lassen den Raum höher wirken.";
+  if(t==="kueche")   return "Der Weg Kühlschrank – Spüle – Herd sollte kurz und frei sein. Arbeitsfläche zwischen Spüle und Herd: mindestens 60 cm.";
+  if(t==="essen")    return "Pro Person 60 cm Tischbreite rechnen und rundum 80 cm Platz zum Zurückschieben der Stühle.";
+  if(t==="bad")      return "Licht seitlich vom Spiegel statt darüber, und alles was nass wird, gehört auf offene Ablagen statt in geschlossene Schränke.";
+  if(t==="wc")       return "Der kleinste Raum verträgt den grössten Mut: dunkle Farbe oder Mustertapete wirken hier stark und kosten wenig.";
+  if(t==="kind")     return "Alles unter 120 cm Höhe muss das Kind selbst erreichen. Hohe Möbel zwingend an der Wand sichern.";
+  if(t==="buero")    return "Der Schreibtisch steht am besten seitlich zum Fenster – frontal blendet es, mit dem Rücken zum Fenster spiegelt der Bildschirm.";
+  if(t==="flur")     return "Nur 30 cm tiefe Möbel wählen, damit der Durchgang mindestens 80 cm breit bleibt.";
+  if(t==="ankleide") return "Doppelte Kleiderstangen verdoppeln die Hängefläche. Licht mit hoher Farbwiedergabe, sonst passt morgens nichts zusammen.";
+  if(t==="balkon")   return "Ein Outdoor-Teppich macht aus dem Balkon einen Raum. Windfeste, stapelbare Möbel überleben den Winter besser.";
+  if(t==="gast")     return "Ein Gästezimmer, das nur ein paar Wochen im Jahr gebraucht wird, sollte den Rest der Zeit etwas anderes können – Sekretär oder Klappbett.";
+  if(t==="technik")  return "In die Höhe planen: Regale bis unter die Decke, unten das Schwere, oben das Selten-Gebrauchte.";
+  return "Drei Lichtquellen auf verschiedenen Höhen machen jeden Raum sofort wohnlicher.";
+}
+
+/* ------------------------------------------------------------------
+   Möblierung im Grundriss
+   Belegungsraster mit 10 cm Auflösung. Wandmöbel werden an die Wände
+   gelegt, Tische in die Mitte, Pflanzen und Leuchten in die Ecken.
+   Bei erkannten Räumen prüft die Platzierung gegen die echte Raumform,
+   nicht nur gegen das umschliessende Rechteck.
+   ------------------------------------------------------------------ */
+const CELL = 10;   // cm
+function layoutRoom(room, items){
+  const gw = Math.max(3, Math.floor(room.wCm/CELL)), gh = Math.max(3, Math.floor(room.dCm/CELL));
+  const occ = new Uint8Array(gw*gh);
+
+  // Zellen ausserhalb der erkannten Raumfläche sperren
+  if(!room.synth && S.labels){
+    for(let gy=0; gy<gh; gy++) for(let gx=0; gx<gw; gx++){
+      const px = Math.round(room.x + (gx+0.5)/gw*room.w);
+      const py = Math.round(room.y + (gy+0.5)/gh*room.h);
+      const i = py*S.lw+px;
+      if(px<0||py<0||px>=S.lw||py>=S.lh||S.labels[i]!==room.id) occ[gy*gw+gx]=2;
+    }
+  }
+  const free = (x,y,w,h)=>{
+    if(x<0||y<0||x+w>gw||y+h>gh) return false;
+    for(let j=y;j<y+h;j++) for(let i=x;i<x+w;i++) if(occ[j*gw+i]) return false;
+    return true;
+  };
+  const fill = (x,y,w,h)=>{ for(let j=y;j<y+h;j++) for(let i=x;i<x+w;i++) occ[j*gw+i]=1; };
+  const out = [];
+  const push = (it,x,y,w,h)=>{
+    out.push({id:it.id, name:it.name, mat:it.mat, x:x*CELL, y:y*CELL, w:w*CELL, h:h*CELL});
+  };
+
+  // Teppiche zuerst, sie liegen unter allem und blockieren nichts
+  items.filter(i=>i.pos==="under").forEach(it=>{
+    const w = Math.min(gw-1, Math.max(2, Math.round(it.w/CELL)));
+    const h = Math.min(gh-1, Math.max(2, Math.round(it.d/CELL)));
+    const x = Math.floor((gw-w)/2), y = Math.floor((gh-h)/2);
+    out.push({id:it.id, name:it.name, mat:"rug", x:x*CELL, y:y*CELL, w:w*CELL, h:h*CELL, under:true});
+  });
+
+  const order = {wall:0, window:1, center:2, corner:3, free:4};
+  const rest = items.filter(i=>i.pos!=="under").sort((a,b)=>(order[a.pos]??5)-(order[b.pos]??5) || b.w*b.d-a.w*a.d);
+  const rnd = rng(hash(room.id+"|"+room.type+"|"+S.style+"|"+S.budget));
+
+  for(const it of rest){
+    const q = Math.min(it.q, it.pos==="wall"?2:3);
+    for(let k=0;k<q;k++){
+      const iw = Math.max(1, Math.round(it.w/CELL)), id_ = Math.max(1, Math.round(it.d/CELL));
+      let done = false;
+
+      if(it.pos==="wall"||it.pos==="window"){
+        const sides = [0,1,2,3].sort(()=>rnd()-0.5);
+        for(const s of sides){
+          const w = (s===0||s===2) ? iw : id_;
+          const h = (s===0||s===2) ? id_ : iw;
+          const span = (s===0||s===2) ? gw : gh;
+          const startList = [];
+          for(let a=0; a+((s===0||s===2)?w:h)<=span; a++) startList.push(a);
+          startList.sort(()=>rnd()-0.5);
+          for(const a of startList){
+            const x = (s===0||s===2) ? a : (s===1 ? gw-w : 0);
+            const y = (s===0||s===2) ? (s===0 ? 0 : gh-h) : a;
+            if(free(x,y,w,h)){ fill(x,y,w,h); push(it,x,y,w,h); done=true; break; }
+          }
+          if(done) break;
+        }
+      } else if(it.pos==="center"){
+        const x = Math.floor((gw-iw)/2), y = Math.floor((gh-id_)/2);
+        if(free(x,y,iw,id_)){ fill(x,y,iw,id_); push(it,x,y,iw,id_); done=true; }
+      } else if(it.pos==="corner"){
+        const corners = [[0,0],[gw-iw,0],[0,gh-id_],[gw-iw,gh-id_]].sort(()=>rnd()-0.5);
+        for(const [x,y] of corners){
+          if(free(x,y,iw,id_)){ fill(x,y,iw,id_); push(it,x,y,iw,id_); done=true; break; }
+        }
+      }
+      if(!done && it.pos!=="center"){
+        // Notfall: irgendeine freie Fläche
+        outer: for(let y=0;y<gh-id_;y++) for(let x=0;x<gw-iw;x++){
+          if(free(x,y,iw,id_)){ fill(x,y,iw,id_); push(it,x,y,iw,id_); done=true; break outer; }
+        }
+      }
+      if(!done) break;
+    }
+  }
+  return out;
+}
+
+/* Gesamtauswertung über alle Räume */
+function buildDesign(){
+  rescale();
+  const rooms = S.rooms.filter(r=>r.type!=="ignor");
+  const per = rooms.map(designRoom);
+  const total = per.reduce((a,d)=>a+d.total,0);
+  const byCat = {};
+  per.forEach(d=>{ for(const k in d.byCat) byCat[k]=(byCat[k]||0)+d.byCat[k]; });
+  const area = rooms.reduce((a,r)=>a+r.m2,0);
+
+  // Wunschbudget: was liesse sich streichen?
+  let cut = null;
+  if(S.cap && total > S.cap){
+    const opt = [];
+    per.forEach(d=> d.items.filter(i=>!i.need).forEach(i=> opt.push({room:d.room, i})));
+    opt.sort((a,b)=>b.i.total-a.i.total);
+    let sum=0; const take=[];
+    for(const o of opt){ if(total-sum <= S.cap) break; sum+=o.i.total; take.push(o); }
+    cut = { need: total - S.cap, saved: sum, items: take, ok: total - sum <= S.cap };
+  }
+  S.design = { per, total, byCat, area, cut, perM2: area>0 ? total/area : 0 };
+  return S.design;
+}
+
+/* ============================ E · DARSTELLUNG ===================== */
+/* Die Raumansicht ist eine Zentralperspektive: ein Fluchtpunkt in der
+   Bildmitte, alles andere wird von dort weg skaliert. Dadurch stimmen
+   Proportionen und Möbelhöhen, ohne eine 3D-Bibliothek zu laden.    */
+const SW = 1000, SH = 620;            // Bildmass der Ansicht
+const VPX = 500, VPY = 278;           // Fluchtpunkt
+const BX0 = 252, BX1 = 748;           // Rückwand links / rechts
+const BY0 = 118, BY1 = 432;           // Rückwand oben / unten (= Boden)
+const SGROW = 1.226;                  // Streckung bis zur Bildkante
+
+const Pp = (x,y,t)=>{ const s = 1 + t*SGROW; return [VPX+(x-VPX)*s, VPY+(y-VPY)*s]; };
+const pt = a => a[0].toFixed(1)+","+a[1].toFixed(1);
+const poly = (pts, fill, extra)=>`<polygon points="${pts.map(pt).join(" ")}" fill="${fill}" ${extra||""}/>`;
+
+/* Höhe in cm → Einheiten der Rückwandebene */
+function uh(cm){ return (BY1-BY0) * (cm / S.height); }
+
+/* Ein Quader im Raum. x quer (Rückwandeinheiten), t Tiefe 0…1,
+   hcm Höhe, baseCm Unterkante über dem Boden. Gezeichnet werden
+   Deckfläche, die sichtbare Flanke und die Front – dazu ein weicher
+   Schatten, damit das Stück auf dem Boden steht statt zu schweben.  */
+function box3(x0,x1,t0,t1,hcm,col,baseCm,seams){
+  const b = uh(baseCm||0), h = uh(hcm), FY = BY1;
+  const yB = FY-b, yT = FY-b-h;
+  const cTop = lighten(col,11), cFront = col, cSide = darken(col,13);
+  const fbl=Pp(x0,yB,t1), fbr=Pp(x1,yB,t1), ftl=Pp(x0,yT,t1), ftr=Pp(x1,yT,t1);
+  const bbl=Pp(x0,yB,t0), bbr=Pp(x1,yB,t0), btl=Pp(x0,yT,t0), btr=Pp(x1,yT,t0);
+  let s = "";
+  if(!baseCm){                                                    // Kontaktschatten
+    const p0=Pp(x0-6,FY,t0-.02), p1=Pp(x1+6,FY,t0-.02), p2=Pp(x1+9,FY,t1+.03), p3=Pp(x0-9,FY,t1+.03);
+    s += poly([p0,p1,p2,p3], "#241C14", 'opacity=".16" filter="url(#soft)"');
+  }
+  s += poly([btl,btr,ftr,ftl], cTop);
+  if(x1 < VPX)      s += poly([btr,bbr,fbr,ftr], cSide);
+  else if(x0 > VPX) s += poly([btl,bbl,fbl,ftl], cSide);
+  s += poly([ftl,ftr,fbr,fbl], cFront);
+  if(seams>1){                                                    // Türfugen und Fachböden
+    const ink = darken(col,20);
+    for(let i=1;i<seams;i++){
+      const x = x0+(x1-x0)*i/seams, a=Pp(x,yT,t1), b=Pp(x,yB,t1);
+      s += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${ink}" stroke-width="1.3"/>`;
+    }
+  }
+  return s;
+}
+/* Fläche an der Rückwand (Bilder, Fliesenspiegel …) */
+function backPanel(x0,x1,y0,y1,fill,extra){
+  return poly([Pp(x0,y0,0),Pp(x1,y0,0),Pp(x1,y1,0),Pp(x0,y1,0)], fill, extra);
+}
+/* Fläche an einer Seitenwand: side -1 = links, +1 = rechts */
+function sidePanel(side,t0,t1,y0,y1,fill,extra){
+  const x = side<0 ? BX0 : BX1;
+  return poly([Pp(x,y0,t0),Pp(x,y0,t1),Pp(x,y1,t1),Pp(x,y1,t0)], fill, extra);
+}
+/* Fläche auf dem Boden (Teppiche) */
+function floorPanel(x0,x1,t0,t1,fill,extra){
+  return poly([Pp(x0,BY1,t0),Pp(x1,BY1,t0),Pp(x1,BY1,t1),Pp(x0,BY1,t1)], fill, extra);
+}
+
+/* --- Einzelteile, die kein Quader sind -------------------------- */
+function pendant(x,t,dropCm,pal,wide){
+  const top = Pp(x,BY0,t), b = Pp(x,BY1-uh(S.height-dropCm),t);
+  const s = 1+t*SGROW, r = (wide?32:21)*s;
+  return `<ellipse cx="${b[0].toFixed(1)}" cy="${(b[1]+r*1.1).toFixed(1)}" rx="${(r*2.4).toFixed(1)}" ry="${(r*1.7).toFixed(1)}" fill="url(#glow)" opacity=".38"/>`
+   + `<line x1="${top[0].toFixed(1)}" y1="${top[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${pal.metal}" stroke-width="${(1.5*s).toFixed(1)}"/>`
+   + `<path d="M ${(b[0]-r).toFixed(1)} ${b[1].toFixed(1)} Q ${b[0].toFixed(1)} ${(b[1]-r*0.95).toFixed(1)} ${(b[0]+r).toFixed(1)} ${b[1].toFixed(1)} Z" fill="${pal.metal}"/>`
+   + `<ellipse cx="${b[0].toFixed(1)}" cy="${b[1].toFixed(1)}" rx="${r.toFixed(1)}" ry="${(r*0.24).toFixed(1)}" fill="#FFF6E2"/>`;
+}
+function plant(x,t,pal,tall){
+  const base = Pp(x,BY1,t), s = 1+t*SGROW;
+  const potH = (tall?32:21)*s, potW = (tall?24:17)*s;
+  const leaf = mix("#4C6B47", pal.accent, .22);
+  let o = poly([Pp(x-14,BY1,t-.02),Pp(x+14,BY1,t-.02),Pp(x+16,BY1,t+.03),Pp(x-16,BY1,t+.03)], "#241C14",
+    'opacity=".18" filter="url(#soft)"');
+  const n = tall?7:5, hgt = (tall?150:82)*s*0.62;
+  for(let i=0;i<n;i++){
+    const a = (i/(n-1)-0.5)*1.9, len = hgt*(0.72+0.28*Math.cos(a));
+    const tipX = base[0]+Math.sin(a)*len*0.78, tipY = base[1]-potH-len;
+    o += `<path d="M ${base[0].toFixed(1)} ${(base[1]-potH).toFixed(1)} Q ${(base[0]+Math.sin(a)*len*0.32).toFixed(1)} ${(base[1]-potH-len*0.6).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)}" fill="none" stroke="${i%2?leaf:darken(leaf,9)}" stroke-width="${(6*s).toFixed(1)}" stroke-linecap="round"/>`;
+  }
+  o += `<path d="M ${(base[0]-potW).toFixed(1)} ${(base[1]-potH).toFixed(1)} L ${(base[0]+potW).toFixed(1)} ${(base[1]-potH).toFixed(1)} L ${(base[0]+potW*0.74).toFixed(1)} ${base[1].toFixed(1)} L ${(base[0]-potW*0.74).toFixed(1)} ${base[1].toFixed(1)} Z" fill="${mix(pal.wood,"#C6B098",.45)}"/>`;
+  return o;
+}
+function artwall(x0,x1,y0,y1,pal,n){
+  let o=""; const wdt=(x1-x0)/n;
+  for(let i=0;i<n;i++){
+    const a=x0+i*wdt+wdt*0.12, b=a+wdt*0.76;
+    const inner = i%2 ? mix(pal.accent,pal.wall,.3) : mix(pal.uph,pal.wall,.22);
+    o += backPanel(a-1.5,b+1.5,y0-2,y1+2, "#241C14", 'opacity=".14" filter="url(#soft)"');
+    o += backPanel(a,b,y0,y1, pal.metal);
+    o += backPanel(a+wdt*0.05,b-wdt*0.05,y0+5,y1-5, inner);
+  }
+  return o;
+}
+function windowLeft(pal,t0,t1){
+  const y0=BY0+uh(S.height-215), y1=BY1-uh(28);
+  let o = sidePanel(-1,t0,t1,y0-9,y1+9, mix(pal.wall,"#FFFFFF",.6));
+  o += sidePanel(-1,t0+.02,t1-.02,y0,y1, "url(#sky)");
+  o += sidePanel(-1,(t0+t1)/2-.006,(t0+t1)/2+.006,y0,y1, mix(pal.wall,"#FFFFFF",.65));
+  o += sidePanel(-1,t0-.11,t0+.01,BY0+uh(4),BY1, pal.uph, 'opacity=".95"');
+  o += sidePanel(-1,t1-.01,t1+.13,BY0+uh(4),BY1, pal.uph, 'opacity=".95"');
+  // Lichtbahn auf dem Boden
+  o += poly([Pp(BX0,BY1,t0),Pp(BX0+180,BY1,t0+.18),Pp(BX0+210,BY1,t1+.30),Pp(BX0,BY1,t1)],
+    "#FFF3D6", 'opacity=".30" filter="url(#soft)"');
+  return o;
+}
+
+/* --- Möblierung je Raumtyp --------------------------------------
+   Reihenfolge immer von hinten nach vorne, sonst überdecken weit
+   entfernte Stücke die nahen.                                      */
+function sceneParts(d){
+  const p = d.pal, t = d.room.type, big = d.room.m2 >= 18;
+  const W = (a,b)=>[BX0+(BX1-BX0)*a, BX0+(BX1-BX0)*b];
+  const F = { uph:p.uph, wood:p.wood, metal:p.metal, acc:p.accent };
+  const B = (a,b,t0,t1,h,c,base,seams)=>{ const [x0,x1]=W(a,b); return box3(x0,x1,t0,t1,h,c,base,seams); };
+  let s = "";
+
+  if(t==="wohnen"||t==="wohnessen"||t==="gast"){
+    s += windowLeft(p, .26, .58);
+    s += artwall(...W(.32,.68), BY0+uh(S.height-192), BY0+uh(S.height-118), p, big?3:2);
+    s += floorPanel(...W(.05,.95), .16, .94, mix(p.uph,p.floor,.32), 'opacity=".92"');
+    s += B(.20,.80, .04,.13, 82, darken(F.uph,6));                 // Rückenlehne
+    s += B(.20,.80, .04,.34, 42, F.uph);                           // Sitzkorpus
+    for(let i=0;i<3;i++){ const a=.235+i*.185; s += B(a,a+.13, .07,.15, 26, mix(F.acc,F.uph,.42), 42); }
+    s += B(.20,.80, .13,.34, 6, lighten(F.uph,5), 42);             // Sitzfläche
+    s += B(.81,.99, .06,.34, 76, F.wood, 0, 2);                     // Sideboard rechts
+    s += B(.39,.61, .44,.64, 40, F.wood);                          // Couchtisch
+    s += B(.40,.50, .48,.56, 5, F.acc, 40);
+    s += plant(BX0+22, .20, p, false);
+    s += B(.02,.19, .58,.86, 40, F.uph);                           // Sessel
+    s += B(.02,.19, .58,.66, 78, darken(F.uph,6));
+    s += pendant(VPX, .42, 105, p, big);
+    s += plant(BX1-16, .84, p, true);
+  }
+  else if(t==="schlafen"){
+    s += windowLeft(p, .30, .62);
+    s += artwall(...W(.37,.63), BY0+uh(S.height-198), BY0+uh(S.height-138), p, 1);
+    s += B(.86,.99, .02,.42, 210, F.wood, 0, 2);                    // Schrank
+    s += backPanel(...W(.27,.73), BY0+uh(S.height-120), BY1-uh(48), mix(F.uph,p.wall,.2));  // Kopfteil
+    s += floorPanel(...W(.12,.88), .28, .96, mix(p.uph,p.floor,.38), 'opacity=".9"');
+    s += B(.16,.26, .05,.19, 52, F.wood);                          // Nachttische
+    s += B(.74,.84, .05,.19, 52, F.wood);
+    s += B(.27,.73, .04,.74, 46, F.wood);                          // Bettgestell
+    s += B(.27,.73, .04,.74, 14, mix("#FFFFFF",p.wall,.14), 46);   // Matratze
+    s += B(.28,.72, .40,.66, 8, F.acc, 60);                        // Plaid
+    s += B(.30,.48, .06,.22, 13, mix("#FFFFFF",p.wall,.04), 60);   // Kissen
+    s += B(.52,.70, .06,.22, 13, mix("#FFFFFF",p.wall,.04), 60);
+    s += pendant(VPX, .34, 95, p, false);
+    s += plant(BX1-22, .74, p, true);
+  }
+  else if(t==="kueche"){
+    s += backPanel(...W(0,1), BY0+uh(S.height-150), BY1-uh(90), mix(p.floor,"#FFFFFF",.55));
+    s += B(.03,.30, .02,.10, 62, F.wood, 128, 2);                   // Oberschränke
+    s += B(.70,.97, .02,.10, 62, F.wood, 128, 2);
+    s += B(.34,.66, .02,.09, 34, mix(F.metal,"#3A3A3A",.45), 142); // Dunstabzug
+    s += B(0,1, .02,.16, 88, F.wood, 0, 7);                         // Unterschränke
+    s += B(0,1, .01,.17, 5, mix(F.metal,"#FFFFFF",.42), 88);       // Arbeitsplatte
+    if(big){
+      s += B(.26,.76, .44,.70, 88, F.wood, 0, 3);                  // Kochinsel
+      s += B(.24,.78, .43,.71, 5, mix(F.metal,"#FFFFFF",.42), 88);
+      s += pendant(VPX-62,.56,118,p,false); s += pendant(VPX+62,.56,118,p,false);
+      s += B(.30,.38, .74,.82, 44, F.uph); s += B(.52,.60, .74,.82, 44, F.uph);
+    } else s += pendant(VPX,.44,118,p,false);
+    s += plant(BX0+24,.24,p,false);
+  }
+  else if(t==="essen"){
+    s += artwall(...W(.58,.94), BY0+uh(S.height-188), BY0+uh(S.height-118), p, 2);
+    s += B(.04,.40, .02,.16, 82, F.wood, 0, 3);                     // Buffet
+    s += floorPanel(...W(.10,.90), .22, .92, mix(p.uph,p.floor,.32), 'opacity=".88"');
+    for(let i=0;i<3;i++){ const a=.27+i*.17; s += B(a,a+.13,.20,.32, 44, F.uph);
+      s += B(a,a+.13,.20,.24, 88, darken(F.uph,6)); }                // Stühle hinten
+    s += B(.22,.78, .34,.74, 72, F.wood);                          // Tisch
+    s += B(.20,.80, .33,.75, 5, lighten(F.wood,6), 72);
+    for(let i=0;i<3;i++){ const a=.27+i*.17; s += B(a,a+.13,.78,.90, 44, F.uph);
+      s += B(a,a+.13,.86,.90, 88, darken(F.uph,6)); }               // Stühle vorne
+    s += pendant(VPX-48,.52,116,p,false); s += pendant(VPX+48,.52,116,p,false);
+    s += plant(BX1-18,.30,p,true);
+  }
+  else if(t==="bad"||t==="wc"){
+    s += backPanel(...W(0,1), BY0+uh(S.height-215), BY1, mix(p.floor,"#FFFFFF",.66));
+    s += backPanel(...W(.13,.45), BY0+uh(S.height-182), BY0+uh(S.height-100), mix("#D6E2E6",p.wall,.25));
+    s += backPanel(...W(.135,.445), BY0+uh(S.height-179), BY0+uh(S.height-103), "url(#mirror)");
+    s += B(.10,.48, .02,.16, 84, F.wood);                          // Waschtisch
+    s += B(.09,.49, .01,.17, 6, mix(F.metal,"#FFFFFF",.58), 84);
+    s += B(.52,.70, .02,.14, 42, mix("#FFFFFF",p.wall,.08));       // WC
+    s += floorPanel(...W(.12,.50), .24, .50, F.acc, 'opacity=".78"');
+    if(t==="bad"){
+      s += B(.74,.99, .02,.30, 4, mix(p.floor,"#FFFFFF",.45));     // Duschtasse
+      s += sidePanel(1,.02,.52,BY0+uh(4),BY1, "url(#glass)");
+      s += poly([Pp(BX0+(BX1-BX0)*.74,BY0+uh(4),.30),Pp(BX0+(BX1-BX0)*.74,BY1,.30),
+                 Pp(BX1,BY1,.30),Pp(BX1,BY0+uh(4),.30)], "url(#glass)");
+    }
+    s += backPanel(...W(.76,.92), BY0+uh(S.height-118), BY0+uh(S.height-58), F.acc);   // Handtuch
+    s += plant(BX1-26,.66,p,false);
+    s += pendant(VPX,.32,58,p,false);
+  }
+  else if(t==="buero"){
+    s += windowLeft(p,.20,.56);
+    s += B(.78,.99, .02,.30, 196, F.wood, 0, 2);                    // Regal
+    for(let i=0;i<4;i++){ const [ax,bx]=W(.80,.97);
+      s += backPanel(ax,bx, BY0+uh(S.height-44-i*36), BY0+uh(S.height-50-i*36), mix(F.acc,p.wall,.3)); }
+    s += floorPanel(...W(.12,.76), .16, .74, mix(p.uph,p.floor,.35), 'opacity=".82"');
+    s += B(.16,.72, .14,.44, 72, F.wood);                          // Schreibtisch
+    s += B(.15,.73, .13,.45, 4, lighten(F.wood,7), 72);
+    s += B(.36,.54, .18,.24, 42, mix("#2A2A2A",F.metal,.15), 76);  // Monitor
+    s += B(.36,.52, .50,.68, 44, F.uph);                           // Stuhl
+    s += B(.36,.52, .62,.68, 62, darken(F.uph,7), 44);
+    s += pendant(VPX,.36,105,p,false);
+    s += plant(BX1-14,.78,p,true);
+  }
+  else if(t==="kind"){
+    s += artwall(...W(.52,.94), BY0+uh(S.height-192), BY0+uh(S.height-142), p, 3);
+    s += B(.44,.62, .02,.16, 156, F.wood, 0, 2);                    // Regal
+    s += floorPanel(...W(.16,.90), .30, .95, F.acc, 'opacity=".5"');
+    s += B(.04,.40, .04,.66, 42, F.wood);                          // Bett
+    s += B(.04,.40, .04,.66, 12, mix("#FFFFFF",p.wall,.1), 42);
+    s += B(.04,.40, .04,.14, 52, mix(F.acc,F.wood,.45), 54);
+    s += B(.60,.97, .06,.30, 72, F.wood, 0, 2);                     // Schreibtisch
+    s += B(.59,.98, .05,.31, 4, lighten(F.wood,7), 72);
+    s += B(.72,.86, .34,.50, 42, F.uph);
+    s += pendant(VPX,.34,88,p,false);
+  }
+  else if(t==="flur"){
+    s += backPanel(...W(.36,.62), BY0+uh(S.height-200), BY1-uh(48), "url(#mirror)");
+    s += sidePanel(-1,.10,.62,BY0+uh(S.height-192),BY0+uh(S.height-182), F.wood);
+    for(let i=0;i<4;i++) s += sidePanel(-1,.14+i*.12,.16+i*.12,BY0+uh(S.height-182),BY0+uh(S.height-170), F.metal);
+    s += floorPanel(...W(.26,.74), .10, .98, mix(p.uph,p.floor,.42), 'opacity=".92"');
+    s += B(.70,.98, .06,.26, 184, F.wood, 0, 2);                    // Schuhschrank
+    s += B(.02,.30, .32,.46, 44, F.uph);                           // Bank
+    s += pendant(VPX,.26,68,p,false);
+    s += plant(BX0+16,.74,p,true);
+  }
+  else if(t==="balkon"){
+    s += `<rect x="0" y="0" width="${SW}" height="${SH}" fill="url(#sky)"/>`;
+    s += poly([Pp(BX0,BY1,0),Pp(BX1,BY1,0),Pp(BX1,BY1,1),Pp(BX0,BY1,1)], p.floor);
+    for(let i=1;i<14;i++){ const x=BX0+(BX1-BX0)*i/14;
+      s += poly([Pp(x,BY1,0),Pp(x+2.5,BY1,0),Pp(x+2.5,BY1,1),Pp(x,BY1,1)], darken(p.floor,8)); }
+    s += backPanel(BX0,BX1, BY1-uh(106), BY1-uh(100), p.metal);
+    for(let i=0;i<12;i++){ const x=BX0+(BX1-BX0)*(i+.5)/12; s += backPanel(x-2,x+2, BY1-uh(103), BY1, p.metal); }
+    s += plant(BX0+34,.12,p,true); s += plant(BX1-34,.16,p,true);
+    s += floorPanel(...W(.14,.86), .30, .88, F.acc, 'opacity=".58"');
+    s += B(.08,.54, .30,.64, 38, F.uph);
+    s += B(.08,.54, .30,.38, 74, darken(F.uph,7));
+    s += B(.62,.88, .34,.58, 44, F.wood);
+    s += plant(BX1-58,.80,p,false);
+    for(let i=0;i<9;i++){ const a=Pp(BX0+(BX1-BX0)*i/8, BY0+uh(8)+Math.sin(i/8*Math.PI)*12, .04);
+      s += `<circle cx="${a[0].toFixed(1)}" cy="${a[1].toFixed(1)}" r="4.5" fill="#FFE9B8"/>`; }
+  }
+  else if(t==="ankleide"){
+    s += backPanel(...W(.46,.54), BY0+uh(S.height-205), BY1-uh(18), "url(#mirror)");
+    s += B(0,.44, .02,.26, 216, F.wood, 0, 3);
+    s += B(.56,1, .02,.26, 216, F.wood, 0, 3);
+    for(let i=0;i<6;i++){ const a=.03+i*.065;
+      s += B(a,a+.05,.08,.18, 88, mix(F.uph,F.acc,(i%3)/3), 96); }
+    for(let i=0;i<6;i++){ const a=.59+i*.065;
+      s += B(a,a+.05,.08,.18, 88, mix(F.uph,p.wall,(i%3)/3), 96); }
+    s += floorPanel(...W(.24,.76), .40, .92, mix(p.uph,p.floor,.36), 'opacity=".82"');
+    s += B(.42,.58, .56,.74, 42, F.uph);
+    s += pendant(VPX,.38,68,p,false);
+  }
+  else {
+    s += B(0,.32, .02,.26, 216, F.wood, 0, 3);
+    s += B(.68,1, .02,.26, 216, F.wood, 0, 3);
+    for(let i=0;i<4;i++) s += B(.03,.29, .06,.22, 26, mix(F.acc,p.wall,.35), 24+i*48);
+    s += floorPanel(...W(.30,.70), .40, .92, mix(p.uph,p.floor,.45), 'opacity=".7"');
+    s += B(.38,.62, .30,.56, 85, mix(F.metal,"#FFFFFF",.35));
+    s += pendant(VPX,.32,58,p,false);
+  }
+  return s;
+}
+
+/* Komplette Raumansicht */
+function renderScene(d){
+  const p = d.pal;
+  const lightWarm = S.light==="neutral" ? "#EAF0F6" : S.light==="warm" ? "#FFE2B0" : "#FFEDCD";
+  const wallL = darken(p.wall, 11), wallR = darken(p.wall, 4);
+  let s = `<svg class="scene" viewBox="0 0 ${SW} ${SH}" role="img" aria-label="Raumansicht ${esc(plain(RT[d.room.type].n))}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C6DDEC"/><stop offset="1" stop-color="#F4F0E6"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="${lightWarm}" stop-opacity=".85"/><stop offset="1" stop-color="${lightWarm}" stop-opacity="0"/></radialGradient>
+    <linearGradient id="mirror" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${lighten(p.wall,14)}"/><stop offset=".5" stop-color="${mix(p.wall,"#D6E2E8",.65)}"/><stop offset="1" stop-color="${darken(p.wall,6)}"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#DCE9EE" stop-opacity=".38"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".14"/></linearGradient>
+    <linearGradient id="fl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${darken(p.floor,7)}"/><stop offset="1" stop-color="${lighten(p.floor,5)}"/></linearGradient>
+    <linearGradient id="ao" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#241C14" stop-opacity=".22"/><stop offset="1" stop-color="#241C14" stop-opacity="0"/></linearGradient>
+    <radialGradient id="vig" cx=".5" cy=".44" r=".8">
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>`;
+
+  if(d.room.type!=="balkon"){
+    const ceil = isDarkC(p.wall) ? mix(lighten(p.wall,15), "#F2EEE8", .18) : lighten(p.wall,6);
+    s += poly([[0,0],[SW,0],Pp(BX1,BY0,0),Pp(BX0,BY0,0)], ceil);                                   // Decke
+    s += poly([Pp(BX0,BY1,0),Pp(BX1,BY1,0),Pp(BX1,BY1,1),Pp(BX0,BY1,1)], "url(#fl)");              // Boden
+    s += poly([[0,0],Pp(BX0,BY0,0),Pp(BX0,BY1,0),Pp(BX0,BY1,1),[0,SH]], wallL);                    // links
+    s += poly([[SW,0],Pp(BX1,BY0,0),Pp(BX1,BY1,0),Pp(BX1,BY1,1),[SW,SH]], wallR);                  // rechts
+    s += backPanel(BX0,BX1,BY0,BY1, p.wall);                                                       // Rückwand
+    if(S.wall==="paneele") for(let i=0;i<11;i++){ const x=BX0+(BX1-BX0)*i/11;
+      s += backPanel(x,x+((BX1-BX0)/24), BY0, BY1-uh(9), p.wall2); }
+    s += backPanel(BX0,BX1, BY1-uh(26), BY1, "url(#ao)");                                          // Wandanschluss
+    s += backPanel(BX0,BX1, BY1-uh(9), BY1, lighten(p.wall,9));                                    // Sockelleiste
+    s += sidePanel(-1,0,1,BY1-uh(9),BY1, lighten(wallL,9));
+    s += sidePanel(1,0,1,BY1-uh(9),BY1, lighten(wallR,9));
+  }
+
+  s += sceneParts(d);
+  s += `<rect width="${SW}" height="${SH}" fill="url(#vig)"/></svg>`;
+  return s;
+}
+
+/* --- Möblierter Grundriss je Raum -------------------------------- */
+const MATCOL = (p,m)=>({uph:p.uph, wood:p.wood, metal:p.metal, rug:mix(p.uph,p.accent,.4),
+  lamp:p.accent, tex:mix(p.uph,p.wall,.4), deco:p.accent, plant:"#6E8C5E",
+  stone:mix(p.floor,"#FFFFFF",.4), tech:"#3A3A3A"}[m] || p.wood);
+
+function renderPlanRoom(d){
+  const r = d.room, pal = d.pal;
+  const pad = 26, W = 760;
+  const sc = (W-2*pad)/r.wCm;
+  const H = Math.round(r.dCm*sc + 2*pad);
+  const X = c=>pad + c*sc, Y = c=>pad + c*sc;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Möblierter Grundriss">
+    <rect width="${W}" height="${H}" fill="${lighten(pal.wall, isDarkC(pal.wall)?4:3)}"/>`;
+  // Raumfläche: bei erkannten Räumen die echte Form, sonst das Rechteck
+  const url = r.synth ? null : maskURL(r, pal.floor);
+  if(url) s += `<image href="${url}" x="${pad}" y="${pad}" width="${(r.wCm*sc).toFixed(1)}" height="${(r.dCm*sc).toFixed(1)}" preserveAspectRatio="none"/>`;
+  else s += `<rect x="${pad}" y="${pad}" width="${(r.wCm*sc).toFixed(1)}" height="${(r.dCm*sc).toFixed(1)}" fill="${pal.floor}"/>`;
+  s += `<rect x="${pad}" y="${pad}" width="${(r.wCm*sc).toFixed(1)}" height="${(r.dCm*sc).toFixed(1)}" fill="none" stroke="${darken(pal.floor,22)}" stroke-width="5"/>`;
+
+  d.place.filter(i=>i.under).forEach(i=>{
+    s += `<rect x="${X(i.x)}" y="${Y(i.y)}" width="${(i.w*sc).toFixed(1)}" height="${(i.h*sc).toFixed(1)}"
+      fill="${MATCOL(pal,"rug")}" opacity=".55" rx="3"/>`;
+  });
+  d.place.filter(i=>!i.under).forEach(i=>{
+    const c = MATCOL(pal,i.mat);
+    s += `<g><rect x="${X(i.x)}" y="${Y(i.y)}" width="${(i.w*sc).toFixed(1)}" height="${(i.h*sc).toFixed(1)}"
+      fill="${c}" stroke="${darken(c,14)}" stroke-width="1.4" rx="2.5"/>`;
+    if(i.w*sc>52 && i.h*sc>22)
+      s += `<text x="${X(i.x+i.w/2)}" y="${Y(i.y+i.h/2)+3.5}" text-anchor="middle" font-size="10.5"
+        font-family="-apple-system,sans-serif" fill="${onC(c)}" opacity=".92">${esc(shortName(i.name))}</text>`;
+    s += `</g>`;
+  });
+  // Bemassung
+  const bw = (r.wCm/100).toFixed(1).replace(".",","), bd = (r.dCm/100).toFixed(1).replace(".",",");
+  s += `<text x="${W/2}" y="15" text-anchor="middle" font-size="11.5" font-family="-apple-system,sans-serif" fill="${pal.ink}" opacity=".55">${bw} m</text>`;
+  s += `<text x="11" y="${H/2}" text-anchor="middle" font-size="11.5" font-family="-apple-system,sans-serif" fill="${pal.ink}" opacity=".55" transform="rotate(-90 11 ${H/2})">${bd} m</text>`;
+  return s + `</svg>`;
+}
+const shortName = n => n.replace(/\s*\(.*?\)/,"").replace(/,.*$/,"").replace(/\s+\d+\s*×.*$/,"").slice(0,22);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+const maskCache = {};
+function maskURL(room, col){
+  const key = room.id+"|"+col;
+  if(maskCache[key]) return maskCache[key];
+  if(!S.labels) return null;
+  const c = document.createElement("canvas");
+  c.width = room.w; c.height = room.h;
+  const g = c.getContext("2d"), im = g.createImageData(room.w, room.h);
+  const rr = parseInt(col.substr(1,2),16), gg = parseInt(col.substr(3,2),16), bb = parseInt(col.substr(5,2),16);
+  for(let y=0;y<room.h;y++) for(let x=0;x<room.w;x++){
+    const src = (room.y+y)*S.lw + (room.x+x), dst = (y*room.w+x)*4;
+    if(S.labels[src]===room.id){ im.data[dst]=rr; im.data[dst+1]=gg; im.data[dst+2]=bb; im.data[dst+3]=255; }
+  }
+  g.putImageData(im,0,0);
+  const u = c.toDataURL("image/png");
+  maskCache[key] = u;
+  return u;
+}
+
+/* --- Moodboard --------------------------------------------------- */
+function renderMood(d){
+  const p = d.pal, st = d.style;
+  const sw = [
+    ["Wand", p.wall, S.wall==="weiss"?"gestrichen, matt":plain(WALLS.find(w=>w.id===S.wall).n)],
+    ["Boden", p.floor, S.floor==="keep" ? "bleibt bestehen" : plain(FLOORS.find(f=>f.id===S.floor).n)],
+    ["Holz", p.wood, plain(st.fin.wood)],
+    ["Polster", p.uph, plain(st.fin.uph)],
+    ["Akzent", p.accent, "Kissen, Vorhänge, Deko"],
+    ["Metall", p.metal, p.metalName || plain(st.fin.metal)],
+    ["Textil", mix(p.uph,p.wall,.35), plain(st.fin.tex)],
+    ["Teppich", mix(p.uph,p.accent,.4), plain(st.fin.rug)]
+  ];
+  return `<div class="mood">` + sw.map(([n,c,t])=>
+    `<div class="m"><div class="c" style="background:${c}"></div><div class="t"><b>${esc(n)}</b><span>${esc(t)}</span></div></div>`
+  ).join("") + `</div>`;
+}
+
+/* ============================ F · OBERFLÄCHE ====================== */
+const busy = (on,t,s)=>{ $("#busy").classList.toggle("on",!!on); if(t)$("#busy-t").textContent=t; $("#busy-s").textContent=s||""; };
+const openM = id => $(id).classList.add("on");
+const closeM = id => $(id).classList.remove("on");
+
+/* --- Schritte ---------------------------------------------------- */
+const STEP_INFO = [
+  ["Grundriss hochladen", r=>r ? "Plan geladen" : "Noch kein Plan gewählt"],
+  ["Räume prüfen",        r=>`${S.rooms.length} Räume · ${m2(S.rooms.reduce((a,x)=>a+x.m2,0))}`],
+  ["Stil festlegen",      ()=>plain(STYLES.find(s=>s.id===S.style).n)+" · "+plain(MOODS.find(m=>m.id===S.mood).n)],
+  ["Fertig",              ()=>S.design ? money(S.design.total)+" gesamt" : ""]
+];
+function goto(n){
+  n = clamp(n,0,3);
+  if(n>=1 && !S.rooms.length) n = 0;
+  if(n===3) buildDesign();
+  S.step = n;
+  $$(".panel").forEach((p,i)=>p.classList.toggle("on", i===n));
+  $$("#steps .step").forEach((b,i)=>{
+    b.dataset.state = i===n ? "active" : (i<n ? "done" : "");
+    b.disabled = i>0 && !S.rooms.length;
+  });
+  $("#fb-t").textContent = STEP_INFO[n][0];
+  $("#fb-s").textContent = STEP_INFO[n][1](S.img);
+  $("#btn-back").style.visibility = n===0 ? "hidden" : "visible";
+  $("#btn-next").textContent = n===2 ? "Einrichtung berechnen" : n===3 ? "Von vorne" : "Weiter";
+  $("#btn-next").disabled = n>=1 && !S.rooms.length;
+  if(n===1) drawOverlay();
+  if(n===3) renderResult();
+  window.scrollTo({top:0, behavior:"smooth"});
+  save();
+}
+
+/* --- Bild laden -------------------------------------------------- */
+function loadImageFile(file){
+  if(!file || !/^image\//.test(file.type)){ alert("Bitte eine Bilddatei wählen (PNG, JPG oder WebP)."); return; }
+  const fr = new FileReader();
+  fr.onload = ()=> useImage(fr.result);
+  fr.readAsDataURL(file);
+}
+function useImage(dataUrl){
+  busy(true,"Plan wird gelesen","Räume werden erkannt");
+  const im = new Image();
+  im.onload = ()=>{
+    // Auf sinnvolle Grösse bringen, damit der Speicher nicht überläuft
+    const cv = document.createElement("canvas");
+    const sc = Math.min(1, 1500/Math.max(im.naturalWidth, im.naturalHeight));
+    cv.width = Math.round(im.naturalWidth*sc); cv.height = Math.round(im.naturalHeight*sc);
+    cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+    S.img = cv.toDataURL("image/jpeg", 0.82);
+    S.imgW = cv.width; S.imgH = cv.height;
+    const el2 = $("#plan-img");
+    el2.onload = ()=>{ runDetect(el2); busy(false); };
+    el2.src = S.img;
+  };
+  im.onerror = ()=>{ busy(false); alert("Das Bild liess sich nicht lesen."); };
+  im.src = dataUrl;
+}
+function runDetect(imgEl){
+  const res = detectRooms(imgEl);
+  S.labels = res.labels; S.lw = res.w; S.lh = res.h; S.nextLabel = res.comps.length+1;
+  Object.keys(maskCache).forEach(k=>delete maskCache[k]);
+  S.rooms = res.comps.map(c=>({ id:c.id, areaPx:c.areaPx, x:c.x, y:c.y, w:c.w, h:c.h,
+                                m2:0, wCm:0, dCm:0, type:"wohnen", synth:false }));
+  rescale(); guessTypes(S.rooms); rescale();
+  $("#detect-hint").textContent = S.rooms.length
+    ? `${S.rooms.length} Flächen gefunden`
+    : "Nichts erkannt – Räume bitte von Hand einzeichnen";
+  renderRoomList(); drawOverlay(); goto(1);
+}
+
+/* --- Beispielgrundriss ------------------------------------------- */
+function demoPlan(){
+  const c = document.createElement("canvas"); c.width=1000; c.height=700;
+  const g = c.getContext("2d");
+  g.fillStyle="#FFFFFF"; g.fillRect(0,0,1000,700);
+  g.fillStyle="#1A1A1A";
+  const W = (x,y,w,h)=>g.fillRect(x,y,w,h);
+  const D = (x,y,w,h)=>{ g.fillStyle="#FFFFFF"; g.fillRect(x,y,w,h); g.fillStyle="#1A1A1A"; };
+  W(40,40,920,10); W(40,650,920,10); W(40,40,10,620); W(950,40,10,620);   // Aussenwände
+  W(40,330,920,9); W(40,410,920,9);                                       // Korridor
+  W(500,40,9,299); W(751,40,9,299); W(751,200,209,9);                     // obere Zimmer
+  W(390,410,9,249); W(640,410,9,249); W(820,410,9,249);                   // untere Zimmer
+  D(220,330,60,9); D(580,330,55,9); D(830,330,55,9);                      // Türen zum Korridor
+  D(190,410,60,9); D(480,410,55,9); D(700,410,50,9); D(870,410,50,9);
+  D(830,200,55,9);                                                        // Ankleide über das Bad
+  g.fillStyle="#8A8A8A";                                                  // Fenster
+  [[130,40],[330,40],[580,40],[820,40],[130,650],[330,650],[500,650],[700,650],[860,650]]
+    .forEach(([x,y])=> g.fillRect(x,y+3,100,4));
+  g.font="15px -apple-system,sans-serif";
+  g.fillText("Wohnen",130,200); g.fillText("Küche",560,200); g.fillText("Ankleide",790,130);
+  g.fillText("Bad",810,285); g.fillText("Flur",130,382); g.fillText("Schlafen",130,545);
+  g.fillText("Kind",460,545); g.fillText("Büro",680,545); g.fillText("Abstell",850,545);
+  S.totalArea = 112; $("#in-area").value = 112;
+  useImage(c.toDataURL("image/png"));
+}
+
+/* --- Räume ohne Plan --------------------------------------------- */
+const START_SET = [["wohnen",28],["kueche",11],["schlafen",15],["kind",12],["bad",7],["flur",8]];
+function startWithoutPlan(){
+  S.img = null; S.labels = null;
+  S.rooms = START_SET.map((r,i)=>({ id:1000+i, type:r[0], m2:r[1], areaPx:0, synth:true, wCm:0, dCm:0 }));
+  S.totalArea = START_SET.reduce((a,r)=>a+r[1],0);
+  $("#in-area").value = S.totalArea;
+  $("#stage").style.display = "none";
+  $("#detect-hint").textContent = "Ohne Plan: Räume von Hand pflegen";
+  rescale(); renderRoomList(); goto(1);
+}
+function addManualRoom(){
+  const id = 1000 + S.rooms.length + Math.floor(Math.random()*900);
+  S.rooms.push({id, type:"gast", m2:12, areaPx:0, synth:true, wCm:0, dCm:0});
+  S.totalArea = Math.round(S.rooms.reduce((a,r)=>a+r.m2,0));
+  $("#in-area").value = S.totalArea;
+  rescale(); renderRoomList(); drawOverlay();
+}
+
+/* --- Plan-Überlagerung ------------------------------------------- */
+function drawOverlay(){
+  const ov = $("#ov");
+  if(!S.img || !S.labels){ $("#stage").style.display = S.img ? "block" : "none"; ov.innerHTML=""; return; }
+  $("#stage").style.display = "block";
+  ov.setAttribute("viewBox", `0 0 ${S.lw} ${S.lh}`);
+  const c = document.createElement("canvas"); c.width=S.lw; c.height=S.lh;
+  const g = c.getContext("2d"), im = g.createImageData(S.lw, S.lh);
+  const cols = {};
+  S.rooms.forEach(r=>{ if(!r.synth){ const h=RT[r.type].col;
+    cols[r.id]=[parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)]; }});
+  for(let i=0;i<S.labels.length;i++){
+    const l = S.labels[i]; if(!l || !cols[l]) continue;
+    const isEdge = (i%S.lw===0)||(i%S.lw===S.lw-1)||(i<S.lw)||(i>=S.labels.length-S.lw)
+      || S.labels[i-1]!==l || S.labels[i+1]!==l || S.labels[i-S.lw]!==l || S.labels[i+S.lw]!==l;
+    const [r,gg,b] = cols[l], o=i*4;
+    im.data[o]=r; im.data[o+1]=gg; im.data[o+2]=b;
+    im.data[o+3] = isEdge ? 235 : (S.sel===l ? 118 : 62);
+  }
+  g.putImageData(im,0,0);
+  let s = `<image href="${c.toDataURL("image/png")}" x="0" y="0" width="${S.lw}" height="${S.lh}"/>`;
+  S.rooms.filter(r=>!r.synth).forEach(r=>{
+    const cx = r.x + r.w/2, cy = r.y + r.h/2;
+    s += `<text class="rm-lbl" x="${cx}" y="${cy}" text-anchor="middle" fill="#1C1917" stroke="#FFFFFF">${esc(plain(RT[r.type].n))}</text>`;
+    s += `<text class="rm-lbl" x="${cx}" y="${cy+13}" text-anchor="middle" fill="#57534E" stroke="#FFFFFF" style="font-size:9.5px">${m2(r.m2)}</text>`;
+  });
+  ov.innerHTML = s;
+}
+
+function renderRoomList(){
+  const host = $("#room-list"); host.innerHTML = "";
+  $("#room-count").textContent = S.rooms.length ? `· ${m2(S.rooms.reduce((a,r)=>a+r.m2,0))}` : "";
+  if(!S.rooms.length){
+    host.innerHTML = `<div class="note warn">Es wurden keine Räume erkannt. Zeichne sie mit
+      „Raum einzeichnen" von Hand ein oder starte ohne Plan.</div>`;
+    return;
+  }
+  S.rooms.forEach(r=>{
+    const row = el("div","room-row"+(S.sel===r.id?" sel":""));
+    row.innerHTML = `<span class="sw" style="background:${RT[r.type].col}"></span>
+      <select class="inp" aria-label="Raumtyp">${RTYPES.map(t=>
+        `<option value="${t.id}"${t.id===r.type?" selected":""}>${t.n}</option>`).join("")}</select>
+      <span class="a">${r.synth?`<input class="inp" type="number" min="1" max="120" step="1" value="${r.m2}" style="width:74px;padding:6px 8px;font-size:13px" aria-label="Fläche">`:m2(r.m2)}</span>
+      <button class="del" aria-label="Raum entfernen">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
+    row.querySelector("select").onchange = e=>{ r.type = e.target.value; renderRoomList(); drawOverlay(); save(); };
+    const num = row.querySelector('input[type="number"]');
+    if(num) num.onchange = e=>{ r.m2 = clamp(+e.target.value||1,1,200);
+      S.totalArea = Math.round(S.rooms.reduce((a,x)=>a+x.m2,0)); $("#in-area").value=S.totalArea;
+      rescale(); renderRoomList(); save(); };
+    row.querySelector(".del").onclick = ()=>{
+      S.rooms = S.rooms.filter(x=>x!==r);
+      if(S.labels && !r.synth) for(let i=0;i<S.labels.length;i++) if(S.labels[i]===r.id) S.labels[i]=0;
+      rescale(); renderRoomList(); drawOverlay(); save();
+    };
+    row.onclick = e=>{ if(e.target.closest("select,button,input")) return;
+      S.sel = S.sel===r.id?null:r.id; renderRoomList(); drawOverlay(); };
+    host.appendChild(row);
+  });
+}
+
+/* Raum im Plan antippen bzw. neuen Raum aufziehen */
+let drawMode = false, dragStart = null;
+function stagePos(ev){
+  const b = $("#stage").getBoundingClientRect();
+  return [clamp(Math.round((ev.clientX-b.left)/b.width*S.lw),0,S.lw-1),
+          clamp(Math.round((ev.clientY-b.top )/b.height*S.lh),0,S.lh-1)];
+}
+function bindStage(){
+  const st = $("#stage");
+  st.addEventListener("pointerdown", ev=>{
+    if(!S.labels) return;
+    const [x,y] = stagePos(ev);
+    if(drawMode){ dragStart=[x,y]; st.setPointerCapture(ev.pointerId); return; }
+    const l = S.labels[y*S.lw+x];
+    S.sel = l && l===S.sel ? null : (l||null);
+    renderRoomList(); drawOverlay();
+  });
+  st.addEventListener("pointermove", ev=>{
+    if(!drawMode || !dragStart) return;
+    const [x,y]=stagePos(ev);
+    const r = {x:Math.min(x,dragStart[0]), y:Math.min(y,dragStart[1]),
+               w:Math.abs(x-dragStart[0]), h:Math.abs(y-dragStart[1])};
+    $("#ov").querySelector("#tmp")?.remove();
+    $("#ov").insertAdjacentHTML("beforeend",
+      `<rect id="tmp" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#B4744A" fill-opacity=".3" stroke="#B4744A" stroke-width="2"/>`);
+  });
+  st.addEventListener("pointerup", ev=>{
+    if(!drawMode || !dragStart) return;
+    const [x,y]=stagePos(ev);
+    const x0=Math.min(x,dragStart[0]), y0=Math.min(y,dragStart[1]);
+    const w=Math.abs(x-dragStart[0]), h=Math.abs(y-dragStart[1]);
+    dragStart=null; $("#ov").querySelector("#tmp")?.remove();
+    if(w<8||h<8) return;
+    const id = ++S.nextLabel;
+    let n=0;
+    for(let j=y0;j<y0+h;j++) for(let i=x0;i<x0+w;i++){ S.labels[j*S.lw+i]=id; n++; }
+    S.rooms.push({id, areaPx:n, x:x0, y:y0, w, h, m2:0, wCm:0, dCm:0, type:"gast", synth:false});
+    drawMode=false; $("#btn-draw").classList.remove("pri");
+    rescale(); renderRoomList(); drawOverlay(); save();
+  });
+}
+
+/* --- Auswahl-Steuerelemente aufbauen ----------------------------- */
+function buildControls(){
+  // Stile
+  $("#tiles-style").innerHTML = STYLES.map(s=>{
+    const p = s.pal;
+    return `<button class="tile" data-style="${s.id}" aria-pressed="${s.id===S.style}">
+      <span class="sw"><i style="background:${p.wall}"></i><i style="background:${p.floor}"></i>
+        <i style="background:${p.uph}"></i><i style="background:${p.accent}"></i></span>
+      <span class="tx"><b>${s.n}</b><span>${s.tag}</span></span></button>`;
+  }).join("");
+  // Farbwelten – Vorschau mit der aktuellen Stilpalette
+  const paintMoods = ()=>{
+    const base = paletteFor(null);
+    $("#tiles-mood").innerHTML = MOODS.map(mo=>{
+      const c = k=>shift(base[k], mo.l[k]||0, mo.s.all, mo.hueShift||0);
+      return `<button class="tile" data-mood="${mo.id}" aria-pressed="${mo.id===S.mood}">
+        <span class="sw"><i style="background:${c("wall")}"></i><i style="background:${c("floor")}"></i>
+          <i style="background:${c("uph")}"></i><i style="background:${c("accent")}"></i></span>
+        <span class="tx"><b>${mo.n}</b><span>${mo.tag}</span></span></button>`;
+    }).join("");
+    bind("#tiles-mood","[data-mood]", b=>{ S.mood=b.dataset.mood; paintMoods(); save(); });
+  };
+  bind("#tiles-style","[data-style]", b=>{
+    S.style=b.dataset.style;
+    $$("#tiles-style .tile").forEach(t=>t.setAttribute("aria-pressed", t.dataset.style===S.style));
+    paintMoods(); save();
+  });
+  paintMoods();
+
+  $("#chips-accent").innerHTML = ACCENTS.map(a=>
+    `<button class="chip" data-accent="${a.id}" aria-pressed="${a.id===S.accent}">${
+      a.hex?`<span class="dot" style="background:${a.hex}"></span>`:""}${a.n}</button>`).join("");
+  bind("#chips-accent","[data-accent]", b=>{ S.accent=b.dataset.accent; save(); });
+
+  $("#chips-wood").innerHTML = WOODS.map(w=>
+    `<button class="chip" data-wood="${w.id}" aria-pressed="${w.id===S.wood}">${
+      w.hex?`<span class="dot" style="background:${w.hex}"></span>`:""}${w.n}</button>`).join("");
+  bind("#chips-wood","[data-wood]", b=>{ S.wood=b.dataset.wood; save(); });
+
+  $("#seg-budget").innerHTML = BUDGETS.map(b=>
+    `<button data-budget="${b.id}" aria-pressed="${b.id===S.budget}" title="${b.tag}">${b.n}</button>`).join("");
+  bind("#seg-budget","[data-budget]", b=>{ S.budget=+b.dataset.budget; save(); });
+
+  $("#seg-house").innerHTML = HOUSES.map(h=>
+    `<button data-house="${h.id}" aria-pressed="${h.id===S.house}">${h.n}</button>`).join("");
+  bind("#seg-house","[data-house]", b=>{ S.house=b.dataset.house; save(); });
+
+  $("#chips-prio").innerHTML = PRIOS.map(p=>
+    `<button class="chip" data-prio="${p.id}" aria-pressed="${S.prio.has(p.id)}">${p.n}</button>`).join("");
+  $("#chips-prio").addEventListener("click", e=>{
+    const b = e.target.closest("[data-prio]"); if(!b) return;
+    const id = b.dataset.prio;
+    S.prio.has(id) ? S.prio.delete(id) : S.prio.add(id);
+    b.setAttribute("aria-pressed", S.prio.has(id)); save();
+  });
+
+  const fillSel = (sel, arr, cur)=> $(sel).innerHTML = arr.map(o=>
+    `<option value="${o.id}"${o.id===cur?" selected":""}>${o.n}</option>`).join("");
+  fillSel("#in-floor", FLOORS, S.floor);
+  fillSel("#in-wall", WALLS, S.wall);
+  fillSel("#in-light", LIGHTS, S.light);
+  fillSel("#in-orient", ORIENTS, S.orient);
+
+  [["#in-floor","floor"],["#in-wall","wall"],["#in-light","light"],["#in-orient","orient"],
+   ["#in-currency","currency"]].forEach(([sel,key])=>{
+    $(sel).onchange = e=>{ S[key]=e.target.value; save(); };
+  });
+  $("#in-cap").onchange = e=>{ S.cap = +e.target.value || null; save(); };
+
+  [["#tg-pets","pets"],["#tg-vintage","vintage"],["#tg-access","access"],["#tg-rent","rent"]].forEach(([sel,key])=>{
+    const b = $(sel);
+    b.setAttribute("aria-pressed", !!S[key]);
+    b.onclick = ()=>{ S[key]=!S[key]; b.setAttribute("aria-pressed", S[key]); save(); };
+  });
+}
+function bind(host, sel, fn){
+  $(host).addEventListener("click", e=>{
+    const b = e.target.closest(sel); if(!b) return;
+    $$(sel, $(host)).forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");
+    fn(b);
+  });
+}
+
+/* --- Ergebnis ---------------------------------------------------- */
+function planFigure(){
+  if(!S.img || !S.labels) return "";
+  const c = document.createElement("canvas"); c.width=S.lw; c.height=S.lh;
+  const g = c.getContext("2d"), im = g.createImageData(S.lw,S.lh), cols={};
+  S.rooms.forEach(r=>{ if(!r.synth){ const h=RT[r.type].col;
+    cols[r.id]=[parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)]; }});
+  for(let i=0;i<S.labels.length;i++){
+    const l=S.labels[i]; if(!l||!cols[l]) continue;
+    const edge = S.labels[i-1]!==l||S.labels[i+1]!==l||S.labels[i-S.lw]!==l||S.labels[i+S.lw]!==l;
+    const [r,gg,b]=cols[l], o=i*4;
+    im.data[o]=r; im.data[o+1]=gg; im.data[o+2]=b; im.data[o+3]= edge?230:70;
+  }
+  g.putImageData(im,0,0);
+  const lbl = S.rooms.filter(r=>!r.synth).map(r=>
+    `<text class="rm-lbl" x="${r.x+r.w/2}" y="${r.y+r.h/2}" text-anchor="middle" fill="#1C1917" stroke="#FFFFFF">${esc(plain(RT[r.type].n))}</text>`).join("");
+  return `<div class="plan-stage"><img src="${S.img}" alt="Grundriss mit erkannten Räumen">
+    <svg class="ov" viewBox="0 0 ${S.lw} ${S.lh}" preserveAspectRatio="none">
+      <image href="${c.toDataURL("image/png")}" x="0" y="0" width="${S.lw}" height="${S.lh}"/>${lbl}</svg></div>`;
+}
+
+const CATCOL = {"Möbel":"#B4744A","Textilien":"#8A9A7B","Licht":"#C79A3A","Deko":"#9C8AA5",
+  "Bau":"#6E7B8B","Technik":"#4E8098","Ausstattung":"#A09384"};
+
+function renderResult(){
+  const d = S.design;
+  $("#res-sub").textContent = `${d.per.length} Räume · ${m2(d.area)} · ${plain(STYLES.find(s=>s.id===S.style).n)}, `
+    + `${plain(MOODS.find(m=>m.id===S.mood).n).toLowerCase()} · Budgetstufe ${BUDGETS[S.budget].n.toLowerCase()}`;
+
+  const cats = Object.entries(d.byCat).sort((a,b)=>b[1]-a[1]);
+  $("#summary").innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="k">Gesamtbudget</div><div class="v">${money(d.total)}</div><div class="s">alles inklusive</div></div>
+      <div class="kpi"><div class="k">Pro m²</div><div class="v">${money(d.perM2)}</div><div class="s">Richtwert</div></div>
+      <div class="kpi"><div class="k">Räume</div><div class="v">${d.per.length}</div><div class="s">${m2(d.area)} Wohnfläche</div></div>
+      <div class="kpi"><div class="k">Positionen</div><div class="v">${d.per.reduce((a,x)=>a+x.items.reduce((b,i)=>b+i.q,0),0)}</div><div class="s">Stück gesamt</div></div>
+    </div>
+    <div class="mt-l"><div class="bar">${cats.map(([k,v])=>
+      `<i style="width:${(v/d.total*100).toFixed(2)}%;background:${CATCOL[k]||"#999"}" title="${k}"></i>`).join("")}</div>
+      <div class="legend">${cats.map(([k,v])=>
+        `<span><i style="background:${CATCOL[k]||"#999"}"></i>${k} ${money(v)}</span>`).join("")}</div></div>
+    ${d.cut ? `<div class="note ${d.cut.ok?"warn":"warn"} mt-l"><b>Wunschbudget ${money(S.cap)} überschritten um ${money(d.cut.need)}.</b><br>
+      Streicht man die ${d.cut.items.length} teuersten Ergänzungen (${d.cut.items.slice(0,4).map(o=>esc(o.i.name)).join(", ")}${d.cut.items.length>4?" …":""}),
+      spart das ${money(d.cut.saved)} – ${d.cut.ok?"damit passt es":"das reicht noch nicht, dann eine Budgetstufe tiefer wählen"}.</div>`
+     : (S.cap ? `<div class="note ok mt-l">Wunschbudget von ${money(S.cap)} eingehalten.</div>` : "")}`;
+
+  $("#res-nav").innerHTML = `<button class="res-tab" data-r="-1" aria-pressed="${S.resRoom===-1}">Überblick</button>`
+    + d.per.map((x,i)=>`<button class="res-tab" data-r="${i}" aria-pressed="${S.resRoom===i}">${esc(plain(RT[x.room.type].n))}</button>`).join("");
+  $("#res-nav").onclick = e=>{
+    const b = e.target.closest("[data-r]"); if(!b) return;
+    S.resRoom = +b.dataset.r;
+    $$("#res-nav .res-tab").forEach(t=>t.setAttribute("aria-pressed", +t.dataset.r===S.resRoom));
+    renderResBody();
+  };
+  if(S.resRoom >= d.per.length) S.resRoom = -1;
+  renderResBody();
+}
+
+function renderResBody(){
+  const d = S.design, host = $("#res-body");
+  if(S.resRoom === -1){
+    host.innerHTML = `
+      ${planFigure() ? `<div class="card pad mt"><div class="h-m">Die Wohnung im Überblick</div>
+        <div class="mt-s">${planFigure()}</div></div>` : ""}
+      <div class="card pad mt">
+        <div class="h-m">Budget je Raum</div>
+        <table class="fl-t mt"><thead><tr><th>Raum</th><th>Fläche</th><th class="num">pro m²</th><th class="num">Budget</th></tr></thead><tbody>
+        ${d.per.slice().sort((a,b)=>b.total-a.total).map(x=>`<tr>
+          <td><span class="it-n">${esc(plain(RT[x.room.type].n))}</span><div class="it-d">${x.items.reduce((a,i)=>a+i.q,0)} Positionen</div></td>
+          <td>${m2(x.room.m2)}</td><td class="num">${money(x.total/Math.max(1,x.room.m2))}</td>
+          <td class="num"><b>${money(x.total)}</b></td></tr>`).join("")}
+        </tbody></table>
+        <div class="tot"><span>Gesamt</span><span class="v">${money(d.total)}</span></div>
+      </div>
+      <div class="card pad mt">
+        <div class="h-m">So ist das Budget verteilt</div>
+        <table class="fl-t mt"><tbody>${Object.entries(d.byCat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr>
+          <td><span class="badge" style="background:${CATCOL[k]||"#999"};color:#fff;margin:0">${esc(k)}</span></td>
+          <td class="num">${(v/d.total*100).toFixed(0)} %</td><td class="num"><b>${money(v)}</b></td></tr>`).join("")}</tbody></table>
+      </div>`;
+    return;
+  }
+  const x = d.per[S.resRoom];
+  const rendered = S.renders[x.room.id];
+  host.innerHTML = `
+    <div class="card mt" style="overflow:hidden">
+      ${rendered ? `<img src="${rendered}" alt="KI-Render" style="display:block;width:100%">` : renderScene(x)}
+      <div class="pad">
+        <div class="row" style="justify-content:space-between">
+          <div><div class="h-m">${esc(plain(RT[x.room.type].n))}</div>
+            <div class="tiny">${m2(x.room.m2)} · ${(x.room.wCm/100).toFixed(1).replace(".",",")} × ${(x.room.dCm/100).toFixed(1).replace(".",",")} m · Raumhöhe ${(S.height/100).toFixed(2).replace(".",",")} m</div></div>
+          <div style="text-align:right"><div class="h-m">${money(x.total)}</div><div class="tiny">${money(x.total/Math.max(1,x.room.m2))} pro m²</div></div>
+        </div>
+        <div class="note info mt">${esc(x.tip)}</div>
+        ${S.provider ? `<div class="row mt no-print">
+          <button class="btn sm" data-ai="${S.resRoom}">${rendered?"Neu rendern":"Fotorealistisch rendern"}</button>
+          ${rendered?`<button class="btn sm ghost" data-airm="1">Zeichnung zeigen</button>`:""}
+          <span class="tiny">läuft über deinen eigenen Schlüssel</span></div>` : ""}
+      </div>
+    </div>
+
+    <div class="grid mt" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div class="card pad"><div class="h-m">Möblierter Grundriss</div>
+        <div class="mt-s">${renderPlanRoom(x)}</div>
+        <p class="tiny mt-s">Massstäblich gestellte Möbel innerhalb der erkannten Raumform.</p></div>
+      <div class="card pad"><div class="h-m">Farben und Materialien</div>
+        <div class="mt-s">${renderMood(x)}</div></div>
+    </div>
+
+    <div class="card pad mt">
+      <div class="h-m">Möbelliste</div>
+      <table class="fl-t mt"><thead><tr><th>Stück</th><th class="num">Anz.</th><th class="num">Einzeln</th><th class="num">Summe</th></tr></thead><tbody>
+      ${x.items.map(i=>`<tr>
+        <td><span class="it-n">${esc(i.name)}</span><span class="badge ${i.need?"core":"nice"}">${i.need?"Basis":"Extra"}</span>
+          <div class="it-d">${esc(i.fin)}${i.w?` · ${i.w} × ${i.d} cm`:""}${i.note?`<br>${esc(i.note)}`:""}</div></td>
+        <td class="num">${i.q}</td><td class="num">${money(i.unit)}</td><td class="num"><b>${money(i.total)}</b></td></tr>`).join("")}
+      </tbody></table>
+      <div class="tot"><span>${plain(RT[x.room.type].n)} gesamt</span><span class="v">${money(x.total)}</span></div>
+    </div>`;
+
+  host.querySelector("[data-ai]")?.addEventListener("click", ()=>aiRender(x));
+  host.querySelector("[data-airm]")?.addEventListener("click", ()=>{ delete S.renders[x.room.id]; renderResBody(); });
+}
+
+/* --- Fotorealistischer Render über einen eigenen Schlüssel -------- */
+const ROOM_EN = {wohnen:"living room", wohnessen:"open plan living and dining room", essen:"dining room",
+  kueche:"kitchen", schlafen:"bedroom", kind:"child's bedroom", gast:"guest room", buero:"home office",
+  bad:"bathroom", wc:"guest toilet", flur:"hallway", ankleide:"walk-in closet",
+  technik:"utility room", balkon:"balcony"};
+
+function aiPrompt(x){
+  const p = x.pal, st = x.style, mo = MOODS.find(m=>m.id===S.mood), li = LIGHTS.find(l=>l.id===S.light);
+  const key = x.items.filter(i=>i.need && i.pos!=="skip").slice(0,8).map(i=>i.name.toLowerCase()).join(", ");
+  return [
+    `Photorealistic interior design photograph of a ${ROOM_EN[x.room.type]||"room"}, `
+    + `${Math.round(x.room.wCm/100*10)/10} by ${Math.round(x.room.dCm/100*10)/10} metres, ceiling height ${S.height/100} m.`,
+    `Style: ${st.ai}. Mood: ${mo.ai}. Lighting: ${li.ai}.`,
+    `Colour scheme — walls ${p.wall}, floor ${p.floor}, wood ${p.wood}, upholstery ${p.uph}, accent ${p.accent}, metal ${p.metal}.`,
+    `Furniture present: ${key}.`,
+    `One point perspective from the doorway, eye level 150 cm, 35 mm lens, natural daylight plus warm lamps, `
+    + `realistic materials and textures, architectural photography, no people, no text, no watermark.`,
+    S.img ? `The attached image is the floor plan of this room — respect its proportions and the position of walls.` : ""
+  ].filter(Boolean).join(" ");
+}
+function roomCropB64(room){
+  if(!S.img || room.synth) return null;
+  try{
+    const im = $("#plan-img");
+    if(!im || !im.naturalWidth) return null;
+    const sx = im.naturalWidth/S.lw, sy = im.naturalHeight/S.lh, pad = 6;
+    const c = document.createElement("canvas");
+    c.width = Math.max(32,Math.round(room.w*sx)+pad*2); c.height = Math.max(32,Math.round(room.h*sy)+pad*2);
+    const g = c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height);
+    g.drawImage(im, Math.round(room.x*sx)-pad, Math.round(room.y*sy)-pad,
+                Math.round(room.w*sx)+pad*2, Math.round(room.h*sy)+pad*2, 0,0,c.width,c.height);
+    return c.toDataURL("image/jpeg",0.85).split(",")[1];
+  }catch(e){ return null; }
+}
+const GEM_MODELS = ["gemini-3.1-flash-image","gemini-2.5-flash-image","gemini-2.0-flash-preview-image-generation"];
+
+async function aiRender(x){
+  if(!S.key){ openM("#m-settings"); return; }
+  busy(true,"Der Raum wird gerendert","Das dauert je nach Anbieter 10 bis 40 Sekunden");
+  try{
+    const prompt = aiPrompt(x), crop = roomCropB64(x.room);
+    let dataUrl = null, lastErr = "";
+    if(S.provider==="gemini"){
+      for(const model of GEM_MODELS){
+        const parts = [{text:prompt}];
+        if(crop) parts.push({inline_data:{mime_type:"image/jpeg", data:crop}});
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(S.key)}`,
+          {method:"POST", headers:{"Content-Type":"application/json"},
+           body:JSON.stringify({contents:[{parts}], generationConfig:{responseModalities:["IMAGE"]}})});
+        const j = await r.json().catch(()=>({}));
+        if(!r.ok){ lastErr = (j.error && j.error.message) || ("HTTP "+r.status); continue; }
+        const ps = ((j.candidates||[])[0]||{}).content?.parts || [];
+        const img = ps.find(q=>q.inlineData||q.inline_data);
+        if(img){ const d0 = img.inlineData||img.inline_data;
+          dataUrl = `data:${d0.mimeType||d0.mime_type||"image/png"};base64,${d0.data}`; break; }
+        lastErr = "Das Modell hat kein Bild zurückgegeben.";
+      }
+    } else if(S.provider==="openai"){
+      const r = await fetch("https://api.openai.com/v1/images/generations",
+        {method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+S.key},
+         body:JSON.stringify({model:"gpt-image-1", prompt, size:"1536x1024", n:1})});
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok) lastErr = (j.error && j.error.message) || ("HTTP "+r.status);
+      else if(j.data && j.data[0] && j.data[0].b64_json) dataUrl = "data:image/png;base64,"+j.data[0].b64_json;
+      else lastErr = "Keine Bilddaten in der Antwort.";
+    }
+    if(dataUrl){ S.renders[x.room.id] = dataUrl; renderResBody(); }
+    else alert("Der Render hat nicht geklappt.\n\n"+lastErr+"\n\nDie eingebaute Raumansicht bleibt davon unberührt.");
+  }catch(e){
+    alert("Verbindung zum Anbieter fehlgeschlagen: "+e.message);
+  }finally{ busy(false); }
+}
+
+/* --- Export ------------------------------------------------------ */
+function shoppingText(){
+  const d = S.design, L = [];
+  L.push("EINRICHTUNGSPLAN – " + plain(STYLES.find(s=>s.id===S.style).n));
+  L.push(plain(MOODS.find(m=>m.id===S.mood).n) + " · Budgetstufe " + BUDGETS[S.budget].n
+    + " · " + m2(d.area) + " · " + money(d.total) + " gesamt");
+  L.push("");
+  d.per.forEach(x=>{
+    L.push("── " + plain(RT[x.room.type].n) + " (" + m2(x.room.m2) + ") – " + money(x.total));
+    x.items.forEach(i=> L.push(`  ${String(i.q).padStart(2," ")}×  ${i.name} — ${i.fin} — ${money(i.total)}`));
+    L.push("");
+  });
+  L.push("Kostengruppen:");
+  Object.entries(d.byCat).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=> L.push(`  ${k}: ${money(v)}`));
+  L.push("");
+  L.push("Erstellt mit RAUMWERK. Preise sind Richtwerte, keine Angebote.");
+  return L.join("\n");
+}
+function download(name, content, type){
+  const b = new Blob([content], {type:type||"text/plain;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(b); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+/* --- Start ------------------------------------------------------- */
+function applyTheme(){
+  const t = S.theme;
+  if(t==="auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  $("#in-theme").value = t;
+}
+function applyStateToControls(){
+  $("#in-area").value = S.totalArea;
+  $("#in-h").value = S.height;
+  $("#in-cap").value = S.cap || "";
+  $("#in-currency").value = S.currency;
+  $("#in-provider").value = S.provider;
+  $("#in-key").value = S.key;
+  $("#key-wrap").hidden = !S.provider;
+  $("#key-hint").innerHTML = S.provider==="gemini"
+    ? 'Schlüssel aus dem Google AI Studio. Er wird nur an Google gesendet.'
+    : S.provider==="openai" ? 'Schlüssel aus der OpenAI-Plattform. Er wird nur an OpenAI gesendet.' : "";
+  applyTheme();
+  buildControls();
+}
+
+function init(){
+  const had = load();
+  applyStateToControls();
+  bindStage();
+
+  $("#file").onchange = e=> loadImageFile(e.target.files[0]);
+  $("#drop").onclick = ()=> $("#file").click();
+  ["dragenter","dragover"].forEach(t=> $("#drop").addEventListener(t, e=>{ e.preventDefault(); $("#drop").classList.add("hot"); }));
+  ["dragleave","drop"].forEach(t=> $("#drop").addEventListener(t, e=>{ e.preventDefault(); $("#drop").classList.remove("hot"); }));
+  $("#drop").addEventListener("drop", e=> loadImageFile(e.dataTransfer.files[0]));
+  $("#btn-demo").onclick = demoPlan;
+  $("#btn-noplan").onclick = startWithoutPlan;
+
+  $("#in-area").onchange = e=>{ S.totalArea = clamp(+e.target.value||60, 10, 900);
+    rescale(); renderRoomList(); drawOverlay(); save(); };
+  $("#in-h").onchange = e=>{ S.height = +e.target.value; save(); };
+  $("#btn-redetect").onclick = ()=>{ if($("#plan-img").src) { busy(true,"Neu erkennen"); setTimeout(()=>{ runDetect($("#plan-img")); busy(false); }, 40);} };
+  $("#btn-draw").onclick = e=>{ drawMode = !drawMode; e.currentTarget.classList.toggle("pri", drawMode);
+    $("#detect-hint").textContent = drawMode ? "Rechteck über dem Raum aufziehen" : ""; };
+  $("#btn-addmanual").onclick = addManualRoom;
+
+  $("#btn-back").onclick = ()=> goto(S.step-1);
+  $("#btn-next").onclick = ()=> S.step===3 ? goto(0) : goto(S.step+1);
+  $("#steps").onclick = e=>{ const b = e.target.closest("[data-goto]"); if(b && !b.disabled) goto(+b.dataset.goto); };
+
+  $("#btn-theme").onclick = ()=>{
+    const cur = document.documentElement.getAttribute("data-theme")
+      || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    S.theme = cur==="dark" ? "light" : "dark"; applyTheme(); save();
+  };
+  $("#in-theme").onchange = e=>{ S.theme = e.target.value; applyTheme(); save(); };
+  $("#btn-settings").onclick = ()=> openM("#m-settings");
+  $("#in-provider").onchange = e=>{ S.provider = e.target.value; $("#key-wrap").hidden = !S.provider;
+    applyStateToControls(); save(); };
+  $("#in-key").onchange = e=>{ S.key = e.target.value.trim(); save(); };
+  document.addEventListener("click", e=>{ if(e.target.matches("[data-close]")) e.target.closest(".modal").classList.remove("on"); });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") $$(".modal.on").forEach(m=>m.classList.remove("on")); });
+
+  $("#btn-print").onclick = ()=> window.print();
+  $("#btn-copy").onclick = async ()=>{
+    const t = shoppingText();
+    try{ await navigator.clipboard.writeText(t); $("#btn-copy").textContent = "Kopiert"; setTimeout(()=>$("#btn-copy").textContent="Einkaufsliste kopieren",1800); }
+    catch(e){ download("einkaufsliste.txt", t); }
+  };
+  $("#btn-json").onclick = ()=>{
+    const d = S.design;
+    download("raumwerk-projekt.json", JSON.stringify({
+      erstellt:new Date().toISOString(), waehrung:S.currency,
+      stil:plain(STYLES.find(s=>s.id===S.style).n), farbwelt:plain(MOODS.find(m=>m.id===S.mood).n),
+      budgetstufe:BUDGETS[S.budget].n, haushalt:HOUSES.find(h=>h.id===S.house).n,
+      prioritaeten:Array.from(S.prio), wohnflaeche:d.area, gesamt:d.total,
+      raeume: d.per.map(x=>({raum:plain(RT[x.room.type].n), flaeche:x.room.m2, budget:x.total,
+        palette:x.pal, positionen:x.items.map(i=>({stueck:i.name, anzahl:i.q, material:i.fin, einzeln:i.unit, summe:i.total}))}))
+    }, null, 2), "application/json");
+  };
+  $("#btn-restart").onclick = ()=>{
+    if(!confirm("Alles zurücksetzen und neu beginnen?")) return;
+    localStorage.removeItem(LS); location.reload();
+  };
+
+  // Gespeicherten Stand wiederherstellen
+  if(had && S.img){
+    const im = $("#plan-img");
+    const savedTypes = S.rooms.filter(r=>!r.synth).map(r=>r.type);
+    const savedSynth = S.rooms.filter(r=>r.synth);
+    im.onload = ()=>{
+      const res = detectRooms(im);
+      S.labels = res.labels; S.lw = res.w; S.lh = res.h; S.nextLabel = res.comps.length+1;
+      S.rooms = res.comps.map((c,i)=>({ id:c.id, areaPx:c.areaPx, x:c.x, y:c.y, w:c.w, h:c.h,
+        m2:0, wCm:0, dCm:0, type: savedTypes[i] || "wohnen", synth:false })).concat(savedSynth);
+      rescale();
+      if(!savedTypes.length) guessTypes(S.rooms);
+      renderRoomList(); drawOverlay(); goto(Math.max(1, S.step));
+    };
+    im.src = S.img;
+  } else if(had && S.rooms.length){
+    $("#stage").style.display = "none";
+    rescale(); renderRoomList(); goto(Math.max(1, S.step));
+  } else {
+    goto(0);
+  }
+}
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
