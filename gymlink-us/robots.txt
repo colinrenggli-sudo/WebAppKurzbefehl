@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://colinrenggli-sudo.github.io/WebAppKurzbefehl/gymlink-us/sitemap.xml
