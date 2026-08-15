@@ -6,9 +6,11 @@ Moodboard und die Möbelliste mit Budget.
 
 ## Sofort ausprobieren
 
-`raumdesign/index.html` im Browser öffnen – mehr braucht es nicht. Keine
-Installation, kein Build, kein Server, kein Konto. Die Seite kommt ohne
-einen einzigen externen Request aus.
+Live: **<https://colinrenggli-sudo.github.io/WebAppKurzbefehl/raumdesign/>**
+
+Oder `raumdesign/index.html` im Browser öffnen – mehr braucht es nicht.
+Keine Installation, kein Build, kein Server, kein Konto. Ohne
+hinterlegten Schlüssel stellt die Seite keinen einzigen externen Request.
 
 Lokal mit Server (empfohlen):
 
@@ -127,10 +129,15 @@ Datei lokal.
 
 ## Datenschutz
 
-Alles läuft lokal im Browser. Der Grundriss wird nirgendwohin
-hochgeladen, solange der KI-Render nicht bewusst aktiviert wird. Der
-Zwischenstand liegt im lokalen Speicher und überlebt das Neuladen; unter
-**Neu starten** wird alles gelöscht.
+Ohne hinterlegten Schlüssel läuft alles lokal im Browser und der
+Grundriss verlässt das Gerät nicht.
+
+Mit Schlüssel gehen genau zwei Dinge an Google, beide nur auf deinen
+ausdrücklichen Knopfdruck: bei **Plan lesen** das Planbild, beim Rendern
+der Ausschnitt des jeweiligen Raums samt Stilvorgaben. Sonst nichts.
+
+Der Zwischenstand liegt im lokalen Speicher und überlebt das Neuladen;
+unter **Neu starten** wird alles gelöscht, Schlüssel inklusive.
 
 ## Dateien
 

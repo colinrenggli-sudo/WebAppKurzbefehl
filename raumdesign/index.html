@@ -3033,10 +3033,18 @@ async function renderOne(x){
   throw last || new Error("Kein Bildmodell verfügbar.");
 }
 
+/* Vor dem ersten Aufruf sicherstellen, dass die Modellwahl steht –
+   sonst liefe alles auf die hinterlegte Notfall-Rangfolge hinaus. */
+async function ensureModels(){
+  if(S.models && S.models.checked) return;
+  try{ await discoverModels(); }catch(e){ /* Notnagel greift */ }
+}
+
 async function aiRender(x){
   if(!S.key){ openM("#m-settings"); return; }
   busy(true, "Der Raum wird gerendert", plain(RT[x.room.type].n) + " · das dauert 10 bis 40 Sekunden");
   try{
+    await ensureModels();
     S.renders[x.room.id] = await renderOne(x);
     renderResBody();
   }catch(e){
@@ -3049,6 +3057,7 @@ async function renderAllRooms(){
   const list = S.design.per;
   if(!confirm(`${list.length} Räume, ${list.length} Bilder.\n\nDas dauert grob ${Math.ceil(list.length*25/60)} bis ${Math.ceil(list.length*45/60)} Minuten und läuft über dein Google-Konto.\n\nStarten?`)) return;
   S.renderAbort = false;
+  await ensureModels();
   const fails = [];
   for(let i=0; i<list.length; i++){
     if(S.renderAbort) break;
@@ -3233,7 +3242,7 @@ function init(){
     }
     busy(true, "Der Plan wird gelesen", "Bemassung, Flächenangaben und Raumnamen");
     try{
-      if(!S.models || !S.models.checked) await discoverModels();
+      await ensureModels();
       const res = applyPlanReading(await readPlanWithGemini());
       renderRoomList(); drawOverlay(); save();
       $("#detect-hint").textContent = `${res.matched} Räume zugeordnet`

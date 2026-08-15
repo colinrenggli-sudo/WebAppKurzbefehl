@@ -197,10 +197,34 @@ die echten Raummasse, die Palette in Hex und die Möbelliste des Raums.
 
 Der Schlüssel liegt ausschliesslich im `localStorage` des Browsers.
 
+### Läuft das überhaupt aus dem Browser?
+
+Ja, geprüft. Ein Preflight gegen
+`generativelanguage.googleapis.com` mit
+`Origin: https://colinrenggli-sudo.github.io` antwortet:
+
+```
+access-control-allow-origin: https://colinrenggli-sudo.github.io
+access-control-allow-methods: DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT
+access-control-allow-headers: content-type
+```
+
+Google erlaubt also direkte Aufrufe von der Pages-Adresse. Die App
+sendet nur `Content-Type: application/json` und den Schlüssel als
+Query-Parameter – beides innerhalb dessen, was der Preflight freigibt.
+Ein Server dazwischen ist nicht nötig.
+
+Auch die Fehlerform wurde gegen die echte API geprüft: ein ungültiger
+Schlüssel liefert HTTP 400 mit
+`"message": "API key not valid. Please pass a valid API key."` und
+`"reason": "API_KEY_INVALID"` – genau das, worauf die Übersetzung in
+Klartext greift.
+
 **Einschränkung, die zählt:** Eine eingebettete Vorschau (Artifact,
 iframe mit strenger Content-Security-Policy) verbietet externe
-Aufrufe. Der Schlüssel funktioniert dort nicht, egal ob er gültig ist.
-Die App erkennt das und sagt es im Klartext, statt still zu scheitern.
+Aufrufe unabhängig von CORS. Der Schlüssel funktioniert dort nicht,
+egal ob er gültig ist. Die App erkennt das und sagt es im Klartext,
+statt still zu scheitern.
 
 Quellen:
 [Gemini API – Bildgenerierung](https://ai.google.dev/gemini-api/docs/image-generation) ·
