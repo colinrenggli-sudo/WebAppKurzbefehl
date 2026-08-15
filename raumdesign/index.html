@@ -626,6 +626,16 @@ table.fl-t td.num{text-align:right; font-variant-numeric:tabular-nums; white-spa
         <button class="btn sm" id="btn-check">Schlüssel prüfen</button>
         <span class="tiny" id="key-status"></span>
       </div>
+      <div class="mt-s" id="model-pick" hidden>
+        <label class="fl" for="in-mtext">Modell fürs Plan-Lesen</label>
+        <select class="inp" id="in-mtext"></select>
+        <label class="fl mt-s" for="in-mimage">Modell für die Bilder</label>
+        <select class="inp" id="in-mimage"></select>
+        <p class="tiny mt-s">Voreingestellt sind die sparsamen „flash“-Modelle – sie haben im
+          Gratis-Kontingent am ehesten Freimenge. „pro“ liefert bessere Bilder, braucht aber
+          meist ein Konto mit Abrechnung. Läuft ein Modell ins Limit, probiert RAUMWERK
+          automatisch das nächste.</p>
+      </div>
       <div class="note warn mt-s">Der Schlüssel bleibt in diesem Browser und geht nur an Google.
         Die Aufrufe laufen über dein eigenes Konto und kosten dort entsprechend.</div>
     </div>
@@ -1251,6 +1261,7 @@ const S = {
   rooms:[], sel:null,
   totalArea:95, height:250,
   scaleCm:null, scaleSrc:null, planNote:"", models:null, renderAbort:false,
+  pickImage:null, pickText:null,
   style:"skandi", mood:"hell", accent:"auto", wood:"auto", budget:1,
   house:"paar", prio:new Set(["stauraum","gaeste"]),
   pets:false, vintage:false, access:false, rent:true,
@@ -1272,6 +1283,8 @@ function load(){
     const raw = localStorage.getItem(LS); if(!raw) return false;
     const o = JSON.parse(raw);
     Object.assign(S, o, {prio:new Set(o.prio||[]), labels:null, design:null, renders:{}});
+    // Stand aus einer älteren Fassung: Modelllisten fehlen, also neu ermitteln
+    if(S.models && !Array.isArray(S.models.textAll)) S.models = null;
     return true;
   }catch(e){ return false; }
 }
@@ -2762,8 +2775,8 @@ const GEM_BASE = "https://generativelanguage.googleapis.com/v1beta";
    Rang sortiert – die App bevorzugt aber immer, was der Schlüssel
    tatsächlich hergibt. */
 const GEM_FALLBACK = {
-  image:["gemini-3-pro-image","gemini-3.1-flash-image","gemini-3.1-flash-lite-image","gemini-2.5-flash-image"],
-  text: ["gemini-3-flash","gemini-3.1-flash","gemini-2.5-flash","gemini-2.0-flash"]
+  image:["gemini-3.1-flash-image","gemini-2.5-flash-image","gemini-3.1-flash-lite-image","gemini-3-pro-image"],
+  text: ["gemini-3.1-flash","gemini-2.5-flash","gemini-2.0-flash","gemini-3-flash"]
 };
 
 /* Fehler in Klartext übersetzen, samt nächstem Schritt. */
@@ -2781,7 +2794,10 @@ function gemError(e){
   if(st === 404)
     return "Dieses Modell gibt es unter deinem Schlüssel nicht. Unter Einstellungen auf „Schlüssel prüfen“ tippen, dann sucht die App ein verfügbares aus.";
   if(st === 429)
-    return "Das Kontingent ist erschöpft oder die Anfragen kamen zu schnell. Ein paar Minuten warten oder im Google-Konto das Limit anheben.";
+    return "Das Gratis-Kontingent für die verfügbaren Modelle ist erschöpft, oder die Anfragen kamen zu schnell. "
+      + "Das Limit gilt je Modell und pro Tag – RAUMWERK hat schon alle durchprobiert. "
+      + "Entweder ein paar Minuten warten, morgen nochmal versuchen, oder im Google-Konto die Abrechnung "
+      + "aktivieren. Ohne Schlüssel geht es auch: „Massstab abgreifen“ misst eine bekannte Strecke im Plan ab.";
   if(st >= 500)
     return "Google meldet ein Problem auf seiner Seite. In ein paar Minuten nochmal versuchen.";
   return raw || "Unbekannter Fehler.";
@@ -2817,12 +2833,26 @@ async function gemCall(path, body, ms){
 /* Verfügbare Modelle beim Schlüssel erfragen und je eines für Bild und
    Analyse auswählen. Modellnamen ändern sich laufend – fragen ist
    haltbarer als raten. */
-function rankModel(name){
+/* Rangfolge. Bewusst sparsame Modelle zuerst: „pro“-Modelle haben im
+   Gratis-Kontingent oft gar keine Freimenge und antworten sofort mit
+   429. Wer ein bezahltes Konto hat, kann in den Einstellungen manuell
+   auf pro wechseln.                                                   */
+function rankModel(name, kind){
   let s = 0;
-  if(/-pro/.test(name)) s += 300; else if(/-flash-lite/.test(name)) s += 100; else if(/-flash/.test(name)) s += 200;
+  if(kind === "image"){
+    if(/-flash-lite-image/.test(name))  s += 220;
+    else if(/-flash-image/.test(name))  s += 300;
+    else if(/-pro-image/.test(name))    s += 150;
+    else                                s += 60;
+  }else{
+    if(/-flash-lite/.test(name))        s += 220;
+    else if(/-flash/.test(name))        s += 300;
+    else if(/-pro/.test(name))          s += 100;
+    else                                s += 60;
+  }
   const v = name.match(/gemini-(\d+(?:\.\d+)?)/);
   if(v) s += parseFloat(v[1]) * 10;
-  if(/preview|exp/.test(name)) s -= 5;      // stabile Namen bevorzugen
+  if(/preview|exp|thinking/.test(name)) s -= 25;    // stabile Namen bevorzugen
   return s;
 }
 async function discoverModels(){
@@ -2833,21 +2863,36 @@ async function discoverModels(){
   })).filter(m=>m.id && m.gen.some(g=>/generateContent/i.test(g)));
 
   const img = all.filter(m=>/image/.test(m.id) && !/embed|vision-?only/.test(m.id))
-                 .sort((a,b)=>rankModel(b.id)-rankModel(a.id));
-  const txt = all.filter(m=>!/image|embed|tts|audio|native-audio|live/.test(m.id))
-                 .sort((a,b)=>rankModel(b.id)-rankModel(a.id));
+                 .map(m=>m.id).sort((a,b)=>rankModel(b,"image")-rankModel(a,"image"));
+  const txt = all.filter(m=>!/image|embed|tts|audio|native-audio|live|veo|imagen/.test(m.id))
+                 .map(m=>m.id).sort((a,b)=>rankModel(b,"text")-rankModel(a,"text"));
+
   S.models = {
-    image: img.length ? img[0].id : GEM_FALLBACK.image[0],
-    text:  txt.length ? txt[0].id : GEM_FALLBACK.text[0],
-    imageAll: (img.length ? img.map(m=>m.id) : GEM_FALLBACK.image).slice(0,4),
+    imageAll: (img.length ? img : GEM_FALLBACK.image).slice(0,6),
+    textAll:  (txt.length ? txt : GEM_FALLBACK.text).slice(0,6),
     checked: true
   };
   save();
-  return S.models;
+  paintModelPick();      // greift auch, wenn die Erkennung automatisch lief
+  return models();
 }
+
+/* Liefert die Modelllisten, Kopf zuerst. Bewusst robust: im Browser
+   kann noch ein Stand aus einer älteren Fassung liegen, in der nur je
+   ein Modellname gespeichert war. */
 function models(){
-  return S.models && S.models.checked ? S.models
-    : {image:GEM_FALLBACK.image[0], text:GEM_FALLBACK.text[0], imageAll:GEM_FALLBACK.image, checked:false};
+  const m = (S.models && S.models.checked) ? S.models : null;
+  const list = (arr, one, fb)=>{
+    if(Array.isArray(arr) && arr.length) return arr;
+    if(typeof one === "string" && one) return [one].concat(fb.filter(x=>x!==one));
+    return fb.slice();
+  };
+  const imageAll = list(m && m.imageAll, m && m.image, GEM_FALLBACK.image);
+  const textAll  = list(m && m.textAll,  m && m.text,  GEM_FALLBACK.text);
+  const front = (arr, pick)=> pick && arr.includes(pick)
+    ? [pick].concat(arr.filter(x=>x!==pick)) : arr;
+  const im = front(imageAll, S.pickImage), tx = front(textAll, S.pickText);
+  return { image:im[0], text:tx[0], imageAll:im, textAll:tx, checked: !!m };
 }
 
 /* ------------------------------------------------------------------
@@ -2909,24 +2954,41 @@ async function readPlanWithGemini(){
   c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
   const b64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
 
-  const j = await gemCall(`models/${models().text}:generateContent`, {
-    contents:[{parts:[{text:planPrompt()}, {inline_data:{mime_type:"image/jpeg", data:b64}}]}],
-    generationConfig:{ responseMimeType:"application/json", responseSchema:PLAN_SCHEMA, temperature:0 }
-  }, 90000);
-
-  const parts = ((j.candidates||[])[0]||{}).content?.parts || [];
-  const txt = parts.map(p=>p.text||"").join("").trim();
-  if(!txt) throw new Error("Das Modell hat nichts zurückgegeben.");
-  let data;
-  try{ data = JSON.parse(txt); }
-  catch(e){
-    const m = txt.match(/\{[\s\S]*\}/);
-    if(!m) throw new Error("Die Antwort war kein verwertbares JSON.");
-    data = JSON.parse(m[0]);
+  /* Der Reihe nach durch die verfügbaren Modelle: ein erschöpftes
+     Kontingent gilt je Modell, nicht für den ganzen Schlüssel. Also
+     lohnt der nächste Versuch mit einem sparsameren Modell.          */
+  const cand = models().textAll;
+  let last = null;
+  for(const model of cand){
+    let j;
+    try{
+      j = await gemCall(`models/${model}:generateContent`, {
+        contents:[{parts:[{text:planPrompt()}, {inline_data:{mime_type:"image/jpeg", data:b64}}]}],
+        generationConfig:{ responseMimeType:"application/json", responseSchema:PLAN_SCHEMA, temperature:0 }
+      }, 90000);
+    }catch(e){
+      last = e;
+      if(e.kind === "network" || e.kind === "nokey") throw e;      // weitere Versuche zwecklos
+      if([429, 404, 403, 400].includes(e.status)) continue;        // nächstes Modell probieren
+      throw e;
+    }
+    const parts = ((j.candidates||[])[0]||{}).content?.parts || [];
+    const txt = parts.map(p=>p.text||"").join("").trim();
+    if(!txt){ last = new Error("Das Modell hat nichts zurückgegeben."); continue; }
+    let data;
+    try{ data = JSON.parse(txt); }
+    catch(e){
+      const m = txt.match(/\{[\s\S]*\}/);
+      if(!m){ last = new Error("Die Antwort war kein verwertbares JSON."); continue; }
+      data = JSON.parse(m[0]);
+    }
+    if(!data || !Array.isArray(data.raeume) || !data.raeume.length){
+      last = new Error("Im Plan wurden keine Räume erkannt."); continue;
+    }
+    S.usedText = model;
+    return data;
   }
-  if(!data || !Array.isArray(data.raeume) || !data.raeume.length)
-    throw new Error("Im Plan wurden keine Räume erkannt.");
-  return data;
+  throw last || new Error("Kein Analysemodell verfügbar.");
 }
 
 /* Gelesene Zahlen mit der Pixelerkennung zusammenführen.
@@ -3021,13 +3083,14 @@ async function renderOne(x){
       const img = ps.find(q=>q.inlineData || q.inline_data);
       if(img){
         const d0 = img.inlineData || img.inline_data;
+        S.usedImage = model;
         return `data:${d0.mimeType||d0.mime_type||"image/png"};base64,${d0.data}`;
       }
       last = new Error("Das Modell hat kein Bild zurückgegeben.");
     }catch(e){
       last = e;
       if(e.kind === "network" || e.kind === "nokey") throw e;   // weitere Versuche zwecklos
-      if(e.status && e.status !== 404) throw e;
+      if(e.status && ![429, 404, 403, 400].includes(e.status)) throw e;
     }
   }
   throw last || new Error("Kein Bildmodell verfügbar.");
@@ -3180,6 +3243,18 @@ function applyTheme(){
   else document.documentElement.setAttribute("data-theme", t);
   $("#in-theme").value = t;
 }
+function paintModelPick(){
+  const box = $("#model-pick");
+  if(!box) return;
+  const m = models();
+  if(!m.checked){ box.hidden = true; return; }
+  box.hidden = false;
+  const fill = (sel, list, cur)=> $(sel).innerHTML = list.map(id=>
+    `<option value="${esc(id)}"${id===cur?" selected":""}>${esc(id)}</option>`).join("");
+  fill("#in-mtext",  m.textAll,  m.text);
+  fill("#in-mimage", m.imageAll, m.image);
+}
+
 function applyStateToControls(){
   $("#in-area").value = S.totalArea;
   $("#in-h").value = S.height;
@@ -3187,11 +3262,14 @@ function applyStateToControls(){
   $("#in-currency").value = S.currency;
   $("#in-key").value = S.key;
   const st = document.getElementById("key-status");
-  if(st) st.textContent = !S.key ? "" : (S.models && S.models.checked
-    ? `Geprüft · Bild: ${S.models.image} · Analyse: ${S.models.text}` : "Noch nicht geprüft.");
+  const mm = models();
+  if(st) st.textContent = !S.key ? "" : (mm.checked
+    ? `Geprüft · ${mm.textAll.length} Analyse- und ${mm.imageAll.length} Bildmodelle`
+    : "Noch nicht geprüft.");
   applyTheme();
   buildControls();
   paintScale();
+  paintModelPick();
 }
 
 function init(){
@@ -3245,7 +3323,7 @@ function init(){
       await ensureModels();
       const res = applyPlanReading(await readPlanWithGemini());
       renderRoomList(); drawOverlay(); save();
-      $("#detect-hint").textContent = `${res.matched} Räume zugeordnet`
+      $("#detect-hint").textContent = `Gelesen mit ${S.usedText || models().text} · ${res.matched} Räume zugeordnet`
         + (res.added ? `, ${res.added} aus dem Plantext ergänzt` : "")
         + (res.unsicher ? `, ${res.unsicher} zum Prüfen markiert` : "")
         + ` · ${m2(S.totalArea)} gesamt`;
@@ -3255,14 +3333,19 @@ function init(){
     }finally{ busy(false); }
   };
 
+  $("#in-mtext").onchange  = e=>{ S.pickText  = e.target.value; save(); };
+  $("#in-mimage").onchange = e=>{ S.pickImage = e.target.value; save(); };
+
   $("#btn-check").onclick = async ()=>{
     const st = $("#key-status");
     if(!S.key){ st.textContent = "Erst einen Schlüssel eintragen."; return; }
     st.textContent = "wird geprüft …";
     try{
       const m = await discoverModels();
-      st.innerHTML = `<span style="color:var(--ok)">Schlüssel gültig</span> · Bild: ${esc(m.image)} · Analyse: ${esc(m.text)}`;
-    }catch(e){ st.innerHTML = `<span style="color:var(--warn)">${esc(gemError(e))}</span>`; }
+      S.pickText = null; S.pickImage = null;
+      st.innerHTML = `<span style="color:var(--ok)">Schlüssel gültig</span> · ${m.textAll.length} Analyse- und ${m.imageAll.length} Bildmodelle gefunden`;
+      paintModelPick();
+    }catch(e){ st.innerHTML = `<span style="color:var(--warn)">${esc(gemError(e))}</span>`; $("#model-pick").hidden = true; }
   };
 
   $("#btn-back").onclick = ()=> goto(S.step-1);
