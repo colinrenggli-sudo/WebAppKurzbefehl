@@ -75,9 +75,10 @@ Quellen:
 Beim Durchspielen des Ablaufs kamen Punkte dazu, nach denen niemand
 fragt, die aber jedes Einrichtungsprojekt entscheiden:
 
-- **Massstab.** Ohne Wohnfläche in m² ist ein Plan nur ein Bild. Aus der
-  Gesamtfläche und den erkannten Pixelflächen wird der Massstab
-  berechnet – erst dadurch stimmen Möbelgrössen und Laufwege.
+- **Massstab.** Ohne ihn ist ein Plan nur ein Bild. Er kommt aus dem
+  Plan selbst (gelesene Bemassung), aus einer abgegriffenen Strecke
+  oder aus einer korrigierten Raumfläche – erst dadurch stimmen
+  Möbelgrössen und Laufwege. Siehe Abschnitt 6.
 - **Raumhöhe.** Bestimmt Schrankhöhen, Vorhanglänge und die Proportion
   in der Raumansicht.
 - **Haushalt.** Sofagrösse, Anzahl Sitzplätze am Esstisch und Bettbreite
@@ -136,25 +137,74 @@ Wohnen und Essen und stark vermasste Pläne mit vielen Beschriftungen.
 Deshalb sind „Neu erkennen", „Raum einzeichnen" und die Typkorrektur
 gleich neben der Vorschau.
 
-## 6 · Der optionale KI-Render
+## 6 · Was der Gemini-Schlüssel zusätzlich kann
 
 Die eingebaute Raumansicht ist eine berechnete Zentralperspektive, kein
-KI-Bild – sie funktioniert offline, kostet nichts und ist reproduzierbar.
+KI-Bild – sie funktioniert offline, kostet nichts und ist
+reproduzierbar. Ein eigener Schlüssel schaltet zwei Dinge frei.
 
-Wer zusätzlich ein Foto möchte, hinterlegt einen eigenen Schlüssel:
+### Modelle abfragen statt festschreiben
 
-- **Google Gemini** – Bildmodelle `gemini-3.1-flash-image` und
-  `gemini-2.5-flash-image`, über `:generateContent` mit
-  `responseModalities: ["IMAGE"]`. Die App probiert die Modelle der
-  Reihe nach durch. Der Raumausschnitt aus dem Plan wird als Referenz
-  mitgeschickt.
-- **OpenAI** – `gpt-image-1` über `/v1/images/generations`.
+Googles Modellnamen wechseln laufend (`gemini-3-pro-image`,
+`gemini-3.1-flash-image`, `gemini-3.1-flash-lite-image` sind der
+aktuelle Stand, in ein paar Monaten heissen sie anders). Eine fest
+verdrahtete Liste veraltet also garantiert.
 
-Der Schlüssel liegt ausschliesslich im `localStorage` des Browsers. Ohne
-Schlüssel läuft die App vollständig, nur ohne Fotorender.
+Deshalb fragt die App beim Speichern des Schlüssels
+`GET /v1beta/models` ab und wählt selbst: fürs Bild ein Modell mit
+`image` im Namen, für die Analyse ein Textmodell, jeweils nach Rang
+(`pro` > `flash` > `flash-lite`, höhere Version zuerst, stabile Namen
+vor `preview`). Fällt die Abfrage aus, greift eine hinterlegte
+Rangfolge als Notnagel.
+
+### Den Plan lesen
+
+Das Analysemodell bekommt den Plan als Bild und antwortet in
+erzwungenem JSON (`responseMimeType: "application/json"` mit
+`responseSchema`, `temperature: 0`). Die Anweisung gibt eine klare
+Rangfolge vor:
+
+1. gedruckte Flächenangabe im Raum → `quelle: "beschriftung"`
+2. Bemassung an den Wänden → `quelle: "bemassung"`
+3. Massstabsleiste oder 1:100 → `quelle: "massstab"`
+4. erst dann schätzen → `quelle: "geschaetzt"`
+
+Diese Quellenangabe ist der Kern: Sie erlaubt, geschätzte Zahlen anders
+zu behandeln als abgelesene, statt allem gleich zu vertrauen.
+
+### Zusammenführen und prüfen
+
+Die Pixelerkennung liefert die exakte Raumform, das Modell die Zahlen
+und Namen. Zugeordnet wird über die Überlappung der Flächen
+(Schnitt durch Vereinigung), beste Paare zuerst, jeder Raum nur einmal.
+
+Aus jedem Paar folgt ein eigener Massstab in cm je Pixel. Bei einem
+sauber gelesenen Plan liegen diese Werte dicht beieinander – der
+**Median** wird zum Massstab der Wohnung. Räume, die um mehr als 25 %
+abweichen, werden als „Fläche weicht vom übrigen Plan ab" markiert.
+Räume, die das Modell nur im Text findet, kommen ohne Form dazu und
+sind ebenfalls markiert.
+
+Damit wird das Modell für das eingesetzt, was es gut kann (Text und
+Bemassung lesen), und die Geometrie kommt weiter aus dem Bild.
+Fehler bleiben sichtbar, statt sich in einer Zahl zu verstecken.
+
+### Bilder
+
+Pro Raum ein Aufruf ans Bildmodell mit `responseModalities: ["IMAGE"]`.
+Mitgeschickt werden der Raumausschnitt aus dem Plan als Referenzbild,
+die echten Raummasse, die Palette in Hex und die Möbelliste des Raums.
+
+Der Schlüssel liegt ausschliesslich im `localStorage` des Browsers.
+
+**Einschränkung, die zählt:** Eine eingebettete Vorschau (Artifact,
+iframe mit strenger Content-Security-Policy) verbietet externe
+Aufrufe. Der Schlüssel funktioniert dort nicht, egal ob er gültig ist.
+Die App erkennt das und sagt es im Klartext, statt still zu scheitern.
 
 Quellen:
 [Gemini API – Bildgenerierung](https://ai.google.dev/gemini-api/docs/image-generation) ·
+[Gemini 3 Pro Image](https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image) ·
 [Gemini API – Modelle](https://ai.google.dev/gemini-api/docs/models)
 
 ## 7 · Was vor einem Livegang fehlt
@@ -165,7 +215,5 @@ Quellen:
   davon hängt ab, wo ein Sofa wirklich stehen kann
 - Mehrere Varianten pro Raum zum Vergleichen nebeneinander
 - Speichern und Teilen eines Projekts über den Browser hinaus
-- Bemassung durch Abgreifen einer bekannten Strecke im Plan, als
-  Alternative zur Eingabe der Gesamtfläche
 - Preise regelmässig nachführen; Möbelpreise sind in den letzten Jahren
   spürbar gestiegen

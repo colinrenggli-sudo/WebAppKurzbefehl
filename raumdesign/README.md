@@ -27,12 +27,34 @@ cd raumdesign && python3 -m http.server 8000
    **Dunkel & ruhig**, Budgetstufe **Gehoben**
 4. **Einrichtung berechnen** – fertig
 
-Mit einem eigenen Plan geht es genauso: Datei ziehen oder auswählen, dann
-die Wohnfläche in m² eintragen. Daraus wird der Massstab berechnet,
-deshalb stimmen anschliessend Möbelgrössen und Laufwege.
+Mit einem eigenen Plan geht es genauso: Datei ziehen oder auswählen.
 
 Ohne Plan geht es auch: **Ohne Plan starten** legt eine Standardwohnung
 an, deren Räume und Flächen sich von Hand pflegen lassen.
+
+## Wie die Raumgrössen zustande kommen
+
+Die Raumformen erkennt RAUMWERK selbst aus dem Bild. Für die echten
+Masse braucht es einen Bezug – dafür gibt es drei Wege, vom besten zum
+einfachsten:
+
+1. **Plan lesen** (mit Gemini-Schlüssel). Das Modell liest den Plan wie
+   ein Architekt: erst gedruckte Flächenangaben, dann die Bemassung an
+   den Wänden, dann die Massstabsleiste. Zu jedem Raum kommt zurück,
+   woher die Zahl stammt. Die Formen aus der Bilderkennung und die
+   Zahlen aus dem Plan werden über die Lage zusammengeführt.
+   Anschliessend prüft RAUMWERK, ob alle Räume denselben Massstab
+   ergeben; Ausreisser werden markiert, nicht stillschweigend
+   übernommen.
+2. **Massstab abgreifen** (ohne Schlüssel). Eine Strecke im Plan
+   abfahren, deren Länge du kennst – Zimmerbreite, Türöffnung (meist
+   0.80 m) oder die Massstabsleiste – und die Länge eintragen.
+3. **Eine Fläche korrigieren.** Trägst du bei einem Raum die richtige
+   Quadratmeterzahl ein, zieht RAUMWERK den ganzen Plan mit. Eine
+   Korrektur genügt.
+
+Die Wohnfläche ist danach ein **Ergebnis**, keine Eingabe. Änderst du
+sie trotzdem, wird der ganze Plan entsprechend gestreckt.
 
 ## Was du einstellen kannst
 
@@ -77,19 +99,31 @@ Trägt man unter Budgetstufe ein Wunschbudget ein und wird es
 überschritten, rechnet RAUMWERK aus, welche Ergänzungen sich streichen
 lassen und wie viel das bringt.
 
-## Fotorealistischer Render (optional)
+## Gemini-Schlüssel (optional)
 
-Die eingebaute Raumansicht ist berechnet, kein KI-Bild – sie läuft
-offline und kostet nichts. Wer zusätzlich ein Foto möchte, hinterlegt
-unter **Einstellungen** einen eigenen API-Schlüssel:
+Ein eigener Schlüssel aus dem [Google AI Studio](https://aistudio.google.com/apikey)
+schaltet zwei Dinge frei: **Plan lesen** und **fotorealistische Bilder**.
+Nötig ist er nicht – ohne Schlüssel läuft alles andere unverändert.
 
-- **Google Gemini** – Schlüssel aus dem Google AI Studio
-- **OpenAI** – `gpt-image-1`
+Eintragen unter **Einstellungen**, dann auf **Schlüssel prüfen**. RAUMWERK
+fragt die für deinen Schlüssel verfügbaren Modelle ab und wählt selbst
+das beste für Bild und Analyse aus. Modellnamen ändern sich bei Google
+laufend; deshalb wird gefragt statt geraten.
 
-Der Schlüssel bleibt im Browser (`localStorage`) und wird nur an den
-gewählten Anbieter gesendet. Es fallen die Kosten des eigenen Kontos an.
-Im Ergebnis erscheint dann pro Raum die Schaltfläche **Fotorealistisch
-rendern**; die berechnete Zeichnung bleibt jederzeit abrufbar.
+Im Ergebnis gibt es den Reiter **Bilder**: **Alle Räume rendern** erzeugt
+für jeden Raum ein Bild, einzelne Räume lassen sich jederzeit neu
+rendern, und jedes Bild kann einzeln gesichert werden. Mitgeschickt
+werden der Raumausschnitt aus deinem Plan, die echten Raummasse, die
+Farbpalette und die Möbelliste – damit das Bild wirklich diesen Raum
+zeigt. Die berechnete Raumansicht bleibt jederzeit abrufbar.
+
+Der Schlüssel bleibt im Browser (`localStorage`) und geht nur an Google.
+Die Aufrufe laufen über dein eigenes Konto und kosten dort entsprechend.
+
+**Wichtig:** In einer eingebetteten Vorschau (etwa einer geteilten
+Artifact-Seite) sind externe Aufrufe gesperrt – dort funktioniert der
+Schlüssel nicht, egal ob er stimmt. Nutze die eigene Adresse oder die
+Datei lokal.
 
 ## Datenschutz
 
@@ -110,6 +144,10 @@ Zwischenstand liegt im lokalen Speicher und überlebt das Neuladen; unter
 - Die Preise sind Richtwerte, keine Angebote, und enthalten weder
   Lieferung noch Montage
 - Die Möbelliste nennt Kategorien, keine bestellbaren Artikel
+- Wie gut **Plan lesen** funktioniert, hängt vom Plan ab: ein sauberer
+  Architektenplan mit Bemassung wird zuverlässig gelesen, ein schiefes
+  Foto einer Skizze deutlich schlechter. Deshalb die Ausreisser-Markierung
+  und die Möglichkeit, jede Zahl von Hand zu korrigieren
 - Türen und Fenster werden nicht aus dem Plan gelesen, sondern
   angenommen – die Möbelstellung im Grundriss ist damit ein Vorschlag
 - Runde Wände, Treppenhäuser und stark vermasste Pläne können die

@@ -262,6 +262,12 @@ select.inp{
 .room-row .sw{width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,.12)}
 .room-row select{padding:7px 26px 7px 10px; font-size:13.5px; border-radius:9px; background-position:right 7px center}
 .room-row .a{font-size:13px; color:var(--txt-3); font-variant-numeric:tabular-nums; white-space:nowrap}
+.room-row.warn{border-color:var(--warn)}
+.rw{grid-column:1/-1; font-size:11.5px; color:var(--warn); display:flex; gap:5px; align-items:center; margin-top:-2px}
+.rw svg{width:12px;height:12px;flex:none}
+.rlabel{font-size:11px; color:var(--txt-3); margin-top:2px}
+.scale-on{font-size:13.5px; display:flex; gap:8px; align-items:baseline}
+.scale-on b{font-variant-numeric:tabular-nums}
 .del{width:30px;height:30px;border-radius:9px;border:1px solid var(--sep);background:var(--card);color:var(--txt-3);display:grid;place-items:center}
 .del:hover{color:#C0392B;border-color:#C0392B}
 
@@ -281,6 +287,12 @@ select.inp{
 .view-seg button[aria-pressed="true"]{background:var(--card); color:var(--txt); box-shadow:var(--shadow)}
 
 .scene{width:100%; display:block; border-radius:var(--r-m); overflow:hidden; background:var(--card-2)}
+.gal{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px}
+.gi{margin:0; border:1px solid var(--sep); border-radius:var(--r-m); overflow:hidden; background:var(--card-2)}
+.gi img{display:block; width:100%; aspect-ratio:3/2; object-fit:cover}
+.gi figcaption{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px}
+.gi figcaption b{display:block; font-size:14px; font-weight:650}
+.gi figcaption span{display:block; font-size:12px; color:var(--txt-3)}
 .mood{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px}
 .mood .m{border-radius:13px; overflow:hidden; border:1px solid var(--sep); background:var(--card)}
 .mood .m .c{height:64px}
@@ -439,19 +451,24 @@ table.fl-t td.num{text-align:right; font-variant-numeric:tabular-nums; white-spa
           <svg class="ov" id="ov" preserveAspectRatio="none"></svg>
         </div>
         <div class="row mt-s no-print">
+          <button class="btn sm pri" id="btn-analyse">Plan lesen</button>
+          <button class="btn sm" id="btn-scale">Massstab abgreifen</button>
           <button class="btn sm" id="btn-redetect">Neu erkennen</button>
           <button class="btn sm" id="btn-draw">Raum einzeichnen</button>
-          <button class="btn sm" id="btn-addmanual">Raum ohne Plan hinzufügen</button>
-          <span class="tiny" id="detect-hint"></span>
+          <button class="btn sm" id="btn-addmanual">Raum ohne Plan</button>
         </div>
+        <p class="tiny mt-s" id="detect-hint"></p>
       </div>
 
       <div>
         <div class="card pad-s">
-          <label class="fl" for="in-area">Wohnfläche gesamt (m²)</label>
-          <input class="inp" id="in-area" type="number" min="10" max="900" step="1" value="95" inputmode="decimal">
-          <p class="tiny mt-s">Steht meist im Inserat oder Mietvertrag. Daraus wird der Massstab
-            berechnet – deshalb stimmen danach Möbelgrössen und Laufwege.</p>
+          <div class="h-m">Massstab</div>
+          <div id="scale-box" class="mt-s"></div>
+          <div class="mt-s">
+            <label class="fl" for="in-area">Wohnfläche gesamt (m²)</label>
+            <input class="inp" id="in-area" type="number" min="10" max="900" step="0.1" value="95" inputmode="decimal">
+            <p class="tiny mt-s" id="area-hint"></p>
+          </div>
           <div class="mt-s">
             <label class="fl" for="in-h">Raumhöhe</label>
             <select class="inp" id="in-h">
@@ -596,23 +613,21 @@ table.fl-t td.num{text-align:right; font-variant-numeric:tabular-nums; white-spa
   <div class="bd" data-close></div>
   <div class="sheet">
     <h2 class="h-l" id="ms-t">Einstellungen</h2>
-    <p class="tiny mt-s">RAUMWERK funktioniert komplett ohne Konto und ohne Internet. Wer zusätzlich
-      einen fotorealistischen Render möchte, hinterlegt hier einen eigenen API-Schlüssel.</p>
+    <p class="tiny mt-s">RAUMWERK läuft ohne Konto und ohne Internet. Ein eigener Schlüssel schaltet
+      zwei zusätzliche Funktionen frei – nötig ist er nicht.</p>
 
     <div class="mt-l">
-      <label class="fl" for="in-provider">KI-Render (optional)</label>
-      <select class="inp" id="in-provider">
-        <option value="">Aus – nur die eingebaute Raumansicht</option>
-        <option value="gemini">Google Gemini (Bildmodell)</option>
-        <option value="openai">OpenAI (gpt-image-1)</option>
-      </select>
-    </div>
-    <div class="mt" id="key-wrap" hidden>
-      <label class="fl" for="in-key">API-Schlüssel</label>
+      <label class="fl" for="in-key">Gemini-Schlüssel <span class="tiny" style="font-weight:500">(optional)</span></label>
       <input class="inp" id="in-key" type="password" autocomplete="off" spellcheck="false" placeholder="wird nur lokal gespeichert">
-      <p class="tiny mt-s" id="key-hint"></p>
-      <div class="note warn mt-s">Mit aktiviertem Render verlassen dein Raumausschnitt und die
-        Stilvorgaben den Browser Richtung Anbieter. Es fallen die Kosten deines eigenen Kontos an.</div>
+      <p class="tiny mt-s" id="key-hint">Kostenlos im Google AI Studio erstellbar. Damit kann RAUMWERK
+        zwei Dinge zusätzlich: den <b>Grundriss auslesen</b>, also Raumnamen und echte Flächen aus der
+        Bemassung übernehmen, und pro Raum ein <b>fotorealistisches Bild</b> erzeugen.</p>
+      <div class="row mt-s">
+        <button class="btn sm" id="btn-check">Schlüssel prüfen</button>
+        <span class="tiny" id="key-status"></span>
+      </div>
+      <div class="note warn mt-s">Der Schlüssel bleibt in diesem Browser und geht nur an Google.
+        Die Aufrufe laufen über dein eigenes Konto und kosten dort entsprechend.</div>
     </div>
 
     <div class="mt-l">
@@ -1235,12 +1250,13 @@ const S = {
   labels:null, lw:0, lh:0, nextLabel:1,
   rooms:[], sel:null,
   totalArea:95, height:250,
+  scaleCm:null, scaleSrc:null, planNote:"", models:null, renderAbort:false,
   style:"skandi", mood:"hell", accent:"auto", wood:"auto", budget:1,
   house:"paar", prio:new Set(["stauraum","gaeste"]),
   pets:false, vintage:false, access:false, rent:true,
   floor:"keep", wall:"weiss", light:"mix", orient:"unbekannt",
   currency:"CHF", cap:null,
-  provider:"", key:"", theme:"auto",
+  key:"", theme:"auto",
   design:null, resRoom:-1, resView:"scene", renders:{}
 };
 
@@ -1483,14 +1499,25 @@ function guessTypes(rooms){
   return rooms;
 }
 
-/* Fläche neu verteilen: die Summe der Pixelflächen entspricht der
-   eingegebenen Wohnfläche. Daraus folgt der Massstab in cm je Pixel. */
+/* Massstab und Raumflächen bestimmen.
+   Ist der Massstab bekannt – aus dem gelesenen Plan oder von Hand
+   abgegriffen – wird er direkt verwendet und die Wohnfläche daraus
+   berechnet. Nur wenn er fehlt, wird ersatzweise die eingegebene
+   Gesamtfläche auf die Pixelflächen verteilt.                       */
 function rescale(){
-  const px = S.rooms.filter(r=>!r.synth).reduce((a,r)=>a+r.areaPx,0);
-  const synthM2 = S.rooms.filter(r=>r.synth).reduce((a,r)=>a+r.m2,0);
-  const targetM2 = Math.max(5, S.totalArea - synthM2);
-  const cmPerPx = px>0 ? Math.sqrt(targetM2*10000/px) : 1;
+  const real = S.rooms.filter(r=>!r.synth);
+  const px = real.reduce((a,r)=>a+r.areaPx,0);
+  let cmPerPx;
+
+  if(S.scaleCm > 0){
+    cmPerPx = S.scaleCm;
+  }else{
+    const synthM2 = S.rooms.filter(r=>r.synth).reduce((a,r)=>a+r.m2,0);
+    const targetM2 = Math.max(5, S.totalArea - synthM2);
+    cmPerPx = px>0 ? Math.sqrt(targetM2*10000/px) : 1;
+  }
   S.cmPerPx = cmPerPx;
+
   S.rooms.forEach(r=>{
     if(r.synth){
       const side = Math.sqrt(r.m2*10000);
@@ -1501,6 +1528,25 @@ function rescale(){
     r.wCm = Math.round(r.w*cmPerPx);
     r.dCm = Math.round(r.h*cmPerPx);
   });
+
+  // Bei bekanntem Massstab ist die Wohnfläche ein Ergebnis, keine Eingabe
+  if(S.scaleCm > 0){
+    S.totalArea = +S.rooms.reduce((a,r)=>a+r.m2,0).toFixed(1);
+    const f = document.getElementById("in-area");
+    if(f) f.value = S.totalArea;
+  }
+}
+
+/* Massstab aus einer einzelnen bekannten Raumfläche ableiten. Wird
+   genutzt, wenn du eine Fläche in der Liste korrigierst: eine
+   Korrektur zieht den ganzen Plan mit.                              */
+function calibrateFromRoom(room, m2){
+  if(room.synth || !(room.areaPx > 0) || !(m2 > 0)) return false;
+  S.scaleCm = Math.sqrt(m2*10000/room.areaPx);
+  S.scaleSrc = "korrigiert";
+  S.rooms.forEach(r=>{ if(!r.synth) r.warn = null; });
+  rescale();
+  return true;
 }
 
 /* ============================ D · EINRICHTUNGS-ENGINE ============= */
@@ -2237,6 +2283,7 @@ function useImage(dataUrl){
 function runDetect(imgEl){
   const res = detectRooms(imgEl);
   S.labels = res.labels; S.lw = res.w; S.lh = res.h; S.nextLabel = res.comps.length+1;
+  S.scaleCm = null; S.scaleSrc = null;          // neuer Plan, neuer Massstab
   Object.keys(maskCache).forEach(k=>delete maskCache[k]);
   S.rooms = res.comps.map(c=>({ id:c.id, areaPx:c.areaPx, x:c.x, y:c.y, w:c.w, h:c.h,
                                 m2:0, wCm:0, dCm:0, type:"wohnen", synth:false }));
@@ -2276,7 +2323,7 @@ function demoPlan(){
 /* --- Räume ohne Plan --------------------------------------------- */
 const START_SET = [["wohnen",28],["kueche",11],["schlafen",15],["kind",12],["bad",7],["flur",8]];
 function startWithoutPlan(){
-  S.img = null; S.labels = null;
+  S.img = null; S.labels = null; S.scaleCm = null; S.scaleSrc = null;
   S.rooms = START_SET.map((r,i)=>({ id:1000+i, type:r[0], m2:r[1], areaPx:0, synth:true, wCm:0, dCm:0 }));
   S.totalArea = START_SET.reduce((a,r)=>a+r[1],0);
   $("#in-area").value = S.totalArea;
@@ -2321,27 +2368,61 @@ function drawOverlay(){
   ov.innerHTML = s;
 }
 
+/* Massstab-Anzeige über der Raumliste */
+function paintScale(){
+  const box = $("#scale-box"), hint = $("#area-hint");
+  if(!box) return;
+  if(S.scaleCm > 0){
+    const src = { gemini:"aus dem Plan gelesen", manual:"von Hand abgegriffen",
+                  korrigiert:"aus deiner Korrektur" }[S.scaleSrc] || "bestimmt";
+    box.innerHTML = `<div class="note ok"><div class="scale-on"><b>1 Pixel = ${S.scaleCm.toFixed(2)} cm</b>
+      <span>· ${src}</span></div></div>`;
+    hint.textContent = "Die Wohnfläche ist das Ergebnis der einzelnen Räume. Änderst du sie hier, "
+      + "wird der ganze Plan entsprechend gestreckt.";
+  }else{
+    box.innerHTML = `<div class="note warn">Der Massstab ist noch nicht bestimmt. Tippe auf
+      <b>Plan lesen</b>, damit die Flächen aus dem Plan übernommen werden, oder auf
+      <b>Massstab abgreifen</b> und miss eine bekannte Strecke ab.</div>`;
+    hint.textContent = "Solange der Massstab fehlt, wird diese Fläche behelfsweise auf die "
+      + "erkannten Räume verteilt.";
+  }
+}
+
 function renderRoomList(){
   const host = $("#room-list"); host.innerHTML = "";
   $("#room-count").textContent = S.rooms.length ? `· ${m2(S.rooms.reduce((a,r)=>a+r.m2,0))}` : "";
+  paintScale();
   if(!S.rooms.length){
     host.innerHTML = `<div class="note warn">Es wurden keine Räume erkannt. Zeichne sie mit
       „Raum einzeichnen" von Hand ein oder starte ohne Plan.</div>`;
     return;
   }
   S.rooms.forEach(r=>{
-    const row = el("div","room-row"+(S.sel===r.id?" sel":""));
+    const row = el("div","room-row"+(S.sel===r.id?" sel":"")+(r.warn?" warn":""));
     row.innerHTML = `<span class="sw" style="background:${RT[r.type].col}"></span>
-      <select class="inp" aria-label="Raumtyp">${RTYPES.map(t=>
+      <div><select class="inp" aria-label="Raumtyp">${RTYPES.map(t=>
         `<option value="${t.id}"${t.id===r.type?" selected":""}>${t.n}</option>`).join("")}</select>
-      <span class="a">${r.synth?`<input class="inp" type="number" min="1" max="120" step="1" value="${r.m2}" style="width:74px;padding:6px 8px;font-size:13px" aria-label="Fläche">`:m2(r.m2)}</span>
+        ${r.label ? `<div class="rlabel">im Plan: ${esc(r.label)}</div>` : ""}</div>
+      <span class="a"><input class="inp" type="number" min="0.5" max="300" step="0.1" value="${r.m2}"
+        style="width:82px;padding:6px 8px;font-size:13px;text-align:right" aria-label="Fläche in Quadratmeter"> m²</span>
       <button class="del" aria-label="Raum entfernen">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      ${r.warn ? `<div class="rw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>${esc(r.warn)}</div>` : ""}`;
+
     row.querySelector("select").onchange = e=>{ r.type = e.target.value; renderRoomList(); drawOverlay(); save(); };
-    const num = row.querySelector('input[type="number"]');
-    if(num) num.onchange = e=>{ r.m2 = clamp(+e.target.value||1,1,200);
-      S.totalArea = Math.round(S.rooms.reduce((a,x)=>a+x.m2,0)); $("#in-area").value=S.totalArea;
-      rescale(); renderRoomList(); save(); };
+
+    row.querySelector('input[type="number"]').onchange = e=>{
+      const v = clamp(+e.target.value||1, 0.5, 300);
+      if(r.synth){
+        r.m2 = v;
+        if(!(S.scaleCm > 0)) S.totalArea = +S.rooms.reduce((a,x)=>a+x.m2,0).toFixed(1);
+        rescale();
+      }else if(!calibrateFromRoom(r, v)){
+        r.m2 = v; rescale();
+      }
+      renderRoomList(); drawOverlay(); save();
+    };
+
     row.querySelector(".del").onclick = ()=>{
       S.rooms = S.rooms.filter(x=>x!==r);
       if(S.labels && !r.synth) for(let i=0;i<S.labels.length;i++) if(S.labels[i]===r.id) S.labels[i]=0;
@@ -2351,10 +2432,12 @@ function renderRoomList(){
       S.sel = S.sel===r.id?null:r.id; renderRoomList(); drawOverlay(); };
     host.appendChild(row);
   });
+  // Fussleiste mitziehen, damit sie nicht die alte Fläche zeigt
+  if(S.step === 1 && $("#fb-s")) $("#fb-s").textContent = STEP_INFO[1][1](S.img);
 }
 
 /* Raum im Plan antippen bzw. neuen Raum aufziehen */
-let drawMode = false, dragStart = null;
+let drawMode = false, scaleMode = false, dragStart = null;
 function stagePos(ev){
   const b = $("#stage").getBoundingClientRect();
   return [clamp(Math.round((ev.clientX-b.left)/b.width*S.lw),0,S.lw-1),
@@ -2365,14 +2448,25 @@ function bindStage(){
   st.addEventListener("pointerdown", ev=>{
     if(!S.labels) return;
     const [x,y] = stagePos(ev);
-    if(drawMode){ dragStart=[x,y]; st.setPointerCapture(ev.pointerId); return; }
+    if(drawMode || scaleMode){ dragStart=[x,y]; st.setPointerCapture(ev.pointerId); return; }
     const l = S.labels[y*S.lw+x];
     S.sel = l && l===S.sel ? null : (l||null);
     renderRoomList(); drawOverlay();
   });
   st.addEventListener("pointermove", ev=>{
-    if(!drawMode || !dragStart) return;
+    if(!dragStart) return;
     const [x,y]=stagePos(ev);
+    if(scaleMode){
+      $("#ov").querySelector("#tmp")?.remove();
+      const d = Math.round(Math.hypot(x-dragStart[0], y-dragStart[1]));
+      $("#ov").insertAdjacentHTML("beforeend",
+        `<g id="tmp"><line x1="${dragStart[0]}" y1="${dragStart[1]}" x2="${x}" y2="${y}"
+           stroke="#B4744A" stroke-width="3" stroke-linecap="round"/>
+         <text x="${(dragStart[0]+x)/2}" y="${(dragStart[1]+y)/2-8}" text-anchor="middle"
+           class="rm-lbl" fill="#8C5432" stroke="#FFFFFF">${d} px</text></g>`);
+      return;
+    }
+    if(!drawMode) return;
     const r = {x:Math.min(x,dragStart[0]), y:Math.min(y,dragStart[1]),
                w:Math.abs(x-dragStart[0]), h:Math.abs(y-dragStart[1])};
     $("#ov").querySelector("#tmp")?.remove();
@@ -2380,8 +2474,18 @@ function bindStage(){
       `<rect id="tmp" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#B4744A" fill-opacity=".3" stroke="#B4744A" stroke-width="2"/>`);
   });
   st.addEventListener("pointerup", ev=>{
-    if(!drawMode || !dragStart) return;
+    if(!dragStart) return;
     const [x,y]=stagePos(ev);
+    if(scaleMode){
+      const px = Math.round(Math.hypot(x-dragStart[0], y-dragStart[1]));
+      dragStart = null; scaleMode = false;
+      $("#btn-scale").classList.remove("pri");
+      $("#ov").querySelector("#tmp")?.remove();
+      $("#detect-hint").textContent = "";
+      if(px > 4) applyScaleLine(px);
+      return;
+    }
+    if(!drawMode) return;
     const x0=Math.min(x,dragStart[0]), y0=Math.min(y,dragStart[1]);
     const w=Math.abs(x-dragStart[0]), h=Math.abs(y-dragStart[1]);
     dragStart=null; $("#ov").querySelector("#tmp")?.remove();
@@ -2526,6 +2630,8 @@ function renderResult(){
      : (S.cap ? `<div class="note ok mt-l">Wunschbudget von ${money(S.cap)} eingehalten.</div>` : "")}`;
 
   $("#res-nav").innerHTML = `<button class="res-tab" data-r="-1" aria-pressed="${S.resRoom===-1}">Überblick</button>`
+    + `<button class="res-tab" data-r="-2" aria-pressed="${S.resRoom===-2}">Bilder${
+        Object.keys(S.renders).length ? " · " + Object.keys(S.renders).length : ""}</button>`
     + d.per.map((x,i)=>`<button class="res-tab" data-r="${i}" aria-pressed="${S.resRoom===i}">${esc(plain(RT[x.room.type].n))}</button>`).join("");
   $("#res-nav").onclick = e=>{
     const b = e.target.closest("[data-r]"); if(!b) return;
@@ -2539,6 +2645,15 @@ function renderResult(){
 
 function renderResBody(){
   const d = S.design, host = $("#res-body");
+  if(S.resRoom === -2){
+    host.innerHTML = renderGallery();
+    host.querySelector("#btn-renderall")?.addEventListener("click", renderAllRooms);
+    host.querySelectorAll("[data-save]").forEach(btn=> btn.onclick = ()=>{
+      const u = S.renders[+btn.dataset.save]; if(!u) return;
+      download(`raumwerk-${btn.dataset.name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}.png`, dataUrlToBlob(u));
+    });
+    return;
+  }
   if(S.resRoom === -1){
     host.innerHTML = `
       ${planFigure() ? `<div class="card pad mt"><div class="h-m">Die Wohnung im Überblick</div>
@@ -2573,7 +2688,7 @@ function renderResBody(){
           <div style="text-align:right"><div class="h-m">${money(x.total)}</div><div class="tiny">${money(x.total/Math.max(1,x.room.m2))} pro m²</div></div>
         </div>
         <div class="note info mt">${esc(x.tip)}</div>
-        ${S.provider ? `<div class="row mt no-print">
+        ${S.key ? `<div class="row mt no-print">
           <button class="btn sm" data-ai="${S.resRoom}">${rendered?"Neu rendern":"Fotorealistisch rendern"}</button>
           ${rendered?`<button class="btn sm ghost" data-airm="1">Zeichnung zeigen</button>`:""}
           <span class="tiny">läuft über deinen eigenen Schlüssel</span></div>` : ""}
@@ -2637,43 +2752,380 @@ function roomCropB64(room){
     return c.toDataURL("image/jpeg",0.85).split(",")[1];
   }catch(e){ return null; }
 }
-const GEM_MODELS = ["gemini-3.1-flash-image","gemini-2.5-flash-image","gemini-2.0-flash-preview-image-generation"];
+/* ============================ G · GEMINI ==========================
+   Alles, was über den eigenen API-Schlüssel läuft: Modelle ermitteln,
+   den Plan lesen lassen und Räume rendern. Ohne Schlüssel bleibt jede
+   Funktion hier ungenutzt, die App läuft vollständig weiter.
+   ================================================================== */
+const GEM_BASE = "https://generativelanguage.googleapis.com/v1beta";
+/* Notnagel, falls die Modellliste nicht abrufbar ist. Bewusst nach
+   Rang sortiert – die App bevorzugt aber immer, was der Schlüssel
+   tatsächlich hergibt. */
+const GEM_FALLBACK = {
+  image:["gemini-3-pro-image","gemini-3.1-flash-image","gemini-3.1-flash-lite-image","gemini-2.5-flash-image"],
+  text: ["gemini-3-flash","gemini-3.1-flash","gemini-2.5-flash","gemini-2.0-flash"]
+};
+
+/* Fehler in Klartext übersetzen, samt nächstem Schritt. */
+function gemError(e){
+  const raw = (e && (e.message || e.msg)) || String(e || "");
+  const st  = e && e.status;
+  if(e && e.kind === "network")
+    return "Die Anfrage hat den Browser nicht verlassen. Das passiert, wenn die Seite eingebettet läuft (etwa als geteilte Vorschau) und keine externen Aufrufe machen darf. Öffne die App unter ihrer eigenen Adresse oder lokal als Datei.";
+  if(e && e.kind === "timeout")
+    return "Google hat nicht rechtzeitig geantwortet. Nochmal versuchen; bei Bildern kann es bis zu einer Minute dauern.";
+  if(st === 400 && /API key not valid|API_KEY_INVALID/i.test(raw))
+    return "Der Schlüssel wird nicht akzeptiert. Prüfe ihn im Google AI Studio und trage ihn neu ein.";
+  if(st === 403)
+    return "Der Schlüssel darf dieses Modell nicht nutzen. Meist fehlt die Freischaltung der Gemini API im Google-Projekt.";
+  if(st === 404)
+    return "Dieses Modell gibt es unter deinem Schlüssel nicht. Unter Einstellungen auf „Schlüssel prüfen“ tippen, dann sucht die App ein verfügbares aus.";
+  if(st === 429)
+    return "Das Kontingent ist erschöpft oder die Anfragen kamen zu schnell. Ein paar Minuten warten oder im Google-Konto das Limit anheben.";
+  if(st >= 500)
+    return "Google meldet ein Problem auf seiner Seite. In ein paar Minuten nochmal versuchen.";
+  return raw || "Unbekannter Fehler.";
+}
+
+/* Ein Aufruf gegen die Gemini-API, mit Zeitgrenze und sauberem Fehler. */
+async function gemCall(path, body, ms){
+  if(!S.key){ const e=new Error("Kein Schlüssel hinterlegt."); e.kind="nokey"; throw e; }
+  const ctl = new AbortController();
+  const to = setTimeout(()=>ctl.abort(), ms || 90000);
+  let r;
+  try{
+    r = await fetch(`${GEM_BASE}/${path}${path.includes("?")?"&":"?"}key=${encodeURIComponent(S.key)}`,
+      Object.assign({signal:ctl.signal}, body ? {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+      } : {}));
+  }catch(err){
+    clearTimeout(to);
+    const e = new Error(err.message);
+    e.kind = err.name === "AbortError" ? "timeout" : "network";
+    throw e;
+  }
+  clearTimeout(to);
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok){
+    const e = new Error((j.error && j.error.message) || ("HTTP " + r.status));
+    e.status = r.status;
+    throw e;
+  }
+  return j;
+}
+
+/* Verfügbare Modelle beim Schlüssel erfragen und je eines für Bild und
+   Analyse auswählen. Modellnamen ändern sich laufend – fragen ist
+   haltbarer als raten. */
+function rankModel(name){
+  let s = 0;
+  if(/-pro/.test(name)) s += 300; else if(/-flash-lite/.test(name)) s += 100; else if(/-flash/.test(name)) s += 200;
+  const v = name.match(/gemini-(\d+(?:\.\d+)?)/);
+  if(v) s += parseFloat(v[1]) * 10;
+  if(/preview|exp/.test(name)) s -= 5;      // stabile Namen bevorzugen
+  return s;
+}
+async function discoverModels(){
+  const j = await gemCall("models?pageSize=200", null, 20000);
+  const all = (j.models||[]).map(m=>({
+    id: String(m.name||"").replace(/^models\//,""),
+    gen: (m.supportedGenerationMethods||m.supportedActions||[]).map(String)
+  })).filter(m=>m.id && m.gen.some(g=>/generateContent/i.test(g)));
+
+  const img = all.filter(m=>/image/.test(m.id) && !/embed|vision-?only/.test(m.id))
+                 .sort((a,b)=>rankModel(b.id)-rankModel(a.id));
+  const txt = all.filter(m=>!/image|embed|tts|audio|native-audio|live/.test(m.id))
+                 .sort((a,b)=>rankModel(b.id)-rankModel(a.id));
+  S.models = {
+    image: img.length ? img[0].id : GEM_FALLBACK.image[0],
+    text:  txt.length ? txt[0].id : GEM_FALLBACK.text[0],
+    imageAll: (img.length ? img.map(m=>m.id) : GEM_FALLBACK.image).slice(0,4),
+    checked: true
+  };
+  save();
+  return S.models;
+}
+function models(){
+  return S.models && S.models.checked ? S.models
+    : {image:GEM_FALLBACK.image[0], text:GEM_FALLBACK.text[0], imageAll:GEM_FALLBACK.image, checked:false};
+}
+
+/* ------------------------------------------------------------------
+   Den Plan lesen lassen
+   Gemini bekommt das Planbild und antwortet in erzwungenem JSON. Es
+   soll ausdrücklich ablesen, was gedruckt ist – Bemassung, m²-Angaben,
+   Massstabsleiste – und dazusagen, woher jede Zahl stammt.
+   ------------------------------------------------------------------ */
+const PLAN_SCHEMA = {
+  type:"OBJECT",
+  properties:{
+    gesamtflaeche_m2:{type:"NUMBER"},
+    massstab:{type:"STRING"},
+    hinweis:{type:"STRING"},
+    raeume:{type:"ARRAY", items:{
+      type:"OBJECT",
+      properties:{
+        bezeichnung:{type:"STRING"},
+        typ:{type:"STRING", enum:RTYPES.map(r=>r.id)},
+        flaeche_m2:{type:"NUMBER"},
+        breite_m:{type:"NUMBER"},
+        tiefe_m:{type:"NUMBER"},
+        box:{type:"ARRAY", items:{type:"NUMBER"}},
+        quelle:{type:"STRING", enum:["beschriftung","bemassung","massstab","geschaetzt"]}
+      },
+      required:["bezeichnung","typ","flaeche_m2","box","quelle"]
+    }}
+  },
+  required:["raeume"]
+};
+
+function planPrompt(){
+  return [
+    "Du bekommst den Grundriss einer Wohnung. Lies ihn wie ein Architekt und gib jeden Raum zurück.",
+    "",
+    "Wichtig, in dieser Reihenfolge:",
+    "1. Steht im Raum eine Flächenangabe (z.B. „24.5 m²“), nimm exakt diese Zahl. quelle = \"beschriftung\".",
+    "2. Steht eine Bemassung an den Wänden (z.B. „4.20 x 3.15“ oder Masslinien), rechne die Fläche daraus. quelle = \"bemassung\".",
+    "3. Gibt es nur eine Massstabsleiste oder eine Angabe wie 1:100, miss darüber ab. quelle = \"massstab\".",
+    "4. Erst wenn nichts davon vorhanden ist, schätze. quelle = \"geschaetzt\".",
+    "",
+    "Erfinde keine Zahlen und rechne nichts auf glatte Werte. Wenn du eine Angabe nicht sicher lesen kannst, schätze und markiere es als geschaetzt.",
+    "",
+    "box ist die Lage des Raums im Bild als [x0, y0, x1, y1], jeweils 0 bis 1, x nach rechts, y nach unten.",
+    "typ ordnet den Raum einer dieser Kategorien zu: " + RTYPES.map(r=>`${r.id} = ${plain(r.n)}`).join(", ") + ".",
+    "bezeichnung ist der Text, der im Plan steht; fehlt er, beschreibe den Raum kurz.",
+    "",
+    "Balkone, Terrassen und Kellerräume gehören dazu. Wände, Treppenhäuser und Flächen ausserhalb der Wohnung nicht.",
+    "Gib zusätzlich die Gesamtwohnfläche zurück, falls sie im Plan steht."
+  ].join("\n");
+}
+
+async function readPlanWithGemini(){
+  const im = $("#plan-img");
+  if(!im || !im.naturalWidth) throw new Error("Kein Plan geladen.");
+  const c = document.createElement("canvas");
+  const sc = Math.min(1, 1600/Math.max(im.naturalWidth, im.naturalHeight));
+  c.width = Math.round(im.naturalWidth*sc); c.height = Math.round(im.naturalHeight*sc);
+  c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+  const b64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
+
+  const j = await gemCall(`models/${models().text}:generateContent`, {
+    contents:[{parts:[{text:planPrompt()}, {inline_data:{mime_type:"image/jpeg", data:b64}}]}],
+    generationConfig:{ responseMimeType:"application/json", responseSchema:PLAN_SCHEMA, temperature:0 }
+  }, 90000);
+
+  const parts = ((j.candidates||[])[0]||{}).content?.parts || [];
+  const txt = parts.map(p=>p.text||"").join("").trim();
+  if(!txt) throw new Error("Das Modell hat nichts zurückgegeben.");
+  let data;
+  try{ data = JSON.parse(txt); }
+  catch(e){
+    const m = txt.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error("Die Antwort war kein verwertbares JSON.");
+    data = JSON.parse(m[0]);
+  }
+  if(!data || !Array.isArray(data.raeume) || !data.raeume.length)
+    throw new Error("Im Plan wurden keine Räume erkannt.");
+  return data;
+}
+
+/* Gelesene Zahlen mit der Pixelerkennung zusammenführen.
+   Die Pixelerkennung liefert die exakte Raumform, Gemini die Zahlen
+   und Namen. Zugeordnet wird über die Überlappung der Flächen.      */
+function overlap(a, b){
+  const x = Math.max(0, Math.min(a.x1,b.x1) - Math.max(a.x0,b.x0));
+  const y = Math.max(0, Math.min(a.y1,b.y1) - Math.max(a.y0,b.y0));
+  const inter = x*y;
+  const uni = (a.x1-a.x0)*(a.y1-a.y0) + (b.x1-b.x0)*(b.y1-b.y0) - inter;
+  return uni > 0 ? inter/uni : 0;
+}
+function applyPlanReading(data){
+  const det = S.rooms.filter(r=>!r.synth).map(r=>({ r,
+    box:{x0:r.x/S.lw, y0:r.y/S.lh, x1:(r.x+r.w)/S.lw, y1:(r.y+r.h)/S.lh} }));
+  const gem = data.raeume.map(g=>{
+    const b = Array.isArray(g.box) && g.box.length===4 ? g.box.map(Number) : [0,0,1,1];
+    return { g, box:{x0:Math.min(b[0],b[2]), y0:Math.min(b[1],b[3]), x1:Math.max(b[0],b[2]), y1:Math.max(b[1],b[3])} };
+  });
+
+  // Beste Paare zuerst, damit ein Raum nicht doppelt vergeben wird
+  const pairs = [];
+  det.forEach((d,i)=> gem.forEach((q,k)=> pairs.push({i, k, s:overlap(d.box, q.box)})));
+  pairs.sort((a,b)=>b.s-a.s);
+  const usedD = new Set(), usedG = new Set(), matched = [];
+  pairs.forEach(p=>{
+    if(p.s < 0.12 || usedD.has(p.i) || usedG.has(p.k)) return;
+    usedD.add(p.i); usedG.add(p.k); matched.push(p);
+  });
+
+  // Massstab aus jedem Paar, Median gewinnt
+  const scales = [];
+  matched.forEach(p=>{
+    const d = det[p.i], q = gem[p.k].g;
+    const m2v = Number(q.flaeche_m2);
+    if(m2v > 0.5 && d.r.areaPx > 0) scales.push({ p, cm: Math.sqrt(m2v*10000/d.r.areaPx) });
+  });
+  if(!scales.length) throw new Error("Die gelesenen Flächen liessen sich dem Plan nicht zuordnen.");
+  const sorted = scales.map(s=>s.cm).sort((a,b)=>a-b);
+  const median = sorted[Math.floor(sorted.length/2)];
+
+  S.scaleCm = median;
+  S.scaleSrc = "gemini";
+  S.planNote = data.hinweis || "";
+
+  // Namen, Typen und Unsicherheiten übertragen
+  S.rooms.forEach(r=>{ r.label=null; r.warn=null; r.src=null; });
+  matched.forEach(p=>{
+    const r = det[p.i].r, q = gem[p.k].g;
+    r.label = String(q.bezeichnung||"").slice(0,40);
+    if(RT[q.typ]) r.type = q.typ;
+    r.src = q.quelle;
+    const own = Math.sqrt(Number(q.flaeche_m2)*10000/Math.max(1,r.areaPx));
+    if(Math.abs(own-median)/median > 0.25) r.warn = "Fläche weicht vom übrigen Plan ab";
+    else if(q.quelle === "geschaetzt") r.warn = "vom Modell geschätzt, nicht abgelesen";
+  });
+  det.forEach((d,i)=>{ if(!usedD.has(i)) d.r.warn = "im Plan nicht wiedergefunden"; });
+
+  // Was Gemini sieht, die Pixelerkennung aber verpasst hat
+  let added = 0;
+  gem.forEach((q,k)=>{
+    if(usedG.has(k)) return;
+    const a = Number(q.g.flaeche_m2);
+    if(!(a > 1.5)) return;
+    S.rooms.push({ id: 2000 + S.rooms.length + added, type: RT[q.g.typ] ? q.g.typ : "gast",
+      label: String(q.g.bezeichnung||"").slice(0,40), m2:+a.toFixed(1), areaPx:0, synth:true,
+      wCm:0, dCm:0, warn:"nur aus dem Plantext, ohne Form" });
+    added++;
+  });
+
+  rescale();
+  return { matched: matched.length, added, gesamt: S.totalArea,
+           unsicher: S.rooms.filter(r=>r.warn).length };
+}
+
+/* ------------------------------------------------------------------
+   Alle Räume rendern
+   ------------------------------------------------------------------ */
+async function renderOne(x){
+  const prompt = aiPrompt(x), crop = roomCropB64(x.room);
+  const cand = models().imageAll.slice();
+  if(!cand.includes(models().image)) cand.unshift(models().image);
+  let last = null;
+  for(const model of cand){
+    const parts = [{text:prompt}];
+    if(crop) parts.push({inline_data:{mime_type:"image/jpeg", data:crop}});
+    try{
+      const j = await gemCall(`models/${model}:generateContent`, {
+        contents:[{parts}], generationConfig:{responseModalities:["IMAGE"]}
+      }, 120000);
+      const ps = ((j.candidates||[])[0]||{}).content?.parts || [];
+      const img = ps.find(q=>q.inlineData || q.inline_data);
+      if(img){
+        const d0 = img.inlineData || img.inline_data;
+        return `data:${d0.mimeType||d0.mime_type||"image/png"};base64,${d0.data}`;
+      }
+      last = new Error("Das Modell hat kein Bild zurückgegeben.");
+    }catch(e){
+      last = e;
+      if(e.kind === "network" || e.kind === "nokey") throw e;   // weitere Versuche zwecklos
+      if(e.status && e.status !== 404) throw e;
+    }
+  }
+  throw last || new Error("Kein Bildmodell verfügbar.");
+}
 
 async function aiRender(x){
   if(!S.key){ openM("#m-settings"); return; }
-  busy(true,"Der Raum wird gerendert","Das dauert je nach Anbieter 10 bis 40 Sekunden");
+  busy(true, "Der Raum wird gerendert", plain(RT[x.room.type].n) + " · das dauert 10 bis 40 Sekunden");
   try{
-    const prompt = aiPrompt(x), crop = roomCropB64(x.room);
-    let dataUrl = null, lastErr = "";
-    if(S.provider==="gemini"){
-      for(const model of GEM_MODELS){
-        const parts = [{text:prompt}];
-        if(crop) parts.push({inline_data:{mime_type:"image/jpeg", data:crop}});
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(S.key)}`,
-          {method:"POST", headers:{"Content-Type":"application/json"},
-           body:JSON.stringify({contents:[{parts}], generationConfig:{responseModalities:["IMAGE"]}})});
-        const j = await r.json().catch(()=>({}));
-        if(!r.ok){ lastErr = (j.error && j.error.message) || ("HTTP "+r.status); continue; }
-        const ps = ((j.candidates||[])[0]||{}).content?.parts || [];
-        const img = ps.find(q=>q.inlineData||q.inline_data);
-        if(img){ const d0 = img.inlineData||img.inline_data;
-          dataUrl = `data:${d0.mimeType||d0.mime_type||"image/png"};base64,${d0.data}`; break; }
-        lastErr = "Das Modell hat kein Bild zurückgegeben.";
-      }
-    } else if(S.provider==="openai"){
-      const r = await fetch("https://api.openai.com/v1/images/generations",
-        {method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+S.key},
-         body:JSON.stringify({model:"gpt-image-1", prompt, size:"1536x1024", n:1})});
-      const j = await r.json().catch(()=>({}));
-      if(!r.ok) lastErr = (j.error && j.error.message) || ("HTTP "+r.status);
-      else if(j.data && j.data[0] && j.data[0].b64_json) dataUrl = "data:image/png;base64,"+j.data[0].b64_json;
-      else lastErr = "Keine Bilddaten in der Antwort.";
-    }
-    if(dataUrl){ S.renders[x.room.id] = dataUrl; renderResBody(); }
-    else alert("Der Render hat nicht geklappt.\n\n"+lastErr+"\n\nDie eingebaute Raumansicht bleibt davon unberührt.");
+    S.renders[x.room.id] = await renderOne(x);
+    renderResBody();
   }catch(e){
-    alert("Verbindung zum Anbieter fehlgeschlagen: "+e.message);
+    alert("Der Render hat nicht geklappt.\n\n" + gemError(e) + "\n\nDie eingebaute Raumansicht bleibt davon unberührt.");
   }finally{ busy(false); }
+}
+
+async function renderAllRooms(){
+  if(!S.key){ openM("#m-settings"); return; }
+  const list = S.design.per;
+  if(!confirm(`${list.length} Räume, ${list.length} Bilder.\n\nDas dauert grob ${Math.ceil(list.length*25/60)} bis ${Math.ceil(list.length*45/60)} Minuten und läuft über dein Google-Konto.\n\nStarten?`)) return;
+  S.renderAbort = false;
+  const fails = [];
+  for(let i=0; i<list.length; i++){
+    if(S.renderAbort) break;
+    busy(true, `Bild ${i+1} von ${list.length}`, plain(RT[list[i].room.type].n) + " · zum Abbrechen Esc drücken");
+    try{ S.renders[list[i].room.id] = await renderOne(list[i]); }
+    catch(e){
+      fails.push(plain(RT[list[i].room.type].n) + ": " + gemError(e));
+      if(e.kind === "network" || e.kind === "nokey" || e.status === 403 || e.status === 429) break;
+    }
+  }
+  busy(false);
+  S.resRoom = -2;
+  renderResult();
+  if(fails.length) alert("Nicht alle Bilder sind entstanden:\n\n" + fails.slice(0,4).join("\n\n"));
+}
+
+/* Eine bekannte Strecke im Plan abgreifen, um den Massstab zu setzen */
+function askLength(px){
+  return new Promise(res=>{
+    $("#mr-body").innerHTML = `<h2 class="h-l">Wie lang ist diese Strecke?</h2>
+      <p class="tiny mt-s">Du hast ${px} Bildpunkte abgegriffen. Trage die echte Länge ein –
+        eine Zimmerbreite, eine Türöffnung (meist 0.80 m) oder die Massstabsleiste im Plan.</p>
+      <div class="mt-l"><label class="fl" for="len">Länge in Metern</label>
+        <input class="inp" id="len" type="number" min="0.1" max="100" step="0.01" value="4" inputmode="decimal"></div>
+      <div class="row mt-l" style="justify-content:flex-end">
+        <button class="btn" id="len-x">Abbrechen</button>
+        <button class="btn pri" id="len-ok">Übernehmen</button></div>`;
+    openM("#m-room");
+    const done = v=>{ closeM("#m-room"); res(v); };
+    $("#len-ok").onclick = ()=> done(+$("#len").value || 0);
+    $("#len-x").onclick  = ()=> done(0);
+    setTimeout(()=>{ const f=$("#len"); if(f) f.select(); }, 60);
+  });
+}
+async function applyScaleLine(px){
+  const m = await askLength(px);
+  if(!(m > 0.05) || !(px > 4)) return;
+  S.scaleCm = (m*100)/px;
+  S.scaleSrc = "manual";
+  S.rooms.forEach(r=>{ if(!r.synth) r.warn = null; });
+  rescale(); renderRoomList(); drawOverlay(); save();
+  $("#detect-hint").textContent = `Massstab gesetzt · Wohnfläche ${m2(S.totalArea)}`;
+}
+
+/* Ein Bild aus der Galerie sichern */
+function dataUrlToBlob(u){
+  const [head, b64] = u.split(",");
+  const mime = (head.match(/data:([^;]+)/) || [,"image/png"])[1];
+  const bin = atob(b64), arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], {type:mime});
+}
+
+/* Galerie aller gerenderten Räume */
+function renderGallery(){
+  const d = S.design;
+  const have = d.per.filter(x=>S.renders[x.room.id]);
+  const missing = d.per.length - have.length;
+  return `<div class="card pad mt">
+    <div class="row" style="justify-content:space-between; align-items:flex-start">
+      <div><div class="h-m">Bilder</div>
+        <div class="tiny mt-s">${have.length} von ${d.per.length} Räumen gerendert</div></div>
+      <button class="btn sm no-print" id="btn-renderall">${
+        have.length ? (missing ? "Fehlende rendern" : "Alle neu rendern") : "Alle Räume rendern"}</button>
+    </div>
+    ${have.length ? `<div class="gal mt">${have.map(x=>`
+      <figure class="gi">
+        <img src="${S.renders[x.room.id]}" alt="Render ${esc(plain(RT[x.room.type].n))}" loading="lazy">
+        <figcaption>
+          <div><b>${esc(plain(RT[x.room.type].n))}</b><span>${m2(x.room.m2)} · ${money(x.total)}</span></div>
+          <button class="btn sm no-print" data-save="${x.room.id}" data-name="${esc(plain(RT[x.room.type].n))}">Sichern</button>
+        </figcaption>
+      </figure>`).join("")}</div>`
+    : `<div class="note info mt">Noch keine Bilder. ${S.key
+        ? "Mit „Alle Räume rendern“ entsteht für jeden Raum ein fotorealistisches Bild über deinen Gemini-Schlüssel."
+        : "Dafür braucht es einen Gemini-Schlüssel unter Einstellungen. Die berechneten Raumansichten bei den einzelnen Räumen gibt es auch ohne."}</div>`}
+  </div>`;
 }
 
 /* --- Export ------------------------------------------------------ */
@@ -2724,14 +3176,13 @@ function applyStateToControls(){
   $("#in-h").value = S.height;
   $("#in-cap").value = S.cap || "";
   $("#in-currency").value = S.currency;
-  $("#in-provider").value = S.provider;
   $("#in-key").value = S.key;
-  $("#key-wrap").hidden = !S.provider;
-  $("#key-hint").innerHTML = S.provider==="gemini"
-    ? 'Schlüssel aus dem Google AI Studio. Er wird nur an Google gesendet.'
-    : S.provider==="openai" ? 'Schlüssel aus der OpenAI-Plattform. Er wird nur an OpenAI gesendet.' : "";
+  const st = document.getElementById("key-status");
+  if(st) st.textContent = !S.key ? "" : (S.models && S.models.checked
+    ? `Geprüft · Bild: ${S.models.image} · Analyse: ${S.models.text}` : "Noch nicht geprüft.");
   applyTheme();
   buildControls();
+  paintScale();
 }
 
 function init(){
@@ -2747,13 +3198,63 @@ function init(){
   $("#btn-demo").onclick = demoPlan;
   $("#btn-noplan").onclick = startWithoutPlan;
 
-  $("#in-area").onchange = e=>{ S.totalArea = clamp(+e.target.value||60, 10, 900);
-    rescale(); renderRoomList(); drawOverlay(); save(); };
+  $("#in-area").onchange = e=>{
+    const want = clamp(+e.target.value||60, 5, 900);
+    if(S.scaleCm > 0 && S.totalArea > 0){
+      S.scaleCm *= Math.sqrt(want/S.totalArea);      // ganzen Plan mitziehen
+      S.scaleSrc = "korrigiert";
+      S.rooms.forEach(r=>{ if(!r.synth) r.warn = null; });
+    }
+    S.totalArea = want;
+    rescale(); renderRoomList(); drawOverlay(); save();
+  };
   $("#in-h").onchange = e=>{ S.height = +e.target.value; save(); };
   $("#btn-redetect").onclick = ()=>{ if($("#plan-img").src) { busy(true,"Neu erkennen"); setTimeout(()=>{ runDetect($("#plan-img")); busy(false); }, 40);} };
   $("#btn-draw").onclick = e=>{ drawMode = !drawMode; e.currentTarget.classList.toggle("pri", drawMode);
     $("#detect-hint").textContent = drawMode ? "Rechteck über dem Raum aufziehen" : ""; };
   $("#btn-addmanual").onclick = addManualRoom;
+
+  $("#btn-scale").onclick = e=>{
+    if(!S.labels){ alert("Dafür braucht es zuerst einen hochgeladenen Plan."); return; }
+    drawMode = false; $("#btn-draw").classList.remove("pri");
+    scaleMode = !scaleMode;
+    e.currentTarget.classList.toggle("pri", scaleMode);
+    $("#detect-hint").textContent = scaleMode
+      ? "Eine Strecke im Plan abfahren, deren echte Länge du kennst – dann die Länge eintragen."
+      : "";
+  };
+
+  $("#btn-analyse").onclick = async ()=>{
+    if(!S.img || !S.labels){ alert("Lade zuerst einen Grundriss hoch."); return; }
+    if(!S.key){
+      alert("„Plan lesen“ braucht einen eigenen Gemini-Schlüssel.\n\nOhne Schlüssel geht es auch: "
+        + "mit „Massstab abgreifen“ eine bekannte Strecke im Plan abmessen.");
+      openM("#m-settings"); return;
+    }
+    busy(true, "Der Plan wird gelesen", "Bemassung, Flächenangaben und Raumnamen");
+    try{
+      if(!S.models || !S.models.checked) await discoverModels();
+      const res = applyPlanReading(await readPlanWithGemini());
+      renderRoomList(); drawOverlay(); save();
+      $("#detect-hint").textContent = `${res.matched} Räume zugeordnet`
+        + (res.added ? `, ${res.added} aus dem Plantext ergänzt` : "")
+        + (res.unsicher ? `, ${res.unsicher} zum Prüfen markiert` : "")
+        + ` · ${m2(S.totalArea)} gesamt`;
+    }catch(e){
+      alert("Der Plan liess sich nicht auslesen.\n\n" + gemError(e)
+        + "\n\nDu kannst stattdessen „Massstab abgreifen“ nutzen.");
+    }finally{ busy(false); }
+  };
+
+  $("#btn-check").onclick = async ()=>{
+    const st = $("#key-status");
+    if(!S.key){ st.textContent = "Erst einen Schlüssel eintragen."; return; }
+    st.textContent = "wird geprüft …";
+    try{
+      const m = await discoverModels();
+      st.innerHTML = `<span style="color:var(--ok)">Schlüssel gültig</span> · Bild: ${esc(m.image)} · Analyse: ${esc(m.text)}`;
+    }catch(e){ st.innerHTML = `<span style="color:var(--warn)">${esc(gemError(e))}</span>`; }
+  };
 
   $("#btn-back").onclick = ()=> goto(S.step-1);
   $("#btn-next").onclick = ()=> S.step===3 ? goto(0) : goto(S.step+1);
@@ -2766,11 +3267,17 @@ function init(){
   };
   $("#in-theme").onchange = e=>{ S.theme = e.target.value; applyTheme(); save(); };
   $("#btn-settings").onclick = ()=> openM("#m-settings");
-  $("#in-provider").onchange = e=>{ S.provider = e.target.value; $("#key-wrap").hidden = !S.provider;
-    applyStateToControls(); save(); };
-  $("#in-key").onchange = e=>{ S.key = e.target.value.trim(); save(); };
+  $("#in-key").onchange = e=>{
+    S.key = e.target.value.trim(); S.models = null;
+    $("#key-status").textContent = S.key ? "Noch nicht geprüft." : "";
+    save();
+  };
   document.addEventListener("click", e=>{ if(e.target.matches("[data-close]")) e.target.closest(".modal").classList.remove("on"); });
-  document.addEventListener("keydown", e=>{ if(e.key==="Escape") $$(".modal.on").forEach(m=>m.classList.remove("on")); });
+  document.addEventListener("keydown", e=>{
+    if(e.key!=="Escape") return;
+    if($("#busy").classList.contains("on")) S.renderAbort = true;   // Stapel abbrechen
+    $$(".modal.on").forEach(m=>m.classList.remove("on"));
+  });
 
   $("#btn-print").onclick = ()=> window.print();
   $("#btn-copy").onclick = async ()=>{
