@@ -108,9 +108,16 @@ schaltet zwei Dinge frei: **Plan lesen** und **fotorealistische Bilder**.
 Nötig ist er nicht – ohne Schlüssel läuft alles andere unverändert.
 
 Eintragen unter **Einstellungen**, dann auf **Schlüssel prüfen**. RAUMWERK
-fragt die für deinen Schlüssel verfügbaren Modelle ab und wählt selbst
-das beste für Bild und Analyse aus. Modellnamen ändern sich bei Google
-laufend; deshalb wird gefragt statt geraten.
+fragt die für deinen Schlüssel verfügbaren Modelle ab und listet sie zur
+Auswahl. Modellnamen ändern sich bei Google laufend; deshalb wird gefragt
+statt geraten.
+
+**Zum Gratis-Kontingent:** Voreingestellt sind die sparsamen
+`flash`-Modelle. Die `pro`-Modelle liefern bessere Bilder, haben aber
+ohne aktivierte Abrechnung meist gar keine Freimenge und antworten sofort
+mit „Kontingent erschöpft“. Das Limit gilt **je Modell und pro Tag** –
+läuft eines hinein, probiert RAUMWERK automatisch das nächste, bevor es
+aufgibt. In den Einstellungen lässt sich jederzeit manuell wechseln.
 
 Im Ergebnis gibt es den Reiter **Bilder**: **Alle Räume rendern** erzeugt
 für jeden Raum ein Bild, einzelne Räume lassen sich jederzeit neu

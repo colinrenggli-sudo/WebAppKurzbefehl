@@ -151,11 +151,21 @@ aktuelle Stand, in ein paar Monaten heissen sie anders). Eine fest
 verdrahtete Liste veraltet also garantiert.
 
 Deshalb fragt die App beim Speichern des Schlüssels
-`GET /v1beta/models` ab und wählt selbst: fürs Bild ein Modell mit
-`image` im Namen, für die Analyse ein Textmodell, jeweils nach Rang
-(`pro` > `flash` > `flash-lite`, höhere Version zuerst, stabile Namen
-vor `preview`). Fällt die Abfrage aus, greift eine hinterlegte
-Rangfolge als Notnagel.
+`GET /v1beta/models` ab und sortiert die Treffer selbst: fürs Bild die
+Modelle mit `image` im Namen, für die Analyse die Textmodelle.
+
+Die Rangfolge stellt **`flash` vor `flash-lite` vor `pro`** – das ist
+gegen die Intuition und wurde erst im echten Test gelernt: `pro`-Modelle
+haben im Gratis-Kontingent oft überhaupt keine Freimenge und antworten
+schon beim ersten Aufruf mit HTTP 429. Ein Werkzeug, das im
+Standardzustand sofort scheitert, ist wertlos, auch wenn das teurere
+Modell schöner rendern würde. Wer Abrechnung aktiviert hat, stellt in
+den Einstellungen manuell um.
+
+Weil das Kontingent **je Modell** gilt, ist ein 429 kein Abbruchgrund:
+Die App arbeitet die Liste durch und meldet erst auf, wenn alle Modelle
+abgelehnt haben. Dasselbe gilt für 403 und 404 – ein Schlüssel ohne
+Zugriff auf ein bestimmtes Modell soll nicht den ganzen Ablauf stoppen.
 
 ### Den Plan lesen
 
