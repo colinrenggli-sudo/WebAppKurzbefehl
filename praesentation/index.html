@@ -676,8 +676,17 @@ input[type=range]::-moz-range-thumb{
   }
   body.rail-collapsed .nav,body.rail-collapsed .railfoot{display:none}
   .slide{aspect-ratio:auto;width:100%;min-height:auto}
-  .slide__pad{font-size:clamp(13px,3.9cqw,17px);padding:2.2em 1.7em 3.4em}
-  .slide__foot{left:1.7rem;right:1.7rem;bottom:1rem;font-size:.66rem}
+  .slide__pad{font-size:clamp(13px,3.6cqw,17px);padding:2em 1.5em 3.2em}
+  .slide__foot{left:1.5rem;right:1.5rem;bottom:1rem;font-size:.66rem}
+  .slide h1{font-size:2.4em}
+  .slide h2{font-size:1.65em}
+  .l-statement .big{font-size:1.95em}
+
+  /* Die Kopfzeile hat auf 390 Pixeln keinen Platz für Tastaturhinweise. */
+  .topbar{padding:8px 12px;gap:8px;min-height:46px}
+  .topbar .kbd{display:none}
+  .topbar__title{font-size:.9rem}
+  #ovBtn,#topChip{display:none}
   .l-split,.l-split--wide,.l-split--narrow{grid-template-columns:1fr;gap:1.4em}
   .steps{grid-auto-flow:row;gap:1.2em}
   .step{border-left:0;border-top:1px solid var(--line);padding:.9em 0 0}
@@ -5804,7 +5813,7 @@ DECKS.bau = {
 /* 04 */
 {
   eyebrow:"Der grösste einzelne Hebel",
-  h2:"Ein Drittel eurer Baustelle spricht Portugiesisch. Eure Rapporte sprechen Deutsch.",
+  h2:"Der Rapport ist auf Deutsch. Die Baustelle nicht.",
   body:[
     {t:"split", mod:"narrow",
       a:[
@@ -5816,7 +5825,7 @@ DECKS.bau = {
       b:[
         {t:"p", v:"<b>Ein deutschsprachiger Papierrapport erreicht diese Belegschaft strukturell nicht.</b> Das trifft drei Dinge gleichzeitig: die Qualität der Rapporte, die Sicherheitsunterweisung nach Bauarbeitenverordnung, die nachweislich verstanden sein muss, und die Nacharbeit, weil missverstandene Anweisungen zweimal ausgeführt werden."},
         {t:"note", v:"Und das Beste daran: <b>Übersetzung ist mit 52 % bereits die häufigste KI-Anwendung in Schweizer KMU.</b> Das Argument muss ich nicht erklären — es ist schon im Kopf."},
-        {t:"src", v:"AXA KMU-Arbeitsmarktstudie 2025, durchgeführt von Sotomo, n = 300. Erhoben sind Nationalitäten, nicht Sprachen — deshalb steht hier „Pass“ und nicht „spricht“."}
+        {t:"src", v:"AXA KMU-Arbeitsmarktstudie 2025, durchgeführt von Sotomo, n = 300. Die Lohnerhebung des Baumeisterverbands erfasst Nationalitäten, keine Sprachen — deshalb steht hier „Pass“ und nicht „spricht“. Der Schluss ist naheliegend, aber er ist ein Schluss."}
       ]}
   ],
   notes:"Diese Folie funktioniert, weil jeder Bauunternehmer sie sofort erkennt.<ul><li>Nachfragen: „Wie viele Sprachen sind bei euch auf der Baustelle?“ — die Antwort ist der Einstieg ins Leuchtturmprojekt.</li><li>Ehrlich bleiben: erhoben sind Nationalitäten, nicht Sprachen.</li></ul>"
