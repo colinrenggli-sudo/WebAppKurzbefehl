@@ -700,18 +700,34 @@ input[type=range]::-moz-range-thumb{
   .page{padding:20px 16px 60px}
 }
 
+/* Handout: alle Folien in den Baum legen und drucken. Die Slide-Engine
+   zeigt sonst immer nur eine Folie — gedruckt käme sonst genau eine Seite. */
+.handout{display:none}
+.handout__deck{
+  page-break-after:always;break-after:page;padding:40px 0;
+}
+.handout__deck h2{font-size:26px;margin:0 0 6px;letter-spacing:-.02em}
+.handout__notes{
+  page-break-after:always;break-after:page;padding:22px 0;
+  font-size:11px;line-height:1.5;color:#222;
+}
+.handout__notes h4{margin:0 0 6px;font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#666}
+.handout__notes ul{margin:6px 0 0;padding-left:16px}
+
 @media print{
-  body{background:#fff}
+  body{background:#fff;color:#000}
   .rail,.topbar,.deckbar,.shortlist,.overview{display:none !important}
   .app{display:block;height:auto}
   .stage{display:block}
   .view{overflow:visible;height:auto}
   .deckwrap{display:block;padding:0}
   .slide{
-    width:100%;aspect-ratio:auto;box-shadow:none;border:1px solid #ccc;border-radius:0;
-    page-break-after:always;break-after:page;font-size:12px;min-height:0;
+    width:100%;box-shadow:none;border:1px solid #bbb;border-radius:0;
+    page-break-after:always;break-after:page;margin:0 0 4px;
   }
-  .notes{page-break-after:always}
+  body.is-printing .app{display:none !important}
+  body.is-printing .handout{display:block}
+  .handout .slide__pad{padding:2.4em 3em 3.2em}
 }
 </style>
 </head>
@@ -4243,6 +4259,52 @@ function step(d){
   render();
 }
 
+/* Handout drucken: alle Folien aller Decks, wahlweise mit Sprechernotizen.
+   Wird nach dem Druck wieder aus dem Baum entfernt. */
+function handoutDrucken(mitNotizen){
+  const alt = $("#handout");
+  if(alt) alt.remove();
+
+  const box = el("div", {id:"handout", class:"handout"});
+  for(const id of deckIds()){
+    const deck = DECKS[id];
+    const slides = deck.slides();
+    box.appendChild(el("div", {class:"handout__deck"},
+      el("div", {class:"masslinie", text:"Deck " + deck.no}),
+      el("h2", {html:deck.title}),
+      el("p", {style:"margin:0;color:#444;max-width:60ch", html:deck.blurb}),
+      el("p", {class:"mono", style:"margin-top:10px;font-size:11px;color:#666",
+               text:slides.length + " Folien · " + (deck.dauer||"") + " · " + (deck.audience||"")})
+    ));
+    slides.forEach((s,i) => {
+      box.appendChild(renderSlide(s, i, slides.length, deck));
+      if(mitNotizen && s.notes){
+        box.appendChild(el("div", {class:"handout__notes"},
+          el("h4", {text:"Sprechernotiz · " + deck.short + " · Folie " + (i+1)}),
+          el("div", {html:s.notes})));
+      }
+    });
+  }
+
+  document.body.appendChild(box);
+  document.body.classList.add("is-printing");
+
+  /* Aufräumen erst, wenn der Druckdialog wirklich zu ist. Ein Zeitgeber
+     würde den Inhalt mitten im Druck entfernen — genau das ist beim Testen
+     passiert und hat aus 53 Seiten acht gemacht. */
+  const aufraeumen = () => {
+    document.body.classList.remove("is-printing");
+    box.remove();
+    window.removeEventListener("afterprint", aufraeumen);
+    document.removeEventListener("keydown", beiTaste, true);
+  };
+  const beiTaste = e => { if(e.key === "Escape") aufraeumen(); };
+  window.addEventListener("afterprint", aufraeumen);
+  document.addEventListener("keydown", beiTaste, true);
+
+  setTimeout(() => window.print(), 80);
+}
+
 let notesOn = false;
 function toggleNotes(){
   notesOn = !notesOn;
@@ -4561,7 +4623,9 @@ function renderCockpit(v){
       el("ul", {class:"ticks", style:"font-size:.92rem"}, VORBEREITUNG.map(x => el("li", {html:x}))),
       el("div", {style:"display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"},
         el("button", {class:"btn", type:"button", onclick:() => go("einstellungen")}, "Einstellungen öffnen"),
-        el("button", {class:"btn", type:"button", onclick:() => go("katalog")}, "Katalog vorbereiten")
+        el("button", {class:"btn", type:"button", onclick:() => go("katalog")}, "Katalog vorbereiten"),
+        el("button", {class:"btn", type:"button", onclick:() => handoutDrucken(false)}, "Handout drucken"),
+        el("button", {class:"btn", type:"button", onclick:() => handoutDrucken(true)}, "Handout mit Notizen")
       )
     )
   ));
