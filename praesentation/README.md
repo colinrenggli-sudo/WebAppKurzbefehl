@@ -110,6 +110,7 @@ Bericht trennt konsequent zwischen **belegt** (mit Quelle und Abrufdatum),
 
 | Datei | Thema |
 |---|---|
+| [`00-luecken-und-pruefung.md`](recherche/00-luecken-und-pruefung.md) | **Die Prüfinstanz.** Eine zwölfte Instanz hat die elf Berichte gegeneinander gelesen und nach Widersprüchen, unbelegten Zahlen und Rechenfehlern gesucht |
 | [`01-kmu-ki-schweiz.md`](recherche/01-kmu-ki-schweiz.md) | KI in Schweizer KMU, Vollkosten pro Stunde, Fördergelder |
 | [`02-arztpraxen-schweiz-markt.md`](recherche/02-arztpraxen-schweiz-markt.md) | Marktstruktur, Abläufe und Schmerzpunkte in Arztpraxen |
 | [`03-arztpraxen-ki-usecases.md`](recherche/03-arztpraxen-ki-usecases.md) | 26 Anwendungsfälle mit Anbietern, Nutzen und Regulatorik |
@@ -121,6 +122,30 @@ Bericht trennt konsequent zwischen **belegt** (mit Quelle und Abrufdatum),
 | [`09-agentur-angebot-preise.md`](recherche/09-agentur-angebot-preise.md) | Angebotsmodelle, Pilotstruktur, Vertragsrecht |
 | [`10-pitch-narrativ.md`](recherche/10-pitch-narrativ.md) | Deck-Aufbau und wie man die eigene Geschichte erzählt |
 | [`11-firmen-kontext.md`](recherche/11-firmen-kontext.md) | Firmenkontext und Praxisdienstleister-Landschaft |
+
+### Was die Prüfinstanz gefunden hat
+
+Die zwölfte Instanz hat die elf Berichte gegeneinander gelesen. Drei
+Befunde haben es direkt in die Folien geändert:
+
+- **Die Pfandrechtsfrist ist nicht neu.** Eine Teilrecherche behauptete
+  eine Verlängerung von drei auf vier Monate per 1.1.2026, gestützt auf
+  eine einzelne Kanzlei-Seite. Die vier Monate stammen aus der
+  ZGB-Revision von 2012. Die Folie sagt jetzt nur noch, wie lang die
+  Frist ist — der Verkaufswert bleibt derselbe, das Risiko ist weg.
+- **Der Schluss von der Nationalität auf die Sprache** ist nicht belegt.
+  Die Erhebung des Baumeisterverbands zählt Pässe, keine Sprachen. Die
+  Folie sagt jetzt „31 % haben einen portugiesischen Pass“ und zieht den
+  Schluss im nächsten Satz sichtbar selbst.
+- **Die 54 Minuten** sind die praxisambulante Administration *ohne* die
+  Arbeit am Patientendossier. Eine Teilrecherche hatte einen Spitalwert
+  (114 Minuten) danebengestellt, was den Nutzen um Faktor drei aufgebläht
+  hätte. Die Folie nennt nur die belegte Zahl mit ihrer Abgrenzung.
+
+Bewusst nicht übernommen wurden ausserdem: CHF-Beträge pro Katalogeintrag
+(es gibt keine belastbaren Schweizer Marktsätze — der Katalog zeigt
+Aufwandsklassen und Dauer), Anbieter-Nutzerzahlen und die MPA-Zahlen aus
+einem Verbandsblog, die einander widersprachen.
 
 ### Was die Recherche selbst als ungeprüft markiert
 

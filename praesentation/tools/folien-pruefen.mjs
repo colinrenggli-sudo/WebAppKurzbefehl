@@ -25,17 +25,28 @@ const browser = await chromium.launch();
 let probleme = 0;
 const melde = t => { probleme++; console.log("  ! " + t); };
 
-for (const schema of ["light", "dark"]) {
-  const ctx = await browser.newContext({ viewport: { width: 1600, height: 950 }, colorScheme: schema });
+/* Mehrere Fenstergroessen, weil die Folie mit ihrer eigenen Breite skaliert:
+   ein 1366er-Laptop ist das wahrscheinlichste Praesentationsgeraet und war
+   einmal die Groesse, bei der Inhalte abgeschnitten wurden. */
+const GROESSEN = [
+  { w: 1280, h: 800, schema: "light" },
+  { w: 1366, h: 768, schema: "dark" },
+  { w: 1440, h: 900, schema: "light" },
+  { w: 1600, h: 950, schema: "dark" },
+  { w: 1920, h: 1080, schema: "light" },
+];
+
+for (const { w, h, schema } of GROESSEN) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: schema });
   const page = await ctx.newPage();
-  page.on("pageerror", e => melde(`${schema}: JS-Fehler — ${e.message}`));
-  page.on("console", m => { if (m.type() === "error" && !/ERR_(CONNECTION|NAME|INTERNET)/.test(m.text())) melde(`${schema}: Konsole — ${m.text()}`); });
+  page.on("pageerror", e => melde(`${w}x${h} ${schema}: JS-Fehler — ${e.message}`));
+  page.on("console", m => { if (m.type() === "error" && !/ERR_(CONNECTION|NAME|INTERNET)/.test(m.text())) melde(`${w}x${h} ${schema}: Konsole — ${m.text()}`); });
 
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(500);
 
   const decks = await page.evaluate(() => Object.keys(DECKS));
-  console.log(`\n${schema}: ${decks.length} Decks`);
+  console.log(`\n${w}x${h} ${schema}: ${decks.length} Decks`);
 
   for (const id of decks) {
     const n = await page.evaluate(d => { go(d); return DECKS[d].slides().length; }, id);
@@ -55,10 +66,10 @@ for (const schema of ["light", "dark"]) {
         })));
       }, i);
 
-      if (info.ueberlauf > 2) melde(`${schema} · ${id} · Folie ${i + 1} „${info.titel}“ — ${Math.round(info.ueberlauf)} px zu hoch`);
-      if (info.breite) melde(`${schema} · ${id} · Folie ${i + 1} — Seite scrollt seitwaerts`);
-      if (schema === "light" && info.notiz === 0) melde(`${id} · Folie ${i + 1} „${info.titel}“ — keine Sprechernotiz`);
-      if (bilder) await page.screenshot({ path: join(shotDir, `${schema}-${id}-${String(i + 1).padStart(2, "0")}.png`) });
+      if (info.ueberlauf > 2) melde(`${w}x${h} ${schema} · ${id} · Folie ${i + 1} „${info.titel}“ — ${Math.round(info.ueberlauf)} px zu hoch`);
+      if (info.breite) melde(`${w}x${h} ${schema} · ${id} · Folie ${i + 1} — Seite scrollt seitwaerts`);
+      if (w === 1600 && info.notiz === 0) melde(`${id} · Folie ${i + 1} „${info.titel}“ — keine Sprechernotiz`);
+      if (bilder && (w === 1600 || w === 1366)) await page.screenshot({ path: join(shotDir, `${schema}-${w}-${id}-${String(i + 1).padStart(2, "0")}.png`) });
     }
   }
 
@@ -67,8 +78,8 @@ for (const schema of ["light", "dark"]) {
     await page.evaluate(x => go(x), v);
     await page.waitForTimeout(250);
     const quer = await page.evaluate(() => document.body.scrollWidth > document.body.clientWidth + 1);
-    if (quer) melde(`${schema} · Ansicht ${v} scrollt seitwaerts`);
-    if (bilder) await page.screenshot({ path: join(shotDir, `${schema}-view-${v}.png`), fullPage: true });
+    if (quer) melde(`${w}x${h} ${schema} · Ansicht ${v} scrollt seitwaerts`);
+    if (bilder && w === 1600) await page.screenshot({ path: join(shotDir, `${schema}-view-${v}.png`), fullPage: true });
   }
 
   await ctx.close();
