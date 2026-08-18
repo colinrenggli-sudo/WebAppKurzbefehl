@@ -1,0 +1,15 @@
+{
+  "name": "DACHWERK – Auftragsverwaltung",
+  "short_name": "DACHWERK",
+  "description": "Aufträge anlegen, disponieren, vor Ort abarbeiten und abrechnen.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EEF1F6",
+  "theme_color": "#D9531E",
+  "lang": "de-CH",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
