@@ -266,7 +266,10 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
 
 .slide__pad{
   font-size:clamp(12px, 1.63cqw, 40px);
-  padding:3.1em 4em 4.2em;flex:1 1 auto;min-height:0;
+  /* Unten nur so viel Reserve, wie die Fusszeile wirklich braucht:
+     sie sitzt 1.55cqw über der Kante und ist rund 1.5cqw hoch, zusammen
+     etwa 1.9em. 2.9em lässt Luft, ohne eine ganze Zeile zu verschenken. */
+  padding:3.1em 4em 2.9em;flex:1 1 auto;min-height:0;
   display:flex;flex-direction:column;gap:.98em;
 }
 .slide__foot{
@@ -4216,12 +4219,28 @@ function renderDeck(v, deck){
   requestAnimationFrame(() => ueberlaufPruefen(bar));
 }
 
+/* Wie weit ragt der Inhalt über die untere Satzspiegelkante hinaus?
+   scrollHeight genügt dafür nicht: Läuft eine Spalte innerhalb eines
+   Flex-Elements mit min-height:0 über, wächst der Vorfahre nicht mit, und
+   der Text schiebt sich stillschweigend über die Fusszeile. Deshalb wird
+   die tiefste Unterkante aller Nachfahren gemessen. */
+function ueberlaufMessen(pad){
+  const cs = getComputedStyle(pad);
+  const grenze = pad.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom);
+  let tiefste = 0;
+  for(const n of pad.querySelectorAll("*")){
+    const r = n.getBoundingClientRect();
+    if(r.height > 0 && r.bottom > tiefste) tiefste = r.bottom;
+  }
+  return Math.max(0, tiefste - grenze, pad.scrollHeight - pad.clientHeight);
+}
+
 /* Eine Folie mit fester Seitenlänge schneidet zu langen Inhalt stillschweigend
    ab. Das darf im Meeting nicht passieren — also sichtbar melden. */
 function ueberlaufPruefen(bar){
   const pad = $(".slide__pad");
   if(!pad) return;
-  const zuviel = pad.scrollHeight - pad.clientHeight;
+  const zuviel = ueberlaufMessen(pad);
   window.__ueberlauf = zuviel > 2 ? zuviel : 0;
   if(zuviel > 2 && !presenting){
     const w = el("span", {class:"chip", style:"border-color:var(--crit);color:var(--crit);background:var(--crit-weak)",
@@ -5321,17 +5340,17 @@ DECKS.geschichte = {
         ]},
         S.preiseZeigen ? {t:"note", v:"<b>Damit ihr rechnen könnt:</b> Analyse " + esc(S.preisAnalyse) +
           ". Pilot " + esc(S.preisPilot) + ". Betrieb " + esc(S.preisBetrieb) +
-          ". <b>Verbindlich wird die Zahl nach der Messung</b> — vorher würde ich raten."}
+          ". <b>Verbindlich nach der Messung</b> — vorher würde ich raten."}
           : {t:"note", v:"Preise nenne ich erst nach der Messung. Vorher wäre es geraten."}
       ],
       b:[
         {t:"h3", v:"Drei Punkte, die in den Vertrag gehören"},
         {t:"ticks", v:[
-          "<b>Die Rechte am Code.</b> Bei einem externen Beauftragten gehen sie <i>nicht</i> automatisch an den Kunden über. „Der Code gehört euch“ muss ausdrücklich im Vertrag stehen, sonst ist es ein leeres Versprechen.",
+          "<b>Die Rechte am Code.</b> Bei einem externen Beauftragten gehen sie <i>nicht</i> automatisch an den Kunden über. „Der Code gehört euch“ muss ausdrücklich im Vertrag stehen.",
           "<b>Der Auftragsbearbeitungsvertrag</b>: Bearbeitungsort Schweiz, keine Trainingsnutzung, Löschung am Ende.",
-          "<b>Der Ausstieg.</b> Das Gesetz lässt euch beim Werkvertrag jederzeit zurücktreten — aber gegen volle Entschädigung. Meine Klausel geht weiter: nach jeder Stufe Schluss, bezahlt wird nur die abgeschlossene."
+          "<b>Der Ausstieg.</b> Zurücktreten könnt ihr laut Gesetz jederzeit — aber gegen volle Entschädigung. Meine Klausel geht weiter: nach jeder Stufe Schluss, bezahlt wird nur die abgeschlossene."
         ]},
-        {t:"src", v:"Keine Rechtsberatung — den Vertrag schaut euer Treuhänder oder Anwalt an."}
+        {t:"src", v:"Orientierung, keine Rechtsberatung."}
       ]}
   ],
   notes:"Diese Folie ist für den Onkel gemacht: Er kalkuliert seit Jahrzehnten und erkennt eine gegriffene Zahl.<ul><li><b>Keine <i>fremden</i> Marktzahlen nennen</b> — für Schweizer Tages- und Stundensätze in der Softwareentwicklung gibt es keine belastbare Erhebung. Der eigene Preis ist etwas anderes: den darfst und sollst du nennen. Wer nach 75 Minuten keine Hausnummer gehört hat, entscheidet nichts.</li><li><b>Prüfe die Beträge unter Einstellungen, bevor du sie aussprichst.</b> Sie stehen als Vorschlag drin und entsprechen den Ausgangslagen im Nutzenrechner — wenn du andere Zahlen willst, ändere beide, sonst widersprichst du dir im selben Termin.</li><li>Der Punkt zu den Code-Rechten ist der, den fast alle Anbieter übergehen. Er schafft Vertrauen, weil er gegen mich selbst geht.</li><li>Falls es um Förderung geht: Der Innovationsscheck des Bundes finanziert bis CHF 15'000 für eine Vorstudie — aber das Geld geht an einen Forschungspartner, nicht an den Betrieb und nicht an mich. Ehrlich so sagen.</li></ul>"
@@ -5509,8 +5528,8 @@ DECKS.praxis = {
           "Wie lange dauert eine Korrektur, wer macht sie?",
           "Wie viele Tage kostet jede Retoure an Zahlungseingang?"
         ]},
-        {t:"note", v:"<b>Das gibt es schon</b> — bei Ärztekasse, MediData und Medical Invoice, als Teil ihrer Abrechnungsdienstleistung. Der Unterschied: dort seht ihr das Ergebnis, nicht die Ursachen, und die Regeln gehören euch nicht. Ob sich das gegen einen bestehenden Vertrag lohnt, rechnen wir in Woche 2 — nicht heute."},
-        {t:"src", v:"Kontext: santésuisse gibt rund 10 % nicht korrekt verrechnete Leistungen an — Angabe des Versichererverbands, keine neutrale Statistik. Genau darum die eigene Messung."}
+        {t:"note", v:"<b>Das gibt es schon</b> — bei Ärztekasse, MediData und Medical Invoice. Der Unterschied: dort seht ihr das Ergebnis, nicht die Ursachen, und die Regeln gehören euch nicht."},
+        {t:"src", v:"santésuisse nennt rund 10 % nicht korrekt verrechnete Leistungen — Angabe der Versichererseite, keine neutrale Statistik. Darum die eigene Messung."}
       ]}
   ],
   notes:"Das ist für eine Verwaltungsfirma der ertragsstärkste Punkt, weil er über alle Praxen skaliert.<ul><li>Frage an Jana: „Wer bearbeitet bei euch heute die Rückweisungen, und wisst ihr, welche Gründe am häufigsten sind?“ Wenn sie es nicht weiss, ist genau das der Auftrag.</li></ul>"
@@ -5557,8 +5576,8 @@ DECKS.praxis = {
         ]}
       ],
       b:[
-        {t:"note", v:"Argomed und medkey machen Ähnliches für ihre Ärztenetze. Für eine Verwaltungsfirma eurer Art habe ich nichts gefunden — <b>das ist ein Hinweis, kein Beweis.</b> Zwei Telefonate klären es, bevor irgendetwas gebaut wird."},
-        {t:"src", v:"Ziel ist die aggregierte Kennzahl. Der Weg dorthin führt aber durch die Praxissysteme — Auftragsbearbeitungsvertrag und Berufsgeheimnis-Klausel gelten deshalb auch hier. Wo möglich aggregieren wir in der Praxis und übernehmen nur die Summe."}
+        {t:"note", v:"Argomed und medkey machen Ähnliches für ihre Ärztenetze. Für eine Verwaltungsfirma eurer Art habe ich nichts gefunden — <b>ein Hinweis, kein Beweis.</b> Zwei Telefonate klären es."},
+        {t:"src", v:"Ziel ist die aggregierte Kennzahl. Der Weg dorthin führt durch die Praxissysteme — Auftragsbearbeitungsvertrag und Berufsgeheimnis-Klausel gelten deshalb auch hier. Wo möglich aggregieren wir in der Praxis und übernehmen nur die Summe."}
       ]}
   ],
   notes:"<b>Das ist der strategische Punkt für eine COO</b> — kein Werkzeug, sondern ein Angebot, das ihre Firma von anderen unterscheidet.<ul><li>Ehrlich bleiben: dass ich keinen Anbieter gefunden habe, ist ein Hinweis, kein Beweis. Nicht als „Marktlücke“ verkaufen, sondern als „das sollten wir zu zweit prüfen“.</li></ul>"
@@ -5578,8 +5597,8 @@ DECKS.praxis = {
       ],
       b:[
         {t:"h3", v:"Was sich stärker verändert als die Zeit"},
-        {t:"p", v:"In derselben Studie verbesserten sich Belastungs- und Zufriedenheitswerte in beiden Armen. Bei einer grossen Beobachtungsreihe in den USA (7'260 Ärzte, rund 2,5 Mio. Konsultationen) berichteten 84 % eine bessere Patientenbindung. <b>Der Nutzen liegt eher bei „bleibt die Ärztin?“ als bei „spart sie eine Stunde?“</b> — und für einen Betrieb, der Personal nicht ersetzen kann, ist das womöglich das wertvollere Argument."},
-        {t:"note", v:"Zwei Bedingungen, die nicht verhandelbar sind: <b>ärztliche Freigabe vor der Übernahme ins Dossier</b> und ein Schweizer Betrieb der Verarbeitung. Eine begutachtete Untersuchung fand bei rund 1 % der Transkriptionen frei erfundene Passagen."}
+        {t:"p", v:"In derselben Studie verbesserten sich Belastungs- und Zufriedenheitswerte in beiden Armen. In einer grossen US-Beobachtungsreihe (7'260 Ärzte) berichteten 84 % eine bessere Patientenbindung. <b>Der Nutzen liegt eher bei „bleibt die Ärztin?“ als bei „spart sie eine Stunde?“</b>"},
+        {t:"note", v:"Zwei Bedingungen, die nicht verhandelbar sind: <b>ärztliche Freigabe vor der Übernahme ins Dossier</b> und Verarbeitung in der Schweiz. Eine begutachtete Untersuchung fand bei rund 1 % der Transkriptionen frei erfundene Passagen."}
       ]}
   ],
   notes:"Hier nicht übertreiben. Der ehrliche Rahmen macht das Angebot glaubwürdiger als die Anbieterzahlen.<ul><li>Das Halluzinationsrisiko selbst ansprechen, bevor jemand fragt (Koenecke et al., ACM FAccT 2024: rund 1 % der Transkripte mit erfundenen Phrasen).</li><li>Das Argument „Bindung statt Zeitersparnis“ landet bei einer COO, die Rekrutierung kennt.</li></ul>"
@@ -5912,7 +5931,7 @@ DECKS.bau = {
       b:[
         {t:"h3", v:"Was es dazu schon gibt"},
         {t:"p", v:"Sprachnotizen als Anhang (Abacus, SORBA), Spracherfassung mit KI (123erfasst), automatische Übersetzung am Bau (CENDAS) — die Bausteine existieren einzeln."},
-        {t:"note", v:"Ein Schweizer Produkt, das <b>beides verbindet</b> — Diktat in der Muttersprache und fertiger Rapport im Schweizer Format —, habe ich nicht gefunden. Das heisst nicht, dass es keines gibt. Es heisst, dass ich es nicht gefunden habe, und das prüfen wir vor dem ersten Franken."}
+        {t:"note", v:"Ein Schweizer Produkt, das <b>beides verbindet</b>, habe ich nicht gefunden. Das heisst nicht, dass es keines gibt — nur, dass ich es nicht gefunden habe. Das prüfen wir vor dem ersten Franken."}
       ]}
   ],
   notes:"Das ist das sichtbarste Projekt: Jeder auf der Baustelle merkt es am ersten Tag.<ul><li>Der Satz „ich habe es nicht gefunden, das heisst nicht, dass es keines gibt“ ist wichtig — nie „Marktlücke“ behaupten.</li><li>Risiko offen ansprechen: Baustellenlärm, Dialekt, und dass Zahlen falsch verstanden werden können. Darum die Rückbestätigung.</li></ul>"
@@ -5969,7 +5988,7 @@ DECKS.bau = {
   body:[
     {t:"cards", cols:2, v:[
       {n:"Der teure Weg", t:"Leute stundenweise überlassen", p:"Wer Arbeitskräfte überlässt und dabei <b>die wesentlichen Weisungsbefugnisse abtritt</b>, betreibt Personalverleih. Das heisst: kantonale Bewilligung nach Art. 12 AVG, <b>Kaution ab CHF 50'000</b> (ab 60'000 Einsatzstunden 100'000), und die Pflicht, gleichzeitig den GAV Personalverleih <i>und</i> den LMV einzuhalten. Für ein Bau-KMU ist das ein eigenes Geschäftsfeld, kein Nebenprodukt einer Website."},
-      {n:"Der schnelle Weg", t:"Leistung anbieten statt Personal", p:"Beworben werden <b>Arbeitsergebnisse</b> — „Fundamentsanierung“, „Aushub bis 50 m³“, „Umgebungsarbeiten“ — nie Personen oder Berufsbilder. Weisungsrecht, Werkzeug, Organisation und Gewährleistung bleiben bei euch. Das ist der Zuschnitt, der als Werkvertrag oder Regie trägt statt als Verleih — in Wochen aufgebaut. Ob er im Einzelfall hält, entscheidet die tatsächliche Weisungsmacht, nicht der Vertragstitel. <b>Vor dem Aufschalten einmal juristisch prüfen lassen.</b>", accent:true}
+      {n:"Der schnelle Weg", t:"Leistung anbieten statt Personal", p:"Beworben werden <b>Arbeitsergebnisse</b> — „Fundamentsanierung“, „Aushub bis 50 m³“ — nie Personen oder Berufsbilder. Weisungsrecht, Werkzeug und Gewährleistung bleiben bei euch. Dieser Zuschnitt trägt als Werkvertrag oder Regie statt als Verleih, in Wochen aufgebaut. Ob er im Einzelfall hält, entscheidet die tatsächliche Weisungsmacht, nicht der Vertragstitel. <b>Vor dem Aufschalten juristisch prüfen lassen.</b>", accent:true}
     ]},
     {t:"note", v:"Die gefährliche Stelle: <b>Regie wird nach Stunden abgerechnet</b> — ein Kriterium, das für Verleih spricht. Regie bleibt trotzdem sauber, solange Weisungsrecht, Werkzeug und Gewährleistung bei euch liegen. Aber eine Seite, auf der „Bauarbeiter, CHF 95/h, buchbar ab Montag“ steht, beschreibt Personal statt Leistung. <b>Hier wird die Marketingsprache selbst zur Rechtsfrage.</b>"}
   ],
@@ -6015,9 +6034,9 @@ DECKS.bau = {
     {t:"table",
      head:["Vorschrift", "Was sie verlangt", "Was Software daraus macht"],
      rows:[
-       ["<b>LMV 2026–2031</b>", "Gilt seit 1.1.2026 für sechs Jahre und rund 80'000 Mitarbeitende. Der betriebliche Arbeitszeitkalender geht bis Mitte November an die paritätische Berufskommission; zu gewährleisten sind 2'112 Jahresstunden.", "Rapportstunden laufen direkt in den Kalender, Salden mit — statt einmal im Jahr rekonstruiert zu werden."],
+       ["<b>LMV 2026–2031</b>", "Gilt seit 1.1.2026 für rund 80'000 Mitarbeitende. Der betriebliche Arbeitszeitkalender geht bis Mitte November an die paritätische Berufskommission; zu gewährleisten sind 2'112 Jahresstunden.", "Rapportstunden laufen direkt in den Kalender, Salden mit — statt einmal im Jahr rekonstruiert zu werden."],
        ["<b>Bauarbeitenverordnung</b>", "Vor Baubeginn ein <b>schriftliches</b> Sicherheits- und Gesundheitsschutzkonzept samt Notfallorganisation. Betrifft über 70'000 Betriebe.", "Entwurf aus den Projektdaten, in acht Sprachen unterwiesen, mit dokumentierter Kenntnisnahme. Freigabe bleibt beim Betrieb."],
-       ["<b>Entsendung</b>", "Betrifft nur Personal, das ein <i>ausländischer</i> Arbeitgeber in die Schweiz entsendet — nicht eure Direktangestellten. Dann aber: Meldung ab dem ersten Tag, acht Tage vor Arbeitsbeginn, seit dem 17.3.2025 nur noch über EasyGov.", "Fristenüberwachung und vorbereitete Meldung statt Nachrennen."],
+       ["<b>Entsendung</b>", "Betrifft nur Personal, das ein <i>ausländischer</i> Arbeitgeber in die Schweiz entsendet — nicht eure Direktangestellten. Dann: Meldung ab dem ersten Tag, acht Tage im Voraus, seit 17.3.2025 nur über EasyGov.", "Fristenüberwachung und vorbereitete Meldung."],
        ["<b>SIA 118</b>", "Kein Abrechnungsposten ohne Beleg.", "Siehe vorhin: der digitale Regierapport."]
      ]},
     {t:"note", v:"Bei diesen vier Punkten ist Digitalisierung keine Kür, sondern <b>Risikoabbau</b>. Die paritätische Berufskommission kontrolliert systematisch und kann Konventionalstrafen verhängen."}
@@ -6057,21 +6076,20 @@ DECKS.bau = {
       a:[
         {t:"kpis", v:[
           {n:"5'600", l:"Fachkräfte fehlen dem Bauhauptgewerbe bis 2040", s:"Studie des Baumeisterverbands, durchgeführt von Demografik. Bei Maurern werden 31 %, bei Bauvorarbeitern 33 % mehr Personal gebraucht als verfügbar sein wird."},
-          {n:"722", l:"Lehrbeginne Maurer/in EFZ 2024, +10 % gegenüber dem Tiefpunkt 2019 — 2010 waren es rund 1'200. Die Talsohle ist durchschritten, aber sie deckt den Altersabgang nicht.", s:"Schweizerischer Baumeisterverband"}
+          {n:"722", l:"Lehrbeginne Maurer/in EFZ 2024, +10 % gegenüber dem Tiefpunkt 2019 — 2010 waren es rund 1'200", s:"Schweizerischer Baumeisterverband"}
         ]}
       ],
       b:[
         {t:"ticks", v:[
           "<b>Inserate in den Sprachen der Zielgruppe</b>, ausgespielt dort, wo die Leute wirklich sind — nicht nur auf Jobportalen.",
-          "<b>Bewerbung ohne Konto und ohne Lebenslauf-Pflicht</b>: Kurzvideo oder Sprachnachricht genügt für den ersten Schritt.",
+          "<b>Bewerbung ohne Konto und ohne Lebenslauf</b>: Kurzvideo oder Sprachnachricht genügt für den ersten Schritt.",
           "<b>Rückmeldung am selben Tag</b>, Terminvereinbarung automatisch. Wer drei Tage wartet, hat den Bewerber verloren.",
-          "<b>Wissen sichern, bevor es in Pension geht</b>: Was die langjährigen Poliere wissen, strukturiert aufnehmen und durchsuchbar machen. Der Altersüberhang bei Polieren ist laut derselben Studie der Haupttreiber des Mangels."
+          "<b>Wissen sichern, bevor es in Pension geht</b>: Was die langjährigen Poliere wissen, strukturiert aufnehmen. Der Altersüberhang bei Polieren ist laut derselben Studie der Haupttreiber des Mangels."
         ]},
-        {t:"note", v:"Eine Einstellung kostet in der Schweiz im Schnitt rund <b>CHF 13'570</b>. Bei 3 % Marge braucht es <b>rund 450'000 Franken Umsatz</b>, nur um die Suchkosten <i>einer</i> Stelle zu decken."},
-        {t:"src", v:"Rekrutierungskosten: Angabe einer Personalberatung, also mit Eigeninteresse. Die Division ist meine Rechnung."}
+        {t:"note", v:"Eine Einstellung kostet im Schnitt rund <b>CHF 13'570</b> — Angabe einer Personalberatung. Bei 3 % Marge braucht es <b>rund 450'000 Franken Umsatz</b>, nur um die Suchkosten <i>einer</i> Stelle zu decken; die Division ist meine Rechnung."}
       ]}
   ],
-  notes:"Der letzte Punkt — Wissen der Poliere sichern — löst bei älteren Patrons oft am meisten aus.<ul><li>Frage: „Wer geht bei euch in den nächsten fünf Jahren, und was weiss nur diese Person?“</li><li><b>Nicht mit „akutem Notstand“ argumentieren.</b> Der Fachkräftemangel-Index ist 2025 um 22 % gesunken, offene Stellen −8 %, Stellensuchende +17 %. Ein informierter Bauunternehmer weiss das und widerlegt dich. Die Demografie bis 2040 ist das tragfähige Argument, nicht die aktuelle Lage.</li></ul>"
+  notes:"Der letzte Punkt — Wissen der Poliere sichern — löst bei älteren Patrons oft am meisten aus.<ul><li>Frage: „Wer geht bei euch in den nächsten fünf Jahren, und was weiss nur diese Person?“</li><li><b>Zur Lehrlingszahl:</b> Die Talsohle ist durchschritten — 2019 waren es gut 700, jetzt 722. Sie reicht trotzdem nicht, um den Altersabgang zu decken. Wer nur den Rückgang seit 2010 erzählt, wird korrigiert.</li><li><b>Nicht mit „akutem Notstand“ argumentieren.</b> Der Fachkräftemangel-Index ist 2025 um 22 % gesunken, offene Stellen −8 %, Stellensuchende +17 %. Ein informierter Bauunternehmer weiss das und widerlegt dich. Die Demografie bis 2040 ist das tragfähige Argument, nicht die aktuelle Lage.</li></ul>"
 },
 
 /* 13 */

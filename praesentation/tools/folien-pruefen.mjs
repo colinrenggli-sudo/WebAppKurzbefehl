@@ -32,6 +32,8 @@ const GROESSEN = [
   { w: 1280, h: 800, schema: "light" },
   { w: 1366, h: 768, schema: "dark" },
   { w: 1440, h: 900, schema: "light" },
+  { w: 1500, h: 1000, schema: "dark" },
+  { w: 1680, h: 1050, schema: "light" },
   { w: 1600, h: 950, schema: "dark" },
   { w: 1920, h: 1080, schema: "light" },
 ];
@@ -57,7 +59,7 @@ for (const { w, h, schema } of GROESSEN) {
           const pad = document.querySelector(".slide__pad");
           const s = window.__slides[i];
           res({
-            ueberlauf: Math.max(0, pad.scrollHeight - pad.clientHeight),
+            ueberlauf: ueberlaufMessen(pad),
             titel: (s.h1 || s.h2 || s.big || s.eyebrow || "").replace(/<[^>]+>/g, "").slice(0, 52),
             notiz: (s.notes || "").length,
             platzhalter: /‹|›/.test(pad.textContent),
