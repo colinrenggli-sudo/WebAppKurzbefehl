@@ -22,9 +22,21 @@ const rechercheDir = join(root, "recherche");
 
 /* ---------- 1. Markdown einsammeln ---------- */
 
-const files = readdirSync(rechercheDir)
+/**
+ * NICHT einbetten: Diese Berichte bleiben lokale Arbeitsdokumente.
+ * `10` enthaelt die ausformulierte Anleitung, wie die Kuendigung zu erzaehlen
+ * ist; `11` nennt beide frueheren Arbeitgeber im Titel. Beides in einer Datei,
+ * die geteilt und weitergeleitet werden kann, macht den Anonymitaets-Schalter
+ * der Anwendung wirkungslos.
+ */
+const NICHT_EINBETTEN = ["10-pitch-narrativ.md", "11-firmen-kontext.md"];
+
+const alle = readdirSync(rechercheDir)
   .filter(f => f.endsWith(".md"))
   .sort((a, b) => a.localeCompare(b, "de-CH"));
+
+const files = alle.filter(f => !NICHT_EINBETTEN.includes(f));
+const ausgelassen = alle.filter(f => NICHT_EINBETTEN.includes(f));
 
 if (!files.length) {
   console.error("Keine Markdown-Dateien in " + rechercheDir);
@@ -80,5 +92,9 @@ writeFileSync(artifactPath, artifact, "utf8");
 const kb = n => (n / 1024).toFixed(0) + " KB";
 console.log(`${files.length} Rechercheberichte eingebettet:`);
 for (const f of files) console.log("  · " + f);
+if (ausgelassen.length) {
+  console.log("bewusst NICHT eingebettet (bleiben lokal):");
+  for (const f of ausgelassen) console.log("  · " + f);
+}
 console.log(`index.html    ${kb(Buffer.byteLength(html))}`);
 console.log(`artifact.html ${kb(Buffer.byteLength(artifact))}`);

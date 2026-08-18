@@ -23,12 +23,14 @@
   --sunk:#E3E8EB;
   --ink:#0F151A;
   --ink-2:#55636E;
-  --ink-3:#8695A1;
+  --ink-3:#5C6B77;
   --line:#CBD5DA;
   --line-soft:#DFE6EA;
 
   /* Ein lauter Akzent: Signalorange von der Baustelle */
   --signal:#EA5B0C;
+  --signal-text:#B8430A;   /* dunkler, nur fuer kleine Schrift auf hellem Grund */
+  --btn-bg:#B8430A; --btn-fg:#FFFFFF;
   --signal-ink:#FFFFFF;
   --signal-weak:#FDEBE0;
 
@@ -64,10 +66,12 @@
     --sunk:#0A0E11;
     --ink:#E8EDF0;
     --ink-2:#98A6B0;
-    --ink-3:#6C7B86;
+    --ink-3:#8A99A4;
     --line:#28323A;
     --line-soft:#1F272E;
     --signal:#FF7A2F;
+    --signal-text:#FF9153;
+    --btn-bg:#FF7A2F; --btn-fg:#1A0E06;
     --signal-ink:#1A0E06;
     --signal-weak:#2A1508;
     --care:#2CB6AC;
@@ -90,10 +94,12 @@
   --sunk:#0A0E11;
   --ink:#E8EDF0;
   --ink-2:#98A6B0;
-  --ink-3:#6C7B86;
+  --ink-3:#8A99A4;
   --line:#28323A;
   --line-soft:#1F272E;
   --signal:#FF7A2F;
+  --signal-text:#FF9153;
+  --btn-bg:#FF7A2F; --btn-fg:#1A0E06;
   --signal-ink:#1A0E06;
   --signal-weak:#2A1508;
   --care:#2CB6AC;
@@ -185,7 +191,7 @@ body.is-presenting .rail{opacity:0;pointer-events:none;transform:translateX(-12p
 }
 .navitem[aria-current="page"] .navitem__no{border-color:currentColor;color:var(--ink)}
 .navitem__meta{font-family:var(--f-mono);font-size:.66rem;color:var(--ink-3)}
-.navitem--bau[aria-current="page"] .navitem__no{border-color:var(--signal);color:var(--signal)}
+.navitem--bau[aria-current="page"] .navitem__no{border-color:var(--signal);color:var(--signal-text)}
 .navitem--care[aria-current="page"] .navitem__no{border-color:var(--care);color:var(--care)}
 
 .railfoot{border-top:1px solid var(--line-soft);padding:10px;display:flex;flex-direction:column;gap:8px}
@@ -215,7 +221,7 @@ body.is-presenting .topbar{background:transparent;border-bottom-color:transparen
   font-family:var(--f-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
   padding:3px 8px;border-radius:100px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap;
 }
-.chip--bau{border-color:var(--signal);color:var(--signal);background:var(--signal-weak)}
+.chip--bau{border-color:var(--signal);color:var(--signal-text);background:var(--signal-weak)}
 .chip--care{border-color:var(--care);color:var(--care);background:var(--care-weak)}
 .chip--both{border-color:var(--ink-3);color:var(--ink-2)}
 .btn{
@@ -224,7 +230,9 @@ body.is-presenting .topbar{background:transparent;border-bottom-color:transparen
   white-space:nowrap;
 }
 .btn:hover{border-color:var(--ink-3);color:var(--ink)}
-.btn--primary{background:var(--signal);border-color:var(--signal);color:var(--signal-ink);font-weight:600}
+/* Weiss auf dem hellen Signalorange erreicht nur 3,5:1 — für Knopfbeschriftung
+   zu wenig. Der Knopf nimmt deshalb den dunkleren Ton (5,0:1). */
+.btn--primary{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg);font-weight:600}
 .btn--primary:hover{filter:brightness(1.06);color:var(--signal-ink)}
 .btn--ghost{border-color:transparent;background:transparent}
 .btn--ghost:hover{background:var(--surface-2);border-color:var(--line-soft)}
@@ -267,8 +275,8 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
 
 .slide__pad{
   font-size:clamp(12px, 1.63cqw, 40px);
-  padding:3.2em 4em 4.3em;flex:1 1 auto;min-height:0;
-  display:flex;flex-direction:column;gap:1.05em;
+  padding:3.1em 4em 4.2em;flex:1 1 auto;min-height:0;
+  display:flex;flex-direction:column;gap:.98em;
 }
 .slide__foot{
   position:absolute;left:6.52cqw;right:6.52cqw;bottom:1.55cqw;
@@ -283,7 +291,7 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
   font-family:var(--f-mono);font-size:.64em;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-3);display:flex;align-items:center;gap:.8em;
 }
-.eyebrow--bau{color:var(--signal)}
+.eyebrow--bau{color:var(--signal-text)}
 .eyebrow--care{color:var(--care)}
 .eyebrow::after{content:"";height:1px;flex:1 1 auto;background:var(--line-soft)}
 
@@ -328,7 +336,7 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
 .col{display:flex;flex-direction:column;gap:.9em;min-width:0}
 
 /* Aufzählung mit Masslinien-Tick */
-.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.78em}
+.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7em}
 .ticks li{
   position:relative;padding-left:1.5em;font-size:.96em;line-height:1.42;color:var(--ink-2);
 }
@@ -482,7 +490,7 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
   border:1px solid var(--line);border-radius:3px;padding:3px 7px;
 }
 .deckcard--bau:hover{border-color:var(--signal)}
-.deckcard--bau .deckcard__no{border-color:var(--signal);color:var(--signal)}
+.deckcard--bau .deckcard__no{border-color:var(--signal);color:var(--signal-text)}
 .deckcard--care:hover{border-color:var(--care)}
 .deckcard--care .deckcard__no{border-color:var(--care);color:var(--care)}
 .deckcard h3{margin:0 0 4px;font-size:1.04rem;font-weight:700;letter-spacing:-.015em}
@@ -542,7 +550,7 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
   border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--ink-3);
   display:grid;place-items:center;font-size:.9rem;line-height:1;padding:0;
 }
-.item__pick:hover{border-color:var(--signal);color:var(--signal)}
+.item__pick:hover{border-color:var(--signal);color:var(--signal-text)}
 .item__pick[aria-pressed="true"]{background:var(--signal);border-color:var(--signal);color:var(--signal-ink)}
 .item h3{padding-right:26px}
 .item__win{font-size:.8rem;color:var(--ink);background:var(--surface-2);border-radius:var(--r-s);padding:6px 8px;border:1px solid var(--line-soft)}
@@ -554,7 +562,7 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
   box-shadow:var(--shadow-lg);
 }
 .shortlist__n{font-family:var(--f-mono);font-size:.8rem;color:var(--ink-2)}
-.shortlist__n b{color:var(--signal);font-size:1.1rem}
+.shortlist__n b{color:var(--signal-text);font-size:1.1rem}
 
 /* ============================ Rechner ============================ */
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
@@ -562,7 +570,7 @@ body.is-presenting .deckwrap{padding:8px 10px 6px}
 .field:last-child{border-bottom:0}
 .field__h{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .field__l{font-size:.9rem;font-weight:500}
-.field__v{font-family:var(--f-mono);font-size:.94rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--signal)}
+.field__v{font-family:var(--f-mono);font-size:.94rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--signal-text)}
 .field__d{font-size:.76rem;color:var(--ink-3);line-height:1.4}
 input[type=range]{
   -webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer;margin:0;
@@ -1140,8 +1148,8 @@ Groessenordnung nennen.
 ### 3.1 Deck A «Colins Geschichte und Referenzen» — die groesste Luecke der ganzen Sammlung
 
 **Befund:** Es existiert **kein einziger recherchierter Fakt ueber Colin selbst.** `10` ist reines
-Kommunikationshandwerk (und als solches gut), `11` stellt fest, dass Stirnimann Bau AG und Galliker
-Transport AG **vollstaendig unverifiziert** sind. Ein Deck ueber Geschichte und Referenzen hat damit
+Kommunikationshandwerk (und als solches gut), `11` stellt fest, dass beide dort untersuchten Firmen
+**vollstaendig unverifiziert** sind. Ein Deck ueber Geschichte und Referenzen hat damit
 derzeit **keine Substanz** — nur eine Anleitung, wie man ueber fehlende Substanz spricht.
 
 Konkret fehlt:
@@ -3420,456 +3428,426 @@ Diese Quellen konnten **nicht** abgerufen werden (Egress-Sperre) und enthalten d
 12. **URG (SR 231.1), Art. 17 (Rechte an Computerprogrammen im Arbeitsverhältnis)** — https://www.fedlex.admin.ch/eli/cc/1993/1798_1798_1798/de — **in dieser Session nicht abrufbar (Proxy 403)** — *Amtlich. Der Punkt «keine automatische Rechtsübertragung beim Freelancer» ist die praktisch wichtigste Vertragsfolge und sollte anwaltlich bestätigt werden.*
 
 </script>
-<script type="text/markdown" data-doc="10-pitch-narrativ.md" data-title="Pitch-Narrativ, Deck-Aufbau und die eigene Geschichte ohne Groll">
-# Pitch-Narrativ, Deck-Aufbau und die eigene Geschichte ohne Groll
+<script type="text/markdown" data-doc="12-cofounder-review.md" data-title="Mitgruender-Durchgang">
+# Mitgruender-Durchgang
 
-> **STATUS: NICHT WEB-RECHERCHIERT — bitte vor Verwendung lesen.**
-> Dieses Dokument entstand **ohne Live-Recherche**. Das Websuche-Kontingent der Session war
-> bei Beginn dieser Teilaufgabe aufgebraucht (200 von 200 Suchanfragen, verbraucht durch die
-> vorangegangenen Teilrecherchen 01–08), und der Egress-Proxy blockierte anschliessend **jeden**
-> WebFetch-Versuch (`EGRESS_BLOCKED` u. a. für `fedlex.admin.ch`, `sequoiacap.com`,
-> `duarte.com`, `kmu.admin.ch`, `en.wikipedia.org`).
->
-> Deshalb enthält dieses Dokument **keinen Abschnitt "Quellen" mit Abrufdaten** — es gäbe keine
-> ehrlichen Abrufdaten zu nennen. Statt erfundener Belege gibt es am Ende eine **Prüfliste**
-> mit den Quellen, die vor der Verwendung im Deck zu verifizieren sind.
->
-> **Kennzeichnung im Text:**
-> `[HANDWERK]` = Konzeptions- und Kommunikationsurteil, keine belegpflichtige Tatsachenbehauptung. Direkt verwendbar.
-> `[UNGEPRÜFT]` = Modellwissen ohne Live-Verifikation. **Nicht ungeprüft auf eine Folie setzen.**
->
-> **Behebung:** `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` erhöhen und diese Teilaufgabe in einer
-> frischen Session erneut laufen lassen. Die juristischen Punkte (Abschnitt 4) sind der einzige
-> Teil, der zwingend Verifikation braucht; Abschnitte 1–3 und 5–7 sind Handwerk.
+Sechs unabhaengige Lesarten, zusammengefuehrt und jede Stelle in `index.html` nachgelesen.
+Was sich nicht bestaetigt hat, steht unten unter «Verworfene Befunde».
+
+## Kurzurteil
+
+Ja, Colin geht damit ins Meeting — aber nicht in dieser Fassung der Datei. Die Unterlage ist
+inhaltlich weiter als alles, was ein Erstanbieter normalerweise mitbringt: sie legt ihre eigenen
+Schwaechen offen, sie datiert ihre Quellen, und sie enthaelt mit der Verleih-Abgrenzung und dem
+Hinweis auf die Code-Rechte zwei Auskuenfte, fuer die andere Geld verlangen. Kaputt machen kann
+sie genau dreierlei: eine Zahl, die im Deck anders steht als in der Studie, ein Deck, das in vier
+von vierzig Folien ueberhaupt keinen Preis nennt, und eine ausgelieferte Datei, in der die
+Klarnamen zweier frueherer Arbeitgeber und eine schriftliche Anleitung zum Erzaehlen der
+Kuendigung mitreisen. Das sind drei Stunden Arbeit, nicht drei Tage. Danach ist es eine Unterlage,
+mit der ich mich neben ihn setze.
 
 ---
 
-## 1. Die strategische Kernentscheidung: Die Geschichte ist optional, der Beweis nicht
+## Sofort aendern (kritisch)
 
-`[HANDWERK]`
+**[Auslieferung · `tools/inline-recherche.mjs`, Zeilen 3423 und 3716]** Die Recherchedokumente 10
+und 11 sind in die Datei eingebettet. Dokument 11 nennt **beide frueheren Arbeitgeber im Titel**,
+Dokument 10 enthaelt die schriftliche Anleitung, wie die Kuendigung zu erzaehlen
+ist. Der Schalter «Standard ist anonym» schuetzt danach nichts mehr, und die Datei soll
+veroeffentlicht werden.
+> Alt: alle elf Dokumente werden eingebettet.
+> Neu: nur `00`–`09` einbetten. `10-pitch-narrativ.md` und `11-firmen-kontext.md` bleiben lokale
+> Arbeitsdokumente; in der README-Tabelle die beiden Zeilen mit «nicht in der ausgelieferten
+> Datei» kennzeichnen.
 
-Die wichtigste Empfehlung zuerst, weil sie den ganzen Rest umstellt: **Colin ist in diesem Meeting
-nicht in einem Vorstellungsgespräch.** Er verkauft eine Dienstleistung. Ein Anbieter schuldet einem
-Kunden keine Biografie. Die Frage "warum bist du bei deinem letzten Arbeitgeber weg?" ist in einem
-Bewerbungsgespräch Pflichtprogramm — in einem Verkaufsgespräch ist sie **gar nicht auf der Agenda**,
-solange Colin sie nicht selbst dorthin setzt.
+**[Deck 4 · Folie 04 und Folie 10, Katalog 20]** Die Folie widerlegt fremde Zahlen und stellt
+danach selbst eine ungenaue hin. Die Studie misst −41 s im besseren Arm **gegen −18 s in der
+Kontrollgruppe**; zurechenbar sind rund 20 Sekunden. Ausgerechnet auf dieser Folie ist das toedlich.
+> Alt: "Die einzige randomisierte Studie (NEJM AI, 238 ambulante Ärzte, 14 Fachrichtungen) findet
+> <b>rund 10 %</b> weniger Dokumentationszeit — etwa 41 Sekunden pro Notiz. Das zweite geprüfte
+> System zeigte gar keinen signifikanten Effekt."
+> Neu: "Die einzige randomisierte Studie (NEJM AI, 238 ambulante Ärzte, 14 Fachrichtungen) findet
+> <b>rund 10 %</b> weniger Dokumentationszeit. In Sekunden: −41 s pro Notiz im besseren System —
+> die Kontrollgruppe verbesserte sich im selben Zeitraum um 18 s. Zurechenbar sind rund
+> <b>20 Sekunden</b>. Das zweite geprüfte System zeigte keinen signifikanten Effekt."
 
-Das ist die eigentliche Falle. Jede Minute, die Colin auf die Frage verwendet, warum zwei Firmen ihn
-falsch behandelt haben, ist eine Minute, in der zwei Entscheider über **Colins Vergangenheit**
-nachdenken statt über **ihr eigenes Problem**. Und sie ist eine Einladung an genau den Gedanken, den
-er fürchtet: "Moment — zwei Arbeitgeber, beide gleich falsch? Oder ist da ein Muster?"
+**[Deck 1 · Folie 10b, dritter Vertragspunkt]** Die Folie verspricht einen kostenlosen Ausstieg.
+Art. 377 OR gibt das Ruecktrittsrecht **gegen volle Entschaedigung**. Wenn der Treuhaender das
+liest, ist es keine Vertrauensfolie mehr, sondern eine geschoente Rechtsauskunft — auf der Folie,
+die Vertrauen aufbauen soll.
+> Alt: "<b>Der Ausstieg.</b> Beim Werkvertrag könnt ihr ohnehin jederzeit zurücktreten — ich
+> schreibe die Klausel trotzdem hin."
+> Neu: "<b>Der Ausstieg.</b> Das Gesetz lässt euch beim Werkvertrag jederzeit zurücktreten — aber
+> gegen volle Entschädigung (Art. 377 OR). Meine Klausel geht weiter: nach jeder Stufe Schluss,
+> bezahlt wird nur die abgeschlossene Stufe."
 
-Faustregel für dieses Deck: **Die Geschichte wird zur Fussnote einer Kompetenzbehauptung, nicht zum
-Kapitel.** Konkret heisst das: kein Story-Slide über die Kündigungen. Kein "was mir widerfahren ist".
-Stattdessen zwei Sätze, gesagt (nicht projiziert), an genau einer Stelle — und nur, wenn die Frage
-kommt oder wenn die Herkunft der Demo erklärt werden muss.
+Und zwei Ticks hoeher, gleiche Logik:
+> Alt: "<b>Monatliche Betreuung erst danach</b> — und jederzeit kündbar, das gibt euch das Gesetz
+> ohnehin."
+> Neu: "<b>Monatliche Betreuung erst danach</b> — jederzeit auf Monatsende kündbar. So steht es im
+> Vertrag, nicht bloss im Gesetz."
 
-Zweiter Punkt, der oft übersehen wird: Bei Onkel und Cousine ist die Familiengeschichte **schon im
-Raum**. Die beiden kennen Bruchstücke, vermutlich über Dritte, vermutlich unvollständig. Colin muss
-sie also nicht einführen — er muss sie nur **einmal sauber und knapp abschliessen**, damit sie nicht
-den ganzen Termin über als unausgesprochene Frage mitläuft. Ein kurzer, ruhiger, abgeschlossener
-Satz erledigt das besser als jede ausführliche Richtigstellung.
+**[Deck 1 · Folie 10b und Deck 4 · Folie 13 — kein Preis, nirgends]** Vier Decks, 38
+Katalogpunkte, kein einziger Frankenbetrag. Gleichzeitig stehen in den Rechner-Voreinstellungen
+Setup 12'000–25'000 und Betrieb 250–500 auf dem Beamer. Der Preis ist also im Raum, nur besitzt
+ihn niemand. Ein Patron, der nach 75 Minuten keine Hausnummer gehoert hat, entscheidet nichts.
+> Neu (vierter Tick auf 10b): "<b>Grössenordnung, damit ihr rechnen könnt:</b> der halbe Tag
+> Analyse CHF 800, voll anrechenbar. Ein Pilot liegt bei CHF 12'000 bis 25'000 zum Fixpreis, der
+> Betrieb bei CHF 250 bis 500 im Monat. Verbindlich wird die Zahl nach Stufe 1 — vorher rate ich,
+> und Raten ist genau das, was ich euch nicht verkaufen will."
 
----
+Bewusst dieselben Zahlen wie in `PRESETS`. Jede andere Bandbreite widerspricht dem Rechner, der
+im selben Termin laeuft. Die Sprechernotiz «Keine Marktzahlen nennen» bleibt gueltig — sie
+verbietet fremde Tagessaetze, nicht den eigenen Preis. Notiz entsprechend praezisieren.
 
-## 2. Deck-Strukturen: Welche passt, welche nicht
+**[Deck 4 gesamt · Katalog 15–22 — die Praxissoftware kommt nicht vor]** Alle fuenf Vorhaben
+haengen an vitomed, Aeskulap, Axenita, tomedo und dem Weg ueber MediData. Keine Folie erwaehnt
+das. Fuer eine COO ist das die Stelle, an der sie abschaltet, weil sie zeigt: hier hat noch nie
+jemand in einer Praxis etwas angeschlossen.
+> Neu (Notiz unter der Tabelle auf Folie 05): "Alle fünf hängen an eurer Praxissoftware. Ich habe
+> vitomed, Aeskulap, Axenita, tomedo und den Weg über MediData angeschaut — angeschlossen habe
+> ich noch an keines davon etwas. Erste Frage in Woche 1: Welche Systeme laufen bei euch, und was
+> gibt jedes davon exportiert heraus? Wo eine Schnittstelle Geld kostet, sage ich das, bevor wir
+> bauen."
 
-`[UNGEPRÜFT]` — Die folgenden Frameworks stammen aus Modellwissen. Die Zuordnungen sind gängig, die
-Primärquellen wurden **nicht** abgerufen. Für ein internes Arbeitspapier reicht das; sobald ein
-Framework-Name oder eine Jahreszahl auf eine Folie soll, vorher prüfen.
+**[Deck 4 · Folie 07 — der Wettbewerb kommt nicht vor]** Regelpruefung vor Versand verkaufen
+Aerztekasse, MediData und Medical Invoice seit Jahren; unsere eigene Recherche 02 listet sie. Wenn
+das Deck tut, als waere die Idee neu, entwertet es Folie 04, wo die Ehrlichkeit gerade das Produkt
+war.
+> Neu (Absatz rechts, unter «Was wir vorher messen»): "<b>Das gibt es schon</b> — bei Ärztekasse,
+> MediData und Medical Invoice, als Teil ihrer Abrechnungsdienstleistung. Der Unterschied: dort
+> seht ihr das Ergebnis, nicht die Ursachen, und die Regeln gehören euch nicht. Ob sich das gegen
+> einen bestehenden Vertrag lohnt, rechnen wir in Woche 2 — nicht heute."
 
-| Framework | Kernstruktur (ungeprüft) | Passt hier? |
-|---|---|---|
-| **Sequoia Deck** | Company purpose, Problem, Solution, Why now, Market size, Competition, Product, Business model, Team, Financials; ca. 10 Slides | **Nein.** Investoren-Logik. Marktgrösse und Financials interessieren einen Bau-Patron null — der will wissen, was es ihn kostet und was es ihm spart. |
-| **StoryBrand / SB7 (D. Miller)** | Held (= Kunde) mit Problem trifft Guide (= Anbieter) mit Empathie + Autorität, der einen Plan gibt, zum Handeln auffordert, Scheitern vermeidet, Erfolg ermöglicht | **Ja, als Grundgerüst.** Löst das Groll-Problem *strukturell*: Wenn der Kunde der Held ist und Colin der Guide, schrumpft Colins Biografie automatisch auf einen Autoritätsnachweis zusammen. |
-| **Duarte "Sparkline"** | Wechsel zwischen "what is" und "what could be", Ende im "new bliss"; Call to Adventure | **Ja, als Rhythmus** für die Use-Case-Blöcke. Ist-Zustand / Soll-Zustand im Wechsel, statt Feature-Liste. |
-| **Before–After–Bridge** | Ist-Zustand → Ziel-Zustand → die Brücke dorthin (= das Angebot) | **Ja, als Mikro-Struktur** für jeden einzelnen Use Case. Drei Zeilen pro Folie. |
-| **Guy Kawasaki 10/20/30** | 10 Slides, 20 Minuten, 30-Punkt-Schrift | **Als Disziplinregel ja.** Nicht als Struktur. |
+**[Cockpit · Prüfliste und `DEFAULTS`, Zeile 3900/3910]** `zahlenNennen: true` und
+`p2Volumen: "16 Mio. CHF"` stellen eine interne Projektzahl eines frueheren Arbeitgebers
+serienmaessig an. Der Cockpit-Punkt zeigt sie zusaetzlich auf der Startseite — also auch bei
+ausgeschaltetem Schalter.
+> Alt: `zahlenNennen: true`, `p2Volumen: "16 Mio. CHF"`, Prüfpunkt "Worauf sich die 16 Millionen
+> beziehen"
+> Neu: `zahlenNennen: false`, `p2Volumen: ""`, Prüfpunkt "Grössenordnung des zweiten Projekts —
+> nennen oder nicht?" mit dem Text: "Eine interne Projektzahl eines früheren Arbeitgebers ist
+> unbelegbar und kann unter die Geheimhaltung fallen. Standard: die Art der Aufgabe beschreiben,
+> keine Zahl."
 
-**Empfehlung** `[HANDWERK]`: StoryBrand als Skelett, Before-After-Bridge als Fleisch auf jedem
-Use-Case, Duarte-Rhythmus für die Dramaturgie. Kein Sequoia.
+**[Rechner · `paintResult`, Zeile 4902]** Die groesste Zahl auf dem Schirm ist `brutto`, vor jedem
+Abzug — genau die Optik, die Deck 4/04 anderen vorwirft. Dazu: gesparte MPA-Stunden sind kein
+Franken, solange niemand geht.
+> Alt: `result__big` zeigt `x.brutto`, darunter kleiner "Netto im ersten Jahr, nach Einführung und
+> Betrieb".
+> Neu: `result__big` zeigt `x.netto1`; `brutto` bleibt als erste Balkenzeile. Label darunter:
+> "Rechnerischer Wert der frei werdenden Zeit, nach Einführung und Betrieb — ein Franken wird
+> daraus erst, wenn ihr die Stunden anders einsetzt oder eine offene Stelle nicht mehr besetzt."
 
-Der entscheidende StoryBrand-Move für Colins Situation: **Autorität wird durch Beweis hergestellt,
-nicht durch Leidensgeschichte.** In der Guide-Rolle braucht Colin genau zwei Dinge — Empathie
-("ich weiss, wie euer Tag aussieht") und Autorität ("hier läuft etwas, das ich gebaut habe").
-Beides bekommt er über die Demo. Keines davon über die Kündigungsgeschichte.
+**[Rechner · Reset, Zeile 5099 — echter Datenfehler]** `S = {...DEFAULTS}` kopiert die *Referenz*
+auf `DEFAULTS.picked`; jedes Markieren im Katalog (`S.picked.push`, Zeile 4745) mutiert seither
+die Vorgabe. «Alles zuruecksetzen» meldet «Zurueckgesetzt», die Auswahl bleibt — auch nach
+Neuladen. Praktisch heisst das: du raeumst vor dem Termin auf und stehst mit Janas markierten
+Punkten vor deinem Onkel.
+> Alt: `S = {...DEFAULTS}; save();`
+> Neu: `S = JSON.parse(JSON.stringify(DEFAULTS)); save();`
+> Ebenso im Loader, Zeilen 3921/3923.
 
----
-
-## 3. Ablehnung und Kündigung erzählen, ohne verbittert zu wirken
-
-`[HANDWERK]` — Kommunikationsurteil. Die einschlägige Ratgeberliteratur (Karriere-Coaching,
-Outplacement-Beratung) wurde **nicht** recherchiert; die "no villain"-Regel und verwandte Konzepte
-konnten nicht auf Primärquellen zurückgeführt werden. Die folgenden Regeln sind als Handwerk
-formuliert und stehen für sich.
-
-### Die fünf Regeln
-
-**1. Kein Bösewicht.** In der Sekunde, in der eine zweite Partei als schuldig markiert wird, prüft
-das Publikum unbewusst die Gegenrechnung. Wer keinen Schuldigen benennt, gegen den kann auch nicht
-gegengerechnet werden. Praktisch: **keine Wertung über das Verhalten der anderen Seite**. Nicht
-"sie haben sich meine Arbeit nicht einmal angeschaut" (Vorwurf, und für den Zuhörer nicht
-überprüfbar), sondern "das Projekt lief noch, als ich ging" (Tatsache, neutral).
-
-**2. Ergebnis statt Behandlung.** Colins Geschichte enthält zwei Ergebnisse (eine gebaute Lösung,
-ein eigenständig entwickeltes Projekt) und zwei Behandlungen (Absage, Kündigung). Die Ergebnisse
-sind sein Kapital, die Behandlungen sind Rauschen. Verhältnis im Vortrag ungefähr **90:10**.
-
-**3. Kurz. Und dann weiter.** Die Länge einer Erklärung ist für Zuhörer ein Indikator für ihre
-Heikelkeit. Zwei Sätze wirken abgeschlossen; zwei Minuten wirken wie eine Verteidigung. Nach den
-zwei Sätzen sofort zur Sache zurück — im selben Atemzug, ohne Pause, ohne nachzuschieben.
-
-**4. Der Probezeit-Punkt entschärft am meisten.** `[UNGEPRÜFT — Abschnitt 4]` Eine Kündigung in der
-Probezeit ist im Schweizer Arbeitsrecht ein Vorgang mit sehr niedriger Schwelle: kurze Frist, keine
-Begründungspflicht. Das ist die stärkste verfügbare Entdramatisierung, weil sie **ohne jeden Vorwurf
-auskommt** und sachlich stimmt. Sinngemäss: "Probezeit, beidseitig kurze Frist — das ist genau der
-Zweck einer Probezeit." Danach kommt nichts mehr. Kein "obwohl", kein "dabei hatte ich".
-
-**5. Den Rahmen selbst setzen, bevor jemand anders ihn setzt.** Wenn Colin die Sache als "ich habe
-gemerkt, dass ich das, was ich kann, in einer Anstellung nicht platzieren kann — deshalb baue ich es
-jetzt als eigenes Angebot" rahmt, ist die Kündigung ein **Wendepunkt in seiner Erzählung** statt ein
-Urteil über ihn. Das ist keine Beschönigung: Es ist tatsächlich der Grund, warum das Meeting
-stattfindet.
-
-### Formulierungen
-
-| Statt | Besser |
-|---|---|
-| "Sie wollten die Lösung nicht kaufen und haben alle Folgetermine abgesagt." | "Es kam intern nicht zur Entscheidung. Das Ding läuft trotzdem — ich zeig's euch gleich." |
-| "Ich wurde entlassen, ohne dass sich jemand meine Arbeit angeschaut hat." | "Ich war in der Probezeit, die wurde beendet. Was ich dort gebaut habe, kann ich unabhängig davon zeigen." |
-| "Zweimal ist mir dasselbe passiert." | *(ersatzlos streichen — das ist die Zeile, die das Muster in den Raum stellt)* |
-| "Ich hätte es gern präsentiert, durfte aber nicht." | "Präsentiert habe ich es dort nie. Heute schon." |
-
-Die letzte Zeile ist der beste verfügbare Übergang: Sie benennt den Sachverhalt vollständig, klagt
-niemanden an, und macht aus dem Meeting den Ort, an dem etwas eingelöst wird.
-
-### Ton
-
-Verbitterung entsteht weniger im Wortlaut als in der **Wiederholung** und der **Stimme**. Ein
-einmal gesagter, ruhig gesprochener Satz über eine Kündigung wirkt souverän. Derselbe Satz, dreimal
-in einer Stunde in unterschiedlicher Verpackung, wirkt wie eine offene Rechnung. Konkrete
-Selbstkontrolle für Colin: **Die Sache darf im ganzen Termin genau einmal vorkommen.**
-
----
-
-## 4. Rechtliche Leitplanken — VOLLSTÄNDIG UNGEPRÜFT
-
-> `[UNGEPRÜFT]` **Dieser Abschnitt ist der kritischste und der einzige mit echtem Schadenspotenzial.**
-> Alle Normen stammen aus Modellwissen. Weder Wortlaut noch Artikelnummern noch Strafmasse wurden
-> verifiziert — `fedlex.admin.ch` war nicht erreichbar. **Nichts hiervon zitieren, bevor es geprüft ist.**
-> Wenn Colin plant, Firmennamen oder Projektzahlen zu nennen, ist das ein Fall für 30 Minuten
-> Anwalt, nicht für ein Rechercheergebnis.
-
-Sinngemässe Orientierung, Prüfung zwingend:
-
-- **Art. 162 StGB** — Verletzung des Fabrikations- oder Geschäftsgeheimnisses. Betrifft den Verrat
-  eines Geheimnisses, das man vertraglich oder gesetzlich zu wahren hat. Antragsdelikt.
-  *Zu prüfen: exakter Wortlaut, Strafmass, Voraussetzungen.*
-- **Art. 321a OR** — Treue- und Sorgfaltspflicht des Arbeitnehmers; Abs. 4 regelt die Geheimhaltung
-  **auch nach Ende des Arbeitsverhältnisses**, soweit zur Wahrung berechtigter Interessen des
-  Arbeitgebers erforderlich. *Praktisch der wichtigste Artikel für Colin — Wortlaut prüfen.*
-- **Art. 340 ff. OR** — Konkurrenzverbot; nur bei schriftlicher Vereinbarung wirksam, mit
-  Einschränkungen nach Ort, Zeit und Gegenstand. *Colin muss seine beiden Arbeitsverträge daraufhin
-  prüfen — das ist ein Blick ins eigene Dossier, keine Recherchefrage.*
-- **Art. 335b OR** — Probezeit und deren Kündigungsfristen. *Zahlen prüfen, bevor sie fallen.*
-- **Art. 28 ZGB** — Persönlichkeitsschutz; erfasst nach herrschender Lehre auch juristische Personen.
-- **UWG** — Herabsetzung von Mitbewerbern durch unrichtige, irreführende oder unnötig verletzende
-  Äusserungen; separat Bestimmungen zur Verwertung fremder Arbeitsergebnisse und Geschäftsgeheimnisse.
-  *Artikelnummern nicht verifiziert.*
-- **DSG / revDSG** — sobald Personendaten (Namen von Vorgesetzten, Kollegen) im Spiel sind.
-
-### Praktische Faustregeln `[HANDWERK]` — unabhängig vom genauen Rechtsstand
-
-Diese Regeln sind so konservativ gewählt, dass sie unter jeder plausiblen Auslegung tragen:
-
-1. **Firmennamen: nein.** Kein Nutzen, nur Risiko. "Ein Industriebetrieb in der Zentralschweiz" und
-   "eine Transportfirma" sagen dem Onkel und Jana alles, was sie wissen müssen. Wer den Namen
-   nennt, macht aus einer Erzählung eine überprüfbare Behauptung über einen Dritten — und lädt
-   genau die Rückfrage ein, die niemand will. *(Im Familienkontext kennen die beiden die Firmen
-   womöglich ohnehin. Das ändert nichts: Colin muss sie nicht aussprechen.)*
-2. **Die 16 Mio.: sehr vorsichtig.** Eine interne Projektzahl eines Ex-Arbeitgebers ist der
-   Prototyp dessen, was unter Geheimhaltung fallen kann — und sie ist für den Kunden **wertlos**,
-   weil unbelegbar. Der Onkel kann sie nicht nachprüfen; sie klingt entweder gross oder
-   aufgeschnitten. Besser: die **Art** der Aufgabe beschreiben ("ein Projekt in einer Grössenordnung,
-   die sonst ein Team bearbeitet") statt der Betrag. Wenn die Zahl trotzdem fallen soll: erst
-   Vertrag und Anwalt.
-3. **Die Demo: das eigene Werk zeigen, nicht die fremden Daten.** Eine Demo mit **erfundenen
-   Beispieldaten** ist rechtlich sauber, wirkt genauso überzeugend und macht die Frage der
-   Datenherkunft gegenstandslos. **Vor dem Termin sicherstellen: keine echten Kundennamen, keine
-   echten Adressen, keine Original-Exports in der Demo.** Das ist die wichtigste einzelne
-   Vorbereitungsmassnahme im ganzen Dokument.
-4. **Nie über Personen, immer über Sachverhalte.** "Die Entscheidung fiel nicht" ist ein Sachverhalt.
-   "Der Geschäftsführer hat es nicht verstanden" ist eine Aussage über eine identifizierbare Person.
-5. **Nichts davon schriftlich.** Keine Kündigungsgeschichte auf einer Folie, in einem Handout, im
-   PDF, auf der Website, auf LinkedIn. Gesprochenes im Familienkreis ist ein anderer Kontext als ein
-   Dokument, das weitergeleitet werden kann.
+**[Deck 1 · Folie 11 und die ganze Unterlage — «ich» oder «wir»]** «Wenn ich ausfalle, steht es
+still» ist falsch, wenn wir zu zweit gruenden — und wenn es stimmt, kauft kein Patron einen
+Prozess mit Bus-Faktor eins. Eines von beiden muss weg. `DEFAULTS.agentur` ist leer.
+> Alt: "<b>Keine Agentur mit dreissig Leuten.</b> Wenn ich ausfalle, steht es still."
+> Neu: "<b>Keine Agentur mit dreissig Leuten.</b> Wir sind zu zweit — und genau deshalb gehören
+> euch Code, Zugänge und Dokumentation ab dem ersten Tag, statt dass ihr auf unsere Verfügbarkeit
+> angewiesen seid."
 
 ---
 
-## 5. Kompetenz zeigen statt behaupten
+## Vor dem Meeting aendern (wichtig)
 
-`[HANDWERK]`
+**[Deck 1 · Folie 08, `h2`]** Die Sprechernotiz zu `absage2` (Zeile 5151) sagt woertlich «Streich
+ersatzlos: „Zweimal ist mir dasselbe passiert.“» — und zwei Folien spaeter steht genau dieser Satz
+als Ueberschrift auf der Leinwand. Die Folie erledigt, wovor die Notiz warnt.
+> Alt: "Zweimal dasselbe Muster. Daraus habe ich drei Dinge gelernt."
+> Neu: "Beides ist fertig geworden und nie angekommen. Drei Dinge, die ich daraus gelernt habe."
+> Und in Karte 01: "Ich habe zweimal fertig gebaut und zweimal nicht übergeben." → "Ich habe
+> fertig gebaut und die Übergabe nicht organisiert."
 
-Colins Ausgangslage ist erzählerisch schwierig, aber **beweistechnisch stark**: Es gibt eine
-laufende Demo. Das ist mehr, als die meisten Anbieter in einem Erstgespräch vorweisen können. Die
-gesamte Deck-Architektur sollte darauf ausgelegt sein, so schnell wie möglich in diese Demo zu kommen.
+**[Deck 1 · `absage1.sub` und `absage2`, Zeilen 5143/5149/5150]** Zweimal «ihr gutes Recht»,
+einmal «durfte ich nicht zeigen». Wer betont, der andere habe das Recht gehabt, sagt dem Raum,
+dass er es fuer falsch haelt. In einer Familie sitzt das doppelt.
+> Alt: "Das war ihre Entscheidung und ihr gutes Recht."
+> Neu: "Es kam intern nicht zur Entscheidung."
+> Alt: "Entlassung in der Probezeit. Die Arbeit wurde nicht angeschaut, die Ergebnisse durfte ich
+> nicht zeigen."
+> Neu: "Die Probezeit wurde beendet, bevor ich das Ergebnis zeigen konnte."
+> Alt (sub): "Auch das war ihr Recht — in der Probezeit braucht es keine Begründung."
+> Neu (sub): "Kurze Frist, keine Begründungspflicht — dafür ist die Probezeit da. Präsentiert habe
+> ich es dort nie. Heute schon."
 
-**Rangfolge der Beweismittel, von stark nach schwach:**
+**[Deck 3 · Folie 01, `h1`]** Die Vorbereitungsliste verbietet Aussagen ueber den Betrieb des
+Onkels («fragen wirkt beratend, sagen wirkt belehrend»); die Eroeffnungsfolie bricht die eigene
+Regel mit einer Verbandszahl von 2022.
+> Alt: "Ihr arbeitet in einer<br>Drei-Prozent-Branche."
+> Neu: "Wie nah seid ihr<br>an den drei Prozent?"
+> Lead dazu: "Ich rede nicht über Digitalisierung, sondern über Marge — eure, nicht die des
+> Verbands."
 
-1. **Live-Demo mit den Daten des Kunden im Kopf.** Nicht die generische Demo zeigen, sondern
-   vorher zwei, drei Felder auf die Welt des Zuhörers umbenennen. Der Bau-Patron muss "Rapport",
-   "Baustelle", "Regie" sehen; Jana muss "Termin", "Praxis", "Abrechnung" sehen. Aufwand: eine
-   Stunde. Wirkung: der Unterschied zwischen "interessant" und "das ist ja unser Prozess".
-2. **Vorher/Nachher an einem echten Vorgang des Kunden.** Einen konkreten Ablauf beim Zuhörer
-   nehmen und beide Wege nebeneinander zeigen.
-3. **Zeit-/Geld-Rechnung, die der Kunde selbst prüfen kann.** Die Rechnung ist nur überzeugend,
-   wenn ihre Eingangsgrössen **vom Kunden** kommen ("wie viele solche Fälle habt ihr pro Woche?").
-   Selbst gesetzte Annahmen wirken wie Verkaufsprosa. Die Frage stellen, die Zahl einsetzen, das
-   Ergebnis vor ihren Augen ausrechnen.
-4. **Pilot-Angebot mit begrenztem Risiko.** Ein klar abgegrenzter erster Schritt mit festem Preis,
-   festem Termin und definiertem Abbruchpunkt. Das ist der eigentliche Call to Action des Termins.
-5. *(schwach)* Referenzen, Zertifikate, Lebenslauf. Hat Colin gerade nicht — braucht er auch nicht,
-   wenn 1–4 sitzen.
+**[Deck 3 · Folie 03]** Die Rechnung im Untertitel nimmt 200'000 von 20 Mio. — das ist ein Prozent
+des **Umsatzes**, nicht der Kosten. Der Onkel rechnet mit.
+> Alt: "Bei drei Prozent Marge macht ein Prozent gesparte Kosten ein Drittel mehr Gewinn."
+> Neu: "Bei drei Prozent Marge macht ein Prozent des Umsatzes an eingesparten Kosten ein Drittel
+> mehr Gewinn."
 
-**Der psychologisch wichtigste Punkt:** Eine funktionierende Demo beantwortet die Frage "kann der
-das?" vollständig und beiläufig. Sie macht die Kündigungsgeschichte **irrelevant** statt sie zu
-erklären. Deshalb ist jede Minute Demo-Vorbereitung mehr wert als jede Minute Feinschliff an der
-Formulierung der Vergangenheit.
+**[Deck 3 · Folie 08, Karte «So nicht»]** Der Kartentitel ist ein woertliches Zitat in
+Anfuehrungszeichen — ein Satz, den der Onkel nie gesagt hat, der ihm aber sichtbar in den Mund
+gelegt wird. Dazu «So wie sie meistens gedacht wird» = eure Idee ist die naive Variante. Das ist
+der wertvollste Punkt des Decks; er darf nicht wie eine Zurechtweisung klingen.
+> Alt (h2): "Die Idee ist richtig. So wie sie meistens gedacht wird, ist sie bewilligungspflichtig."
+> Neu (h2): "Die Idee trägt. Ob sie bewilligungspflichtig wird, entscheidet ein Detail."
+> Alt (Kartentitel): "So nicht" / "„Wir stellen unsere Leute stundenweise auf eine Plattform“"
+> Neu: "Der teure Weg" / "Leute stundenweise überlassen"
+> Alt (Kartentitel 2): "So ja" → Neu: "Der schnelle Weg"
 
----
+**[Deck 3 · Folie 08, Karte «So ja», Schlusssatz]** Die Qualifikation steht kategorisch auf der
+Folie, der Vorbehalt nur in der Sprechernotiz. Genau umgekehrt gehoert es.
+> Alt: "Das ist ein Werkvertrag beziehungsweise Regie, bewilligungsfrei, und in Wochen aufgebaut."
+> Neu: "Das ist der Zuschnitt, der als Werkvertrag oder Regie trägt statt als Verleih — in Wochen
+> aufgebaut. Ob er im Einzelfall hält, entscheidet die tatsächliche Weisungsmacht, nicht der
+> Vertragstitel. Vor dem Aufschalten einmal juristisch prüfen lassen."
 
-## 6. Meeting-Regie: zwei sehr unterschiedliche Entscheider
+**[Deck 3 · Folie 10, Zeile «Entsendung»]** Recherche 04 warnt ausdruecklich: Entsendung betrifft
+auslaendische Arbeitgeber, nicht Direktanstellung. Sechs Folien nach der Sprachenfolie liest der
+Onkel das auf seine eigenen Leute.
+> Alt: "Im Bau Meldung ab dem ersten Tag, acht Tage vor Arbeitsbeginn — seit dem 17.3.2025 nur
+> noch über EasyGov."
+> Neu: "Betrifft nur Personal, das ein ausländischer Arbeitgeber in die Schweiz entsendet — nicht
+> eure Direktangestellten. Dann aber: Meldung ab dem ersten Tag, acht Tage vor Arbeitsbeginn, seit
+> dem 17.3.2025 nur noch über EasyGov."
 
-`[HANDWERK]`
+**[Deck 3 · Folie 11, Quellzeile]** Eine Zahl, die man selbst als ungeprueft ausweist, gehoert
+nicht auf eine Kundenfolie. Das Cockpit sagt «entweder belegen oder weglassen» — also weglassen.
+> Alt: "Die öffentliche Hand beschafft nach Angaben eines Branchenportals über 41 Mrd. CHF pro
+> Jahr — diese Zahl stammt nicht aus einer amtlichen Quelle und ist vor Verwendung
+> gegenzuprüfen."
+> Neu: "Das revidierte Beschaffungsrecht verschiebt den Wettbewerb vom Preis zur Qualität — damit
+> wird der technische Bericht zum Zuschlagsfaktor."
+> Prüfpunkt im Cockpit ersatzlos streichen.
 
-Die Konstellation ist anspruchsvoll: Ein Bau-Patron (KMU, Eigentümer, entscheidet allein, denkt in
-Marge, Termin und Ärger auf der Baustelle) und eine COO im Gesundheitswesen (Prozessverantwortung,
-denkt in Durchsatz, Fehlerquote, Regulatorik, Datenschutz). Gemeinsame Use Cases gibt es kaum.
+**[Deck 3 · Folie 12, zweite Kennzahl]** «722 Lehrbeginne 2024 — 2010 waren es rund 1'200», ohne
+Quelle, zeigt einen fallenden Trend. Die Daten zeigen eine Erholung (2019 gut 700 → 2024 722,
++10 %), und die eigene Notiz warnt zwei Zeilen weiter vor dem Notstands-Argument.
+> Alt: `{n:"722", l:"Lehrbeginne Maurer/in EFZ 2024 — 2010 waren es rund 1'200", s:""}`
+> Neu: `{n:"722", l:"Lehrbeginne Maurer/in EFZ 2024, +10 % gegenüber dem Tiefpunkt 2019 — 2010
+> waren es rund 1'200", s:"Schweizerischer Baumeisterverband"}`
+> Satz dazu: "Die Talsohle ist durchschritten. Sie reicht trotzdem nicht, um den Altersabgang zu
+> decken."
 
-**Grundregel: Nicht ein Pitch für zwei, sondern ein Rahmen und zwei Kerne.**
-Der klassische Fehler wäre ein generischer "KI für KMU"-Vortrag, der beide gleich wenig trifft.
+**[Deck 3 · Folie 09, Modellrechnung]** «1 Vorarbeiter + 2 Bauarbeiter, bisher unausgelastet»
+widerspricht Folie 02 («+5,6 % Umsatz, Arbeitsvorrat ueber Vorjahr»). Er wird fragen, wo er diese
+drei Leute haben soll.
+> Alt: "1 Vorarbeiter + 2 Bauarbeiter, bisher unausgelastet"
+> Neu: "Lücken in der Einsatzplanung (Wetter, verschobene Baustellen, Ausfälle)"
 
-**Agenda-Vorschlag, 75–90 Minuten:**
+**[Deck 4 · Folie 09, `h2` und `src`]** Zwei Probleme auf einer Folie. Der Titel ist ein Satz, zu
+dem man in sechs Monaten nicht mehr steht (die eigene Notiz sagt: «ein Hinweis, kein Beweis»), und
+Argomed und medkey stehen in unserer eigenen Recherche. Dazu der falsche Datenschutz-Schluss:
+aggregiert wird am *Ende* der Kette, der Weg dorthin fuehrt durch die Praxissysteme.
+> Alt (h2): "Das Einzige, was nur ihr bauen könnt."
+> Neu (h2): "Kennzahlen über alle Praxen — was fehlt euch heute am Monatsblatt?"
+> Alt (note): "Ich habe keinen Schweizer Anbieter gefunden, der das für Praxisverwalter macht."
+> Neu: "Argomed und medkey machen Ähnliches für ihre Netze. Für eine Verwaltungsfirma eurer Art
+> habe ich nichts gefunden — das ist ein Hinweis, kein Beweis. Zwei Telefonate klären es."
+> Alt (src): "Für Datenschutz gilt: aggregierte Betriebskennzahlen, keine Patientendaten. Das hält
+> die Sache ausserhalb des Berufsgeheimnisses."
+> Neu: "Ziel ist die aggregierte Kennzahl. Der Weg dorthin führt durch die Praxissysteme —
+> Auftragsbearbeitungsvertrag und Berufsgeheimnis-Klausel gelten deshalb auch hier. Wo möglich
+> aggregieren wir in der Praxis und übernehmen nur die Summe."
 
-| Zeit | Block | Wer redet |
-|---|---|---|
-| 0–5' | Ankommen, Rahmen setzen: "Ich zeig euch zwei Dinge, je eins für euch beide, und am Ende einen konkreten ersten Schritt." | Colin |
-| 5–15' | **Gemeinsamer Teil.** Was sich gerade ändert, was heute technisch geht, was es kostet. Bewusst kurz und konkret. Hier gehört auch der Zwei-Satz-Abschluss der eigenen Geschichte hin — falls überhaupt. | Colin |
-| 15–20' | **Demo.** Das Kernstück. Etwas, das läuft. | Colin |
-| 20–40' | **Block Bau.** Before-After-Bridge an 2–3 Vorgängen aus dem Alltag der Stirnimann Bau AG. Jana hört zu — und sieht dabei, wie Colin arbeitet. | Colin + Onkel, Dialog |
-| 40–60' | **Block Praxen.** Dasselbe für Janas Welt, inkl. Datenschutz/Hosting früh und ungefragt ansprechen. | Colin + Jana, Dialog |
-| 60–75' | **Angebot.** Zwei Pilotvorschläge, je einer pro Person, jeweils Umfang, Preis, Dauer, Abbruchpunkt. | Colin |
-| 75–90' | Fragen, nächster Termin, wer bis wann was liefert. | alle |
+**[Deck 4 · Folie 12, erster Tick und Quellzeile]** Die Hilfspersonen-Konstruktion ist herrschende
+Lehre, nicht geklaerte Rechtslage; Recherche 07 sagt das ausdruecklich und verbietet ungeprüfte
+Artikelnummern auf Folien. Eine COO stuetzt darauf ihre Compliance-Entscheidung.
+> Alt (src): "Grundlagen: Art. 321 StGB · revDSG seit 1.9.2023, Art. 9 …"
+> Neu (src): "Orientierung, keine Rechtsberatung. Grundlage ist der Leitfaden von SAMW und FMH;
+> die Artikelverweise sind in Recherche 07 als ungeprüft markiert und vor jeder Zusage am
+> Gesetzestext gegenzulesen."
+> Ergaenzung im ersten Tick: "… vertraglich als weisungsgebundene Hilfsperson eingebunden sein.
+> Dieser Weg ist in der Lehre anerkannt, aber nicht höchstrichterlich geklärt — für euren Fall
+> lassen wir ihn bestätigen, bevor Daten fliessen."
 
-**Regeln für die Zwei-Personen-Situation:**
+**[Deck 4 · Folie 06, dritter Tick]** Die Warteliste «gibt den Termin an die Person, die als
+naechste passt» — das ist Priorisierung, die Folie 11 selbst als regulatorisch heikel ausschliesst.
+> Alt: "wird ein Termin frei, geht er automatisch an die Person, die als nächste passt."
+> Neu: "wird ein Termin frei, geht er in der Reihenfolge der Anmeldung hinaus, ohne jede
+> inhaltliche Gewichtung — sobald sortiert wird, ist es das Projekt von Folie 11."
 
-- **Der jeweils andere darf nie Publikum ohne Rolle sein.** Wenn 20 Minuten Bau laufen, braucht
-  Jana einen Grund zuzuhören — z. B. der explizite Hinweis, dass derselbe Mechanismus gleich in
-  ihrer Version kommt.
-- **Namentlich adressieren.** Fragen abwechselnd direkt an eine Person richten, nicht in den Raum.
-- **Unterschiedliche Sprache pro Block.** Der Onkel will "spart dir zwei Stunden Büro pro Woche";
-  Jana will "reduziert Rückfragen und dokumentiert nachvollziehbar".
-- **Der Reihenfolge-Trick:** Wer zuerst drankommt, wirkt wichtiger. Wenn einer der beiden der
-  wahrscheinlichere erste Kunde ist, **gehört er nach hinten** — der zweite Block bleibt im
-  Gedächtnis und geht direkt ins Angebot über.
-- **Die Familiendynamik ist real.** Onkel und Cousine haben eine Beziehung zueinander, die älter
-  ist als dieses Meeting. Ein Pilot, den einer der beiden zusagt, erzeugt Zugzwang beim anderen —
-  das kann helfen oder blockieren. Sicherer: **beide Angebote unabhängig voneinander** formulieren,
-  damit niemand das Gefühl hat, für den anderen mitzuentscheiden.
+**[Deck 4 · Folie 06, vierter Tick und Quellzeile]** Eine KMU-Werbezahl direkt neben einem
+Cochrane-Wert; Auftraggeber der Studie ist ein Anbieter digitaler Praesenz. Sie zieht die gute
+Zahl herunter.
+> Alt: "<b>77 %</b> der Bevölkerung wollen Dienstleistungen online suchen und direkt buchen. Nur
+> 3 % der Betriebe können das vollständig."
+> Neu: Tick ersatzlos streichen, Quellzeile "Letzte Zahl: KMU Digital Pulse 2025 …" ebenfalls.
+> Wo die Zahl anderswo stehen bleibt (Katalog 3 und 4), Quellzeile ergaenzen: "… localsearch mit
+> HSLU — Auftraggeber ist ein Anbieter digitaler Präsenz, die Zahl liegt in seinem Eigeninteresse."
 
----
+**[Deck 4 · Folie 13, Schritt 1]** «Anrufe pro Tag und Anlass … alles aus euren eigenen Systemen»
+stimmt nicht: Anrufgruende stehen in keinem System, die strichlisten die MPA. Und ob die zwei
+Wochen etwas kosten, steht nirgends.
+> Alt: "Anrufe pro Tag und Anlass. Rückweisungen und ihre Gründe. Posteingang nach Art.
+> Ausgefallene Termine. Alles aus euren eigenen Systemen — nicht geschätzt."
+> Neu: "Rückweisungen und Gründe, Posteingang nach Art, ausgefallene Termine: aus euren Systemen.
+> Anrufe nach Anlass: rund 10 Minuten pro Tag und Standort als Strichliste am Empfang, fünf Tage
+> lang. <b>Aufwand bei mir: zwei Tage, CHF 1'600 — voll anrechenbar, wenn ein Vorhaben folgt.</b>"
 
-## 7. Prüfliste vor dem Termin
+**[Cockpit · `VORBEREITUNG`, neuer erster Punkt]** `p1Problem`, `p1Loesung`, `p1Ergebnis`,
+`p1Dauer`, `p2Projekt`, `p2Rolle`, `p2Dauer` sind leer. Deck 1, Folie 04 und 06 — die beiden
+Folien, die belegen, dass er im *Betrieb* geliefert hat — zeigen im Moment «unter Einstellungen
+eintragen». Die Vorbereitungsliste erwaehnt sie nicht.
+> Neu (erster Punkt): "<b>Die sieben Projektfelder ausfüllen.</b> Ohne sie sind Deck 1, Folie 4
+> und 6 leer — das sind die beiden Folien, die belegen, dass ich nicht nur privat baue. Je ein
+> Satz genügt, aber es muss dort etwas stehen."
 
-`[HANDWERK]`
+**[Cockpit · `PRUEFEN`, elfter Punkt, Gewicht hoch]** Recherche 09 markiert Art. 373, 377, 404 OR
+und Art. 17 URG als nicht abrufbar und aus Standardwissen. Die Prueffliste fuehrt die
+DSG-Artikel, aber nicht diese — dabei stehen sie auf der Vertrauensfolie.
+> Neu: `{w:"hoch", t:"OR- und URG-Artikel auf der Vertragsfolie", d:"Art. 373 und 377 OR
+> (Werkvertrag, Rücktritt gegen Entschädigung), Art. 404 OR (jederzeitige Kündbarkeit des
+> Auftrags) und Art. 17 URG (keine automatische Rechteübertragung ausserhalb des
+> Arbeitsverhältnisses) stammen aus Standardwissen; der Gesetzestext war während der Recherche
+> nicht abrufbar. Einmal gegenlesen, bevor die Folie gezeigt wird.", wo:"Deck 1, Folie 10b"}`
 
-- [ ] Demo enthält **keine** echten Daten früherer Arbeitgeber oder deren Kunden
-- [ ] Demo-Felder auf die Sprache je eines Zuhörers umbenannt (zwei Varianten)
-- [ ] Eigene Arbeitsverträge auf Konkurrenzverbot/Geheimhaltungsklauseln geprüft
-- [ ] Entscheidung getroffen und schriftlich für sich notiert: Firmennamen — nein; 16-Mio.-Zahl — ja/nein
-- [ ] Die zwei Sätze zur Vergangenheit **wörtlich** ausformuliert und laut geübt, bis sie ruhig klingen
-- [ ] Kontrolle: kommt die Vergangenheit im ganzen Termin nur **einmal** vor?
-- [ ] Keine Folie, kein Handout, kein PDF enthält die Kündigungsgeschichte
-- [ ] Zwei Pilotangebote mit Preis, Dauer, Abbruchpunkt — schriftlich, zum Dalassen
-- [ ] Bei Nennung von Firmennamen oder internen Zahlen: 30 Minuten Anwalt vorher
+**[Darstellung · Zeilen 26, 67, 93, 31]** Grautext und Signalorange liegen unter der
+Lesbarkeitsschwelle: `--ink-3` hell 3,08:1, dunkel 4,02:1, `--signal` 3,5:1 (noetig 4,5). Betroffen
+ist alles Kleingedruckte, das im Meeting zaehlt — die Quellenzeilen, die Massangaben im Rechner,
+die Folienzaehler. Auf einem Beamer in einem hellen Sitzungszimmer ist das weg, und ausgerechnet
+die Quellenangaben sind das, was die Unterlage seriös macht.
+> Alt: `--ink-3:#8695A1;` (hell) · `--ink-3:#6C7B86;` (dunkel) · `--signal:#EA5B0C;`
+> Neu: `--ink-3:#5C6B77;` (5,5:1) · `--ink-3:#8A99A4;` (6,0:1) · `--signal:#C2470A;` (5,0:1)
 
----
-
-## Quellen
-
-**Es gibt keine.** Für dieses Dokument wurde keine einzige Quelle abgerufen (siehe Statusbanner).
-Ein Abschnitt mit URLs und Abrufdaten wäre erfunden und wird deshalb bewusst weggelassen.
-
-**Zu verifizieren, sobald Websuche wieder verfügbar ist** (Priorität absteigend):
-
-1. `fedlex.admin.ch` — Art. 162 StGB, Art. 321a Abs. 4 OR, Art. 340 ff. OR, Art. 335b OR,
-   Art. 28 ZGB, UWG (Herabsetzung / Geschäftsgeheimnisse), DSG. **Zwingend vor jeder Verwendung.**
-2. `sequoiacap.com` — Original-Deck-Struktur, exakte Elementliste.
-3. `duarte.com` — Sparkline, "what is / what could be", Belege für die Zuschreibung.
-4. `storybrand.com` / Miller, *Building a StoryBrand* — SB7-Elemente im Wortlaut.
-5. Schweizer Karriere-/Outplacement-Fachquellen zur Kommunikation von Kündigungen —
-   für Abschnitt 3 **nicht belegbar**, derzeit reines Handwerksurteil.
-6. Zahlen zu Probezeit-Kündigungen in der Schweiz (BFS o. Ä.) — **nicht recherchiert**, im Deck
-   aktuell auch nicht nötig.
-
-</script>
-<script type="text/markdown" data-doc="11-firmen-kontext.md" data-title="Firmenkontext: Stirnimann Bau AG, Galliker Transport AG, Praxisdienstleister-Landschaft">
-# Firmenkontext: Stirnimann Bau AG, Galliker Transport AG, Praxisdienstleister-Landschaft
-
-**Stand: 17. August 2026** · Für das Pitch-Meeting mit dem Onkel (Stirnimann Bau AG) und Jana Rohrer (COO Praxismanagement)
-
----
-
-## 0. Methodenwarnung — bitte zuerst lesen
-
-**Diese Datei konnte nicht wie beauftragt recherchiert werden.** Beim Start dieses Arbeitsschritts war der Websuche-Etat der Session vollständig aufgebraucht (200 von 200 Suchanfragen, verbraucht durch die Recherchen 01–10), und der Egress-Proxy beantwortete jeden Direktabruf mit HTTP 403. Getestet und blockiert: `zefix.ch`, `moneyhouse.ch`, `zefix.admin.ch` (REST-API), `galliker.com`, `de.wikipedia.org`, `medbase.ch`, `duckduckgo.com`. Es war in dieser Session **kein einziger neuer Abruf möglich**.
-
-Konsequenz, streng eingehalten:
-
-- **Abschnitte 1 und 2 (Stirnimann Bau AG, Galliker Transport AG) enthalten keine Rechercheergebnisse.** Sie enthalten stattdessen den Prüfauftrag: welche Quelle was liefert und wie in zehn Minuten nachgeholt wird, was hier fehlt. Es wurde nichts geraten, nichts plausibel ergänzt, keine Zahl, kein Gründungsjahr, kein Standort, kein Umsatz.
-- **Abschnitte 3 und 4 sind belegt, aber übernommen** aus den Schwester-Recherchen 02, 04, 07 und 08 dieses Projekts. Dort wurden die Originalquellen am 17.08.2026 tatsächlich abgerufen. Jede übernommene Angabe trägt hier die Originalquelle mit URL. Kennzeichnung **[B2]** = belegt, aus Schwesterdatei übernommen, in *dieser* Session nicht erneut nachgeprüft.
-
-**Kennzeichnung durchgehend:** **[B2]** belegt/übernommen · **[A]** Annahme oder Schätzung · **[NV]** nicht verifizierbar in dieser Session.
-
----
-
-## 1. Stirnimann Bau AG — Status: nicht verifiziert **[NV]**
-
-**Es liegt kein einziger belegter Fakt zu dieser Firma vor.** Weder Existenz, noch Sitz, Gründungsjahr, Rechtsform, UID, Grösse, Tätigkeitsgebiet, Website oder Leistungsangebot konnten geprüft werden. Ob es eine oder mehrere gleichnamige Gesellschaften gibt, ist offen.
-
-Das ist ausdrücklich **kein Hinweis darauf, dass die Firma nicht existiert** — es ist die Feststellung, dass in dieser Session nicht nachgesehen werden konnte.
-
-### 1.1 Warum das für das Deck zählt
-
-Colin pitcht seinem Onkel dessen eigene Firma. Der Onkel kennt jede Zahl besser. Eine im Deck erfundene oder falsch aus dem Netz übernommene Firmenangabe — falsches Gründungsjahr, falsche Mitarbeiterzahl, verwechselte Schwestergesellschaft — kostet in genau diesem Raum die Glaubwürdigkeit für den ganzen Rest des Termins. **Die sichere Variante ist, im Deck gar keine Angaben über die Stirnimann Bau AG zu behaupten**, sondern sie im Gespräch zu erfragen. Das wirkt zudem beratend statt belehrend.
-
-### 1.2 Prüfauftrag (10 Minuten, vor dem Meeting)
-
-| Quelle | URL | Liefert |
-|---|---|---|
-| Zefix (eidg. Handelsregister-Suche) | `https://www.zefix.ch` | Existenz, exakte Firma, UID (CHE-…), Sitzgemeinde, Rechtsform, Handelsregister-Datum, Status, alle Gleichnamigen |
-| Kantonales HR-Amt Luzern / Zefix-Detailauszug | über Zefix verlinkt | Zweckartikel im Wortlaut (= offizielles Tätigkeitsgebiet), Organe in ihrer Funktion |
-| UID-Register BFS | `https://www.uid.admin.ch` | UID, NOGA-Branchencode, MWST-Status |
-| Firmenwebsite | via Firmenname | Leistungsangebot, Referenzen, Team, Stellenangebote |
-| Schweizerischer Baumeisterverband, Sektion Zentralschweiz | `https://www.baumeister.ch` | Verbandsmitgliedschaft, damit LMV-Unterstellung |
-
-**Beim Onkel direkt zu erheben (bessere Datenqualität als jede Website), [A] als Gesprächsleitfaden:** Anzahl Mitarbeitende gewerblich/Büro, Sparten (Hochbau/Tiefbau/Umbau/Werkleitungen), Jahresumsatz-Grössenordnung, eingesetzte Software (Bauadministration, Zeiterfassung, Buchhaltung), wer heute die Website pflegt, wie viele offene Stellen, wie Bewerbungen eingehen.
-
----
-
-## 2. Galliker Transport AG (Altishofen LU) — Status: nicht verifiziert **[NV]**
-
-**Auch hier liegt kein belegter Fakt vor.** Grösse, Mitarbeiterzahl, Fahrzeugflotte, Standorte, Geschäftsfelder und öffentlich berichtete IT-/Logistik- oder Digitalisierungsprojekte konnten nicht abgerufen werden (`galliker.com` und `de.wikipedia.org` beide egress-blockiert).
-
-### 2.1 Zwei Regeln für die Verwendung im Deck
-
-1. **Nur öffentlich Berichtetes.** Colin hat dort gearbeitet. Alles, was er aus dem Arbeitsverhältnis weiss und was nicht publiziert ist — interne Systeme, Projektstände, Zahlen, Kundennamen, Probleme — gehört nicht in ein Verkaufs-Deck. Das ist arbeitsrechtlich (Treuepflicht, Art. 321a OR) und reputationsseitig heikel; ein Onkel und eine Cousine im Raum machen es nicht weniger heikel. **[A]** zur Einordnung, keine Rechtsauskunft.
-2. **Die Referenz trägt auch ohne Firmendetails.** Der verwertbare Kern ist nicht «Galliker macht X», sondern **«Colin hat in einem grossen Schweizer Logistikbetrieb gesehen, wie Prozesse in echtem Massstab laufen»**. Das ist eine Aussage über Colin, nicht über Galliker — sie braucht keine Quelle und ist nicht angreifbar.
-
-### 2.2 Prüfauftrag, falls Zahlen im Deck stehen sollen
-
-Firmenwebsite (Zahlen/Fakten-Seite, Geschichte, Medienmitteilungen) · Zefix/UID für Rechtsform, Sitz, UID · Fachmedien für berichtete Projekte: `inside-it.ch`, `netzwoche.ch`, `logistik-express.com`, `zentralplus.ch`, `luzernerzeitung.ch`. **Regel: Was sich dort nicht findet, kommt nicht ins Deck.**
-
----
-
-## 3. Praxisverwaltung und Praxisdienstleister in der Schweiz **[B2]**
-
-Dieser Abschnitt ist der belegte Teil dieser Datei. Alle Angaben stammen aus Recherche 02 dieses Projekts, Originalquellen dort am 17.08.2026 abgerufen.
-
-### 3.1 Betreiber, Ketten und Servicegesellschaften
-
-| Akteur | Modell | Grösse | Quelle |
-|---|---|---|---|
-| **Medbase** (Migros) | Integrierte Versorgung, Eigentum der Standorte | rund **190 Standorte** (Gesundheitszentren, Praxen, Apotheken, Zahnarztzentren), rund **4'400 Gesundheitsfachpersonen**; ab **1.4.2026** vollständig beim Migros-Genossenschafts-Bund | [1][2] |
-| **Swiss Medical Network** | Klinik- und Zentrengruppe | Eigenangabe: 19 Kliniken/Spitäler, 80 medizinische und Kompetenzzentren, 22 Augenkliniken; ältere Angabe (2023): 2'300 Ärzte, 4'100 Mitarbeitende, über 60 ambulante Zentren in 15 Kantonen | [3] |
-| **Sanacare** (Fusion mit **Centramed**, 2023) | Hausärztliche Gruppenpraxen | **23 Gruppenpraxen in 14 Städten**, u.a. Sanacare Luzern Bahnhof | [4] |
-| **Argomed Ärzte AG**, Lenzburg | Service-/Kompetenzzentrum, Managed Care — Ärzte bleiben selbständig | **über 800 Haus- und Kinderärzt:innen in 15 Kantonen** | [5] |
-| **medkey AG** (Zentralschweiz) | Betriebsgesellschaft für Ärztenetze; führt u.a. die Geschäftsstellen der Ärztegesellschaften Luzern und Unterwalden | nicht publiziert | [6] |
-| **Ärztekasse Genossenschaft** | Standeseigene Genossenschaft, Praxisadministration und Abrechnung | 1964 gegründet, **10 Niederlassungen**, Eigenangabe «Marktführerin» | [7] |
-
-**Nicht belegt in dieser Session [NV]:** mediX, Arpage, Curabill/Swisscom Health (nur als Anbieter mit Gesundheits-Track-Record in Recherche 07 erwähnt [12]), Medidata, Ofac, Praxisgründungs-Berater. Diese Namen dürfen im Deck nicht mit Zahlen auftreten. Kundenzahlen von Ärztekasse und Curabill sind laut Recherche 02 ohnehin **nicht publiziert**.
-
-### 3.2 Was ein Praxisdienstleister übernimmt — und wo KI ansetzt
-
-Abgeleitet aus den publizierten Leistungskatalogen von Ärztekasse, Argomed und medkey [5][6][7][8]:
-
-| Domäne | Typische Aufgaben | Automatisierungspotenzial |
-|---|---|---|
-| Abrechnung / Debitoren | Leistungserfassung prüfen, Rechnungsstellung, Tarifprüfung, Mahnwesen, Inkasso, Honorarvorschuss | **hoch** (Regelprüfung vor Versand) |
-| Buchhaltung / Treuhand | Vorkontierung, Finanz-/Lohnbuchhaltung, MWST, Abschluss | **hoch** (Belegerfassung) |
-| HR / Recruiting | Verträge, Lohnadmin, MPA-Rekrutierung | mittel |
-| IT / Praxisinformatik | PIS-Betrieb, Updates, Schnittstellen, Backup, Support | mittel |
-| Qualitätsmanagement | QM-System, Prozessdoku, Audits | **hoch** (Dokumentgenerierung) |
-| Einkauf | Sammelbestellungen, Labor, Konditionen | mittel |
-| Marketing / Kommunikation | Website, Auffindbarkeit, Terminplattformen | **hoch** |
-| Recht / Compliance | nDSG, Berufsgeheimnis, Tarifrecht | mittel |
-
-### 3.3 Womit diese Firmen Geld verdienen — und was sie einkaufen
-
-**Belegt [B2]:** Die Erlösquelle ist die Übernahme genau dieser Domänen für viele Praxen; die Abrechnung selbst ist das Kernprodukt der Ärztekasse [7][8], Managed-Care-Betreuung das der Argomed [5], Netz-Geschäftsstellenführung das der medkey [6].
-
-**Annahme [A], im Gespräch mit Jana Rohrer zu verifizieren statt zu behaupten:** Die verbreiteten Erlösmodelle sind Prozentsatz vom abgerechneten Honorarvolumen, Pauschale pro Praxis/Monat, Preis pro Beleg oder Transaktion und Projekthonorar. Welches Modell Janas Firma fährt, entscheidet, welches KI-Argument zieht: Bei umsatzabhängigen Modellen zählt **Durchsatz und Rückweisungsquote**, bei Pauschalen zählt **Kosten pro Praxis**.
-
-**Der verkaufsrelevante Punkt:** Der Dienstleister sitzt an der Schnittstelle vieler Praxen. **Jede Automatisierung skaliert über das gesamte Portfolio** — ein Argument, das gegenüber einer Einzelpraxis nicht funktioniert und Jana Rohrer strukturell zur besseren Kundin macht als eine einzelne Praxis. Hebel mit belegtem Bedarf: 10 % Rechnungsrückweisungen [9], Doppeldokumentation wegen inkompatibler IT-Systeme und 67 % unnötige Aufgaben auf Papier bzw. 56 % als nicht editierbares PDF [10], über 20 aktive PIS-Anbieter am Markt [11] — also **Integration über Schnittstellen statt über einen PIS-Hersteller**.
+**[Deck 3 · Folie 09 bei 1024×768]** Der Ueberlaufwaechter warnt korrekt, aber der letzte Absatz
+faellt weg — und 1024×768 ist der Beamer, den man in einem Bau-Sitzungszimmer antrifft.
+> Alt: zwei Ticks — "<b>Referenzen mit Substanz</b> und eine strukturierte Anfrage statt eines
+> Telefonats." + "<b>Jede Buchung erzeugt eine Regie- oder Werkvertragsbestätigung</b>, nie einen
+> Verleihvertrag."
+> Neu: ein Tick — "<b>Strukturierte Anfrage statt Telefonat</b> — und jede Buchung erzeugt eine
+> Regie- oder Werkvertragsbestätigung, nie einen Verleihvertrag."
+> Deck 4, Folie 10 laeuft dort um 5 px ueber: gleiche Behandlung, eine Zeile kuerzer.
 
 ---
 
-## 4. Webauftritt eines Schweizer Bau-KMU — was typischerweise schiefgeht
+## Wenn Zeit bleibt (kosmetisch)
 
-**Einschränkung vorweg [NV]:** Die beauftragte Sichtung echter Beispiel-Websites von Bau-KMU war ohne Netzzugriff nicht möglich. Es wurde **keine** Beispielseite angeschaut. Was folgt, ist belegter Kontext plus eine als solche gekennzeichnete Prüfliste — **keine Auswertung realer Seiten**.
+**[`PRESETS`-Kommentar vs. `bau-buero`]** Der Kommentar sagt «Bau und Gesundheitswesen je rund
+CHF 51», das Preset setzt 54.
+> Alt: `v:{personen:3, stunden:8, satz:54, …}` → Neu: `satz:51`
 
-### 4.1 Belegter Kontext [B2]
+**[Katalog 24]** Der EQUAM-Aufwand ist «nach Angaben der Stelle» zugeschrieben, belegt ist er ueber
+medmonitor.swiss, einen Anbieter.
+> Alt: "nach Angaben der Stelle" → Neu: "nach Angaben eines Anbieters"
 
-- **Digitalisierungsindex DRE-i der Bau- und Immobilienwirtschaft: 4,3 von 10 Punkten (2026), gegenüber 4,0 (2025)** — pom+ Digital Real Estate & Construction Studie 2026, 11. Ausgabe, rund 200 befragte Fach- und Führungskräfte [13]. *Hinweis auf eine Inkonsistenz im Projekt: Recherche 08 zitiert dieselbe Studie mit «4,0 als Schlusslicht». Recherche 04 ist detaillierter (4,3 in 2026, 4,0 in 2025). **Vor der Deck-Verwendung eine der beiden Zahlen verifizieren** — beide dürfen nicht nebeneinander stehen.*
-- **Sprachrealität auf dem Bau:** rund **31 % Portugiesisch-Anteil**, über 80 % Ausländeranteil in den tiefen Lohnklassen [14]. Eine rein deutschsprachige Karriereseite adressiert damit strukturell einen Teil der Zielgruppe nicht. Übersetzung ist zugleich mit **52 %** die häufigste KI-Anwendung in Schweizer KMU [15].
-- **KI-Integration in Schweizer KMU stieg von 22 % (2024) auf 34 % (2025)**, Anteil der Verweigerer fiel von 45 % auf 29 % [16].
-- **Google for Jobs** liest strukturierte `JobPosting`-Daten (schema.org) von der Karriereseite. **Ohne dieses Markup erscheint ein Inserat dort nicht — unabhängig vom Budget.** Das ist Mechanik, keine Reichweitenzahl; jede konkrete Reichweiten- oder Abbruchquote wäre erfunden [17].
+**[Cockpit · Pruefpunkt «Demo-Links» / «16 Millionen», Feld `wo`]** Der Folienverweis ist hart
+geschrieben und stimmt in der Erzaehlweise «muendlich» nicht (dort Folie 5 statt 6).
+> Alt: `wo:"Deck 1, Folie 6"` → Neu: `wo:"Deck 1 · Folie „Grössenordnung des Projekts“"`
 
-### 4.2 Prüfliste für den Termin **[A]** — als Fragen stellen, nicht als Befund behaupten
+**[Theme-Knopf nach dem Zuruecksetzen]** Die Darstellung springt auf Auto, der Knopf sagt weiter
+«Hell».
+> Neu: im Reset-Handler nach `applyTheme();` ergaenzen: `$("#themeBtn").textContent = "Dunkel / Hell";`
 
-Kundengewinnung: Ist auf der Startseite in einem Satz erkennbar, *was* die Firma macht und *für wen*? Gibt es Referenzobjekte mit Bild, Ort und Auftragsart? Steht eine Telefonnummer klickbar oben? Lädt die Seite auf dem Handy schnell? Ist sie über «Baumeister + Gemeinde» überhaupt auffindbar? Gibt es einen Weg, eine Offertanfrage zu stellen, der kürzer ist als ein Telefonat?
+**[Katalogfilter «Gross»]** Von 38 Angeboten ist genau eines «gross»; «Bau» + «Gross» ergibt «0 von
+38 sichtbar». Das klickt der Onkel in der ersten Minute.
+> Neu: die Vorhaben mit 2–4 Monaten Laufzeit (25, 28, 30, 31, 38) ehrlich auf `gross` heben — oder
+> die Zahl in die Pille schreiben: `"Gross (1)"`.
 
-Rekrutierung: Existiert überhaupt eine Karriereseite — oder hängen offene Stellen als PDF an einer Unterseite? Ist `JobPosting`-Markup vorhanden [17]? Ist die Bewerbung mit dem Handy in unter zwei Minuten möglich, ohne Lebenslauf-Upload? Gibt es Inhalte in einer zweiten Sprache [14]? Sind Team, Lehrlinge und Baustellenalltag sichtbar, oder nur Maschinen?
+**[Deck 2 · Folie 03]** Benchmark-Folie wie bei jedem Anbieter; die Substanz steckt in der Notiz
+darunter. Ich streiche sie nicht ganz — Folie 04 baut darauf auf —, aber sie darf nicht drei
+Kennzahlen gross zeigen.
+> Neu: nur die 34-%-Kennzahl stehen lassen, die anderen beiden in die Notiz, und mit dem Satz
+> schliessen: "49 % der Beschäftigten nutzen KI täglich, die Betriebe haben es nicht im Ablauf.
+> Genau dazwischen liegt die Arbeit."
 
-**Der ehrliche Satz für Colin im Termin:** «Ich habe eure Seite bewusst noch nicht auseinandergenommen — das machen wir zusammen in fünf Minuten am Bildschirm.» Das ist stärker als eine vorbereitete Kritik und vermeidet, dass eine Fehlbeobachtung den Termin kippt.
+**[Druck]** Ctrl+P druckt eine Folie, weil im DOM nur die aktuelle steht. Der Handout-Weg ueber
+`is-printing` existiert — er ist nur nicht die Taste, die jeder drueckt.
+> Neu: `keydown` auf Ctrl/Cmd+P abfangen und auf die Handout-Funktion umleiten.
 
 ---
 
-## 5. Was vor dem Meeting zwingend nachzuholen ist
+## Ergaenzungen, die fehlen
 
-1. **Zefix-Abfrage «Stirnimann Bau»** — Existenz, UID, Sitz, Zweck, Gleichnamige. Ohne das keine Firmenangabe im Deck.
-2. **Galliker: Zahlen/Fakten-Seite** — falls überhaupt eine Zahl ins Deck soll; sonst weglassen und nur Colins Erfahrung nennen.
-3. **DRE-i: 4,0 oder 4,3?** — Widerspruch zwischen Recherche 04 und 08 auflösen [13].
-4. **Jana Rohrers Firma** — Name, Modell und Grösse waren nicht Teil des Auftrags und sind hier nicht recherchiert. Erlösmodell im Gespräch erfragen (Abschnitt 3.3).
-5. **mediX, Arpage, Curabill, Medidata, Ofac** — nachrecherchieren, bevor einer dieser Namen auf eine Folie kommt.
+**Die Familie.** Onkel und Cousine, Geld, ein Neffe, der zweimal nicht angekommen ist — und kein
+Satz dazu in 90 Minuten. Das ist der lauteste ungesagte Gedanke im Raum. Neue Zeile auf Folie 09:
+«Wenn es nicht funktioniert, will ich, dass ihr das sagen könnt, ohne an Weihnachten zu denken.
+Deshalb: schriftlicher Vertrag, Fixpreis, Ausstieg nach jeder Stufe — genau wie mit einem
+Fremden.»
+
+**Dass es noch keinen zahlenden Kunden gibt.** Beide Betriebsprojekte kamen nie zum Einsatz, die
+drei Anwendungen sind Eigenbau, und der vierstufige Ablauf auf Folie 10 ist noch nie durchlaufen
+worden. Der Onkel rechnet das in drei Minuten aus. Ausgesprochen ist es ein Vertrauensgewinn,
+ertappt ist es das Ende des Termins: «Ich habe diesen Ablauf noch mit niemandem zu Ende gemacht.
+Ihr wärt die Ersten — deshalb der bezahlte halbe Tag, der Fixpreis und der Ausstieg nach jeder
+Stufe. Und deshalb rechne ich den ersten Piloten zum halben Satz, wenn ich dafür mit Namen und
+Zahl darüber sprechen darf.»
+
+**Wer haftet, wenn das System irrt.** Im Praxis-Deck geregelt (aerztliche Freigabe), im Bau nicht —
+und dort steht der Fristenwaechter, der den sechsstelligen Schaden verhindern soll. Satz auf Deck
+3/06: «Der Wächter erinnert, er entscheidet nicht. Die Frist bleibt in der Verantwortung des
+Betriebs — das steht auch so im Vertrag.» Dazu auf 10b eine Zeile zu Haftungsbegrenzung und
+Berufshaftpflicht.
+
+**Janas datenschutzrechtliche Rolle.** Deck 4 behandelt sie durchgehend als Verantwortliche. Eine
+Praxisverwaltung ist gegenueber den Praxen aber meist selbst Auftragsbearbeiterin — dann sind wir
+Sub-Auftragsbearbeiter und brauchen die vorgaengige Genehmigung der Praxen. Jana kann uns dann gar
+nicht allein beauftragen. Das ist die Frage, an der ein Pilot scheitert, *nachdem* er verkauft ist.
+
+**Der Abschluss.** Die Agenda hat «75–90 Naechster Schritt», aber keine Folie dazu; der Termin
+endet mit Deck 4, also mit einer Folie, die den Onkel nicht meint. Eine Schlussfolie mit vier
+Zeilen zum Ausfuellen im Raum, zweimal: «Vorhaben ___ · verantwortlich bei euch ___ · Messstart
+___ · naechster Termin ___». Dazu die Katalogauswahl beiden noch am Tisch per Mail schicken — der
+Export existiert. Und einen Knopf «Rechnung kopieren» im Rechner: nach 15 Minuten gemeinsamem
+Reglerschieben ist die einzige Zahl, auf die man sich geeinigt hat, sonst beim Schliessen des Tabs
+weg.
+
+**Verfuegbarkeit.** Nirgends steht, ob er Vollzeit verfuegbar ist, ab wann, und wie viele Piloten
+er parallel tragen kann. Zwei Betriebe fragen sich das gleichzeitig. Gehoert auf Folie 10, Stufe 1.
+
+**Colins eigene Vertraege.** Konkurrenzverbot und Geheimhaltung aus den zwei Arbeitsverhaeltnissen
+kommen in der Vorbereitungsliste nicht vor. Er baut eine Agentur in derselben Region auf. Zehn
+Minuten ins eigene Dossier, vor dem Termin.
 
 ---
 
-## Quellen
+## Verworfene Befunde
 
-Alle Quellen wurden am **17.08.2026** im Rahmen der Schwester-Recherchen 02, 04, 07 und 08 dieses Projekts abgerufen — **nicht in dieser Session**. Kennzeichnung der Übernahme: **[B2]**.
+- **«Deck 3/06 behauptet, die Pfandrechtsfrist sei seit 1.1.2026 von drei auf vier Monate
+  verlaengert.»** (zweimal gemeldet) — Nachgelesen: die Folie sagt schlicht «4 Monate … gerechnet
+  ab Vollendung der Arbeit», die Sprechernotiz warnt ausdruecklich davor, sie als neu zu
+  verkaufen, und im Cockpit steht der Pruefpunkt mit der Gegenpruefung. Bereits korrigiert. Der
+  Rest des Befunds (Quellzeile «Art. 839 ZGB» liest sich wie ein Volltext-Beleg) bleibt gueltig,
+  ist aber kosmetisch: Zusatz «Orientierung, keine Rechtsauskunft» genuegt.
+- **«Deck 3/04 traegt den Titel: Ein Drittel *eurer* Baustelle spricht Portugiesisch. *Eure*
+  Rapporte sprechen Deutsch.»** — Falsch zitiert. Der Titel lautet «Der Rapport ist auf Deutsch.
+  Die Baustelle nicht.», die Kennzahlen sind Branchenzahlen mit Quelle, und die Quellzeile weist
+  selbst darauf hin, dass Nationalitaeten erhoben wurden und nicht Sprachen. Die Folie behauptet
+  nichts ueber Stirnimann. Nichts zu tun.
+- **«Katalog 27 muss angepasst werden (Frist als Neuerung).»** — Der Eintrag nennt keine Neuerung.
+  Nichts zu tun.
+- **«Deck 2/03 ersatzlos streichen.»** — Folie 04 baut auf ihr auf, und die 2-%/10-%-Zahl war
+  ausgerechnet der Punkt, den dieselbe Leserin als staerkstes Argument bezeichnet. Auf Kuerzen
+  reduziert.
+- **«Beide Spezialdecks auf 10 Minuten kuerzen und die Preisverhandlung in getrennte Termine
+  verlegen.»** — Der Befund stimmt (jeder sitzt 15 Minuten daneben, und niemand sagt vor dem
+  anderen als Erster zu), die Massnahme ist aber ein Umbau der Dramaturgie zwei Tage vor dem
+  Termin. Uebernommen wird nur der billige Teil: der Uebergangssatz mit Auftrag statt «hoert zu» —
+  «Jana, du hörst jetzt zwölf Minuten Bau. Deine Aufgabe: sag mir am Schluss, welcher der Abläufe
+  bei euch genauso aussieht.» — und am Ende der Vorschlag zweier Einzeltermine als *naechster
+  Schritt*, nicht als Umbau von heute.
 
-1. Der Migros-Genossenschafts-Bund übernimmt die vollständige Eigentümerschaft der Medbase Gruppe — https://corporate.migros.ch/de/news/der-migros-genossenschafts-bund-uebernimmt-die-vollstaendige — 17.08.2026 — Unternehmensmitteilung, Primärquelle für Standortzahl und Transaktion. Hohe Verlässlichkeit für Fakten, Eigeninteresse bei der Darstellung.
-2. Migros bündelt Medbase vollständig beim Genossenschaftsbund — Moneycab — https://www.moneycab.com/schweiz/migros-buendelt-medbase-vollstaendig-beim-genossenschaftsbund/ — 17.08.2026 — Wirtschaftsmedium, bestätigt Quelle 1.
-3. Swiss Medical Network — About us — https://www.swissmedical.net/en/about — 17.08.2026 — Unternehmenswebsite, Eigenangaben; Zahlen je nach Unterseite abweichend. Im Deck nur als Grössenordnung führen.
-4. Sanacare — Gruppenpraxen / Zusammenschluss mit Centramed — https://www.sanacare.ch/gruppenpraxen/ und https://www.sanacare.ch/news-stories/centramed-und-sanacare-gehen-gemeinsam-in-die-zukunft/ — 17.08.2026 — Unternehmenswebsite, Primärquelle für Standortzahlen.
-5. Argomed Ärzte AG — Unternehmen und Dienstleistungen — https://www.argomed.ch/Ueber_uns/Unternehmen/ und https://www.argomed.ch/Arztpraxis/Dienstleistungen/ — 17.08.2026 — Unternehmenswebsite, Eigenangaben zu Mitgliederzahl und Leistungsportfolio.
-6. medkey AG — Dienstleistungen — https://medkey.ch/dienstleistungen.html — 17.08.2026 — Unternehmenswebsite; Zentralschweizer Anbieter, direkt relevanter Wettbewerber oder Partner. Direktabruf war bereits in Recherche 02 blockiert, Angaben aus Suchindex.
-7. Ärztekasse Genossenschaft — Genossenschaft/Organisation — https://www.aerztekasse.ch/aerztekasse/genossenschaft/ — 17.08.2026 — Unternehmenswebsite, Eigenangaben (1964, 10 Niederlassungen, «Marktführerin»). Marktführerschaft ist Selbstzuschreibung.
-8. Ärztekasse — Abrechnen/Dienstleistungen — https://www.aerztekasse.ch/angebotsuebersicht/dienstleistungen/abrechnen/ — 17.08.2026 — Leistungskatalog, Primärquelle für Abschnitt 3.2.
-9. Rechnungsprüfungen verhindern Prämienerhöhungen von mehr als zehn Prozent — santésuisse — https://www.santesuisse.ch/details/content/rechnungspruefungen-verhindern-praemienerhoehungen-von-mehr-als-zehn-prozent/ — 17.08.2026 — Verband der Krankenversicherer, **Interessenpartei**; Zahlen entsprechend einordnen.
-10. «Wir behandeln Patient:innen, nicht Formulare» — SGAIM-Umfrage «Papiertiger», 1'856 Gesundheitsfachpersonen — https://www.sgaim.ch/de/meta/news/newsdetail/news/wir-behandeln-patientinnen-nicht-formulare-die-sgaim-macht-mit-dem-papiertiger-unnoetige-administration-sichtbar — 17.08.2026 — Fachgesellschaft, Primärquelle mit Detailergebnissen. Hohe Verlässlichkeit.
-11. Praxissoftware Schweiz 2026: Alle Anbieter im Überblick — avenios — https://avenios.ch/ratgeber/praxissoftware-anbieter-schweiz — 17.08.2026 — Vergleichsportal auf Basis FMH Services Softwarekatalog (Stand Juni 2026); mittlere Verlässlichkeit, kommerzielles Interesse.
-12. Swisscom GenAI-/AI-Plattform, Einordnung in Recherche 07 dieses Projekts — 17.08.2026 — nur als Kontext zu Curabill/Swisscom Health verwendet; **keine Kunden- oder Grössenangaben belegt**.
-13. Digital Real Estate & Construction Studie/Index 2026 — pom+ Consulting AG — https://www.pom.ch/de/investitions-und-kostenfragen-bremsen-die-digitale-transformation-der-bau-und-immobilienwirtschaft ; Studie: https://www.digitalrealestate.ch/wp-content/uploads/DREC-Studie_2026_DE.pdf — 17.08.2026 — Etablierte Branchenstudie seit 2016, 11. Ausgabe, rund 200 Befragte, transparente Methodik; Herausgeber ist ein Beratungsunternehmen. **Achtung: projektinterner Zahlenwiderspruch 4,0 vs. 4,3 — siehe 4.1.**
-14. Angaben zu Sprach- und Ausländeranteil im Bauhauptgewerbe, Recherche 04 dieses Projekts, Quelle [19] dort — 17.08.2026 — vor Deck-Verwendung Originalquelle in Recherche 04 nachschlagen.
-15. KI-Anwendungen in Schweizer KMU, Übersetzung mit 52 % häufigste Anwendung — Recherche 04, Quelle [20] dort — 17.08.2026.
-16. KI-Integration Schweizer KMU 22 % (2024) auf 34 % (2025), Verweigerer 45 % auf 29 % — Recherche 08, Quelle [23] dort — 17.08.2026.
-17. Google for Jobs / schema.org `JobPosting` — Mechanik-Beschreibung aus Recherche 08 dieses Projekts — 17.08.2026 — **Mechanik belegt, Reichweitenzahlen ausdrücklich nicht belegbar [NV].**
+---
 
-### Nicht recherchierbar in dieser Session **[NV]**
+## Die drei Saetze, die im Meeting wirklich zaehlen
 
-Stirnimann Bau AG (vollständig) · Galliker Transport AG (vollständig) · mediX · Arpage · Curabill · Medidata · Ofac · Praxisgründungs-Berater · reale Bau-KMU-Websites als Beispielanalyse.
+1. «Diese Zahlen kursieren im Markt. Keine davon ist belegt — hier ist die einzige, die es ist,
+   und sie ist kleiner, als euch andere erzählen.»
+2. «Wer Arbeitskräfte überlässt und dabei die Weisungsbefugnis abtritt, betreibt Personalverleih —
+   Bewilligung, Kaution ab 50'000, zwei Gesamtarbeitsverträge gleichzeitig. Die Idee trägt
+   trotzdem, sie muss nur anders zugeschnitten werden.»
+3. «Ich habe diesen Ablauf noch mit niemandem zu Ende gemacht. Ihr wärt die Ersten — deshalb
+   Fixpreis, deshalb Ausstieg nach jeder Stufe, deshalb gehören euch Code und Dokumentation ab dem
+   ersten Tag.»
 
 </script>
 <!-- RECHERCHE:END -->
@@ -3900,6 +3878,14 @@ const DEFAULTS = {
   zahlenNennen: true,
   erzaehlweise: "ausfuehrlich",   /* ausfuehrlich · knapp · muendlich */
 
+  /* Preise. Bewusst dieselben Grössenordnungen wie die Ausgangslagen im
+     Nutzenrechner — andere Zahlen würden dem Rechner widersprechen, der im
+     selben Termin läuft. */
+  preisAnalyse: "CHF 800 für einen halben Tag",
+  preisPilot: "CHF 12'000 bis 25'000 zum Fixpreis",
+  preisBetrieb: "CHF 250 bis 500 im Monat",
+  preiseZeigen: true,
+
   /* Die Geschichte in eigenen Worten — erscheint auf Deck 1 */
   p1Problem: "",
   p1Loesung: "",
@@ -3915,12 +3901,18 @@ const DEFAULTS = {
 
 let S = load();
 
+/* Tiefe Kopie, nicht {...DEFAULTS}: sonst teilen S.picked und DEFAULTS.picked
+   dieselbe Array-Referenz. Jedes Markieren im Katalog würde die Vorgabe
+   mitverändern, und "Alles zurücksetzen" gäbe die Auswahl zurück, die man
+   gerade löschen wollte. */
+function frisch(){ return JSON.parse(JSON.stringify(DEFAULTS)); }
+
 function load(){
   try{
     const raw = localStorage.getItem(LS);
-    if(!raw) return {...DEFAULTS};
-    return {...DEFAULTS, ...JSON.parse(raw)};
-  }catch(e){ return {...DEFAULTS}; }
+    if(!raw) return frisch();
+    return {...frisch(), ...JSON.parse(raw)};
+  }catch(e){ return frisch(); }
 }
 function save(){
   try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){}
@@ -4523,6 +4515,7 @@ const AGENDA = [
 ];
 
 const VORBEREITUNG = [
+  "<b>Die sieben Felder zu deinen beiden Projekten ausfüllen.</b> Solange sie leer sind, zeigt Deck 1 an vier Stellen sichtbare Lücken — im Meeting ist das der peinlichste Moment des Abends. Unter <b>Einstellungen</b>, ganz unten.",
   "<b>Die Demos auf erfundene Beispieldaten prüfen.</b> Keine echten Kundennamen, keine echten Adressen, keine Original-Exports eines früheren Arbeitgebers. Das ist die wichtigste einzelne Vorbereitung überhaupt — sie macht die Frage nach der Datenherkunft gegenstandslos.",
   "Demo-Links prüfen — unter <b>Einstellungen</b> eintragen und einmal antippen, ob sie laden.",
   "In den Demos zwei, drei Felder auf die Welt der Zuhörer umbenennen: „Rapport“, „Baustelle“, „Regie“ für den Onkel, „Termin“, „Praxis“, „Abrechnung“ für Jana. Eine Stunde Aufwand, und aus „interessant“ wird „das ist ja unser Prozess“.",
@@ -4537,8 +4530,10 @@ const VORBEREITUNG = [
    verschwinden zu lassen — und im Meeting die Stelle, an der man souverän
    „das schaue ich nach“ sagt statt zu raten. */
 const PRUEFEN = [
-  {w:"hoch", t:"Worauf sich die 16 Millionen beziehen",
-   d:"Umsatz, Investitionsvolumen, bewegte Warenwerte oder Einsparung? Das ist die erste Rückfrage im Raum. Wer sie nicht in einem Satz beantwortet, verliert die Zahl.", wo:"Deck 1, Folie 6"},
+  {w:"hoch", t:"Grössenordnung des zweiten Projekts — nennen oder nicht?",
+   d:"Eine interne Projektzahl eines früheren Arbeitgebers ist für die Zuhörer unbelegbar und kann unter die Geheimhaltung fallen. Wenn du sie nennst, musst du in einem Satz sagen können, worauf sie sich bezieht — Umsatz, Investitionsvolumen, bewegte Warenwerte oder Einsparung. Das ist die erste Rückfrage im Raum. Die sichere Variante: die Art der Aufgabe beschreiben, keine Zahl.", wo:"Deck 1, Folie 6 · Einstellungen"},
+  {w:"hoch", t:"Die genannten Preise bestätigen",
+   d:"Unter Einstellungen stehen Vorschläge für Analyse, Pilot und Betrieb. Sie entsprechen den Ausgangslagen im Nutzenrechner. Bevor du sie im Meeting aussprichst: einmal durchrechnen, ob du zu diesen Zahlen wirklich arbeiten willst.", wo:"Deck 1, Folie 11"},
   {w:"hoch", t:"Die drei Demo-Links",
    d:"Einmal antippen und schauen, ob sie laden. Am besten die Seiten vorher offline öffnen, falls das WLAN im Sitzungszimmer nicht mitspielt.", wo:"Deck 1, Folie 3"},
   {w:"hoch", t:"Pfandrechtsfrist: nicht als Neuerung verkaufen",
@@ -4547,8 +4542,8 @@ const PRUEFEN = [
    d:"Die Zahl bezieht sich auf 2022 und ist damit vier Jahre alt. Auf der Folie steht das — im Vortrag ebenfalls sagen.", wo:"Deck 3, Folie 2"},
   {w:"mittel", t:"Artikelnummern im Datenschutzgesetz",
    d:"Art. 9 (Auftragsbearbeitung), Art. 12 (Verzeichnis), Art. 22 (Folgenabschätzung): inhaltlich über Fachquellen abgestützt, die Nummern selbst konnten während der Recherche nicht am Gesetzestext geprüft werden.", wo:"Deck 2 Folie 8, Deck 4 Folie 12"},
-  {w:"mittel", t:"41 Mrd. CHF öffentliche Beschaffung",
-   d:"Stammt aus einem Anbieter-Blog, nicht aus einer amtlichen Quelle. Entweder belegen oder weglassen.", wo:"Deck 3, Folie 11"},
+  {w:"mittel", t:"Vertragsartikel, die im Gespräch fallen könnten",
+   d:"Art. 373 OR (Fixpreis bindet auch bei Mehraufwand), Art. 377 OR (Rücktritt gegen volle Entschädigung), Art. 404 OR (Auftrag jederzeit kündbar) und Art. 17 URG (Rechte am Code gehen nur mit ausdrücklicher Vereinbarung über). Inhaltlich abgestützt, die Artikelnummern selbst konnten während der Recherche nicht am Gesetzestext geprüft werden. Im Zweifel den Inhalt sagen, nicht die Nummer.", wo:"Deck 1, Folie 11"},
   {w:"mittel", t:"Zwischenergebnisse der Bürokratiestudie des Bundes",
    d:"BAG mit der Universität Zürich, erste Zwischenergebnisse für Ende August 2026 angekündigt. Kurz vor dem Termin nachsehen — wenn sie da sind, ist das der beste Gesprächseinstieg mit Jana.", wo:"Deck 4, Folie 3"},
   {w:"tief", t:"Preise für Schweizer KI-Hosting",
@@ -4905,10 +4900,11 @@ function paintResult(){
   const x = calcResult();
   const max = Math.max(x.brutto, 1);
   r.innerHTML = "";
-  r.appendChild(el("div", {class:"masslinie", text:"Ergebnis pro Jahr"}));
+  r.appendChild(el("div", {class:"masslinie", text:"Ergebnis erstes Jahr"}));
   r.appendChild(el("div", {class:"result__big"},
-    el("span", {class:"result__n", text:chf(Math.max(x.brutto,0))}),
-    el("span", {class:"result__l", text:"Arbeitszeit im Wert von " + nf.format(Math.round(x.frei)) + " Stunden pro Jahr, die für anderes frei wird"})
+    el("span", {class:"result__n", style:x.netto1 < 0 ? "color:var(--crit)" : "", text:chf(x.netto1)}),
+    el("span", {class:"result__l", html:"Rechnerischer Wert der frei werdenden Zeit, <b>nach Einführung und Betrieb</b> — " +
+      nf.format(Math.round(x.frei)) + " Stunden pro Jahr. Ein Franken wird daraus erst, wenn ihr die Stunden anders einsetzt oder eine offene Stelle nicht mehr besetzen müsst."})
   ));
 
   const bar = (label, val, cls) => el("div", {class:"bar"},
@@ -4926,8 +4922,8 @@ function paintResult(){
 
   r.appendChild(el("div", {class:"grid grid--2", style:"gap:12px"},
     el("div", null,
-      el("div", {class:"kpi__n", style:"font-size:1.5rem;color:" + (x.netto1 >= 0 ? "var(--good)" : "var(--crit)"), text:chf(x.netto1)}),
-      el("div", {class:"field__d", text:"Netto im ersten Jahr, nach Einführung und Betrieb"})
+      el("div", {class:"kpi__n", style:"font-size:1.5rem", text:chf(Math.max(x.brutto,0))}),
+      el("div", {class:"field__d", text:"Wert der gewonnenen Zeit vor Abzügen"})
     ),
     el("div", null,
       el("div", {class:"kpi__n", style:"font-size:1.5rem", text: isFinite(x.amort) ? (x.amort < 1 ? "unter 1" : nf.format(Math.round(x.amort))) + " Mt." : "—"}),
@@ -4967,7 +4963,9 @@ function renderRecherche(v){
     el("h1", {style:"font-size:clamp(1.7rem,3.4vw,2.5rem);letter-spacing:-.03em;font-weight:800;margin:.4em 0 .3em;line-height:1.05",
               text:"Die Recherche hinter den Folien"}),
     el("p", {style:"color:var(--ink-2);max-width:66ch;font-size:1rem;line-height:1.55",
-             html:"Jede Zahl auf den Folien lässt sich hier nachlesen. Jedes Dokument endet mit einer Quellenliste. Was nicht belegbar war, steht als Annahme drin und ist so gekennzeichnet — das ist wichtiger als eine schöne Zahl."})
+             html:"Jede Zahl auf den Folien lässt sich hier nachlesen. Jedes Dokument endet mit einer Quellenliste. Was nicht belegbar war, steht als Annahme drin und ist so gekennzeichnet — das ist wichtiger als eine schöne Zahl."}),
+    el("div", {class:"callout callout--info", style:"margin-top:14px;max-width:66ch",
+       html:"<b>Zwei Berichte fehlen hier bewusst</b>Die Recherche zum Gesprächsaufbau (10) und die zum Firmenkontext (11) sind <b>nicht</b> in diese Datei eingebettet. Die eine enthält die ausformulierte Anleitung, wie die Kündigung zu erzählen ist, die andere nennt beide früheren Arbeitgeber im Titel. In einer Datei, die man weiterleiten kann, würde das den Anonymitäts-Schalter dieser Anwendung aushebeln. Beide liegen als <code>recherche/10-pitch-narrativ.md</code> und <code>recherche/11-firmen-kontext.md</code> im Projektordner."})
   ));
 
   if(!docs.length){
@@ -5062,6 +5060,15 @@ function renderEinstellungen(v){
   };
 
   p.appendChild(el("div", {class:"panel"},
+    el("div", {class:"panel__h"}, el("h2", {text:"Deine Preise"}), el("span", {class:"sub", text:"Deck 1, Folie 11"})),
+    el("div", {class:"callout callout--info", html:"<b>Sag eine Zahl</b>Für Schweizer Tages- und Stundensätze in der Softwareentwicklung gibt es keine belastbare Erhebung — deshalb steht nirgends eine fremde Marktzahl. Der eigene Preis ist etwas anderes: Wer nach anderthalb Stunden keine Hausnummer gehört hat, entscheidet nichts. Die Vorschläge unten entsprechen den Ausgangslagen im Nutzenrechner. Änderst du sie hier, ändere sie dort mit."}),
+    txt("preisAnalyse", "Analyse zum Start", "Wird bei einem Auftrag voll angerechnet.", "CHF 800 für einen halben Tag"),
+    txt("preisPilot", "Pilot", "Fixpreis. Mehraufwand geht zu deinen Lasten.", "CHF 12'000 bis 25'000 zum Fixpreis"),
+    txt("preisBetrieb", "Betrieb danach", "Monatlich, jederzeit auf Monatsende kündbar.", "CHF 250 bis 500 im Monat"),
+    sw("preiseZeigen", "Preise auf der Folie zeigen", "Aus: Die Folie sagt stattdessen, dass Preise erst nach der Messung kommen.")
+  ));
+
+  p.appendChild(el("div", {class:"panel"},
     el("div", {class:"panel__h"}, el("h2", {text:"Wie ausführlich die Absagen vorkommen"}), el("span", {class:"sub", text:"Deck 1"})),
     el("div", {class:"callout", html:"<b>Hier weiche ich von deiner Vorgabe ab — bewusst, und du entscheidest</b>Du hast zwei eigene Folien für die Absage und die Entlassung verlangt. Die Recherche zur Gesprächsführung rät davon ab, und zwar aus zwei Gründen. Erstens: Wer eine Ablehnung ausführlich erzählt, lädt genau die Frage ein, die er fürchtet — „zwei Arbeitgeber, beide gleich falsch, oder ist da ein Muster?“ Zweitens: Eine Kündigungsgeschichte auf einer Folie ist ein Dokument, das weitergeleitet werden kann; gesprochen im Familienkreis ist es etwas anderes. <b>Voreingestellt ist trotzdem deine Fassung.</b> Die beiden anderen sind einen Klick entfernt."}),
     wahl("erzaehlweise", [
@@ -5103,7 +5110,7 @@ function renderEinstellungen(v){
       el("button", {class:"btn", type:"button", onclick:() => { S.picked = []; save(); flash("Auswahl geleert"); render(); }}, "Katalogauswahl leeren"),
       el("button", {class:"btn", type:"button", onclick:() => {
         if(!confirm("Alle Eingaben auf dieser Seite zurücksetzen?")) return;
-        S = {...DEFAULTS}; save(); applyTheme(); flash("Zurückgesetzt"); render();
+        S = frisch(); save(); applyTheme(); flash("Zurückgesetzt"); render();
       }}, "Alles zurücksetzen")
     )
   ));
@@ -5147,14 +5154,14 @@ DECKS.geschichte = {
       layout:"statement",
       eyebrow:"Was dann geschah",
       big:"Sie haben es nicht gekauft. Die Folgetermine wurden abgesagt.",
-      sub:"Das war ihre Entscheidung und ihr gutes Recht. Für mich war es die erste Lektion — und sie hatte nichts mit Technik zu tun.",
+      sub:"Es kam intern nicht zur Entscheidung. Für mich war es die erste Lektion — und sie hatte nichts mit Technik zu tun.",
       notes:"Das ist die heikelste Folie im ganzen Deck. Zwei Regeln:<ul><li><b>Kein Vorwurf, keine Namen, kein Ton.</b> Sachlich sagen, weitergehen. Wer hier bitter klingt, verliert den Raum — und der Onkel fragt sich innerlich, wie du über ihn reden würdest.</li><li>Nicht stehen bleiben. Der Satz „und sie hatte nichts mit Technik zu tun“ ist die Brücke — direkt weiter.</li><li><b>Neutralere Formulierung, falls du sie sprechen willst:</b> „Es kam intern nicht zur Entscheidung. Das Ding läuft trotzdem — ich zeig’s euch gleich.“</li></ul>"
     };
     const absage2 = {
       layout:"statement",
       eyebrow:"Was dann geschah",
-      big:"Entlassung in der Probezeit. Die Arbeit wurde nicht angeschaut, die Ergebnisse durfte ich nicht zeigen.",
-      sub:"Auch das war ihr Recht — in der Probezeit braucht es keine Begründung. Zweite Lektion, gleiches Muster.",
+      big:"Die Probezeit wurde beendet, bevor ich das Ergebnis zeigen konnte.",
+      sub:"Kurze Frist, keine Begründungspflicht — dafür ist die Probezeit da. <b>Präsentiert habe ich es dort nie. Heute schon.</b>",
       notes:"Gleiche Regel wie zuvor: sachlich, kurz, weiter. Nicht rechtfertigen, nicht ausholen.<ul><li><b>Die stärkste Entdramatisierung ist die Probezeit selbst:</b> kurze Frist, keine Begründungspflicht — genau dafür ist sie da. Danach kommt nichts mehr. Kein „obwohl“, kein „dabei hatte ich“.</li><li><b>Der beste Übergangssatz:</b> „Präsentiert habe ich es dort nie. Heute schon.“</li><li><b>Streich ersatzlos:</b> „Zweimal ist mir dasselbe passiert.“ Das ist der Satz, der das Muster in den Raum stellt.</li></ul>"
     };
     const absageKnapp = {
@@ -5274,10 +5281,10 @@ DECKS.geschichte = {
 /* 08 ---------------------------------------------------------------- */
 {
   eyebrow:"Der Punkt, um den es geht",
-  h2:"Zweimal dasselbe Muster. Daraus habe ich drei Dinge gelernt.",
+  h2:"Beides ist fertig geworden und nie angekommen. Drei Dinge, die ich daraus gelernt habe.",
   body:[
     {t:"cards", cols:3, v:[
-      {n:"01", t:"Der Code ist der kleinere Teil.", p:"Eine Lösung entscheidet sich nicht in der Entwicklung, sondern in der Übergabe. Ich habe zweimal fertig gebaut und zweimal nicht übergeben. Das war mein Fehler, nicht nur ihrer.", accent:true},
+      {n:"01", t:"Der Code ist der kleinere Teil.", p:"Eine Lösung entscheidet sich nicht in der Entwicklung, sondern in der Übergabe. Ich habe fertig gebaut und die Übergabe nicht organisiert. Das war mein Teil daran.", accent:true},
       {n:"02", t:"Ohne Besitzer im Haus stirbt jedes Vorhaben.", p:"Es braucht eine Person im Betrieb, die es haben will, die entscheiden darf und die dafür geradesteht. Fehlt die, ist die beste Software wertlos."},
       {n:"03", t:"Wer nichts misst, kann nichts beurteilen.", p:"Beide Male gab es keine Zahl vorher und keine nachher. Also gab es auch kein Argument. Heute fange ich mit der Messung an, nicht mit dem Bauen."}
     ]},
@@ -5320,22 +5327,26 @@ DECKS.geschichte = {
       a:[
         {t:"p", v:"<b>Lohn plus Nebenkosten plus Gemeinkosten plus Marge, geteilt durch die produktiven Stunden.</b> Dieselbe Rechnung wie beim Regieansatz. Ich lege sie offen, ihr sagt mir, ob sie stimmt."},
         {t:"ticks", v:[
-          "<b>Bezahlter halber Tag Analyse</b> zum Start — er filtert auf beiden Seiten. Kommt ein Auftrag zustande, wird er voll angerechnet.",
-          "<b>Fixpreis für den Piloten.</b> Mehraufwand geht zu meinen Lasten, nicht zu euren.",
-          "<b>Monatliche Betreuung erst danach</b> — und jederzeit kündbar, das gibt euch das Gesetz ohnehin."
-        ]}
+          "<b>Bezahlte Analyse zum Start</b> — sie filtert auf beiden Seiten und wird bei einem Auftrag voll angerechnet.",
+          "<b>Fixpreis für den Piloten.</b> Mehraufwand geht zu meinen Lasten.",
+          "<b>Betreuung erst danach</b>, jederzeit auf Monatsende kündbar."
+        ]},
+        S.preiseZeigen ? {t:"note", v:"<b>Damit ihr rechnen könnt:</b> Analyse " + esc(S.preisAnalyse) +
+          ". Pilot " + esc(S.preisPilot) + ". Betrieb " + esc(S.preisBetrieb) +
+          ". <b>Verbindlich wird die Zahl nach der Messung</b> — vorher würde ich raten."}
+          : {t:"note", v:"Preise nenne ich erst nach der Messung. Vorher wäre es geraten."}
       ],
       b:[
         {t:"h3", v:"Drei Punkte, die in den Vertrag gehören"},
         {t:"ticks", v:[
-          "<b>Die Rechte am Code.</b> Bei einem externen Beauftragten gehen sie <i>nicht</i> automatisch an den Kunden über — das gilt nur im Arbeitsverhältnis. „Der Code gehört euch“ muss ausdrücklich im Vertrag stehen, sonst ist es ein leeres Versprechen.",
+          "<b>Die Rechte am Code.</b> Bei einem externen Beauftragten gehen sie <i>nicht</i> automatisch an den Kunden über. „Der Code gehört euch“ muss ausdrücklich im Vertrag stehen, sonst ist es ein leeres Versprechen.",
           "<b>Der Auftragsbearbeitungsvertrag</b>: Bearbeitungsort Schweiz, keine Trainingsnutzung, Löschung am Ende.",
-          "<b>Der Ausstieg.</b> Beim Werkvertrag könnt ihr ohnehin jederzeit zurücktreten — ich schreibe die Klausel trotzdem hin."
+          "<b>Der Ausstieg.</b> Das Gesetz lässt euch beim Werkvertrag jederzeit zurücktreten — aber gegen volle Entschädigung. Meine Klausel geht weiter: nach jeder Stufe Schluss, bezahlt wird nur die abgeschlossene."
         ]},
-        {t:"src", v:"Keine Rechtsberatung — den Vertrag schaut euer Treuhänder oder Anwalt an, bevor unterschrieben wird."}
+        {t:"src", v:"Keine Rechtsberatung — den Vertrag schaut euer Treuhänder oder Anwalt an."}
       ]}
   ],
-  notes:"Diese Folie ist für den Onkel gemacht: Er kalkuliert seit Jahrzehnten und erkennt eine gegriffene Zahl.<ul><li><b>Keine Marktzahlen nennen.</b> Für Schweizer Tages- und Stundensätze in der Softwareentwicklung gibt es keine belastbare Erhebung — das habe ich geprüft. Lieber die Rechnung zeigen.</li><li>Der Punkt zu den Code-Rechten ist der, den fast alle Anbieter übergehen. Er schafft Vertrauen, weil er gegen mich selbst geht.</li><li>Falls es um Förderung geht: Der Innovationsscheck des Bundes finanziert bis CHF 15'000 für eine Vorstudie — aber das Geld geht an einen Forschungspartner, nicht an den Betrieb und nicht an mich. Ehrlich so sagen.</li></ul>"
+  notes:"Diese Folie ist für den Onkel gemacht: Er kalkuliert seit Jahrzehnten und erkennt eine gegriffene Zahl.<ul><li><b>Keine <i>fremden</i> Marktzahlen nennen</b> — für Schweizer Tages- und Stundensätze in der Softwareentwicklung gibt es keine belastbare Erhebung. Der eigene Preis ist etwas anderes: den darfst und sollst du nennen. Wer nach 75 Minuten keine Hausnummer gehört hat, entscheidet nichts.</li><li><b>Prüfe die Beträge unter Einstellungen, bevor du sie aussprichst.</b> Sie stehen als Vorschlag drin und entsprechen den Ausgangslagen im Nutzenrechner — wenn du andere Zahlen willst, ändere beide, sonst widersprichst du dir im selben Termin.</li><li>Der Punkt zu den Code-Rechten ist der, den fast alle Anbieter übergehen. Er schafft Vertrauen, weil er gegen mich selbst geht.</li><li>Falls es um Förderung geht: Der Innovationsscheck des Bundes finanziert bis CHF 15'000 für eine Vorstudie — aber das Geld geht an einen Forschungspartner, nicht an den Betrieb und nicht an mich. Ehrlich so sagen.</li></ul>"
 },
 
 /* 11 ---------------------------------------------------------------- */
@@ -5344,7 +5355,7 @@ DECKS.geschichte = {
   h2:"Was ich nicht bin.",
   body:[
     {t:"ticks", v:[
-      "<b>Keine Agentur mit dreissig Leuten.</b> Wenn ich ausfalle, steht es still. Genau deshalb gehören euch Code und Dokumentation ab dem ersten Tag — und deshalb baue ich lieber etwas Kleines, das ihr selbst betreiben könnt.",
+      "<b>Keine Agentur mit dreissig Leuten.</b> Genau deshalb gehören euch Code, Zugänge und Dokumentation ab dem ersten Tag — ihr sollt nicht von meiner Verfügbarkeit abhängen. Und deshalb baue ich lieber etwas Kleines, das ihr selbst betreiben könnt.",
       "<b>Kein Hersteller von Medizinprodukten.</b> Alles, was in Diagnose oder Behandlung eingreift, ist nicht mein Feld. Ich baue an der Organisation drumherum, nicht an der Medizin.",
       "<b>Kein Ersatz für Treuhand, IT-Partner oder Anwalt.</b> Wo deren Zuständigkeit anfängt, hört meine auf — und ich sage das, bevor es teuer wird.",
       "<b>Kein Anbieter, der euch an sich bindet.</b> Keine Lizenz, die verfällt, kein Format, das nur ich lesen kann, keine Zugänge, die nur auf mich laufen."
@@ -5438,7 +5449,7 @@ DECKS.praxis = {
     {t:"table",
      head:["Verkaufsversprechen", "Was wirklich belegt ist"],
      rows:[
-       ["„2–3 Stunden Dokumentationszeit pro Arzt und Tag gespart“", "Die einzige randomisierte Studie (NEJM AI, 238 ambulante Ärzte, 14 Fachrichtungen) findet <b>rund 10 %</b> weniger Dokumentationszeit — etwa 41 Sekunden pro Notiz. Das zweite geprüfte System zeigte gar keinen signifikanten Effekt."],
+       ["„2–3 Stunden Dokumentationszeit pro Arzt und Tag gespart“", "Die einzige randomisierte Studie (NEJM AI, 238 ambulante Ärzte, 14 Fachrichtungen) findet <b>rund 10 %</b> weniger Dokumentationszeit. In Sekunden: −41 s pro Notiz im besseren System — aber die Kontrollgruppe verbesserte sich im selben Zeitraum um 18 s. <b>Zurechenbar sind rund 20 Sekunden.</b> Das zweite geprüfte System zeigte keinen signifikanten Effekt."],
        ["„80 % weniger Telefonzeit“", "Herstellerangabe ohne Studie. Für die Schweiz existiert <b>keine belastbare Zahl</b> zum Telefonaufkommen in Praxen."],
        ["Rückweisungsquoten der Versicherer in Prozent", "Nicht öffentlich. santésuisse nennt rund 10 % nicht korrekte Leistungen — das ist eine Angabe der Versichererseite, keine neutrale Statistik."],
        ["Schweizer No-Show-Raten", "Existieren nicht. Die kursierenden 20–23 % stammen aus Deutschland."]
@@ -5462,7 +5473,8 @@ DECKS.praxis = {
        ["3", "<b>Posteingang und Papier strukturieren</b>", "Hoher manueller Anteil, kein klinisches Risiko.", "mittel"],
        ["4", "<b>Kennzahlen über alle Praxen</b>", "Das eigentliche Produkt für eine Verwaltungsfirma — ergibt nur dort Sinn, wo mehrere Praxen zusammenlaufen.", "gross"],
        ["5", "<b>Mitschrift der Konsultation</b>", "Höchste Nachfrage, aber ehrlich gerechnet der kleinste belegte Zeiteffekt.", "mittel"]
-     ]}
+     ]},
+    {t:"note", v:"<b>Alle fünf hängen an eurer Praxissoftware.</b> Ich habe vitomed, Aeskulap, Axenita, tomedo und den Weg über MediData angeschaut — angeschlossen habe ich an keines davon je etwas. Erste Frage in Woche 1: Welche Systeme laufen bei euch, und was gibt jedes davon exportiert heraus? Wo eine Schnittstelle Geld kostet, sage ich das, bevor wir bauen."}
   ],
   notes:"Diese Folie ist die Landkarte. Danach je eine Folie pro Vorhaben — wenn die Zeit knapp wird, nur 2 und 4 zeigen.<ul><li>Reihenfolge begründen: nicht nach Beeindruckung, sondern nach dem, was zuerst funktioniert.</li></ul>"
 },
@@ -5477,8 +5489,7 @@ DECKS.praxis = {
         {t:"ticks", v:[
           "<b>Online buchen</b>, zweiseitig mit der Praxisagenda abgeglichen — Absagen fliessen zurück, ohne dass jemand telefoniert.",
           "<b>Erinnerung per SMS</b> 24 bis 48 Stunden vorher, mit dem Nötigsten im Text und ohne medizinische Angaben.",
-          "<b>Warteliste, die nachrückt</b>: wird ein Termin frei, geht er automatisch an die Person, die als nächste passt.",
-          "<b>77 %</b> der Bevölkerung wollen Dienstleistungen online suchen <i>und direkt buchen</i>. Nur 3 % der Betriebe können das vollständig."
+          "<b>Warteliste, die nachrückt</b>: wird ein Termin frei, geht er automatisch an die nächste Person auf der Liste — in der Reihenfolge der Anmeldung, ohne inhaltliche Gewichtung. Wer wie dringend ist, entscheidet die Praxis, nicht das System."
         ]}
       ],
       b:[
@@ -5486,7 +5497,7 @@ DECKS.praxis = {
           {n:"RR 1,10", l:"mehr wahrgenommene Termine durch SMS-Erinnerung", s:"Cochrane-Review, 4 randomisierte Studien, n = 3'547. 95 %-Vertrauensintervall 1,03–1,17. Erschienen 2013 — die Aussage ist alt, aber sie ist die einzige mit dieser Qualität."}
         ]},
         {t:"note", v:"SMS wirkt <b>gleich gut wie ein Telefonanruf</b>, kostet aber nur 55 bis 65 Prozent davon. Das ist der ganze Fall in einem Satz."},
-        {t:"src", v:"Letzte Zahl: KMU Digital Pulse 2025, localsearch mit HSLU."}
+        {t:"src", v:"Der Review stammt von 2013. Er ist alt — aber er ist die einzige Evidenz dieser Qualität, die es zum Thema gibt. Das gehört dazugesagt."}
       ]}
   ],
   notes:"Klein anfangen, weil es schnell wirkt und niemandem weh tut.<ul><li>Der Cochrane-Wert ist bescheiden — genau deshalb nennen. RR 1,10 heisst: aus 100 Terminen werden etwa 10 % mehr wahrgenommen, nicht „No-Shows verschwinden“.</li><li>Achtung Datenschutz: Im SMS steht kein Grund und keine Diagnose.</li></ul>"
@@ -5510,7 +5521,7 @@ DECKS.praxis = {
           "Wie lange dauert eine Korrektur, wer macht sie?",
           "Wie viele Tage kostet jede Retoure an Zahlungseingang?"
         ]},
-        {t:"note", v:"Erst diese drei Zahlen, dann ein Angebot. Ohne Ausgangsmessung ist jede Ersparnis eine Behauptung."},
+        {t:"note", v:"<b>Das gibt es schon</b> — bei Ärztekasse, MediData und Medical Invoice, als Teil ihrer Abrechnungsdienstleistung. Der Unterschied: dort seht ihr das Ergebnis, nicht die Ursachen, und die Regeln gehören euch nicht. Ob sich das gegen einen bestehenden Vertrag lohnt, rechnen wir in Woche 2 — nicht heute."},
         {t:"src", v:"Kontext: santésuisse gibt rund 10 % nicht korrekt verrechnete Leistungen an — Angabe des Versichererverbands, keine neutrale Statistik. Genau darum die eigene Messung."}
       ]}
   ],
@@ -5545,7 +5556,7 @@ DECKS.praxis = {
 /* 09 */
 {
   eyebrow:"Vorhaben 4",
-  h2:"Das Einzige, was nur ihr bauen könnt.",
+  h2:"Kennzahlen über alle Praxen — was fehlt euch heute am Monatsblatt?",
   body:[
     {t:"split", mod:"wide",
       a:[
@@ -5558,8 +5569,8 @@ DECKS.praxis = {
         ]}
       ],
       b:[
-        {t:"note", v:"Ich habe keinen Schweizer Anbieter gefunden, der das für Praxisverwalter macht. Das kann heissen, dass es die Nische nicht gibt — oder dass sie offen ist. Herausfinden lässt sich das mit zwei Telefonaten, nicht mit einem Projekt."},
-        {t:"src", v:"Für Datenschutz gilt: aggregierte Betriebskennzahlen, keine Patientendaten. Das hält die Sache ausserhalb des Berufsgeheimnisses."}
+        {t:"note", v:"Argomed und medkey machen Ähnliches für ihre Ärztenetze. Für eine Verwaltungsfirma eurer Art habe ich nichts gefunden — <b>das ist ein Hinweis, kein Beweis.</b> Zwei Telefonate klären es, bevor irgendetwas gebaut wird."},
+        {t:"src", v:"Ziel ist die aggregierte Kennzahl. Der Weg dorthin führt aber durch die Praxissysteme — Auftragsbearbeitungsvertrag und Berufsgeheimnis-Klausel gelten deshalb auch hier. Wo möglich aggregieren wir in der Praxis und übernehmen nur die Summe."}
       ]}
   ],
   notes:"<b>Das ist der strategische Punkt für eine COO</b> — kein Werkzeug, sondern ein Angebot, das ihre Firma von anderen unterscheidet.<ul><li>Ehrlich bleiben: dass ich keinen Anbieter gefunden habe, ist ein Hinweis, kein Beweis. Nicht als „Marktlücke“ verkaufen, sondern als „das sollten wir zu zweit prüfen“.</li></ul>"
@@ -5574,7 +5585,7 @@ DECKS.praxis = {
       a:[
         {t:"p", v:"Das System hört mit und schreibt einen strukturierten Verlaufseintrag, den die Ärztin freigibt oder korrigiert. Nachfrage gibt es dafür mehr als für alles andere. Der belegte Zeiteffekt ist trotzdem klein."},
         {t:"kpis", v:[
-          {n:"≈ 10 %", l:"weniger Dokumentationszeit — beim besseren der beiden geprüften Systeme", s:"Randomisierte Studie, NEJM AI: 238 ambulante Ärztinnen und Ärzte, 14 Fachrichtungen. Das zweite System: kein signifikanter Effekt."}
+          {n:"≈ 10 %", l:"weniger Dokumentationszeit — beim besseren der beiden geprüften Systeme", s:"Randomisierte Studie, NEJM AI: 238 ambulante Ärztinnen und Ärzte, 14 Fachrichtungen. In Sekunden: −41 s pro Notiz gegenüber −18 s in der Kontrollgruppe, zurechenbar also rund 20 Sekunden. Das zweite System: kein signifikanter Effekt."}
         ]}
       ],
       b:[
@@ -5607,13 +5618,13 @@ DECKS.praxis = {
   h2:"Berufsgeheimnis und Datenschutz sind kein Zusatz, sondern die Grundlage.",
   body:[
     {t:"ticks", v:[
-      "<b>Art. 321 StGB</b> gilt für die Ärzteschaft <i>und ihre Hilfspersonen</i> — bis zu drei Jahre Freiheitsstrafe, auch nach dem Berufsausstieg. Jeder Dienstleister muss vertraglich als weisungsgebundene Hilfsperson eingebunden sein.",
+      "<b>Art. 321 StGB</b> gilt für die Ärzteschaft <i>und ihre Hilfspersonen</i> — bis zu drei Jahre Freiheitsstrafe, auch nach dem Berufsausstieg. Jeder Dienstleister muss vertraglich als weisungsgebundene Hilfsperson eingebunden sein. Das ist die anerkannte Lehre und gelebte Praxis, aber <b>keine höchstrichterlich abschliessend geklärte Frage</b> — wer etwas anderes behauptet, hat nicht nachgeschaut.",
       "<b>Gesundheitsdaten sind besonders schützenswert.</b> Ein Bearbeitungsverzeichnis ist Pflicht — die Ausnahme für Betriebe unter 250 Mitarbeitenden greift hier nicht.",
       "<b>Datenschutz-Folgenabschätzung</b>: bei umfangreicher Bearbeitung von Gesundheitsdaten in aller Regel nötig.",
       "<b>Verarbeitung in der Schweiz</b>, Verschlüsselung mit den Schlüsseln beim Leistungserbringer, Löschkonzept, Auftragsbearbeitungsvertrag. Ohne diese vier Punkte fange ich gar nicht an.",
       "<b>Keine Nutzung eurer Daten zum Training</b> — vertraglich, nicht als Zusicherung im Verkaufsgespräch."
     ]},
-    {t:"src", v:"Grundlagen: Art. 321 StGB · revDSG seit 1.9.2023, Art. 9 (Auftragsbearbeitung), Art. 22 (Folgenabschätzung) · Rechtlicher Leitfaden von SAMW und FMH. Belegstellen in Recherche 07."}
+    {t:"src", v:"Grundlagen: Art. 321 StGB · revDSG seit 1.9.2023, Art. 9 (Auftragsbearbeitung), Art. 22 (Folgenabschätzung) · Rechtlicher Leitfaden von SAMW und FMH. Belegstellen in Recherche 07. <b>Orientierung, keine Rechtsberatung</b> — die Verträge schaut eure Juristin an."}
   ],
   notes:"Bei einer COO ist das der Abschnitt, an dem sie entscheidet, ob sie weiterhört.<ul><li>Nicht als Hürde vortragen, sondern als Handwerk: „Das ist die Liste, die ich abarbeite, bevor irgendetwas läuft.“</li><li>Wenn nach konkreten Anbietern gefragt wird: Schweizer Betrieb ist möglich, die Optionen stehen in Recherche 07.</li></ul>"
 },
@@ -5624,7 +5635,7 @@ DECKS.praxis = {
   h2:"Zwei Wochen messen. Danach entscheidet ihr.",
   body:[
     {t:"steps", v:[
-      {y:"Woche 1–2", t:"Zählen, was heute läuft", p:"Anrufe pro Tag und Anlass. Rückweisungen und ihre Gründe. Posteingang nach Art. Ausgefallene Termine. Alles aus euren eigenen Systemen — nicht geschätzt."},
+      {y:"Woche 1–2", t:"Zählen, was heute läuft", p:"Anrufe pro Tag und Anlass, Rückweisungen und ihre Gründe, Posteingang nach Art, ausgefallene Termine. Wo die Telefonanlage nichts hergibt, ist das eine Strichliste am Empfang — unschön, aber ehrlich. Gezählt wird von euren Leuten, nicht von mir." + (S.preiseZeigen ? " Kostet " + esc(S.preisAnalyse) + ", bei einem Auftrag voll anrechenbar." : "")},
       {y:"Ende Woche 2", t:"Eine Seite Ergebnis", p:"Was kostet welcher Ablauf, wo liegt der grösste einzelne Betrag, was wäre realistisch davon zu holen."},
       {y:"Danach", t:"Ein Vorhaben, Fixpreis", p:"Wir nehmen genau eines. Zwei bis vier Wochen bis zur lauffähigen Version, Preis vorher abgemacht.", now:true},
       {y:"Und dann", t:"Übergabe oder Stopp", p:"Läuft es, gehört es euch samt Code und Dokumentation. Läuft es nicht, hört es auf — und ihr habt trotzdem die Messung."}
@@ -5786,7 +5797,7 @@ KATALOG.push(
 { id:20, spur:"care", aufwand:"mittel", zeit:"6–10 Wochen",
   t:"Mitschrift der Konsultation",
   p:"Das System hört mit und erzeugt einen strukturierten Verlaufseintrag, den die Ärztin freigibt oder korrigiert. Ärztliche Freigabe vor Übernahme ins Dossier ist zwingend.",
-  win:"Ehrlich gerechnet: rund 10 % weniger Dokumentationszeit beim besseren der beiden geprüften Systeme (randomisierte Studie, NEJM AI, 238 Ärzte). Deutlicher als die Zeit verbessern sich Belastung und Zufriedenheit.",
+  win:"Ehrlich gerechnet: rund 10 % weniger Dokumentationszeit beim besseren der beiden geprüften Systeme (randomisierte Studie, NEJM AI, 238 Ärzte) — in Sekunden rund 20 pro Notiz, nachdem man die Verbesserung der Kontrollgruppe abzieht. Deutlicher als die Zeit verbessern sich Belastung und Zufriedenheit.",
   tags:["Dokumentation","Praxis"] },
 
 { id:21, spur:"care", aufwand:"klein", zeit:"3–5 Wochen",
@@ -5843,8 +5854,8 @@ DECKS.bau = {
 {
   layout:"title",
   kicker:"Deck 3 von 4",
-  h1:"Ihr arbeitet in einer<br>Drei-Prozent-Branche.",
-  lead:"Deshalb rede ich nicht über Digitalisierung, sondern über Marge.",
+  h1:"Wie nah seid ihr<br>an den drei Prozent?",
+  lead:"Ich rede nicht über Digitalisierung, sondern über Marge — eure, nicht die des Verbands.",
   body:[{t:"spacer"},
     {t:"p", v:'<span class="mono dim" style="font-size:.82em">' + (S.firmaBau ? esc(S.firmaBau) + " · " : "") + heute + "</span>"}],
   notes:"Direkt einsteigen, kein Aufwärmen. Ein Patron entscheidet nach der Zahl unten rechts.<ul><li>Einstiegsfrage: „Wenn du im Büro eine Stunde pro Tag zurückbekämst — wofür würdest du sie brauchen?“</li></ul>"
@@ -5869,8 +5880,8 @@ DECKS.bau = {
 {
   layout:"statement",
   eyebrow:"Warum das Rechnen anders läuft als in anderen Branchen",
-  big:"Bei drei Prozent Marge macht ein Prozent gesparte Kosten ein Drittel mehr Gewinn.",
-  sub:"Gerechnet an 20 Mio. Umsatz: 3 % Marge sind 600'000 Franken Gewinn. Wer 200'000 Franken Kosten wegnimmt, steht bei 800'000. <b>Das ist meine Rechnung, keine Studie</b> — aber die Mechanik stimmt für jeden Betrieb mit dünner Marge.",
+  big:"Bei drei Prozent Marge macht ein Prozent des Umsatzes an eingesparten Kosten ein Drittel mehr Gewinn.",
+  sub:"Gerechnet an 20 Mio. Umsatz: 3 % Marge sind 600'000 Franken Gewinn. Wer 200'000 Franken Kosten wegnimmt — ein Prozent des Umsatzes —, steht bei 800'000. <b>Das ist meine Rechnung, keine Studie</b> — aber die Mechanik stimmt für jeden Betrieb mit dünner Marge.",
   notes:"<b>Der wichtigste Satz des ganzen Decks.</b> Langsam sagen, dann schweigen.<ul><li>Sofort mit seiner echten Zahl nachrechnen, wenn er sie nennt. Umsatz × Marge, dann dieselbe Rechnung.</li><li>Nicht behaupten, dass 200'000 erreichbar sind — das ist eine Rechenbeispiel, kein Versprechen. Der Nutzenrechner kommt später.</li></ul>"
 },
 
@@ -5966,11 +5977,11 @@ DECKS.bau = {
 /* 08 */
 {
   eyebrow:"Zur Plattform-Idee",
-  h2:"Die Idee ist richtig. So wie sie meistens gedacht wird, ist sie bewilligungspflichtig.",
+  h2:"Die Idee trägt. Ob sie bewilligungspflichtig wird, entscheidet ein Detail.",
   body:[
     {t:"cards", cols:2, v:[
-      {n:"So nicht", t:"„Wir stellen unsere Leute stundenweise auf eine Plattform“", p:"Wer Arbeitskräfte überlässt und dabei <b>die wesentlichen Weisungsbefugnisse abtritt</b>, betreibt Personalverleih. Das heisst: kantonale Bewilligung nach Art. 12 AVG, <b>Kaution ab CHF 50'000</b> (ab 60'000 Einsatzstunden 100'000), und die Pflicht, gleichzeitig den GAV Personalverleih <i>und</i> den LMV einzuhalten. Für ein Bau-KMU ist das ein eigenes Geschäftsfeld, kein Nebenprodukt einer Website."},
-      {n:"So ja", t:"Ihr verkauft Leistung, nicht Personal", p:"Beworben werden <b>Arbeitsergebnisse</b> — „Fundamentsanierung“, „Aushub bis 50 m³“, „Umgebungsarbeiten“ — nie Personen oder Berufsbilder. Weisungsrecht, Werkzeug, Organisation und Gewährleistung bleiben bei euch. Das ist ein Werkvertrag beziehungsweise Regie, bewilligungsfrei, und in Wochen aufgebaut.", accent:true}
+      {n:"Der teure Weg", t:"Leute stundenweise überlassen", p:"Wer Arbeitskräfte überlässt und dabei <b>die wesentlichen Weisungsbefugnisse abtritt</b>, betreibt Personalverleih. Das heisst: kantonale Bewilligung nach Art. 12 AVG, <b>Kaution ab CHF 50'000</b> (ab 60'000 Einsatzstunden 100'000), und die Pflicht, gleichzeitig den GAV Personalverleih <i>und</i> den LMV einzuhalten. Für ein Bau-KMU ist das ein eigenes Geschäftsfeld, kein Nebenprodukt einer Website."},
+      {n:"Der schnelle Weg", t:"Leistung anbieten statt Personal", p:"Beworben werden <b>Arbeitsergebnisse</b> — „Fundamentsanierung“, „Aushub bis 50 m³“, „Umgebungsarbeiten“ — nie Personen oder Berufsbilder. Weisungsrecht, Werkzeug, Organisation und Gewährleistung bleiben bei euch. Das ist der Zuschnitt, der als Werkvertrag oder Regie trägt statt als Verleih — in Wochen aufgebaut. Ob er im Einzelfall hält, entscheidet die tatsächliche Weisungsmacht, nicht der Vertragstitel. <b>Vor dem Aufschalten einmal juristisch prüfen lassen.</b>", accent:true}
     ]},
     {t:"note", v:"Die gefährliche Stelle: <b>Regie wird nach Stunden abgerechnet</b> — ein Kriterium, das für Verleih spricht. Regie bleibt trotzdem sauber, solange Weisungsrecht, Werkzeug und Gewährleistung bei euch liegen. Aber eine Seite, auf der „Bauarbeiter, CHF 95/h, buchbar ab Montag“ steht, beschreibt Personal statt Leistung. <b>Hier wird die Marketingsprache selbst zur Rechtsfrage.</b>"}
   ],
@@ -5997,13 +6008,12 @@ DECKS.bau = {
           head:["Annahme", "Wert"],
           num:[1],
           rows:[
-            ["1 Vorarbeiter + 2 Bauarbeiter, bisher unausgelastet", "5 Tage/Monat"],
-            ["Verrechnungssatz", "CHF 95/h"],
-            ["Vollkosten (Annahme)", "CHF 60/h"],
+            ["Lücken in der Einsatzplanung — Wetter, verschobene Baustellen, Ausfälle", "5 Tage/Mt."],
+            ["ein Vorarbeiter und zwei Bauarbeiter, Verrechnungssatz", "CHF 95/h"],
+            ["Vollkosten (Annahme, durch eure Kalkulation zu ersetzen)", "CHF 60/h"],
             ["<b>Zusatz-Deckungsbeitrag</b>", "<b>CHF 4'200/Mt.</b>"]
           ]},
-        {t:"note", v:"Der Vollkostensatz muss durch <b>eure</b> Kalkulation ersetzt werden — das ist der erste gemeinsame Arbeitsschritt, keine Behauptung von mir."},
-        {t:"src", v:"Verrechnungssätze im Handwerk 2026: CHF 85–150/h je nach Gewerk, typisch das 2,5- bis 3-Fache des Bruttostundenlohns (Fachquellen, mittlere Verlässlichkeit). Verbindlich sind die Kalkulationshilfen für Regiearbeiten von IPB und Baumeisterverband, Ausgabe 2026."}
+        {t:"src", v:"Verrechnungssätze im Handwerk 2026: CHF 85–150/h je nach Gewerk (Fachquellen, mittlere Verlässlichkeit). Verbindlich sind die Kalkulationshilfen für Regiearbeiten von IPB und Baumeisterverband, Ausgabe 2026."}
       ]}
   ],
   notes:"Die Kapazitätsanzeige ist der Punkt, der wirklich neu ist. Darauf herumreiten.<ul><li>Warnung: Was online steht, muss stimmen. Eine veraltete Kapazitätsanzeige ist schlimmer als keine.</li><li>Ein Marktplatz wäre das falsche Ziel — dafür bräuchte es viele Anbieter und viele Kunden. Stirnimann ist <i>ein</i> Anbieter.</li></ul>"
@@ -6019,7 +6029,7 @@ DECKS.bau = {
      rows:[
        ["<b>LMV 2026–2031</b>", "Gilt seit 1.1.2026 für sechs Jahre und rund 80'000 Mitarbeitende. Der betriebliche Arbeitszeitkalender geht bis Mitte November an die paritätische Berufskommission; zu gewährleisten sind 2'112 Jahresstunden.", "Rapportstunden laufen direkt in den Kalender, Salden mit — statt einmal im Jahr rekonstruiert zu werden."],
        ["<b>Bauarbeitenverordnung</b>", "Vor Baubeginn ein <b>schriftliches</b> Sicherheits- und Gesundheitsschutzkonzept samt Notfallorganisation. Betrifft über 70'000 Betriebe.", "Entwurf aus den Projektdaten, in acht Sprachen unterwiesen, mit dokumentierter Kenntnisnahme. Freigabe bleibt beim Betrieb."],
-       ["<b>Entsendung</b>", "Im Bau Meldung ab dem ersten Tag, acht Tage vor Arbeitsbeginn — seit dem 17.3.2025 nur noch über EasyGov.", "Fristenüberwachung und vorbereitete Meldung statt Nachrennen."],
+       ["<b>Entsendung</b>", "Betrifft nur Personal, das ein <i>ausländischer</i> Arbeitgeber in die Schweiz entsendet — nicht eure Direktangestellten. Dann aber: Meldung ab dem ersten Tag, acht Tage vor Arbeitsbeginn, seit dem 17.3.2025 nur noch über EasyGov.", "Fristenüberwachung und vorbereitete Meldung statt Nachrennen."],
        ["<b>SIA 118</b>", "Kein Abrechnungsposten ohne Beleg.", "Siehe vorhin: der digitale Regierapport."]
      ]},
     {t:"note", v:"Bei diesen vier Punkten ist Digitalisierung keine Kür, sondern <b>Risikoabbau</b>. Die paritätische Berufskommission kontrolliert systematisch und kann Konventionalstrafen verhängen."}
@@ -6044,7 +6054,7 @@ DECKS.bau = {
       b:[
         {t:"h3", v:"Warum das gerade jetzt zählt"},
         {t:"p", v:"Das revidierte Beschaffungsrecht verschiebt den Wettbewerb <b>vom Preis zur Qualität</b>. Damit wird der technische Bericht zum Zuschlagsfaktor — und die Fähigkeit, in kurzer Zeit eine saubere Eingabe zu schreiben, zum Vorteil."},
-        {t:"src", v:"Die öffentliche Hand beschafft nach Angaben eines Branchenportals über 41 Mrd. CHF pro Jahr — diese Zahl stammt nicht aus einer amtlichen Quelle und ist vor Verwendung gegenzuprüfen."}
+        {t:"src", v:"Damit wird der technische Bericht zum Zuschlagsfaktor — und die Fähigkeit, in kurzer Zeit eine saubere Eingabe zu schreiben, zum Vorteil gegenüber Mitbewerbern, die nur rechnen."}
       ]}
   ],
   notes:"Wichtig ist der Satz „wo ein gutes Produkt existiert, führe ich es ein“. Das unterscheidet mich von jemandem, der alles selbst bauen will.<ul><li>Frage: „Wer schaut bei euch simap durch, und wie lange dauert das pro Woche?“</li></ul>"
@@ -6059,7 +6069,7 @@ DECKS.bau = {
       a:[
         {t:"kpis", v:[
           {n:"5'600", l:"Fachkräfte fehlen dem Bauhauptgewerbe bis 2040", s:"Studie des Baumeisterverbands, durchgeführt von Demografik. Bei Maurern werden 31 %, bei Bauvorarbeitern 33 % mehr Personal gebraucht als verfügbar sein wird."},
-          {n:"722", l:"Lehrbeginne Maurer/in EFZ 2024 — 2010 waren es rund 1'200", s:""}
+          {n:"722", l:"Lehrbeginne Maurer/in EFZ 2024, +10 % gegenüber dem Tiefpunkt 2019 — 2010 waren es rund 1'200. Die Talsohle ist durchschritten, aber sie deckt den Altersabgang nicht.", s:"Schweizerischer Baumeisterverband"}
         ]}
       ],
       b:[

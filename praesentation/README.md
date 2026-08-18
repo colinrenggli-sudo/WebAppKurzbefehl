@@ -120,8 +120,16 @@ Bericht trennt konsequent zwischen **belegt** (mit Quelle und Abrufdatum),
 | [`07-datenschutz-hosting-schweiz.md`](recherche/07-datenschutz-hosting-schweiz.md) | Datenschutzgesetz, Berufsgeheimnis, Schweizer Hosting |
 | [`08-recruiting-methoden.md`](recherche/08-recruiting-methoden.md) | Personalgewinnung für Bau und Praxen |
 | [`09-agentur-angebot-preise.md`](recherche/09-agentur-angebot-preise.md) | Angebotsmodelle, Pilotstruktur, Vertragsrecht |
-| [`10-pitch-narrativ.md`](recherche/10-pitch-narrativ.md) | Deck-Aufbau und wie man die eigene Geschichte erzählt |
-| [`11-firmen-kontext.md`](recherche/11-firmen-kontext.md) | Firmenkontext und Praxisdienstleister-Landschaft |
+| [`10-pitch-narrativ.md`](recherche/10-pitch-narrativ.md) | Deck-Aufbau und wie man die eigene Geschichte erzählt — **nicht in der ausgelieferten Datei** |
+| [`11-firmen-kontext.md`](recherche/11-firmen-kontext.md) | Firmenkontext und Praxisdienstleister-Landschaft — **nicht in der ausgelieferten Datei** |
+| [`12-cofounder-review.md`](recherche/12-cofounder-review.md) | Der Mitgründer-Durchgang: sechs unabhängige Lesarten, zusammengeführt zu einer Änderungsliste |
+
+Die Berichte **10 und 11 werden bewusst nicht eingebettet.** Der eine
+enthält die ausformulierte Anleitung, wie die Kündigung zu erzählen ist,
+der andere nennt beide früheren Arbeitgeber im Titel. In einer Datei, die
+man weiterleiten kann, würde das den Anonymitäts-Schalter aushebeln.
+`tools/check.mjs` prüft bei jedem Durchlauf, dass keiner der beiden
+Firmennamen in `index.html` oder `artifact.html` steht.
 
 ### Was die Prüfinstanz gefunden hat
 
@@ -146,6 +154,42 @@ Bewusst nicht übernommen wurden ausserdem: CHF-Beträge pro Katalogeintrag
 (es gibt keine belastbaren Schweizer Marktsätze — der Katalog zeigt
 Aufwandsklassen und Dauer), Anbieter-Nutzerzahlen und die MPA-Zahlen aus
 einem Verbandsblog, die einander widersprachen.
+
+### Was der Mitgründer-Durchgang geändert hat
+
+Sechs unabhängige Lesarten — Faktencheck, Tonalität, Verkaufslogik,
+Recht, Handwerk und eine, die als Jana Rohrer gelesen hat — wurden zu
+[`12-cofounder-review.md`](recherche/12-cofounder-review.md)
+zusammengeführt. Was daraus direkt in die Unterlage ging:
+
+- **Die Rechercheberichte 10 und 11 fliegen aus der Datei.** Siehe oben —
+  das war der schwerwiegendste Befund.
+- **Die Studienzahl war ungenau, ausgerechnet auf der Ehrlichkeitsfolie.**
+  Die randomisierte Studie misst −41 s pro Notiz, aber die Kontrollgruppe
+  verbesserte sich um 18 s. Zurechenbar sind rund 20 Sekunden. Das steht
+  jetzt so da.
+- **Es gab nirgends einen Preis.** Vier Decks, 38 Katalogpunkte, kein
+  Franken — während der Nutzenrechner im selben Termin Beträge zeigt. Deck 1
+  nennt jetzt Grössenordnungen für Analyse, Pilot und Betrieb; unter
+  Einstellungen sind sie änderbar.
+- **Der Ausstieg war geschönt.** Beim Werkvertrag darf man zurücktreten,
+  aber gegen volle Entschädigung. Die Folie sagt das jetzt und stellt die
+  eigene, weitergehende Klausel daneben.
+- **Die Praxissoftware kam nicht vor.** Alle fünf Vorhaben in Deck 4 hängen
+  daran. Für eine COO ist das die Stelle, an der sie abschaltet.
+- **Der Wettbewerb kam nicht vor.** Abrechnungsprüfung verkaufen Ärztekasse,
+  MediData und Medical Invoice seit Jahren. Das steht jetzt auf der Folie.
+- **Ein echter Fehler im Programm:** Beim Zurücksetzen teilte die
+  Katalogauswahl die Referenz mit den Vorgabewerten — «Alles zurücksetzen»
+  meldete Erfolg, die Auswahl blieb. Praktisch hiesse das, mit Janas
+  markierten Punkten vor dem Onkel zu stehen.
+- **Der Rechner stellte die Bruttozahl gross heraus** — genau die Optik,
+  die Deck 4 anderen vorwirft. Jetzt steht der Nettowert oben.
+- **Kontraste:** Graue Beschriftungen und der orange Knopf erfüllten die
+  Lesbarkeitsstufe AA nicht. Behoben, in beiden Themes nachgerechnet.
+
+Verworfen wurden Befunde, die sich beim Nachlesen nicht bestätigten — sie
+stehen mit Begründung im Memo.
 
 ### Was die Recherche selbst als ungeprüft markiert
 
@@ -204,7 +248,10 @@ Folie in hell und dunkel unter `.screenshots/` ab.
 - **Folien skalieren mit dem Fenster** (Container-Queries), sind also auf
   jedem Beamer gleich gesetzt. Auf schmalen Geräten wird aus der Folie
   eine lesbare Karte.
-- **Drucken** ergibt eine Folie pro Seite — für ein Handout.
+- **Handout**: Im Cockpit erzeugen zwei Knöpfe ein druckfertiges
+  Dokument — alle vier Decks mit Titelblatt, eine Folie pro Seite (53
+  Seiten), wahlweise mit den Sprechernotizen dazwischen (102 Seiten).
+  Am besten als A4 quer drucken oder als PDF sichern.
 - **Nichts verlässt das Gerät.** Kein Analytics, kein Tracking, keine
   externen Aufrufe. Die Eingaben liegen im lokalen Speicher des Browsers.
 

@@ -53,7 +53,37 @@ sag(/:root:not\(\[data-theme="light"\]\)/.test(style), "dunkle Palette ist gegen
 sag(/:root\[data-theme="dark"\]/.test(style), "expliziter Dunkelmodus definiert");
 sag(/body\{[\s\S]*?background:var\(--paper\)/.test(style), "body hat eine eigene Hintergrundfarbe");
 
-/* --- 5. Groesse --- */
+/* --- 5. Keine Inhalte aus den nicht einzubettenden Berichten --- */
+const lokalNur = ["10-pitch-narrativ.md", "11-firmen-kontext.md"];
+sag(!lokalNur.some(f => html.includes(`data-doc="${f}"`)),
+  "die beiden lokalen Rechercheberichte sind nicht eingebettet");
+
+/* Die frueheren Arbeitgeber duerfen in der ausgelieferten Datei nirgends
+   ausgeschrieben stehen — sonst ist der Anonymitaets-Schalter wirkungslos.
+   Die Namen stehen nur in den lokalen Berichten 10 und 11, deshalb wird von
+   dort gelesen statt sie hier zu wiederholen. */
+const rechercheDir = join(root, "recherche");
+let namen = [];
+try {
+  const quelle = readFileSync(join(rechercheDir, "11-firmen-kontext.md"), "utf8");
+  namen = [...quelle.matchAll(/\b([A-ZÄÖÜ][\wäöüéè.-]+(?: [A-ZÄÖÜ][\wäöüéè.-]+)*) (?:Transport AG|Bau AG)\b/g)]
+    .map(m => m[0])
+    .filter((v, i, a) => a.indexOf(v) === i);
+} catch { /* Bericht 11 fehlt — dann gibt es auch nichts zu pruefen */ }
+
+const durchgerutscht = namen.filter(n => {
+  /* Der Name der Firma, der praesentiert wird, darf vorkommen — er steht in
+     den Standardeinstellungen. Gemeint sind die frueheren Arbeitgeber. */
+  if (html.includes(`firmaBau: "${n}"`)) return false;
+  const ohneEinstellung = html.split(n).length - 1;
+  return ohneEinstellung > 1;
+});
+sag(durchgerutscht.length === 0,
+  durchgerutscht.length
+    ? `Firmenname(n) in der ausgelieferten Datei: ${durchgerutscht.join(", ")}`
+    : "keine Klarnamen frueherer Arbeitgeber in der Datei");
+
+/* --- 6. Groesse --- */
 const kb = Buffer.byteLength(html) / 1024;
 sag(kb < 16 * 1024, `Groesse ${kb.toFixed(0)} KB`);
 

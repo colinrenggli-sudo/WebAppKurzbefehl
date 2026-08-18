@@ -357,8 +357,8 @@ Groessenordnung nennen.
 ### 3.1 Deck A «Colins Geschichte und Referenzen» — die groesste Luecke der ganzen Sammlung
 
 **Befund:** Es existiert **kein einziger recherchierter Fakt ueber Colin selbst.** `10` ist reines
-Kommunikationshandwerk (und als solches gut), `11` stellt fest, dass Stirnimann Bau AG und Galliker
-Transport AG **vollstaendig unverifiziert** sind. Ein Deck ueber Geschichte und Referenzen hat damit
+Kommunikationshandwerk (und als solches gut), `11` stellt fest, dass beide dort untersuchten Firmen
+**vollstaendig unverifiziert** sind. Ein Deck ueber Geschichte und Referenzen hat damit
 derzeit **keine Substanz** — nur eine Anleitung, wie man ueber fehlende Substanz spricht.
 
 Konkret fehlt:
