@@ -565,7 +565,7 @@ body[data-shell="field"]{background:var(--bg-2)}
       radial-gradient(900px 560px at 12% -8%, color-mix(in srgb, var(--tint) 12%, transparent), transparent 60%),
       var(--bg-2);
   }
-  #field{display:flex; height:100dvh; align-items:center; justify-content:center; gap:34px; padding:26px}
+  body[data-shell="field"] #field{display:flex; height:100dvh; align-items:center; justify-content:center; gap:34px; padding:26px}
   .fld-frame{
     width:392px; height:min(830px, calc(100dvh - 52px)); border-radius:46px; border:11px solid #171E2A;
     box-shadow:0 40px 90px -30px rgba(0,0,0,.55), 0 0 0 2px rgba(255,255,255,.05) inset; flex:none;
@@ -716,6 +716,48 @@ body[data-shell="field"]{background:var(--bg-2)}
 .big-timer .l b{display:block; font-size:13px; font-weight:650; color:var(--tint-txt)}
 .big-timer .l small{display:block; font-size:11.5px; color:var(--txt-2)}
 .sig-pad{width:100%; height:180px; border-radius:var(--r-m); border:1.5px dashed var(--sep-2); background:var(--card-2); touch-action:none; display:block}
+
+/* Stempeluhr — der grösste Knopf der ganzen App */
+.stempel{
+  background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l); box-shadow:var(--shadow-1);
+  padding:16px 15px; display:flex; flex-direction:column; gap:13px; align-items:center;
+}
+.stempel.aktiv{background:var(--tint-soft); border-color:color-mix(in srgb, var(--tint) 38%, transparent)}
+.stempel.pause{background:var(--warn-soft); border-color:color-mix(in srgb, var(--warn) 38%, transparent)}
+.stempel .uhr{
+  font-family:var(--ff-num); font-size:52px; font-weight:730; letter-spacing:-.045em;
+  font-variant-numeric:tabular-nums; line-height:1; color:var(--txt);
+}
+.stempel.aktiv .uhr{color:var(--tint-txt)}
+.stempel.pause .uhr{color:var(--warn-txt)}
+.stempel .was{display:flex; flex-direction:column; gap:2px; text-align:center; min-width:0; width:100%}
+.stempel .was b{font-size:14.5px; font-weight:660}
+.stempel .was small{font-size:12.5px; color:var(--txt-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.stempel .row{width:100%}
+.stempel.bereit{gap:11px}
+
+/* Zeile eines Zeiteintrags */
+.zeile{
+  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  padding:10px 11px; border-radius:var(--r-s); background:var(--card-2); border:1px solid transparent;
+  transition:background .13s, border-color .13s;
+}
+.zeile:active{background:var(--card-3)}
+.zeile.laeuft{background:var(--tint-soft); border-color:color-mix(in srgb, var(--tint) 32%, transparent)}
+.zeile .e{font-size:17px; flex:none}
+.zeile .bd{flex:1; min-width:0}
+.zeile .bd b{display:block; font-size:14px; font-weight:620; font-variant-numeric:tabular-nums}
+.zeile .bd small{display:block; font-size:12px; color:var(--txt-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.zeile .rt{display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none}
+.zeile .rt b{font-size:15px; font-weight:700}
+
+/* Beispielbild-Feld ist zurückhaltender als der Kamera-Knopf */
+.photo-add.demo{border-style:dotted; color:var(--txt-3); font-size:10.5px}
+.photo-add.demo svg.i{width:18px; height:18px}
+
+/* Sicherheitskarte */
+.fcard.sicher{border-color:color-mix(in srgb, var(--warn) 45%, var(--sep))}
+.fcard.sicher.ok{border-color:var(--sep)}
 .sig-pad.filled{border-style:solid; border-color:var(--ok); background:var(--card)}
 </style>
 <style>
@@ -1247,7 +1289,6 @@ const S = {
     Store.speichern();
     location.hash = S.shell === 'desk' ? '#/uebersicht' : '#/f/heute';
     Nav.zeichnen();
-    UI.toast('Angemeldet als ' + b.name, 'ok', { undo: false });
   },
   abmelden() {
     S.benutzerId = null; S.shell = 'none'; S.code = '';
@@ -1559,14 +1600,20 @@ const L = {
   },
   TYP: {
     reparatur: { t: 'Reparatur', e: '🔧' }, notfall: { t: 'Notfall', e: '🚨' },
-    wartung: { t: 'Wartung', e: '🗓' }, neubau: { t: 'Neubau', e: '🏗' },
-    garantie: { t: 'Garantie', e: '🛡' }, kontrolle: { t: 'Kontrolle', e: '🔍' }
+    wartung: { t: 'Service', e: '🧹' }, neubau: { t: 'Sanierung', e: '🏗' },
+    garantie: { t: 'Garantie', e: '🛡' }, kontrolle: { t: 'Kontrolle', e: '🔍' },
+    solar: { t: 'Solarservice', e: '☀️' }, begruenung: { t: 'Begrünung', e: '🌿' },
+    spenglerei: { t: 'Spenglerei', e: '🪣' }
   },
   PRIO: { notfall: 'Notfall', hoch: 'Hoch', normal: 'Normal', tief: 'Tief' },
 
   status: s => (L.STATUS[s] || { t: s, k: 'st-neu' }),
   statusChip(s) { const x = L.status(s); return `<span class="chip st ${x.k}">${h(x.t)}</span>`; },
-  typ: t => (L.TYP[t] || { t: t, e: '•' }),
+  /** Nimmt einen Auftrag oder einen Schlüssel. Die Serviceart geht vor. */
+  typ(x) {
+    const k = (x && typeof x === 'object') ? (x.serviceArt || x.typ) : x;
+    return L.TYP[k] || { t: k, e: '•' };
+  },
 
   /** Fortschritt der Checkliste: erledigte Pflichtpunkte gegen alle sichtbaren. */
   fortschritt(a) {
@@ -1596,29 +1643,75 @@ const L = {
       && L.punktSichtbar(p, a.antworten || {}) && !L.beantwortet(p, (a.antworten || {})[p.id]));
   },
 
-  /* — Zeiten — */
+  /* — Zeiten —
+     Es gibt genau eine Quelle: DB.zeiten. Ein Eintrag kann an einem Auftrag
+     hängen (auftragId) oder frei sein — Werkstatt, Fahrt, interne Arbeit.
+     Ein Eintrag ohne "ende" läuft gerade. Mehr braucht es nicht.            */
+  ZEITARTEN: {
+    arbeit: { t: 'Arbeit', e: '🔧', verrechenbar: true },
+    fahrt: { t: 'Fahrt', e: '🚐', verrechenbar: true },
+    werkstatt: { t: 'Werkstatt', e: '🏠', verrechenbar: false },
+    pause: { t: 'Pause', e: '☕️', verrechenbar: false },
+    schlechtwetter: { t: 'Schlechtwetter', e: '🌧', verrechenbar: false }
+  },
+
+  zeitenVon(auftragId) { return DB.zeiten.filter(z => z.auftragId === auftragId); },
+
+  /** Dauer eines Eintrags in Minuten. Ein laufender zählt bis jetzt. */
+  dauer(z) {
+    if (!z) return 0;
+    const bis = z.ende ? D.minuten(z.ende) : D.minuten(D.jetzt());
+    return Math.max(0, bis - D.minuten(z.start) - (z.pausenMin || 0));
+  },
+
   minuten(a, typ, benutzerId) {
-    return sum((a.zeitLog || []).filter(z => (!typ || z.typ === typ) && (!benutzerId || z.benutzerId === benutzerId)), z => {
-      if (!z.ende) return 0;
-      return Math.max(0, D.minuten(z.ende) - D.minuten(z.start));
-    });
+    if (!a) return 0;
+    return sum(DB.zeiten.filter(z => z.auftragId === a.id && z.ende
+      && (!typ || z.typ === typ) && (!benutzerId || z.benutzerId === benutzerId)), L.dauer);
+  },
+
+  /** Der laufende Eintrag einer Person — mit oder ohne Auftrag. */
+  laufendEintrag(benutzerId) {
+    return DB.zeiten.find(z => !z.ende && z.benutzerId === (benutzerId || S.benutzerId));
   },
   laufend(a, benutzerId) {
-    return (a.zeitLog || []).find(z => !z.ende && (!benutzerId || z.benutzerId === benutzerId));
+    const z = L.laufendEintrag(benutzerId);
+    return z && a && z.auftragId === a.id ? z : null;
   },
   laufenderAuftrag(benutzerId) {
-    return DB.auftraege.find(a => (a.zeitLog || []).some(z => !z.ende && z.benutzerId === benutzerId));
+    const z = L.laufendEintrag(benutzerId);
+    return z && z.auftragId ? Q.auftrag(z.auftragId) : null;
   },
-  laufendeMinuten(z) {
-    if (!z) return 0;
-    return Math.max(0, D.minuten(D.jetzt()) - D.minuten(z.start));
+  laufendeMinuten(z) { return L.dauer(z); },
+
+  /** Startet eine Zeit. auftrag darf null sein (Werkstatt, interne Arbeit). */
+  uhrStart(auftrag, typ, bid, bemerkung) {
+    L.uhrStopp(bid);
+    const z = {
+      id: uid('z'), benutzerId: bid, auftragId: auftrag ? auftrag.id : null,
+      datum: D.heute(), start: D.jetzt(), ende: null, pausenMin: 0,
+      typ: typ || 'arbeit', bemerkung: bemerkung || (auftrag ? auftrag.titel : ''),
+      freigegeben: false, freigegebenVon: null, eingereicht: false
+    };
+    DB.zeiten.unshift(z);
+    return z;
   },
-  uhrStart(a, typ, bid) {
-    L.uhrStopp(a, bid);
-    (a.zeitLog = a.zeitLog || []).push({ id: uid('z'), benutzerId: bid, typ, start: D.jetzt(), ende: null, datum: D.heute() });
+
+  /** Beendet den laufenden Eintrag. Sehr kurze Einträge fallen weg. */
+  uhrStopp(bid) {
+    const z = L.laufendEintrag(bid);
+    if (!z) return null;
+    z.ende = D.jetzt();
+    if (L.dauer(z) < 1) DB.zeiten = DB.zeiten.filter(x => x.id !== z.id);
+    return z;
   },
-  uhrStopp(a, bid) {
-    (a.zeitLog || []).forEach(z => { if (!z.ende && z.benutzerId === bid) z.ende = D.jetzt(); });
+
+  /** Summe eines Tages. Pausen zählen nicht als Arbeitszeit. */
+  tagMinuten(bid, datum) {
+    return sum(DB.zeiten.filter(z => z.benutzerId === bid && z.datum === datum && z.typ !== 'pause'), L.dauer);
+  },
+  wochenMinuten(bid, montag) {
+    return sum(Array.from({ length: 7 }, (_, i) => D.plus(montag, i)), d => L.tagMinuten(bid, d));
   },
 
   /* — Material — */
@@ -1678,10 +1771,10 @@ const L = {
     if (a.abrechnung === 'pauschal' && a.pauschalBetrag) {
       pos.push({ id: uid('p'), art: 'pauschale', text: a.titel + ' (Pauschale)', menge: 1, einheit: 'Pausch.', einzelpreis: a.pauschalBetrag, mwstSatz: b.mwstSatz });
     } else {
-      const proMa = grp((a.zeitLog || []).filter(z => z.ende && z.typ === 'arbeit'), z => z.benutzerId);
+      const proMa = grp(L.zeitenVon(a.id).filter(z => z.ende && z.typ === 'arbeit'), z => z.benutzerId);
       Object.keys(proMa).forEach(bid => {
         const ma = Q.benutzer(bid); if (!ma) return;
-        const min = sum(proMa[bid], z => D.minuten(z.ende) - D.minuten(z.start));
+        const min = sum(proMa[bid], L.dauer);
         if (min <= 0) return;
         pos.push({
           id: uid('p'), art: 'arbeit', text: 'Arbeitszeit ' + ma.funktion + ' (' + ma.name + ')',
@@ -1733,9 +1826,9 @@ const L = {
   },
 
   kosten(a) {
-    const lohn = sum((a.zeitLog || []).filter(z => z.ende), z => {
+    const lohn = sum(L.zeitenVon(a.id).filter(z => z.ende && z.typ !== 'pause'), z => {
       const ma = Q.benutzer(z.benutzerId);
-      return (D.minuten(z.ende) - D.minuten(z.start)) / 60 * ((ma && ma.stundenansatz || 90) * 0.55);
+      return L.dauer(z) / 60 * ((ma && ma.stundenansatz || 90) * 0.55);
     });
     const mat = sum((a.material || []), m => {
       const art = Q.artikel(m.artikelId);
@@ -1782,7 +1875,7 @@ const L = {
       termin: { datum: v.naechsteFaelligkeit, von: '08:00', bis: '11:00' }, dauerGeplantMin: 180,
       zugewiesen: [], abrechnung: 'pauschal', pauschalBetrag: v.pauschale,
       material: [], antworten: {}, fotos: [], sicherheit: { erledigt: false },
-      zeitLog: [], nachtraege: [], maengel: [], chat: [],
+      nachtraege: [], maengel: [], chat: [],
       rapport: {}, rechnungId: null, erstellt: new Date().toISOString(), erstelltVon: S.benutzerId
     };
     DB.auftraege.unshift(a);
@@ -1931,6 +2024,7 @@ window.addEventListener('hashchange', Nav.zeichnen);
    ================================================================== */
 const Desk = {
   ansichten: {},
+  _route: '',
 
   navZeichnen() {
     const akt = Nav.teile()[0];
@@ -1967,8 +2061,11 @@ const Desk = {
     $('#tbTitel').textContent = v.titel || '';
     $('#tbTools').innerHTML = v.tools || '';
     const view = $('#deskview');
+    const schluessel = t.join('/');
+    const oben = schluessel === Desk._route ? view.scrollTop : 0;
+    Desk._route = schluessel;
     view.innerHTML = `<div class="pg ${v.weit ? 'wide' : ''}">${v.html}</div>`;
-    view.scrollTop = S.ui['scroll_' + name] || 0;
+    view.scrollTop = oben;
     document.title = (v.titel ? v.titel + ' · ' : '') + 'DACHWERK';
     // mount bekommt den frisch erzeugten Container, nicht #deskview: so
     // sterben die Zuhoerer beim naechsten Zeichnen mit ihrem Element.
@@ -2156,7 +2253,7 @@ Desk.ansichten.dispo = function () {
     return `<div class="job ${st.k} ${klein ? '' : 'pool-job'}" draggable="true" data-job="${a.id}" style="border-left-color:var(--c)">
       <b>${h(a.titel)}</b>
       <small>${h(o ? o.ort : '')}${a.termin && a.termin.von ? ' · ' + h(a.termin.von) : ''}</small>
-      <span class="mt">${L.typ(a.typ).e} ${h(Fmt.std(a.dauerGeplantMin || 120))} h${a.prio === 'notfall' ? ' · 🚨' : ''}</span>
+      <span class="mt">${L.typ(a).e} ${h(Fmt.std(a.dauerGeplantMin || 120))} h${a.prio === 'notfall' ? ' · 🚨' : ''}</span>
     </div>`;
   };
 
@@ -2327,7 +2424,7 @@ Desk.ansichten.auftraege = function () {
                   <td class="mono" style="color:var(--txt-3)">${h(a.nr.replace(/^A-\d{4}-/, ''))}</td>
                   <td><div class="t1 num">${a.termin && a.termin.datum ? h(Fmt.datumKurz(a.termin.datum)) : '–'}</div>
                       <div class="t2 num">${a.termin && a.termin.von ? h(a.termin.von + '–' + a.termin.bis) : 'offen'}</div></td>
-                  <td><div class="t1">${L.typ(a.typ).e} ${h(a.titel)}</div>
+                  <td><div class="t1">${L.typ(a).e} ${h(a.titel)}</div>
                       <div class="t2">${(a.nachtraege || []).some(n => n.status === 'offen') ? '<span class="chip warn" style="height:18px;font-size:10.5px">Nachtrag</span> ' : ''}${(a.maengel || []).some(m => m.offen) ? '<span class="chip err" style="height:18px;font-size:10.5px">Mangel</span> ' : ''}${h(a.beschreibung || '').slice(0, 54)}</div></td>
                   <td><div class="t1">${h(k ? k.name : '–')}</div><div class="t2">${h(k ? k.typ : '')}</div></td>
                   <td><div class="t1">${h(o ? o.bezeichnung : '–')}</div><div class="t2">${h(o ? o.plz + ' ' + o.ort : '')}</div></td>
@@ -2388,7 +2485,7 @@ Desk.ansichten.auftrag = function (teile) {
     ['uebersicht', 'Übersicht', 0],
     ['checkliste', 'Checkliste', fr.total],
     ['fotos', 'Fotos', (a.fotos || []).length],
-    ['aufwand', 'Zeit & Material', (a.material || []).filter(m => m.mengeVerbraucht > 0).length + (a.zeitLog || []).length],
+    ['aufwand', 'Zeit & Material', (a.material || []).filter(m => m.mengeVerbraucht > 0).length + L.zeitenVon(a.id).length],
     ['nachtrag', 'Nachträge & Mängel', (a.nachtraege || []).length + (a.maengel || []).length],
     ['chat', 'Rückfragen', (a.chat || []).length],
     ['abrechnung', 'Abrechnung', 0]
@@ -2401,7 +2498,7 @@ Desk.ansichten.auftrag = function (teile) {
           <div class="card-h"><h3>Auftrag</h3><button class="btn sm" data-act="auftrag.bearbeiten" data-id="${a.id}">${ic('i-stift')} Bearbeiten</button></div>
           <div class="card-b"><dl class="dl">
             <dt>Nummer</dt><dd class="mono">${h(a.nr)}</dd>
-            <dt>Art</dt><dd>${L.typ(a.typ).e} ${h(L.typ(a.typ).t)}</dd>
+            <dt>Art</dt><dd>${L.typ(a).e} ${h(L.typ(a).t)}</dd>
             <dt>Priorität</dt><dd>${h(L.PRIO[a.prio] || a.prio)}</dd>
             <dt>Termin</dt><dd>${a.termin && a.termin.datum ? h(Fmt.wochentag(a.termin.datum) + ', ' + Fmt.datum(a.termin.datum) + ', ' + a.termin.von + '–' + a.termin.bis) : 'nicht geplant'}</dd>
             <dt>Geplante Dauer</dt><dd>${h(Fmt.std(a.dauerGeplantMin || 0))} h</dd>
@@ -2491,7 +2588,7 @@ Desk.ansichten.auftrag = function (teile) {
     },
 
     aufwand: () => {
-      const proMa = grp((a.zeitLog || []).filter(z => z.ende), z => z.benutzerId);
+      const proMa = grp(L.zeitenVon(a.id).filter(z => z.ende), z => z.benutzerId);
       const mat = (a.material || []).filter(m => m.mengeVerbraucht > 0 || m.mengeGeplant > 0);
       return `<div class="grid g2">
         <div class="card"><div class="card-h"><h3>Zeiten</h3><span class="chip">${h(Fmt.std(L.minuten(a)))} h</span></div>
@@ -2639,7 +2736,7 @@ Desk.ansichten.auftrag = function (teile) {
       <div class="row wrap" style="gap:9px;align-items:center">
         <span class="mono" style="color:var(--txt-3);font-size:13px">${h(a.nr)}</span>
         ${L.statusChip(a.status)}
-        <span class="chip">${L.typ(a.typ).e} ${h(L.typ(a.typ).t)}</span>
+        <span class="chip">${L.typ(a).e} ${h(L.typ(a).t)}</span>
         ${a.prio === 'notfall' ? '<span class="chip err dot">Notfall</span>' : ''}
         <span class="chip">${h(k ? k.name : '')}</span>
         <span class="chip">${h(o ? o.ort : '')}</span>
@@ -3148,10 +3245,10 @@ Desk.ansichten.zeit = function () {
   const tage = Array.from({ length: 7 }, (_, i) => D.plus(woche, i));
   const leute = DB.benutzer.filter(b => b.rolle === 'monteur');
   const eintraege = DB.zeiten.filter(z => z.datum >= woche && z.datum <= D.plus(woche, 6));
-  const offen = DB.zeiten.filter(z => !z.freigegeben);
+  const offen = DB.zeiten.filter(z => !z.freigegeben && z.ende)
+    .sort((a, b) => (b.eingereicht ? 1 : 0) - (a.eingereicht ? 1 : 0) || b.datum.localeCompare(a.datum));
 
-  const minutenVon = (bid, datum) => sum(eintraege.filter(z => z.benutzerId === bid && z.datum === datum),
-    z => Math.max(0, D.minuten(z.ende) - D.minuten(z.start) - (z.pausenMin || 0)));
+  const minutenVon = (bid, datum) => sum(eintraege.filter(z => z.benutzerId === bid && z.datum === datum && z.typ !== 'pause'), L.dauer);
 
   return {
     titel: 'Zeit & Personal',
@@ -3163,9 +3260,9 @@ Desk.ansichten.zeit = function () {
       ${offen.length ? `<button class="btn primary" data-act="zeit.freigebenAlle">${offen.length} Einträge freigeben</button>` : ''}`,
     html: `
       <div class="kpis">
-        ${W.kpi('Stunden diese Woche', Fmt.std(sum(eintraege, z => Math.max(0, D.minuten(z.ende) - D.minuten(z.start) - (z.pausenMin || 0)))) + ' h', leute.length + ' Mitarbeitende', { i: 'i-uhr' })}
+        ${W.kpi('Stunden diese Woche', Fmt.std(sum(eintraege.filter(z => z.typ !== 'pause'), L.dauer)) + ' h', leute.length + ' Mitarbeitende', { i: 'i-uhr' })}
         ${W.kpi('Nicht freigegeben', offen.length, 'brauchen die Kontrolle des Vorgesetzten', { i: 'i-check', hot: offen.length > 6 })}
-        ${W.kpi('Verrechenbar', (() => { const g = sum(eintraege, z => Math.max(0, D.minuten(z.ende) - D.minuten(z.start))); const a = sum(eintraege.filter(z => z.auftragId), z => Math.max(0, D.minuten(z.ende) - D.minuten(z.start))); return g ? Math.round(a / g * 100) + ' %' : '–'; })(), 'Anteil produktiver Zeit', { i: 'i-franken' })}
+        ${W.kpi('Verrechenbar', (() => { const g = sum(eintraege.filter(z => z.typ !== 'pause'), L.dauer); const a2 = sum(eintraege.filter(z => z.auftragId && z.typ !== 'pause'), L.dauer); return g ? Math.round(a2 / g * 100) + ' %' : '–'; })(), 'Anteil produktiver Zeit', { i: 'i-franken' })}
         ${W.kpi('Ablaufende Nachweise', (() => DB.benutzer.reduce((n, b) => n + (b.qualifikationen || []).filter(q => q.gueltigBis && q.gueltigBis < D.plus(D.heute(), 60)).length, 0))(), 'in den nächsten 60 Tagen', { i: 'i-schild', hot: true })}
       </div>
 
@@ -3194,7 +3291,7 @@ Desk.ansichten.zeit = function () {
               <tbody>${offen.slice(0, 40).map(z => {
         const b = Q.benutzer(z.benutzerId), a = z.auftragId && Q.auftrag(z.auftragId);
         return `<tr><td class="num">${h(Fmt.datumKurz(z.datum))}</td><td>${h(b ? b.name : '–')}</td>
-                  <td class="t2">${a ? h(a.titel) : h(z.typ)}</td>
+                  <td class="t2">${a ? h(a.titel) : h((L.ZEITARTEN[z.typ] || {}).t || z.typ)}${z.eingereicht ? ' <span class="chip" style="height:17px;font-size:10px">eingereicht</span>' : ''}</td>
                   <td class="r num">${h(z.start)}–${h(z.ende)}</td>
                   <td class="r"><button class="btn sm ok" data-act="zeit.freigeben" data-id="${z.id}">${ic('i-check')}</button></td></tr>`;
       }).join('')}</tbody></table>` : W.leer('Alles freigegeben', 'Keine offenen Zeiteinträge.', '✅')}
@@ -3869,6 +3966,7 @@ Desk.ansichten.einstellungen = function () {
    ================================================================== */
 const Fld = {
   ansichten: {},
+  _route: '',
 
   zeichnen(teile) {
     const name = teile[0] || 'heute';
@@ -3888,8 +3986,15 @@ const Fld = {
         ${v.unter ? `<div class="sub trunc">${h(v.unter)}</div>` : ''}
       </div>
       ${v.tools || ''}`;
-    $('#fldBody').innerHTML = '<div class="fld-inner">' + v.html + '</div>';
-    $('#fldBody').scrollTop = 0;
+    // Beim Neuzeichnen derselben Seite bleibt der Blick, wo er war. Ohne das
+    // springt die Liste bei jedem Häkchen nach oben — der sicherste Weg, eine
+    // App auf dem Dach unbrauchbar zu machen.
+    const koerper = $('#fldBody');
+    const schluessel = teile.join('/');
+    const oben = schluessel === Fld._route ? koerper.scrollTop : 0;
+    Fld._route = schluessel;
+    koerper.innerHTML = '<div class="fld-inner">' + v.html + '</div>';
+    koerper.scrollTop = oben;
     $('#fldTabs').innerHTML = Nav.ZIELE_FIELD.map(z => {
       const roh = location.hash.replace(/^#\//, '');
       const an = roh.indexOf(z.r) === 0 || (z.r === 'f/heute' && roh === 'f');
@@ -3905,26 +4010,47 @@ const Fld = {
   /** Erklaerspalte neben dem Telefonrahmen — nur auf grossen Schirmen. */
   seite() {
     const ich = Q.ich();
-    const laeuft = L.laufenderAuftrag(S.benutzerId);
+    const zl = L.laufendEintrag(S.benutzerId);
+    const laeuft = zl && zl.auftragId ? Q.auftrag(zl.auftragId) : null;
     $('#fldSide').innerHTML = `
       <div>
         <h2>Monteur-App</h2>
         <p>So sieht ${h(ich ? ich.name : '')} den Tag auf dem Handy. Alles, was hier passiert, steht im Büro sofort im Auftrag.</p>
       </div>
       <div class="fld-steps">
-        ${[['Anfahrt starten', 'Fahrzeit läuft mit, der Kunde bekommt automatisch „wir sind unterwegs".'],
-      ['Sicherheitscheck', 'Ohne quittierte Absturzsicherung lässt die App den Auftrag nicht starten.'],
-      ['Fotos vorher', 'Pflicht, wenn das Büro es beim Anlegen verlangt hat.'],
-      ['Checkliste', 'Schritt für Schritt, mit Folgefragen und automatischer Mangelmeldung.'],
-      ['Material buchen', 'Direkt ab Fahrzeuglager – Scan oder Liste. Wandert auf die Rechnung.'],
-      ['Unterschrift', 'Der Kunde quittiert auf dem Glas, der Rapport geht raus.']]
+        ${[['Arbeit starten', 'Ein Tipp. Die Zeit läuft, der Kunde bekommt automatisch „wir sind unterwegs".'],
+      ['Sicherheit bestätigen', 'Ein Knopf für alle fünf Punkte, mit Name und Uhrzeit. Wer will, geht sie einzeln durch.'],
+      ['Abhaken', 'Grosse Felder, die Liste bleibt stehen. „Alle abhaken" erledigt den Rest auf einmal.'],
+      ['Foto', 'Kamera direkt, ohne Zwischenfrage. Vorher und nachher, wenn das Büro es verlangt.'],
+      ['Material buchen', 'Ab Fahrzeuglager – Scan oder Liste. Wandert auf die Rechnung.'],
+      ['Fertig', 'Nie gesperrt. Was fehlt, geht als Vermerk ans Büro statt den Monteur aufzuhalten.']]
         .map(([t, s], i) => `<div class="fld-step"><span class="n">${i + 1}</span><div><b>${h(t)}</b><small>${h(s)}</small></div></div>`).join('')}
       </div>
-      ${laeuft ? `<div class="banner ok"><span class="ic">${ic('i-play')}</span><div><b>Zeit läuft</b><br>${h(laeuft.titel)}</div></div>` : ''}
+      ${zl ? `<div class="banner ok"><span class="ic">${ic('i-play')}</span><div><b>${h((L.ZEITARTEN[zl.typ] || {}).t || 'Zeit')} läuft</b><br>${h(laeuft ? laeuft.titel : (zl.bemerkung || 'ohne Auftrag'))}</div></div>` : ''}
       <div class="row" style="gap:9px">
         ${Sync.anzeige('fldSync')}
         <button class="btn sm" data-act="abmelden">${ic('i-abmelden')} Rolle wechseln</button>
       </div>`;
+  },
+
+  /**
+   * Fotofeld. Ein Tipp öffnet die Kamera — ohne Zwischenfrage. Daneben liegt
+   * ein Feld für ein erzeugtes Beispielbild, damit sich die App auch am
+   * Laptop ohne Kamera vorführen lässt.
+   */
+  fotoFeld(a, phase, punktId, label) {
+    const fotos = (a.fotos || []).filter(f => punktId ? f.punktId === punktId : (f.phase === phase && !f.punktId));
+    return `<div class="photos">
+      ${fotos.map(f => `<div class="photo">
+        ${f.dataUrl ? `<img src="${f.dataUrl}" alt="">` : '<div style="display:grid;place-items:center;height:100%;font-size:22px">🏠</div>'}
+        <button class="x" data-act="foto.weg" data-a="${a.id}" data-id="${f.id}" aria-label="Foto entfernen">${ic('i-x')}</button>
+        ${label ? `<span class="ph">${h(label)}</span>` : ''}
+      </div>`).join('')}
+      <button class="photo-add" data-act="foto.kamera" data-a="${a.id}" data-phase="${h(phase)}"${punktId ? ` data-p="${punktId}"` : ''}>
+        ${ic('i-kamera')}Foto</button>
+      <button class="photo-add demo" data-act="foto.beispiel" data-a="${a.id}" data-phase="${h(phase)}"${punktId ? ` data-p="${punktId}"` : ''}>
+        ${ic('i-bild')}Beispiel</button>
+    </div>`;
   },
 
   /** Ein Punkt der Checkliste, in gross. */
@@ -3960,10 +4086,7 @@ const Fld = {
     } else if (p.typ === 'text') {
       ein = `<textarea class="inp" rows="3" data-antv="${id}" placeholder="Bemerkung …">${h(w || '')}</textarea>`;
     } else if (p.typ === 'foto') {
-      const fotos = (a.fotos || []).filter(f => f.punktId === p.id);
-      ein = `<div class="photos">
-        ${fotos.map(f => `<div class="photo"><img src="${f.dataUrl}" alt=""><button class="x" data-act="foto.weg" data-a="${a.id}" data-id="${f.id}">${ic('i-x')}</button></div>`).join('')}
-        <button class="photo-add" data-act="foto.neu" data-a="${a.id}" data-p="${p.id}" data-phase="arbeit">${ic('i-kamera')}Foto</button></div>`;
+      ein = Fld.fotoFeld(a, 'arbeit', p.id);
     } else if (p.typ === 'unterschrift') {
       ein = w ? `<img src="${w}" style="background:var(--card-2);border-radius:var(--r-s);max-height:110px" alt="Unterschrift">
         <button class="btn sm" data-act="sig.neu" data-a="${a.id}" data-p="${p.id}">Neu unterschreiben</button>`
@@ -3972,18 +4095,13 @@ const Fld = {
       ein = '';
     }
 
-    const fotoP = p.fotoPflicht && p.typ !== 'foto' ? (() => {
-      const fotos = (a.fotos || []).filter(f => f.punktId === p.id);
-      return `<div class="photos" style="margin-top:4px">
-        ${fotos.map(f => `<div class="photo"><img src="${f.dataUrl}" alt=""><button class="x" data-act="foto.weg" data-a="${a.id}" data-id="${f.id}">${ic('i-x')}</button></div>`).join('')}
-        <button class="photo-add" data-act="foto.neu" data-a="${a.id}" data-p="${p.id}" data-phase="arbeit">${ic('i-kamera')}${fotos.length ? 'Noch eins' : 'Foto nötig'}</button></div>`;
-    })() : '';
+    const fotoP = p.fotoPflicht && p.typ !== 'foto' ? Fld.fotoFeld(a, 'arbeit', p.id) : '';
 
     if (p.typ === 'hinweis') {
       return `<div class="banner"><span class="ic">${ic('i-info')}</span><div><b>${h(p.label)}</b>${p.hilfe ? '<br>' + h(p.hilfe) : ''}</div></div>`;
     }
 
-    return `<div class="pt ${ok ? 'done' : p.pflicht ? 'pflicht-offen' : ''} ${mangel ? 'mangel' : ''}">
+    return `<div class="pt ${ok ? 'done' : p.pflicht ? 'pflicht-offen' : ''} ${mangel ? 'mangel' : ''}" data-pt="${a.id}|${p.id}" data-nr="${i}">
       <div class="pt-h">
         <span class="n">${ok ? '✓' : i}</span>
         <span class="q"><b>${h(p.label)}${p.pflicht ? ' <span class="req">*</span>' : ''}</b>
@@ -4001,15 +4119,10 @@ Fld.ansichten.heute = function () {
   const ich = Q.ich();
   const heute = D.heute();
   const auf = Q.auftraegeVon(ich.id, heute);
-  const laeuft = L.laufenderAuftrag(ich.id);
+  const zLaeuft = L.laufendEintrag(ich.id);
   const w = L.wetterTag(heute), amp = L.wetterAmpel(w);
   const fertig = auf.filter(a => ['erledigt', 'kontrolle', 'verrechnet', 'abgeschlossen'].includes(a.status)).length;
-  const min = sum(DB.zeiten.filter(z => z.benutzerId === ich.id && z.datum === heute),
-    z => Math.max(0, D.minuten(z.ende) - D.minuten(z.start) - (z.pausenMin || 0)))
-    + sum(DB.auftraege, a => sum((a.zeitLog || []).filter(z =>
-      z.benutzerId === ich.id && z.datum === heute && z.ende && z.typ !== 'pause'
-      && !DB.zeiten.some(t => t.id === 'z-' + z.id)),
-      z => Math.max(0, D.minuten(z.ende) - D.minuten(z.start))));
+  const min = L.tagMinuten(ich.id, heute);
 
   return {
     titel: 'Guten Tag, ' + ich.name.split(' ')[0],
@@ -4023,12 +4136,13 @@ Fld.ansichten.heute = function () {
           <div style="flex:1"><b style="font-size:15px">${w.tempMax} °C · Wind ${w.wind} km/h</b>
           <div class="hint">Dacharbeiten freigegeben</div></div></div>`}
 
-      ${laeuft ? (() => {
-        const z = L.laufend(laeuft, ich.id);
-        return `<button class="big-timer" style="width:100%;text-align:left" data-nav="f/auftrag/${laeuft.id}">
-          <span class="t" id="fldUhr">${h(Fmt.std(L.laufendeMinuten(z)))}</span>
-          <span class="l"><b>${h(z.typ === 'fahrt' ? 'Anfahrt läuft' : z.typ === 'pause' ? 'Pause läuft' : 'Arbeitszeit läuft')}</b>
-          <small class="trunc">${h(laeuft.titel)}</small></span>
+      ${zLaeuft ? (() => {
+        const auf = zLaeuft.auftragId && Q.auftrag(zLaeuft.auftragId);
+        const kind = L.ZEITARTEN[zLaeuft.typ] || { t: zLaeuft.typ };
+        return `<button class="big-timer" style="width:100%;text-align:left" data-nav="${auf ? 'f/auftrag/' + auf.id : 'f/zeit'}">
+          <span class="t" id="fldUhr">${h(Fmt.std(L.dauer(zLaeuft)))}</span>
+          <span class="l"><b>${h(kind.t)} läuft</b>
+          <small class="trunc">${h(auf ? auf.titel : (zLaeuft.bemerkung || 'ohne Auftrag'))}</small></span>
           ${ic('i-weiter')}</button>`;
       })() : ''}
 
@@ -4052,7 +4166,7 @@ Fld.ansichten.heute = function () {
               <span class="chip st ${st.k}">${h(st.t)}</span>
             </span>
             <span class="bd">
-              <b>${L.typ(a.typ).e} ${h(a.titel)}</b>
+              <b>${L.typ(a).e} ${h(a.titel)}</b>
               <span class="adr">${ic('i-pin')}${h(o ? o.strasse + ', ' + o.plz + ' ' + o.ort : '')}</span>
               <span class="adr">${ic('i-haus')}${h(k ? k.name : '')}${o ? ' · ' + h(o.dach.form) + ', ' + h(Fmt.num(o.dach.flaecheM2, 0)) + ' m²' : ''}</span>
               ${f.total ? `<span class="bar" style="margin-top:5px"><i style="width:${f.prozent}%"></i></span>` : ''}
@@ -4088,9 +4202,8 @@ Fld.uhrTicken = function () {
   clearInterval(Fld._uhr);
   Fld._uhr = setInterval(() => {
     const el = $('#fldUhr'); if (!el) return clearInterval(Fld._uhr);
-    const a = L.laufenderAuftrag(S.benutzerId); if (!a) return;
-    const z = L.laufend(a, S.benutzerId); if (!z) return;
-    el.textContent = Fmt.std(L.laufendeMinuten(z));
+    const z = L.laufendEintrag(S.benutzerId); if (!z) return;
+    el.textContent = Fmt.std(L.dauer(z));
   }, 20000);
 };
 </script>
@@ -4110,44 +4223,36 @@ Fld.ansichten.auftrag = function (teile) {
   const z = L.laufend(a, ich.id);
   const w = L.wetterTag(a.termin && a.termin.datum || D.heute()), amp = L.wetterAmpel(w);
 
-  const vorher = (a.fotos || []).filter(f => f.phase === 'vorher');
-  const nachher = (a.fotos || []).filter(f => f.phase === 'nachher');
-  const sicherOK = !v || !v.sicherheitPflicht || (a.sicherheit && a.sicherheit.erledigt);
-  const vorherOK = !v || !v.fotoVorherPflicht || vorher.length > 0;
-  const nachherOK = !v || !v.fotoNachherPflicht || nachher.length > 0;
-  const unterschriftOK = !v || !v.unterschriftPflicht || (a.rapport && a.rapport.unterschriftKunde);
+  const vorher = (a.fotos || []).filter(f => f.phase === 'vorher' && !f.punktId);
+  const nachher = (a.fotos || []).filter(f => f.phase === 'nachher' && !f.punktId);
+  const sicherOK = !!(a.sicherheit && a.sicherheit.erledigt);
   const pflichtOffen = L.offenePflicht(a);
-  const fertigMoeglich = sicherOK && vorherOK && nachherOK && !pflichtOffen.length;
   const abgeschlossen = ['erledigt', 'kontrolle', 'verrechnet', 'abgeschlossen'].includes(a.status);
+  const laeuftHier = !!z;
+  const begonnen = ['vorort', 'pausiert'].includes(a.status) || abgeschlossen;
 
   const schritte = [
-    { k: 'anfahrt', t: 'Anfahrt', done: ['vorort', 'pausiert', 'erledigt', 'kontrolle', 'verrechnet', 'abgeschlossen'].includes(a.status) },
-    ...(v && v.sicherheitPflicht ? [{ k: 'sicher', t: 'Sicherheit', done: sicherOK }] : []),
-    ...(v && v.fotoVorherPflicht ? [{ k: 'vorher', t: 'Vorher', done: vorher.length > 0 }] : []),
-    { k: 'arbeit', t: 'Checkliste', done: fr.total > 0 && fr.erledigt === fr.total },
-    ...(v && v.fotoNachherPflicht ? [{ k: 'nachher', t: 'Nachher', done: nachher.length > 0 }] : []),
-    ...(v && v.unterschriftPflicht ? [{ k: 'sig', t: 'Unterschrift', done: !!(a.rapport && a.rapport.unterschriftKunde) }] : []),
-    { k: 'fertig', t: 'Fertig', done: abgeschlossen }
+    { t: 'Anfahrt', done: begonnen || a.status === 'unterwegs' },
+    { t: 'Arbeit', done: fr.total > 0 && fr.erledigt === fr.total },
+    ...(v && (v.fotoVorherPflicht || v.fotoNachherPflicht) ? [{ t: 'Fotos', done: (!v.fotoVorherPflicht || vorher.length > 0) && (!v.fotoNachherPflicht || nachher.length > 0) }] : []),
+    { t: 'Fertig', done: abgeschlossen }
   ];
   const jetztIdx = Math.max(0, schritte.findIndex(s => !s.done));
 
-  /* Was unten in der festen Leiste steht — immer genau eine Sache. */
+  /* Unten steht immer genau eine Sache — und sie ist nie gesperrt. */
   let aktion;
-  if (abgeschlossen) aktion = `<button class="btn wide" data-act="f.rapport" data-id="${a.id}">${ic('i-doc')} Rapport ansehen</button>`;
-  else if (a.status === 'neu' || a.status === 'geplant')
-    aktion = `<button class="btn primary wide" data-act="f.anfahrt" data-id="${a.id}">${ic('i-nav')} Anfahrt starten</button>`;
-  else if (a.status === 'unterwegs')
-    aktion = `<button class="btn primary wide" data-act="f.angekommen" data-id="${a.id}">${ic('i-pin')} Angekommen</button>`;
-  else if (!sicherOK)
-    aktion = `<button class="btn primary wide" data-act="f.sicherheit" data-id="${a.id}">${ic('i-schild')} Sicherheitscheck</button>`;
-  else if (a.status === 'pausiert')
-    aktion = `<button class="btn primary wide" data-act="f.weiter" data-id="${a.id}">${ic('i-play')} Weiterarbeiten</button>`;
-  else if (!fertigMoeglich)
-    aktion = `<button class="btn wide" data-act="f.pause" data-id="${a.id}">${ic('i-pause')} Pause</button>
-      <button class="btn primary wide" data-act="f.abschluss" data-id="${a.id}" style="opacity:.55">${ic('i-check')} Abschliessen</button>`;
-  else
-    aktion = `<button class="btn wide" data-act="f.pause" data-id="${a.id}">${ic('i-pause')} Pause</button>
-      <button class="btn ok wide" data-act="f.abschluss" data-id="${a.id}">${ic('i-check')} Abschliessen</button>`;
+  if (abgeschlossen) {
+    aktion = `<button class="btn wide" data-act="f.rapport" data-id="${a.id}">${ic('i-doc')} Rapport ansehen</button>`;
+  } else if (!begonnen) {
+    aktion = `<button class="btn" style="flex:0 0 auto;width:56px" data-act="f.navi" data-id="${a.id}" aria-label="Navigation">${ic('i-nav')}</button>
+      <button class="btn primary wide" data-act="f.start" data-id="${a.id}">${ic('i-play')} Arbeit starten</button>`;
+  } else if (a.status === 'pausiert') {
+    aktion = `<button class="btn primary wide" data-act="f.weiter" data-id="${a.id}">${ic('i-play')} Weiterarbeiten</button>
+      <button class="btn ok wide" data-act="f.abschluss" data-id="${a.id}">${ic('i-check')} Fertig</button>`;
+  } else {
+    aktion = `<button class="btn" style="flex:0 0 auto;width:56px" data-act="f.pause" data-id="${a.id}" aria-label="Pause">${ic('i-pause')}</button>
+      <button class="btn ok wide" data-act="f.abschluss" data-id="${a.id}">${ic('i-check')} Fertig</button>`;
+  }
 
   return {
     titel: a.titel,
@@ -4158,21 +4263,18 @@ Fld.ansichten.auftrag = function (teile) {
       <div class="stepper">${schritte.map((s, i) => `<div class="st ${s.done ? 'done' : i === jetztIdx ? 'now' : ''}">
         <span class="dot">${s.done ? '✓' : i + 1}</span><small>${h(s.t)}</small></div>`).join('')}</div>
 
-      ${z ? `<div class="big-timer">
-        <span class="t" id="fldUhr">${h(Fmt.std(L.laufendeMinuten(z)))}</span>
-        <span class="l"><b>${h(z.typ === 'fahrt' ? 'Anfahrt' : z.typ === 'pause' ? 'Pause' : 'Arbeitszeit')} läuft</b>
+      ${laeuftHier ? `<div class="big-timer">
+        <span class="t" id="fldUhr">${h(Fmt.std(L.dauer(z)))}</span>
+        <span class="l"><b>${h(L.ZEITARTEN[z.typ].t)} läuft</b>
         <small>seit ${h(z.start)} Uhr</small></span>
-        <button class="btn icon" data-act="f.stopp" data-id="${a.id}" aria-label="Stoppen">${ic('i-stop')}</button></div>` : ''}
+        <button class="btn icon" data-act="f.stopp" aria-label="Stoppen">${ic('i-stop')}</button></div>` : ''}
 
       ${amp.st === 'sperr' && !abgeschlossen ? `<div class="banner err"><span class="ic">${ic('i-warn')}</span>
-        <div><b>${h(amp.t)}</b><br>${h(amp.grund)}. Rücksprache mit dem Büro, bevor du aufs Dach gehst.</div></div>` : ''}
-
-      ${o && o.zugang.absturzsicherung === 'keine' ? `<div class="banner warn"><span class="ic">${ic('i-schild')}</span>
-        <div><b>Keine feste Absturzsicherung an diesem Objekt.</b><br>Seil und Auffanggurt sind Pflicht${o.zugang.geruestNoetig ? ', Gerüst ist vorgesehen' : ''}.</div></div>` : ''}
+        <div><b>${h(amp.t)}</b><br>${h(amp.grund)}. Kurz mit dem Büro reden, bevor du aufs Dach gehst.</div></div>` : ''}
 
       <div class="fcard">
         <div class="fcard-h"><h3>${h(k ? k.name : '')}</h3>
-          ${a.prio === 'notfall' ? '<span class="chip err dot">Notfall</span>' : `<span class="chip">${h(L.typ(a.typ).t)}</span>`}</div>
+          ${a.prio === 'notfall' ? '<span class="chip err dot">Notfall</span>' : `<span class="chip">${h(L.typ(a).t)}</span>`}</div>
         <div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:11px">
           <div style="font-size:14.5px;line-height:1.45">
             <div><b>${h(o ? o.bezeichnung : '')}</b></div>
@@ -4186,49 +4288,58 @@ Fld.ansichten.auftrag = function (teile) {
           ${o ? `<div class="row wrap" style="gap:6px">
             <span class="chip">${h(o.dach.form)}</span>
             <span class="chip">${h(Fmt.num(o.dach.flaecheM2, 0))} m²</span>
-            <span class="chip">${h(o.dach.neigungGrad)}°</span>
             <span class="chip">${h(o.dach.eindeckung)}</span>
+            ${o.dach.solarAnlage ? `<span class="chip">☀️ ${h(o.dach.solarKwp)} kWp</span>` : ''}
             ${o.zugang.geruestNoetig ? '<span class="chip warn">Gerüst</span>' : ''}
-            ${o.dach.solarAnlage ? '<span class="chip">☀️ Solar</span>' : ''}
           </div>
           ${o.zugang.hinweis ? `<div class="hint" style="padding:9px 11px;background:var(--card-2);border-radius:var(--r-s)">💡 ${h(o.zugang.hinweis)}</div>` : ''}
           ${o.zugang.parkplatz ? `<div class="hint">🅿️ ${h(o.zugang.parkplatz)}</div>` : ''}` : ''}
         </div>
       </div>
 
-      ${v && v.sicherheitPflicht ? `<div class="fcard pad row" style="gap:11px;${sicherOK ? '' : 'border-color:var(--warn)'}">
-        <span style="font-size:22px">${sicherOK ? '✅' : '🦺'}</span>
-        <div style="flex:1"><b style="font-size:14.5px">Sicherheitscheck</b>
-          <div class="hint">${sicherOK ? 'quittiert um ' + h(String(a.sicherheit.zeit || '').slice(11, 16)) + ' Uhr' : 'vor Arbeitsbeginn zwingend'}</div></div>
-        <button class="btn ${sicherOK ? '' : 'primary'} sm" data-act="f.sicherheit" data-id="${a.id}">${sicherOK ? 'Ansehen' : 'Jetzt'}</button>
+      ${!abgeschlossen ? `<div class="fcard sicher ${sicherOK ? 'ok' : ''}" id="sicherKarte">
+        ${sicherOK ? `<div class="row" style="gap:11px;padding:13px 15px">
+            <span style="font-size:20px">✅</span>
+            <div style="flex:1"><b style="font-size:14.5px">Sicherheit bestätigt</b>
+              <div class="hint">${h(String(a.sicherheit.zeit || '').slice(11, 16))} Uhr · ${h((Q.benutzer(a.sicherheit.benutzerId) || {}).name || '')}</div></div>
+            <button class="btn sm ghost" data-act="f.sicherEinzeln" data-id="${a.id}">Ansehen</button>
+          </div>`
+      : `<div style="padding:13px 15px;display:flex;flex-direction:column;gap:9px">
+            <div class="row" style="gap:11px">
+              <span style="font-size:20px">🦺</span>
+              <div style="flex:1"><b style="font-size:14.5px">Absturzsicherung, PSA, Zugang, Wetter</b>
+                <div class="hint">Ein Tipp bestätigt alle fünf Punkte mit Name und Uhrzeit.</div></div>
+            </div>
+            <button class="btn ok wide" style="height:48px" data-act="f.sicherAlles" data-id="${a.id}">
+              ${ic('i-check')} Alles geprüft – bestätigen</button>
+            <button class="btn ghost sm" data-act="f.sicherEinzeln" data-id="${a.id}">Lieber einzeln durchgehen</button>
+          </div>`}
       </div>` : ''}
 
       ${v && v.fotoVorherPflicht ? `<div class="fcard">
-        <div class="fcard-h"><h3>Fotos vorher ${vorher.length ? '' : '<span class="req">*</span>'}</h3><span class="chip ${vorher.length ? 'ok' : 'warn'}">${vorher.length}</span></div>
-        <div style="padding:0 15px 13px"><div class="photos">
-          ${vorher.map(f => `<div class="photo"><img src="${f.dataUrl}" alt=""><button class="x" data-act="foto.weg" data-a="${a.id}" data-id="${f.id}">${ic('i-x')}</button><span class="ph">vorher</span></div>`).join('')}
-          <button class="photo-add" data-act="foto.neu" data-a="${a.id}" data-phase="vorher">${ic('i-kamera')}Aufnehmen</button>
-        </div></div></div>` : ''}
+        <div class="fcard-h"><h3>Fotos vorher</h3><span class="chip ${vorher.length ? 'ok' : ''}">${vorher.length}</span></div>
+        <div style="padding:0 15px 13px">${Fld.fotoFeld(a, 'vorher', null, 'vorher')}</div></div>` : ''}
 
       ${v ? `<div class="fcard">
-        <div class="fcard-h"><h3>${h(v.name)}</h3><span class="chip ${fr.prozent === 100 ? 'ok' : ''}">${fr.erledigt}/${fr.total}</span></div>
-        <div style="padding:0 15px 6px"><div class="bar ${fr.prozent === 100 ? 'ok' : ''}"><i style="width:${fr.prozent}%"></i></div></div>
-        <div style="padding:11px 15px 15px;display:flex;flex-direction:column;gap:14px">
+        <div class="fcard-h"><h3>${h(v.name)}</h3>
+          <span class="row" style="gap:7px">
+            ${fr.erledigt < fr.total ? `<button class="btn sm" data-act="f.alleHaken" data-id="${a.id}">Alle abhaken</button>` : ''}
+            <span class="chip ${fr.prozent === 100 ? 'ok' : ''}" id="fldFortschrittChip">${fr.erledigt}/${fr.total}</span>
+          </span></div>
+        <div style="padding:0 15px 6px"><div class="bar ${fr.prozent === 100 ? 'ok' : ''}" id="fldFortschrittBar"><i style="width:${fr.prozent}%"></i></div></div>
+        <div style="padding:11px 15px 15px;display:flex;flex-direction:column;gap:14px" id="fldCheckliste">
           ${['Vorbereitung', 'Arbeit', 'Abschluss'].map(g => {
-      const pk = v.punkte.filter(p => (p.gruppe || 'Arbeit') === g && L.punktSichtbar(p, a.antworten || {}));
-      if (!pk.length) return '';
-      return `<div><div class="lbl" style="margin-bottom:8px;text-transform:uppercase;font-size:11px;letter-spacing:.06em">${h(g)}</div>
+        const pk = v.punkte.filter(p => (p.gruppe || 'Arbeit') === g && L.punktSichtbar(p, a.antworten || {}));
+        if (!pk.length) return '';
+        return `<div><div class="lbl" style="margin-bottom:8px;text-transform:uppercase;font-size:11px;letter-spacing:.06em">${h(g)}</div>
               <div style="display:flex;flex-direction:column;gap:9px">
                 ${pk.map((p, i) => Fld.punkt(a, p, i + 1)).join('')}</div></div>`;
-    }).join('')}
+      }).join('')}
         </div></div>` : ''}
 
       ${v && v.fotoNachherPflicht ? `<div class="fcard">
-        <div class="fcard-h"><h3>Fotos nachher ${nachher.length ? '' : '<span class="req">*</span>'}</h3><span class="chip ${nachher.length ? 'ok' : 'warn'}">${nachher.length}</span></div>
-        <div style="padding:0 15px 13px"><div class="photos">
-          ${nachher.map(f => `<div class="photo"><img src="${f.dataUrl}" alt=""><button class="x" data-act="foto.weg" data-a="${a.id}" data-id="${f.id}">${ic('i-x')}</button><span class="ph">nachher</span></div>`).join('')}
-          <button class="photo-add" data-act="foto.neu" data-a="${a.id}" data-phase="nachher">${ic('i-kamera')}Aufnehmen</button>
-        </div></div></div>` : ''}
+        <div class="fcard-h"><h3>Fotos nachher</h3><span class="chip ${nachher.length ? 'ok' : ''}">${nachher.length}</span></div>
+        <div style="padding:0 15px 13px">${Fld.fotoFeld(a, 'nachher', null, 'nachher')}</div></div>` : ''}
 
       <div class="fcard">
         <div class="fcard-h"><h3>Material</h3>
@@ -4241,7 +4352,7 @@ Fld.ansichten.auftrag = function (teile) {
               <small class="hint">${m.mengeGeplant ? 'geplant ' + Fmt.num(m.mengeGeplant) + ' ' + h(art.einheit) : 'nicht geplant'}</small></span>
               <span class="num" style="font-weight:700;font-size:15px">${Fmt.num(m.mengeVerbraucht || 0)} ${h(art.einheit)}</span>
             </div>`;
-    }).join('') || '<p class="hint">Noch nichts gebucht. Was du verbaust, wird direkt vom Fahrzeug abgezogen und landet auf der Rechnung.</p>'}
+    }).join('') || '<p class="hint">Noch nichts gebucht. Was du verbaust, wird vom Fahrzeug abgezogen und landet auf der Rechnung.</p>'}
         </div>
       </div>
 
@@ -4259,6 +4370,13 @@ Fld.ansichten.auftrag = function (teile) {
             <span class="chip ${n.status === 'freigegeben' ? 'ok' : n.status === 'abgelehnt' ? 'err' : 'warn'}">${h(n.status)}</span></div>`).join('')}
         </div></div>` : ''}
 
+      ${(a.maengel || []).length ? `<div class="fcard">
+        <div class="fcard-h"><h3>Mängel</h3></div>
+        <div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:7px">
+          ${a.maengel.map(m => `<div class="row" style="gap:9px;padding:9px 11px;background:${m.offen ? 'var(--err-soft)' : 'var(--card-2)'};border-radius:var(--r-s)">
+            <span style="flex:1"><b style="font-size:13.5px">${h(m.text)}</b><div class="hint">${h(m.schwere)}${m.offen ? '' : ' · behoben'}</div></span></div>`).join('')}
+        </div></div>` : ''}
+
       ${(a.chat || []).length ? `<div class="fcard">
         <div class="fcard-h"><h3>Büro</h3></div>
         <div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:9px">
@@ -4267,9 +4385,6 @@ Fld.ansichten.auftrag = function (teile) {
               <div class="hint" style="margin-bottom:2px">${h(b ? b.name : '')} · ${h(Fmt.seit(m.zeit))}</div>
               <div style="font-size:14px">${h(m.text)}</div></div>`; }).join('')}
         </div></div>` : ''}
-
-      ${pflichtOffen.length && !abgeschlossen ? `<div class="banner warn"><span class="ic">${ic('i-warn')}</span>
-        <div><b>${pflichtOffen.length} Pflichtpunkt${pflichtOffen.length > 1 ? 'e' : ''} offen</b><br>${h(pflichtOffen.slice(0, 3).map(p => p.label).join(' · '))}</div></div>` : ''}
 
       ${abgeschlossen && a.rapport && a.rapport.unterschriftKunde ? `<div class="fcard pad">
         <div class="lbl">Quittiert durch</div>
@@ -4304,7 +4419,7 @@ Fld.ansichten.auftraege = function () {
         return `<button class="ftask ${st.k}" data-nav="f/auftrag/${a.id}">
           <span class="top"><span class="tm">${h(a.termin ? Fmt.datumKurz(a.termin.datum) : '')}</span>
             <span style="flex:1"></span><span class="chip st ${st.k}">${h(st.t)}</span></span>
-          <span class="bd"><b>${L.typ(a.typ).e} ${h(a.titel)}</b>
+          <span class="bd"><b>${L.typ(a).e} ${h(a.titel)}</b>
             <span class="adr">${ic('i-pin')}${h(o ? o.strasse + ', ' + o.ort : '')}</span>
             ${fr.total ? `<span class="bar" style="margin-top:5px"><i style="width:${fr.prozent}%"></i></span>` : ''}</span>
         </button>`;
@@ -4362,59 +4477,131 @@ Fld.ansichten.lager = function () {
   };
 };
 
-/* — Monteur: Zeiten — */
+/* — Monteur: Zeit —
+   Eigene Stempeluhr, unabhängig vom Auftrag. Starten, pausieren, beenden.
+   Vergessen ist erlaubt: jeder Eintrag lässt sich nachtragen und ändern.   */
 Fld.ansichten.zeit = function () {
   const ich = Q.ich();
-  const woche = D.montag(D.heute());
-  const tage = Array.from({ length: 7 }, (_, i) => D.plus(woche, i));
-  const minVon = datum => sum(DB.zeiten.filter(z => z.benutzerId === ich.id && z.datum === datum),
-    z => Math.max(0, D.minuten(z.ende) - D.minuten(z.start) - (z.pausenMin || 0)))
-    + sum(DB.auftraege, a => sum((a.zeitLog || []).filter(z => z.benutzerId === ich.id && z.datum === datum && z.ende && z.typ !== 'pause'),
-      z => D.minuten(z.ende) - D.minuten(z.start)));
-  const wochenMin = sum(tage, minVon);
-  const laeuft = L.laufenderAuftrag(ich.id);
+  const heute = D.heute();
+  const montag = D.montag(heute);
+  const tage = Array.from({ length: 7 }, (_, i) => D.plus(montag, i));
+  const z = L.laufendEintrag(ich.id);
+  const heutige = DB.zeiten.filter(x => x.benutzerId === ich.id && x.datum === heute)
+    .sort((x, y) => D.minuten(x.start) - D.minuten(y.start));
+  const tagMin = L.tagMinuten(ich.id, heute);
+  const wochenMin = L.wochenMinuten(ich.id, montag);
+  const soll = 42 * 60;
+  const art = S.ui.zeitArt || 'arbeit';
+  const offeneAuftraege = Q.auftraegeVon(ich.id, heute)
+    .filter(x => !['verrechnet', 'abgeschlossen', 'storniert'].includes(x.status));
+  const wocheEingereicht = DB.zeiten.filter(x => x.benutzerId === ich.id && x.datum >= montag && x.datum <= D.plus(montag, 6))
+    .every(x => x.eingereicht || x.freigegeben);
+
+  const eintragZeile = x => {
+    const auf = x.auftragId && Q.auftrag(x.auftragId);
+    const kind = L.ZEITARTEN[x.typ] || { t: x.typ, e: '•' };
+    const laeuft = !x.ende;
+    return `<button class="zeile ${laeuft ? 'laeuft' : ''}" data-act="f.zeitBearbeiten" data-id="${x.id}">
+      <span class="e">${kind.e}</span>
+      <span class="bd">
+        <b>${h(x.start)}–${laeuft ? 'jetzt' : h(x.ende)}</b>
+        <small>${h(kind.t)}${auf ? ' · ' + h(auf.titel) : (x.bemerkung ? ' · ' + h(x.bemerkung) : '')}${x.pausenMin ? ' · ' + x.pausenMin + ' Min. Pause' : ''}</small>
+      </span>
+      <span class="rt">
+        <b class="num">${h(Fmt.std(L.dauer(x)))}</b>
+        ${x.freigegeben ? '<small class="chip ok" style="height:17px;font-size:10px">frei</small>'
+        : x.eingereicht ? '<small class="chip" style="height:17px;font-size:10px">gesendet</small>' : ''}
+      </span>
+    </button>`;
+  };
 
   return {
     titel: 'Meine Zeit',
-    unter: 'KW ' + D.woche(woche) + ' · ' + Fmt.std(wochenMin) + ' h von 42:00 h',
+    unter: 'KW ' + D.woche(heute) + ' · ' + Fmt.std(wochenMin) + ' h von ' + Fmt.std(soll) + ' h',
     html: `
-      ${laeuft ? (() => { const z = L.laufend(laeuft, ich.id); return `<div class="big-timer">
-        <span class="t" id="fldUhr">${h(Fmt.std(L.laufendeMinuten(z)))}</span>
-        <span class="l"><b>${h(z.typ === 'fahrt' ? 'Anfahrt' : 'Arbeitszeit')}</b><small class="trunc">${h(laeuft.titel)}</small></span>
-        <button class="btn icon" data-act="f.stopp" data-id="${laeuft.id}">${ic('i-stop')}</button></div>`; })()
-        : `<div class="fcard pad" style="text-align:center">
-          <div class="hint">Keine Zeit erfasst gerade</div>
-          <button class="btn primary wide" style="margin-top:9px;height:46px" data-act="f.werkstatt">${ic('i-play')} Werkstatt / interne Arbeit starten</button></div>`}
+      ${z ? (() => {
+        const auf = z.auftragId && Q.auftrag(z.auftragId);
+        const pausiert = z.typ === 'pause';
+        return `<div class="stempel ${pausiert ? 'pause' : 'aktiv'}">
+          <div class="uhr" id="fldUhr">${h(Fmt.std(L.dauer(z)))}</div>
+          <div class="was">
+            <b>${h(L.ZEITARTEN[z.typ].e)} ${h(L.ZEITARTEN[z.typ].t)}</b>
+            <small>${auf ? h(auf.titel) : h(z.bemerkung || 'ohne Auftrag')} · seit ${h(z.start)} Uhr</small>
+          </div>
+          <div class="row" style="gap:9px">
+            ${pausiert
+            ? `<button class="btn primary" style="flex:1;height:52px;font-size:16.5px" data-act="f.zeitWeiter">${ic('i-play')} Weiterarbeiten</button>`
+            : `<button class="btn" style="flex:1;height:52px;font-size:16.5px" data-act="f.zeitPause">${ic('i-pause')} Pause</button>`}
+            <button class="btn danger soft" style="flex:1;height:52px;font-size:16.5px" data-act="f.zeitStopp">${ic('i-stop')} Beenden</button>
+          </div>
+        </div>`;
+      })() : `
+        <div class="stempel bereit">
+          <div class="was" style="text-align:center">
+            <b style="font-size:15px">Keine Zeit erfasst</b>
+            <small>Heute bisher ${h(Fmt.std(tagMin))} h</small>
+          </div>
+          <div class="seg" style="width:100%">
+            ${['arbeit', 'fahrt', 'werkstatt'].map(t => `<button style="flex:1" data-act="f.zeitArt" data-v="${t}"${art === t ? ' aria-selected="true"' : ''}>${L.ZEITARTEN[t].e} ${h(L.ZEITARTEN[t].t)}</button>`).join('')}
+          </div>
+          ${offeneAuftraege.length ? `<select class="inp" id="fldZeitAuftrag" style="height:46px">
+            <option value="">Ohne Auftrag – allgemeine Zeit</option>
+            ${offeneAuftraege.map(x => `<option value="${x.id}"${S.ui.zeitAuftrag === x.id ? ' selected' : ''}>${h(x.titel)}</option>`).join('')}
+          </select>` : ''}
+          <button class="btn primary wide" style="height:58px;font-size:18px" data-act="f.zeitStart">${ic('i-play')} Zeit starten</button>
+        </div>`}
 
       <div class="fcard">
-        <div class="fcard-h"><h3>Diese Woche</h3><span class="chip ${wochenMin >= 42 * 60 ? 'ok' : ''}">${h(Fmt.std(wochenMin))} h</span></div>
+        <div class="fcard-h"><h3>Heute</h3><span class="chip ${tagMin ? '' : ''}">${h(Fmt.std(tagMin))} h</span></div>
+        <div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:7px">
+          ${heutige.length ? heutige.map(eintragZeile).join('')
+        : '<p class="hint">Noch nichts erfasst. Oben starten – oder unten nachtragen, wenn du es vergessen hast.</p>'}
+          <button class="btn wide" style="height:46px;margin-top:4px" data-act="f.zeitNachtragen">${ic('i-plus')} Zeit nachtragen</button>
+        </div>
+      </div>
+
+      <div class="fcard">
+        <div class="fcard-h"><h3>Diese Woche</h3>
+          <span class="chip ${wochenMin >= soll ? 'ok' : ''}">${h(Fmt.std(wochenMin))} h</span></div>
         <div style="padding:0 15px 15px;display:flex;flex-direction:column;gap:7px">
           ${tage.map(t => {
-        const m = minVon(t), heute = t === D.heute();
-        return `<div class="row" style="gap:11px;padding:9px 11px;border-radius:var(--r-s);background:${heute ? 'var(--tint-soft)' : 'var(--card-2)'}">
-              <span style="width:76px"><b style="font-size:13.5px">${h(Fmt.wochentag(t))}</b>
+          const m = L.tagMinuten(ich.id, t), ist = t === heute;
+          return `<button class="row" style="gap:11px;padding:9px 11px;border-radius:var(--r-s);background:${ist ? 'var(--tint-soft)' : 'var(--card-2)'};width:100%;text-align:left"
+              data-act="f.zeitTag" data-v="${t}">
+              <span style="width:74px"><b style="font-size:13.5px">${h(Fmt.wochentag(t))}</b>
               <div class="hint">${h(Fmt.datumKurz(t))}</div></span>
               <span class="bar" style="flex:1"><i style="width:${clamp(Math.round(m / (8.4 * 60) * 100), 0, 100)}%"></i></span>
               <span class="num" style="font-weight:660;width:52px;text-align:right">${m ? Fmt.std(m) : '–'}</span>
-            </div>`;
-      }).join('')}
+            </button>`;
+        }).join('')}
+          <div class="row" style="justify-content:space-between;padding-top:9px;border-top:1px solid var(--sep);margin-top:4px">
+            <span class="hint">Saldo zur Sollzeit</span>
+            <b class="num" style="color:${wochenMin - soll >= 0 ? 'var(--ok-txt)' : 'var(--warn-txt)'}">${wochenMin - soll >= 0 ? '+' : ''}${h(Fmt.std(wochenMin - soll))} h</b>
+          </div>
+          ${wocheEingereicht
+        ? '<div class="banner ok" style="margin-top:4px"><span class="ic">' + ic('i-check') + '</span><div>Woche ist beim Büro.</div></div>'
+        : `<button class="btn wide" style="height:46px;margin-top:4px" data-act="f.wocheEinreichen">${ic('i-doc')} Woche ans Büro senden</button>`}
         </div>
       </div>
 
       <div class="row" style="gap:9px">
-        <button class="btn" style="flex:1;height:46px" data-act="f.absenz">🌴 Absenz melden</button>
+        <button class="btn" style="flex:1;height:46px" data-act="f.absenz">🌴 Absenz</button>
         <button class="btn" style="flex:1;height:46px" data-act="f.spese">🧾 Spesen</button>
       </div>
 
       ${(() => {
-        const sp = DB.spesen.filter(s => s.benutzerId === ich.id).slice(0, 6);
+        const sp = DB.spesen.filter(x => x.benutzerId === ich.id).slice(0, 5);
         return sp.length ? `<div class="fcard"><div class="fcard-h"><h3>Letzte Spesen</h3></div>
           <div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:7px">
-          ${sp.map(s => `<div class="row" style="justify-content:space-between;padding:8px 11px;background:var(--card-2);border-radius:var(--r-s)">
-            <span><b style="font-size:13.5px">${h(s.art)}</b><div class="hint">${h(Fmt.datum(s.datum))}</div></span>
-            <span class="num" style="font-weight:660">${Fmt.chf(s.betrag)}</span></div>`).join('')}</div></div>` : '';
+          ${sp.map(x => `<div class="row" style="justify-content:space-between;padding:8px 11px;background:var(--card-2);border-radius:var(--r-s)">
+            <span><b style="font-size:13.5px">${h(x.art)}</b><div class="hint">${h(Fmt.datum(x.datum))}</div></span>
+            <span class="num" style="font-weight:660">${Fmt.chf(x.betrag)}</span></div>`).join('')}</div></div>` : '';
       })()}`,
-    mount() { Fld.uhrTicken(); }
+    mount(root) {
+      Fld.uhrTicken();
+      const sel = $('#fldZeitAuftrag', root);
+      if (sel) sel.addEventListener('change', () => { S.ui.zeitAuftrag = sel.value; });
+    }
   };
 };
 
@@ -4505,58 +4692,58 @@ const AKT = {
     };
   },
 
-  /** Ein Foto besorgen: Kamera, Datei — oder ein erzeugtes Demobild. */
-  async fotoHolen() {
-    return new Promise(res => {
-      const dlg = UI.dialog({
-        titel: 'Foto aufnehmen', weite: 'slim',
-        inhalt: `<div style="display:flex;flex-direction:column;gap:10px">
-          <button class="btn primary lg wide" data-f="kamera">${ic('i-kamera')} Kamera oder Datei</button>
-          <button class="btn lg wide" data-f="demo">🏠 Demo-Foto einfügen</button>
-          <p class="hint">Am Handy öffnet „Kamera" direkt die Kamera. Am Laptop ohne Kamera nimmst du für die Vorführung das Demo-Foto.</p>
-        </div>`,
-        beimSchliessen: () => res(null)
-      });
-      dlg.el.addEventListener('click', async e => {
-        const b = e.target.closest('[data-f]'); if (!b) return;
-        if (b.dataset.f === 'demo') { dlg.zu(); res(AKT.demoFoto()); return; }
-        dlg.zu();
-        if (typeof DWCap === 'undefined') { res(AKT.demoFoto()); return; }
-        const r = await DWCap.photo({ compressTo: 1280, quality: .72 });
-        res(r ? r.dataUrl : null);
-      });
-    });
+  /** Kamera oder Datei, direkt. Liefert null, wenn nichts kam. */
+  async fotoAufnehmen() {
+    if (typeof DWCap === 'undefined' || !DWCap.photo) return AKT.demoFoto();
+    const r = await DWCap.photo({ compressTo: 1280, quality: .72 });
+    return r ? r.dataUrl : null;
   },
 
-  /** Erzeugt ein plausibles Dachbild, damit die Demo auch ohne Kamera Bilder hat. */
+  /** Erzeugt ein Flachdachbild, damit sich die App auch ohne Kamera zeigen lässt. */
   demoFoto() {
     const c = document.createElement('canvas'); c.width = 640; c.height = 480;
     const x = c.getContext('2d');
-    const s = Date.now() % 5;
-    const himmel = x.createLinearGradient(0, 0, 0, 300);
+    const s = Math.floor(Date.now() / 1000) % 5;
+    const himmel = x.createLinearGradient(0, 0, 0, 210);
     himmel.addColorStop(0, ['#7FB3E8', '#9FC4E8', '#6E9CC9', '#B8CFE3', '#8FB8DE'][s]);
     himmel.addColorStop(1, '#DDE8F2');
-    x.fillStyle = himmel; x.fillRect(0, 0, 640, 300);
-    x.fillStyle = 'rgba(255,255,255,.55)';
-    for (let i = 0; i < 5; i++) { x.beginPath(); x.ellipse(80 + i * 130 + s * 17, 60 + (i % 3) * 26, 54, 20, 0, 0, 7); x.fill(); }
-    // Dachflaeche
-    x.fillStyle = ['#8C4A3A', '#7A4032', '#6B4C3F', '#94513E', '#5F4438'][s];
-    x.beginPath(); x.moveTo(0, 470); x.lineTo(320, 180); x.lineTo(640, 470); x.closePath(); x.fill();
-    // Ziegelreihen
-    x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 1.4;
-    for (let r = 0; r < 16; r++) {
-      const y = 200 + r * 17;
-      x.beginPath(); x.moveTo(320 - (y - 180) * 1.1, y); x.lineTo(320 + (y - 180) * 1.1, y); x.stroke();
-      for (let i = -12; i < 12; i++) {
-        const px = 320 + i * 27 + (r % 2 ? 13 : 0);
-        if (Math.abs(px - 320) < (y - 180) * 1.1) { x.beginPath(); x.moveTo(px, y); x.lineTo(px, y + 17); x.stroke(); }
-      }
+    x.fillStyle = himmel; x.fillRect(0, 0, 640, 210);
+    x.fillStyle = 'rgba(255,255,255,.5)';
+    for (let i = 0; i < 4; i++) { x.beginPath(); x.ellipse(90 + i * 160 + s * 19, 52 + (i % 3) * 22, 52, 18, 0, 0, 7); x.fill(); }
+
+    // Attika und Kiesfläche
+    x.fillStyle = '#8E8B85'; x.fillRect(0, 196, 640, 26);
+    x.fillStyle = '#6E6B66'; x.fillRect(0, 216, 640, 10);
+    x.fillStyle = '#ADA69A'; x.fillRect(0, 226, 640, 254);
+    for (let i = 0; i < 900; i++) {
+      const px = (i * 137) % 640, py = 230 + ((i * 61) % 246);
+      x.fillStyle = 'rgba(0,0,0,' + (0.06 + (i % 4) * 0.03) + ')';
+      x.beginPath(); x.arc(px, py, 1.2 + (i % 3) * 0.7, 0, 7); x.fill();
     }
-    // Kamin
-    x.fillStyle = '#B9B2AA'; x.fillRect(410, 215, 52, 78);
-    x.fillStyle = '#8E877F'; x.fillRect(404, 208, 64, 12);
-    x.fillStyle = 'rgba(0,0,0,.4)'; x.font = '600 15px -apple-system,sans-serif';
-    x.fillText('Demo-Foto · ' + new Date().toLocaleString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 14, 466);
+    // Solarreihe
+    x.fillStyle = '#2B3E63'; x.fillRect(48, 250, 250, 92);
+    x.strokeStyle = '#8E9AAE'; x.lineWidth = 2.4; x.strokeRect(48, 250, 250, 92);
+    x.lineWidth = 1.4;
+    for (let i = 1; i < 4; i++) { x.beginPath(); x.moveTo(48 + i * 62, 250); x.lineTo(48 + i * 62, 342); x.stroke(); }
+    x.beginPath(); x.moveTo(48, 296); x.lineTo(298, 296); x.stroke();
+    x.fillStyle = '#7A828C'; x.fillRect(48, 342, 250, 12);
+    // Ablauf
+    x.fillStyle = '#6E6B66'; x.beginPath(); x.arc(470, 392, 40, 0, 7); x.fill();
+    x.fillStyle = '#3C3A37'; x.beginPath(); x.arc(470, 392, 23, 0, 7); x.fill();
+    x.strokeStyle = '#9C9890'; x.lineWidth = 4; x.strokeRect(452, 374, 36, 36);
+    // Bewuchs und Laub — das, was ein Servicegang wegräumt
+    x.strokeStyle = '#4E7A3A'; x.lineWidth = 3.4; x.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const px = 340 + ((i * 71 + s * 23) % 270), py = 300 + ((i * 47) % 150);
+      x.beginPath(); x.moveTo(px, py); x.lineTo(px - 8, py - 26);
+      x.moveTo(px, py); x.lineTo(px + 1, py - 32);
+      x.moveTo(px, py); x.lineTo(px + 10, py - 24); x.stroke();
+    }
+    x.fillStyle = 'rgba(60,80,110,.30)';
+    x.beginPath(); x.ellipse(210, 430, 96, 22, 0, 0, 7); x.fill();
+
+    x.fillStyle = 'rgba(0,0,0,.42)'; x.font = '600 15px -apple-system,sans-serif';
+    x.fillText('Beispielbild · ' + new Date().toLocaleString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), 14, 468);
     return c.toDataURL('image/jpeg', .72);
   },
 
@@ -4676,7 +4863,7 @@ const AKT = {
                 fahrzeugId: g('nWer').value ? (Q.benutzer(g('nWer').value) || {}).fahrzeugId : null,
                 abrechnung: g('nAbr').value, pauschalBetrag: Number(g('nPausch').value || 0),
                 material: [], antworten: {}, fotos: [],
-                sicherheit: { erledigt: false, antworten: {} }, zeitLog: [], nachtraege: [], maengel: [], chat: [],
+                sicherheit: { erledigt: false, antworten: {} }, nachtraege: [], maengel: [], chat: [],
                 rapport: {}, rechnungId: null, erstellt: new Date().toISOString(), erstelltVon: S.benutzerId, geaendert: new Date().toISOString()
               };
               Store.aendern('Auftrag ' + neu.nr + ' angelegt', db => {
@@ -4727,6 +4914,22 @@ const AKT = {
    ================================================================== */
 Object.assign(AKT, {
 
+  /** Arbeit starten: ein Tipp. Fahrzeit läuft mit, der Kunde wird informiert. */
+  start(id) {
+    const a = Q.auftrag(id); if (!a) return;
+    Store.aendern('Arbeit gestartet', db => {
+      const x = db.auftraege.find(y => y.id === id);
+      L.uhrStart(x, 'arbeit', S.benutzerId);
+      L.setzeStatus(x, 'vorort', x.nr + ': Arbeit gestartet');
+      if (!(db.nachrichten || []).some(n => n.auftragId === x.id && n.vorlage === 'unterwegs')) {
+        L.nachrichtSenden(x, 'unterwegs');
+      }
+    }, false);
+    UI.toast('Zeit läuft – Kunde ist informiert', 'ok', { undo: false });
+    Nav.zeichnen();
+  },
+
+  /** Anfahrt getrennt erfassen, wenn jemand die Fahrzeit sauber will. */
   anfahrt(id) {
     const a = Q.auftrag(id); if (!a) return;
     Store.aendern('Anfahrt gestartet', db => {
@@ -4735,101 +4938,250 @@ Object.assign(AKT, {
       L.setzeStatus(x, 'unterwegs', x.nr + ': Anfahrt gestartet');
       L.nachrichtSenden(x, 'unterwegs');
     }, false);
-    UI.toast('Anfahrt läuft – Kunde ist informiert', 'ok', { undo: false });
     AKT.navi(id);
     Nav.zeichnen();
   },
 
-  angekommen(id) {
-    const a = Q.auftrag(id); if (!a) return;
-    const v = Q.vorlage(a.vorlageId);
-    Store.aendern('Angekommen', db => {
+  /**
+   * Sicherheit mit einem Tipp. Die fünf Punkte werden als geprüft
+   * festgehalten, mit Name und Uhrzeit — genau das, was der Betrieb
+   * später vorweisen muss. Wer sie einzeln durchgehen will, kann.
+   */
+  sicherAlles(id) {
+    const sv = DB.vorlagen.find(v => v.id === 'v-9') || { punkte: [] };
+    Store.aendern('Sicherheit bestätigt', db => {
       const x = db.auftraege.find(y => y.id === id);
-      L.uhrStopp(x, S.benutzerId);
-      L.uhrStart(x, 'arbeit', S.benutzerId);
-      L.setzeStatus(x, 'vorort', x.nr + ': vor Ort eingetroffen');
+      const ant = {};
+      sv.punkte.forEach(p => { ant[p.id] = true; });
+      x.sicherheit = {
+        erledigt: true, zeit: new Date().toISOString(), benutzerId: S.benutzerId,
+        antworten: ant, sammelbestaetigung: true
+      };
+      Store.log('sicherheit', 'Sicherheit bestätigt für ' + x.nr, x.id, '🦺');
     }, false);
+    if (navigator.vibrate) navigator.vibrate(30);
+    UI.toast('Bestätigt', 'ok', { undo: false });
     Nav.zeichnen();
-    if (v && v.sicherheitPflicht && !(a.sicherheit && a.sicherheit.erledigt)) setTimeout(() => AKT.sicherheit(id), 350);
   },
 
-  /** Der Sicherheitscheck. Ohne ihn geht auf dem Dach nichts los. */
-  sicherheit(id) {
+  /** Der lange Weg, freiwillig. */
+  sicherEinzeln(id) {
     const a = Q.auftrag(id); if (!a) return;
     const o = Q.objekt(a.objektId);
-    const sv = DB.vorlagen.find(v => v.name.toLowerCase().indexOf('sicherheit') >= 0);
-    const punkte = sv ? sv.punkte.filter(p => p.typ !== 'hinweis') : [
-      { id: 'sp1', label: 'Absturzsicherung geprüft und eingehängt' },
-      { id: 'sp2', label: 'Persönliche Schutzausrüstung vollständig und intakt' },
-      { id: 'sp3', label: 'Zugang, Leiter und Gerüst kontrolliert' },
-      { id: 'sp4', label: 'Wetterlage geprüft (Wind, Nässe, Eis)' },
-      { id: 'sp5', label: 'Absperrung im Fallbereich eingerichtet' }
-    ];
-    const fertig = !!(a.sicherheit && a.sicherheit.erledigt);
+    const sv = DB.vorlagen.find(v => v.id === 'v-9');
+    const punkte = sv ? sv.punkte : [];
     const ant = Object.assign({}, (a.sicherheit && a.sicherheit.antworten) || {});
     const w = L.wetterTag(D.heute()), amp = L.wetterAmpel(w);
 
     const dlg = UI.dialog({
-      titel: 'Sicherheitscheck', unter: fertig ? 'bereits quittiert' : 'vor Arbeitsbeginn – Pflicht',
+      titel: 'Sicherheit', unter: a.sicherheit && a.sicherheit.erledigt ? 'bereits bestätigt' : 'vor Arbeitsbeginn',
       inhalt: `
         ${amp.st !== 'ok' ? `<div class="banner ${amp.st === 'sperr' ? 'err' : 'warn'}"><span class="ic">${ic('i-warn')}</span>
           <div><b>${h(amp.t)}</b><br>${h(amp.grund)}</div></div>` : ''}
         ${o && o.zugang.absturzsicherung === 'keine' ? `<div class="banner err"><span class="ic">${ic('i-schild')}</span>
-          <div><b>Dieses Objekt hat keine feste Absturzsicherung.</b><br>Anseilen ist zwingend.</div></div>`
+          <div><b>Keine feste Absturzsicherung an diesem Objekt.</b><br>Anseilen ist zwingend.</div></div>`
         : o ? `<div class="banner ok"><span class="ic">${ic('i-check')}</span><div>Objekt hat: ${h(o.zugang.absturzsicherung)}</div></div>` : ''}
-        <div style="display:flex;flex-direction:column;gap:9px" id="secList">
+        <div style="display:flex;flex-direction:column;gap:9px">
           ${punkte.map(p => `<button class="bigcheck" data-sp="${p.id}" aria-pressed="${!!ant[p.id]}">
             <span class="bx">${ic('i-check')}</span><span>${h(p.label)}</span></button>`).join('')}
-        </div>
-        <p class="hint">Mit dem Quittieren bestätigst du, dass die Punkte tatsächlich geprüft sind. Der Eintrag wird mit Name und Uhrzeit festgehalten.</p>`,
-      aktionen: fertig ? [{ text: 'Schliessen' }] : [
-        { text: 'Später' },
+        </div>`,
+      aktionen: [
+        { text: 'Zurück' },
         {
-          text: 'Quittieren und starten', art: 'ok', fn: w2 => {
-            const offen = punkte.filter(p => !ant[p.id]);
-            if (offen.length) { UI.toast(offen.length + ' Punkt' + (offen.length > 1 ? 'e' : '') + ' noch offen', 'warn'); return false; }
-            Store.aendern('Sicherheitscheck quittiert', db => {
+          text: 'Bestätigen', art: 'ok', fn: () => {
+            Store.aendern('Sicherheit bestätigt', db => {
               const x = db.auftraege.find(y => y.id === id);
-              x.sicherheit = { erledigt: true, zeit: new Date().toISOString(), benutzerId: S.benutzerId, antworten: ant };
-              if (x.status !== 'vorort') L.setzeStatus(x, 'vorort');
-              if (!L.laufend(x, S.benutzerId)) L.uhrStart(x, 'arbeit', S.benutzerId);
-              Store.log('sicherheit', 'Sicherheitscheck quittiert für ' + x.nr, x.id, '🦺');
+              x.sicherheit = {
+                erledigt: true, zeit: new Date().toISOString(), benutzerId: S.benutzerId,
+                antworten: ant, sammelbestaetigung: false
+              };
+              Store.log('sicherheit', 'Sicherheit einzeln geprüft für ' + x.nr, x.id, '🦺');
             }, false);
-            UI.toast('Sicherheitscheck quittiert', 'ok', { undo: false });
             Nav.zeichnen();
           }
         }
       ]
     });
     dlg.el.addEventListener('click', e => {
-      const b = e.target.closest('[data-sp]'); if (!b || fertig) return;
+      const b = e.target.closest('[data-sp]'); if (!b) return;
       const k = b.dataset.sp; ant[k] = !ant[k];
       b.setAttribute('aria-pressed', String(!!ant[k]));
     });
   },
 
-  pause(id) {
+  /** Alle offenen Haken einer Checkliste auf einmal setzen. */
+  alleHaken(id) {
+    const a = Q.auftrag(id), v = Q.vorlage(a && a.vorlageId);
+    if (!v) return;
+    const offen = v.punkte.filter(p => p.typ === 'haken'
+      && L.punktSichtbar(p, a.antworten || {}) && !(a.antworten || {})[p.id]);
+    if (!offen.length) return UI.toast('Nichts mehr abzuhaken', 'ok', { undo: false });
+    Store.aendern(offen.length + ' Punkte abgehakt', db => {
+      const x = db.auftraege.find(y => y.id === id);
+      x.antworten = x.antworten || {};
+      offen.forEach(p => { x.antworten[p.id] = true; });
+    });
+    Nav.zeichnen();
+  },
+
+  /* — Zeit — */
+  pause() { AKT.zeitPause(); },
+  weiter(id) { AKT.zeitWeiter(id); },
+  stopp() { AKT.zeitStopp(); },
+
+  zeitStart(auftragId, typ) {
+    const art = typ || S.ui.zeitArt || 'arbeit';
+    const sel = $('#fldZeitAuftrag');
+    const aid = auftragId || (sel ? sel.value : S.ui.zeitAuftrag) || null;
+    const a = aid ? Q.auftrag(aid) : null;
+    Store.aendern('Zeit gestartet', db => {
+      L.uhrStart(a, art, S.benutzerId);
+      if (a && art === 'arbeit' && ['neu', 'geplant', 'unterwegs'].includes(a.status)) {
+        L.setzeStatus(db.auftraege.find(x => x.id === a.id), 'vorort');
+      }
+    }, false);
+    if (navigator.vibrate) navigator.vibrate(25);
+    Nav.zeichnen();
+  },
+
+  zeitPause() {
+    const z = L.laufendEintrag(S.benutzerId);
+    if (!z) return;
+    const aid = z.auftragId;
     Store.aendern('Pause', db => {
-      const x = db.auftraege.find(y => y.id === id);
-      L.uhrStopp(x, S.benutzerId);
-      L.uhrStart(x, 'pause', S.benutzerId);
-      L.setzeStatus(x, 'pausiert', x.nr + ': Pause');
+      L.uhrStopp(S.benutzerId);
+      const a = aid ? db.auftraege.find(x => x.id === aid) : null;
+      L.uhrStart(a, 'pause', S.benutzerId, 'Pause');
+      if (a && a.status === 'vorort') L.setzeStatus(a, 'pausiert', a.nr + ': Pause');
     }, false);
     Nav.zeichnen();
   },
 
-  weiter(id) {
+  zeitWeiter(auftragId) {
+    const z = L.laufendEintrag(S.benutzerId);
+    const aid = auftragId || (z && z.auftragId);
     Store.aendern('Weiter', db => {
-      const x = db.auftraege.find(y => y.id === id);
-      L.uhrStopp(x, S.benutzerId);
-      L.uhrStart(x, 'arbeit', S.benutzerId);
-      L.setzeStatus(x, 'vorort', x.nr + ': Arbeit fortgesetzt');
+      L.uhrStopp(S.benutzerId);
+      const a = aid ? db.auftraege.find(x => x.id === aid) : null;
+      L.uhrStart(a, 'arbeit', S.benutzerId);
+      if (a && a.status === 'pausiert') L.setzeStatus(a, 'vorort', a.nr + ': Arbeit fortgesetzt');
     }, false);
     Nav.zeichnen();
   },
 
-  stopp(id) {
-    Store.aendern('Zeit gestoppt', db => { L.uhrStopp(db.auftraege.find(y => y.id === id), S.benutzerId); }, false);
+  zeitStopp() {
+    const z = L.laufendEintrag(S.benutzerId);
+    if (!z) return;
+    const dauer = L.dauer(z);
+    Store.aendern('Zeit gestoppt', db => {
+      L.uhrStopp(S.benutzerId);
+      const a = z.auftragId ? db.auftraege.find(x => x.id === z.auftragId) : null;
+      if (a && a.status === 'pausiert') L.setzeStatus(a, 'vorort');
+    }, false);
+    UI.toast(Fmt.std(dauer) + ' h erfasst', 'ok', { undo: false });
+    Nav.zeichnen();
+  },
+
+  /** Einen Eintrag ändern oder löschen — auch den laufenden. */
+  async zeitBearbeiten(id) {
+    const z = DB.zeiten.find(x => x.id === id);
+    if (!z) return;
+    const auftraege = DB.auftraege
+      .filter(a => (a.zugewiesen || []).includes(S.benutzerId) || a.id === z.auftragId)
+      .slice(0, 30);
+    const r = await UI.formular('Zeit ändern', [
+      { k: 'datum', label: 'Datum', typ: 'date', wert: z.datum, pflicht: true },
+      { k: 'typ', label: 'Art', typ: 'select', wert: z.typ, optionen: Object.keys(L.ZEITARTEN).map(t => ({ v: t, t: L.ZEITARTEN[t].e + ' ' + L.ZEITARTEN[t].t }) ) },
+      { k: 'start', label: 'Von', typ: 'time', wert: z.start, pflicht: true },
+      { k: 'ende', label: 'Bis', typ: 'time', wert: z.ende || D.jetzt() },
+      { k: 'pausenMin', label: 'Pause (Minuten)', typ: 'number', wert: z.pausenMin || 0 },
+      { k: 'auftragId', label: 'Auftrag', typ: 'select', breit: true, wert: z.auftragId || '', optionen: [{ v: '', t: 'ohne Auftrag' }].concat(auftraege.map(a => ({ v: a.id, t: a.nr + ' · ' + a.titel }))) },
+      { k: 'bemerkung', label: 'Bemerkung', wert: z.bemerkung, breit: true },
+      { k: 'loeschen', label: 'Eintrag löschen', typ: 'schalter', wert: false }
+    ], 'Speichern');
+    if (!r) return;
+    if (r.loeschen) {
+      Store.aendern('Zeiteintrag gelöscht', db => { db.zeiten = db.zeiten.filter(x => x.id !== id); });
+      Nav.zeichnen();
+      return;
+    }
+    if (D.minuten(r.ende) <= D.minuten(r.start)) return UI.toast('Das Ende liegt vor dem Beginn', 'err');
+    Store.aendern('Zeit geändert', db => {
+      const x = db.zeiten.find(y => y.id === id);
+      Object.assign(x, {
+        datum: r.datum, typ: r.typ, start: r.start, ende: r.ende,
+        pausenMin: Number(r.pausenMin) || 0, auftragId: r.auftragId || null,
+        bemerkung: r.bemerkung, eingereicht: false
+      });
+    });
+    Nav.zeichnen();
+  },
+
+  /** Vergessene Zeit nachtragen — der häufigste Fall im Alltag. */
+  async zeitNachtragen(datum) {
+    const auftraege = DB.auftraege.filter(a => (a.zugewiesen || []).includes(S.benutzerId)).slice(0, 30);
+    const letzte = DB.zeiten.filter(z => z.benutzerId === S.benutzerId && z.ende)
+      .sort((a, b) => (b.datum + b.ende).localeCompare(a.datum + a.ende))[0];
+    const r = await UI.formular('Zeit nachtragen', [
+      { k: 'datum', label: 'Datum', typ: 'date', wert: datum || D.heute(), pflicht: true },
+      { k: 'typ', label: 'Art', typ: 'select', wert: 'arbeit', optionen: Object.keys(L.ZEITARTEN).map(t => ({ v: t, t: L.ZEITARTEN[t].e + ' ' + L.ZEITARTEN[t].t })) },
+      { k: 'start', label: 'Von', typ: 'time', wert: letzte && letzte.datum === (datum || D.heute()) ? letzte.ende : '07:00', pflicht: true },
+      { k: 'ende', label: 'Bis', typ: 'time', wert: D.hhmm(Math.min(D.minuten(D.jetzt()) || 17 * 60, 17 * 60)), pflicht: true },
+      { k: 'pausenMin', label: 'Pause (Minuten)', typ: 'number', wert: 0 },
+      { k: 'auftragId', label: 'Auftrag', typ: 'select', breit: true, wert: '', optionen: [{ v: '', t: 'ohne Auftrag' }].concat(auftraege.map(a => ({ v: a.id, t: a.nr + ' · ' + a.titel }))) },
+      { k: 'bemerkung', label: 'Bemerkung', wert: '', breit: true, platzhalter: 'z. B. Material geholt, Fahrzeug gerüstet' }
+    ], 'Eintragen');
+    if (!r) return;
+    if (D.minuten(r.ende) <= D.minuten(r.start)) return UI.toast('Das Ende liegt vor dem Beginn', 'err');
+    Store.aendern('Zeit nachgetragen', db => {
+      db.zeiten.unshift({
+        id: uid('z'), benutzerId: S.benutzerId, auftragId: r.auftragId || null,
+        datum: r.datum, start: r.start, ende: r.ende, pausenMin: Number(r.pausenMin) || 0,
+        typ: r.typ, bemerkung: r.bemerkung, freigegeben: false, freigegebenVon: null, eingereicht: false
+      });
+    });
+    Nav.zeichnen();
+  },
+
+  /** Ein Tag der Wochenübersicht: Einträge sehen und ergänzen. */
+  zeitTag(datum) {
+    const eintraege = DB.zeiten.filter(z => z.benutzerId === S.benutzerId && z.datum === datum)
+      .sort((a, b) => D.minuten(a.start) - D.minuten(b.start));
+    const min = L.tagMinuten(S.benutzerId, datum);
+    UI.dialog({
+      titel: Fmt.wochentag(datum, true) + ', ' + Fmt.datum(datum),
+      unter: Fmt.std(min) + ' h erfasst',
+      inhalt: eintraege.length
+        ? `<div style="display:flex;flex-direction:column;gap:7px">${eintraege.map(z => {
+          const auf = z.auftragId && Q.auftrag(z.auftragId);
+          const kind = L.ZEITARTEN[z.typ] || { t: z.typ, e: '•' };
+          return `<button class="zeile" data-act="f.zeitBearbeiten" data-id="${z.id}">
+              <span class="e">${kind.e}</span>
+              <span class="bd"><b>${h(z.start)}–${h(z.ende || 'jetzt')}</b>
+              <small>${h(kind.t)}${auf ? ' · ' + h(auf.titel) : (z.bemerkung ? ' · ' + h(z.bemerkung) : '')}</small></span>
+              <span class="rt"><b class="num">${h(Fmt.std(L.dauer(z)))}</b></span></button>`;
+        }).join('')}</div>`
+        : '<p class="hint">An diesem Tag ist nichts erfasst.</p>',
+      aktionen: [
+        { text: 'Schliessen' },
+        { text: 'Zeit nachtragen', art: 'primary', fn: () => setTimeout(() => AKT.zeitNachtragen(datum), 120) }
+      ]
+    });
+  },
+
+  async wocheEinreichen() {
+    const montag = D.montag(D.heute());
+    const woche = DB.zeiten.filter(z => z.benutzerId === S.benutzerId
+      && z.datum >= montag && z.datum <= D.plus(montag, 6) && z.ende && !z.eingereicht && !z.freigegeben);
+    if (!woche.length) return UI.toast('Alles bereits gesendet', 'ok', { undo: false });
+    const min = L.wochenMinuten(S.benutzerId, montag);
+    const ok = await UI.bestaetigen('Woche ans Büro senden',
+      woche.length + ' Einträge mit ' + Fmt.std(min) + ' Stunden gehen zur Freigabe. Ändern kannst du sie danach immer noch.', 'Senden');
+    if (!ok) return;
+    Store.aendern('Woche gesendet', db => {
+      db.zeiten.forEach(z => { if (woche.some(w => w.id === z.id)) z.eingereicht = true; });
+      Store.log('zeit', Q.ich().name + ' hat die Woche eingereicht (' + Fmt.std(min) + ' h)', null, '🕓');
+    });
     Nav.zeichnen();
   },
 
@@ -4855,7 +5207,6 @@ Object.assign(AKT, {
       let m = DB.material.filter(x => (x.bestand[lager.id] || 0) > 0 || mengen[x.id]);
       if (suche) { const s = esc(suche); m = DB.material.filter(x => esc(x.name).includes(s) || esc(x.artikelnr).includes(s) || String(x.ean).includes(s)); }
       if (vorwahlId) m = [Q.artikel(vorwahlId)].filter(Boolean).concat(m.filter(x => x.id !== vorwahlId));
-      // Geplantes Material des Auftrags zuoberst
       if (a && !suche) {
         const geplant = (a.material || []).map(x => x.artikelId);
         m.sort((x, y) => (geplant.indexOf(y.id) - geplant.indexOf(x.id)));
@@ -4953,7 +5304,7 @@ Object.assign(AKT, {
 
   async nachtrag(id) {
     const r = await UI.formular('Nachtrag melden', [
-      { k: 'text', label: 'Was ist zusätzlich nötig?', typ: 'textarea', pflicht: true, breit: true, platzhalter: 'z. B. Unterdachbahn auf 6 m² beschädigt – muss ersetzt werden' },
+      { k: 'text', label: 'Was ist zusätzlich nötig?', typ: 'textarea', pflicht: true, breit: true, platzhalter: 'z. B. Zwei Abläufe komplett zugewachsen, Wurzeln müssen mechanisch heraus' },
       { k: 'min', label: 'Geschätzter Mehraufwand (Minuten)', typ: 'number', wert: 60 }
     ], 'An Büro senden');
     if (!r) return;
@@ -4970,12 +5321,13 @@ Object.assign(AKT, {
   },
 
   async mangel(id) {
-    const foto = await AKT.fotoHolen();
     const r = await UI.formular('Mangel festhalten', [
-      { k: 'text', label: 'Was ist der Mangel?', typ: 'textarea', pflicht: true, breit: true, platzhalter: 'z. B. Rinnenhalter korrodiert, Rinne hängt durch' },
-      { k: 'schwere', label: 'Schwere', typ: 'select', wert: 'mittel', optionen: [{ v: 'gering', t: 'Gering' }, { v: 'mittel', t: 'Mittel' }, { v: 'gravierend', t: 'Gravierend – sofort handeln' }] }
+      { k: 'text', label: 'Was ist der Mangel?', typ: 'textarea', pflicht: true, breit: true, platzhalter: 'z. B. Wurzeln im Kiesstreifen, stellenweise bis an die Abdichtung' },
+      { k: 'schwere', label: 'Schwere', typ: 'select', wert: 'mittel', optionen: [{ v: 'gering', t: 'Gering' }, { v: 'mittel', t: 'Mittel' }, { v: 'gravierend', t: 'Gravierend – sofort handeln' }] },
+      { k: 'foto', label: 'Foto anhängen', typ: 'schalter', wert: true }
     ], 'Melden');
     if (!r) return;
+    const foto = r.foto ? await AKT.fotoAufnehmen() : null;
     Store.aendern('Mangel gemeldet', db => {
       const a = db.auftraege.find(x => x.id === id);
       (a.maengel = a.maengel || []).push({ id: uid('mg'), text: r.text, foto: foto || null, schwere: r.schwere, offen: true, punktId: null, zeit: new Date().toISOString() });
@@ -4988,12 +5340,11 @@ Object.assign(AKT, {
 
   async frage(id) {
     const r = await UI.formular('Rückfrage ans Büro', [
-      { k: 'text', label: 'Nachricht', typ: 'textarea', pflicht: true, breit: true, platzhalter: 'z. B. Ziegelfarbe stimmt nicht mit Bestand überein – welche nehmen?' },
-      { k: 'foto', label: 'Foto anhängen', typ: 'schalter', wert: true }
+      { k: 'text', label: 'Nachricht', typ: 'textarea', pflicht: true, breit: true, platzhalter: 'z. B. Ablauf ist verengt – ersetzen oder nur spülen?' },
+      { k: 'foto', label: 'Foto anhängen', typ: 'schalter', wert: false }
     ], 'Senden');
     if (!r) return;
-    let foto = null;
-    if (r.foto) foto = await AKT.fotoHolen();
+    const foto = r.foto ? await AKT.fotoAufnehmen() : null;
     Store.aendern('Nachricht gesendet', db => {
       const a = db.auftraege.find(x => x.id === id);
       (a.chat = a.chat || []).push({ von: S.benutzerId, text: r.text, foto: foto || null, zeit: new Date().toISOString(), gelesen: false });
@@ -5003,47 +5354,50 @@ Object.assign(AKT, {
     Nav.zeichnen();
   },
 
-  /** Abschluss: prueft die Pflichten, holt die Unterschrift, schliesst ab. */
+  /**
+   * Abschluss. Die App hält niemanden auf: Was fehlt, steht da und lässt
+   * sich mit einem Tipp erledigen — oder man schliesst trotzdem ab, dann
+   * geht die Abweichung als Vermerk ans Büro.
+   */
   async abschluss(id) {
     const a = Q.auftrag(id); if (!a) return;
     const v = Q.vorlage(a.vorlageId);
-    const offen = L.offenePflicht(a);
-    const vorher = (a.fotos || []).filter(f => f.phase === 'vorher');
-    const nachher = (a.fotos || []).filter(f => f.phase === 'nachher');
-    const fehlt = [];
-    if (v && v.sicherheitPflicht && !(a.sicherheit && a.sicherheit.erledigt)) fehlt.push('Sicherheitscheck ist nicht quittiert');
-    if (v && v.fotoVorherPflicht && !vorher.length) fehlt.push('Foto „vorher" fehlt');
-    if (v && v.fotoNachherPflicht && !nachher.length) fehlt.push('Foto „nachher" fehlt');
-    offen.forEach(p => fehlt.push('Offen: ' + p.label));
-    if (fehlt.length) {
-      UI.dialog({
-        titel: 'Noch nicht abschliessbar', weite: 'slim',
-        inhalt: `<div class="banner warn"><span class="ic">${ic('i-warn')}</span><div><b>Das Büro verlangt diese Punkte:</b></div></div>
-          <ul style="display:flex;flex-direction:column;gap:7px">${fehlt.map(f => `<li class="row" style="gap:8px;font-size:14px"><span>•</span><span>${h(f)}</span></li>`).join('')}</ul>`,
-        aktionen: [{ text: 'Verstanden', art: 'primary' }]
-      });
-      return;
-    }
-
     const kunde = Q.kunde(a.kundeId);
-    let sig = null, pad = null;
+    let pad = null;
+
+    const offen = () => {
+      const x = Q.auftrag(id);
+      const vorher = (x.fotos || []).filter(f => f.phase === 'vorher' && !f.punktId);
+      const nachher = (x.fotos || []).filter(f => f.phase === 'nachher' && !f.punktId);
+      const liste = [];
+      if (v && v.sicherheitPflicht && !(x.sicherheit && x.sicherheit.erledigt))
+        liste.push({ k: 'sicher', t: 'Sicherheit nicht bestätigt', b: 'Jetzt bestätigen', act: 'f.sicherAlles' });
+      if (v && v.fotoVorherPflicht && !vorher.length)
+        liste.push({ k: 'vorher', t: 'Foto „vorher" fehlt', b: 'Beispiel einsetzen', act: 'f.abschlussFoto', phase: 'vorher' });
+      if (v && v.fotoNachherPflicht && !nachher.length)
+        liste.push({ k: 'nachher', t: 'Foto „nachher" fehlt', b: 'Beispiel einsetzen', act: 'f.abschlussFoto', phase: 'nachher' });
+      const p = L.offenePflicht(x);
+      if (p.length) liste.push({ k: 'punkte', t: p.length + ' Pflichtpunkt' + (p.length > 1 ? 'e' : '') + ' offen: ' + p.slice(0, 2).map(y => y.label).join(', '), b: 'Abhaken', act: 'f.alleHaken' });
+      return liste;
+    };
+
     const dlg = UI.dialog({
       titel: 'Arbeit abschliessen', unter: a.titel,
       inhalt: `
-        <div class="field"><label>Bemerkung zum Rapport</label>
+        <div id="abOffen"></div>
+        <div class="field"><label>Bemerkung für den Rapport</label>
           <textarea class="inp" id="abBem" rows="2" placeholder="Was der Kunde wissen muss">${h((a.rapport && a.rapport.bemerkung) || '')}</textarea></div>
         <div class="grid g2">
           <div class="field"><label>Arbeitszeit total</label><input class="inp" value="${h(Fmt.std(L.minuten(a, 'arbeit')))} h" disabled></div>
           <div class="field"><label>Materialpositionen</label><input class="inp" value="${(a.material || []).filter(m => m.mengeVerbraucht > 0).length}" disabled></div>
         </div>
-        ${v && v.unterschriftPflicht ? `
-        <div class="field"><label>Unterschrift des Kunden <span class="req">*</span></label>
+        <div class="field"><label>Unterschrift des Kunden ${v && v.unterschriftPflicht ? '' : '(optional)'}</label>
           <canvas class="sig-pad" id="abSig"></canvas>
           <div class="row" style="margin-top:7px">
             <input class="inp" id="abName" placeholder="Name der unterzeichnenden Person" value="${h(kunde ? (kunde.kontaktperson || kunde.name) : '')}">
-            <button class="btn sm" id="abClear">Löschen</button>
+            <button class="btn sm" id="abClear" type="button">Löschen</button>
           </div>
-          <span class="hint">Der Kunde unterschreibt direkt auf dem Bildschirm.</span></div>` : ''}
+          <span class="hint">Ist niemand da: leer lassen, der Rapport geht per Mail.</span></div>
         <label class="row" style="justify-content:space-between;padding:11px;background:var(--card-2);border-radius:var(--r-s)">
           <span><b style="font-size:14px">Rapport an den Kunden senden</b><br><small class="hint">mit Fotos und Unterschrift</small></span>
           <span class="sw"><input type="checkbox" id="abSend" checked><i></i></span></label>`,
@@ -5051,41 +5405,60 @@ Object.assign(AKT, {
         { text: 'Zurück' },
         {
           text: 'Abschliessen', art: 'ok', fn: w => {
-            const name = w.querySelector('#abName') ? w.querySelector('#abName').value.trim() : '';
-            if (v && v.unterschriftPflicht) {
-              if (!pad || pad.leer()) { UI.toast('Die Unterschrift fehlt noch', 'warn'); return false; }
-              if (!name) { UI.toast('Name der unterzeichnenden Person fehlt', 'warn'); return false; }
-              sig = pad.toDataURL();
-            }
+            const rest = offen();
+            const name = w.querySelector('#abName').value.trim();
+            const sig = pad && !pad.leer() ? pad.toDataURL() : null;
             const senden = w.querySelector('#abSend').checked;
             const bem = w.querySelector('#abBem').value.trim();
             Store.aendern('Auftrag abgeschlossen', db => {
               const x = db.auftraege.find(y => y.id === id);
-              L.uhrStopp(x, S.benutzerId);
+              L.uhrStopp(S.benutzerId);
               x.rapport = Object.assign(x.rapport || {}, {
-                bemerkung: bem, wetter: L.wetterTag(D.heute()), kundeAnwesend: !!name,
-                unterschriftKunde: sig, unterschriftName: name, unterschriftZeit: new Date().toISOString(),
-                abgeschlossenZeit: new Date().toISOString(), abgeschlossenVon: S.benutzerId
+                bemerkung: bem, wetter: L.wetterTag(D.heute()), kundeAnwesend: !!sig,
+                unterschriftKunde: sig, unterschriftName: sig ? name : '',
+                unterschriftZeit: sig ? new Date().toISOString() : null,
+                abgeschlossenZeit: new Date().toISOString(), abgeschlossenVon: S.benutzerId,
+                abweichungen: rest.map(r2 => r2.t)
               });
               L.setzeStatus(x, 'erledigt', x.nr + ' abgeschlossen');
-              // Zeiten in die Personalzeiterfassung uebernehmen
-              (x.zeitLog || []).filter(z => z.ende && z.typ !== 'pause').forEach(z => {
-                if (db.zeiten.some(t => t.id === 'z-' + z.id)) return;
-                db.zeiten.unshift({
-                  id: 'z-' + z.id, benutzerId: z.benutzerId, auftragId: x.id, datum: z.datum || D.heute(),
-                  start: z.start, ende: z.ende, pausenMin: 0, typ: z.typ === 'fahrt' ? 'fahrt' : 'arbeit',
-                  bemerkung: x.titel, freigegeben: false, freigegebenVon: null
+              if (rest.length) {
+                (x.chat = x.chat || []).push({
+                  von: S.benutzerId, foto: null, zeit: new Date().toISOString(), gelesen: false,
+                  text: 'Abgeschlossen mit Abweichung: ' + rest.map(r2 => r2.t).join(' · ')
                 });
-              });
+                Store.log('abweichung', x.nr + ' mit Abweichung abgeschlossen: ' + rest.map(r2 => r2.t).join(', '), x.id, '⚠️');
+              }
               if (senden) L.nachrichtSenden(x, 'bericht');
-              Store.log('abschluss', x.nr + ' abgeschlossen' + (senden ? ', Rapport an Kunde' : ''), x.id, '✅');
             }, false);
-            UI.toast('Abgeschlossen – das Büro hat alles', 'ok', { undo: false });
+            UI.toast(rest.length ? 'Abgeschlossen – Büro sieht die Abweichung' : 'Abgeschlossen', 'ok', { undo: false });
             Nav.gehe('f/heute');
           }
         }
       ],
       beimOeffnen(w) {
+        const zeichneOffen = () => {
+          const rest = offen();
+          w.querySelector('#abOffen').innerHTML = rest.length
+            ? `<div class="banner warn"><span class="ic">${ic('i-warn')}</span>
+                <div style="flex:1"><b>Das Büro hätte gerne noch:</b>
+                <div style="display:flex;flex-direction:column;gap:7px;margin-top:7px">
+                  ${rest.map(r2 => `<div class="row" style="gap:9px">
+                    <span style="flex:1;font-size:13px">${h(r2.t)}</span>
+                    <button class="btn sm" data-fix="${r2.act}"${r2.phase ? ` data-phase="${r2.phase}"` : ''} data-id="${id}">${h(r2.b)}</button>
+                  </div>`).join('')}
+                </div>
+                <div class="hint" style="margin-top:7px">Du kannst trotzdem abschliessen – dann geht ein Vermerk ans Büro.</div></div></div>`
+            : `<div class="banner ok"><span class="ic">${ic('i-check')}</span><div>Alles beisammen.</div></div>`;
+        };
+        zeichneOffen();
+        w.addEventListener('click', async e => {
+          const b = e.target.closest('[data-fix]'); if (!b) return;
+          e.preventDefault();
+          if (b.dataset.fix === 'f.sicherAlles') AKT.sicherAlles(id);
+          else if (b.dataset.fix === 'f.alleHaken') AKT.alleHaken(id);
+          else if (b.dataset.fix === 'f.abschlussFoto') AKT.fotoAnhaengen(id, AKT.demoFoto(), b.dataset.phase, null);
+          zeichneOffen();
+        });
         const c = w.querySelector('#abSig');
         if (c && typeof DWCap !== 'undefined' && DWCap.signature) {
           pad = DWCap.signature(c, { farbe: getComputedStyle(document.body).getPropertyValue('--txt').trim(), dicke: 2.4 });
@@ -5122,9 +5495,7 @@ Object.assign(AKT, {
     });
   }
 });
-</script>
 
-<script>
 /* ==================================================================
    33 · Aktionen des Büros
    ================================================================== */
@@ -5265,7 +5636,7 @@ Object.assign(AKT, {
         termin: { datum: D.plus(D.heute(), 7), von: '08:00', bis: '11:00' }, dauerGeplantMin: 180,
         zugewiesen: [], abrechnung: 'regie', pauschalBetrag: 0, material: [], antworten: {},
         fotos: m.foto ? [{ id: uid('f'), dataUrl: m.foto, phase: 'vorher', zeit: new Date().toISOString(), benutzerId: S.benutzerId, notiz: 'Mangel aus ' + alt.nr }] : [],
-        sicherheit: { erledigt: false }, zeitLog: [], nachtraege: [], maengel: [], chat: [],
+        sicherheit: { erledigt: false }, nachtraege: [], maengel: [], chat: [],
         rapport: {}, rechnungId: null, erstellt: new Date().toISOString(), erstelltVon: S.benutzerId
       };
       db.auftraege.unshift(neu);
@@ -5556,7 +5927,8 @@ const ROUTEN = {
     Nav.zeichnen();
   },
 
-  'foto.neu': async el => AKT.fotoAnhaengen(el.dataset.a, await AKT.fotoHolen(), el.dataset.phase, el.dataset.p),
+  'foto.kamera': async el => AKT.fotoAnhaengen(el.dataset.a, await AKT.fotoAufnehmen(), el.dataset.phase, el.dataset.p),
+  'foto.beispiel': el => AKT.fotoAnhaengen(el.dataset.a, AKT.demoFoto(), el.dataset.phase, el.dataset.p),
   'foto.weg': async el => {
     if (!await UI.bestaetigen('Foto löschen', 'Das Bild wird aus der Dokumentation entfernt.', 'Löschen', 'danger')) return;
     Store.aendern('Foto gelöscht', db => {
@@ -5568,12 +5940,14 @@ const ROUTEN = {
   'foto.gross': el => AKT.fotoGross(el.dataset.a, el.dataset.id),
   'sig.neu': el => AKT.unterschriftPunkt(el.dataset.a, el.dataset.p),
 
+  'f.start': el => AKT.start(el.dataset.id),
   'f.anfahrt': el => AKT.anfahrt(el.dataset.id),
-  'f.angekommen': el => AKT.angekommen(el.dataset.id),
-  'f.sicherheit': el => AKT.sicherheit(el.dataset.id),
-  'f.pause': el => AKT.pause(el.dataset.id),
-  'f.weiter': el => AKT.weiter(el.dataset.id),
-  'f.stopp': el => AKT.stopp(el.dataset.id),
+  'f.sicherAlles': el => AKT.sicherAlles(el.dataset.id),
+  'f.sicherEinzeln': el => AKT.sicherEinzeln(el.dataset.id),
+  'f.alleHaken': el => AKT.alleHaken(el.dataset.id),
+  'f.pause': () => AKT.zeitPause(),
+  'f.weiter': el => AKT.zeitWeiter(el.dataset.id),
+  'f.stopp': () => AKT.zeitStopp(),
   'f.abschluss': el => AKT.abschluss(el.dataset.id),
   'f.navi': el => AKT.navi(el.dataset.id),
   'f.material': el => AKT.material(el.dataset.id),
@@ -5589,7 +5963,15 @@ const ROUTEN = {
   }),
   'f.nachschub': () => AKT.nachschub(),
   'f.filter': el => { S.ui.fFilter = el.dataset.v; Nav.zeichnen(); },
-  'f.werkstatt': () => AKT.werkstatt(),
+  'f.zeitArt': el => { S.ui.zeitArt = el.dataset.v; Nav.zeichnen(); },
+  'f.zeitStart': () => AKT.zeitStart(),
+  'f.zeitPause': () => AKT.zeitPause(),
+  'f.zeitWeiter': () => AKT.zeitWeiter(),
+  'f.zeitStopp': () => AKT.zeitStopp(),
+  'f.zeitBearbeiten': el => AKT.zeitBearbeiten(el.dataset.id),
+  'f.zeitNachtragen': () => AKT.zeitNachtragen(),
+  'f.zeitTag': el => AKT.zeitTag(el.dataset.v),
+  'f.wocheEinreichen': () => AKT.wocheEinreichen(),
   'f.absenz': () => AKT.absenzNeu(true),
   'f.spese': () => AKT.speseNeu(),
   'f.unfall': () => AKT.unfall(),
@@ -5915,7 +6297,7 @@ Object.assign(AKT, {
   },
 
   async speseNeu() {
-    const beleg = await AKT.fotoHolen();
+    const beleg = await AKT.fotoAufnehmen();
     const r = await UI.formular('Spesen erfassen', [
       { k: 'art', label: 'Art', typ: 'select', wert: 'Verpflegung', optionen: ['Verpflegung', 'Material', 'Parkgebühr', 'Km'] },
       { k: 'betrag', label: 'Betrag CHF', typ: 'number', wert: 0, pflicht: true, schritt: '0.05' },
@@ -5925,18 +6307,6 @@ Object.assign(AKT, {
     Store.aendern('Spese erfasst', db => {
       db.spesen.unshift({ id: uid('sp'), benutzerId: S.benutzerId, auftragId: null, datum: r.datum, art: r.art, betrag: Number(r.betrag), beleg: beleg || null, status: 'offen' });
     });
-    Nav.zeichnen();
-  },
-
-  werkstatt() {
-    Store.aendern('Interne Zeit gestartet', db => {
-      db.zeiten.unshift({
-        id: uid('z'), benutzerId: S.benutzerId, auftragId: null, datum: D.heute(),
-        start: D.jetzt(), ende: D.hhmm(D.minuten(D.jetzt()) + 60), pausenMin: 0,
-        typ: 'werkstatt', bemerkung: 'Werkstatt / interne Arbeit', freigegeben: false
-      });
-    });
-    UI.toast('Eine Stunde Werkstattzeit erfasst', 'ok', { undo: true });
     Nav.zeichnen();
   },
 
@@ -5952,7 +6322,7 @@ Object.assign(AKT, {
   },
 
   async unfall() {
-    const foto = await AKT.fotoHolen();
+    const foto = await AKT.fotoAufnehmen();
     const r = await UI.formular('Unfall oder Beinaheunfall', [
       { k: 'art', label: 'Was ist passiert?', typ: 'select', wert: 'Beinaheunfall', optionen: ['Beinaheunfall', 'Unfall ohne Ausfall', 'Unfall mit Ausfall', 'Sachschaden'] },
       { k: 'text', label: 'Hergang', typ: 'textarea', pflicht: true, breit: true },
@@ -6205,7 +6575,7 @@ Object.assign(AKT, {
         vorlageId: db.vorlagen[0].id, offerteId: o.id, vertragId: null,
         termin: { datum: D.plus(D.heute(), 10), von: '07:30', bis: '16:30' }, dauerGeplantMin: 480,
         zugewiesen: [], abrechnung: 'pauschal', pauschalBetrag: L.summe(o.positionen).netto,
-        material: [], antworten: {}, fotos: [], sicherheit: { erledigt: false }, zeitLog: [],
+        material: [], antworten: {}, fotos: [], sicherheit: { erledigt: false },
         nachtraege: [], maengel: [], chat: [], rapport: {}, rechnungId: null,
         erstellt: new Date().toISOString(), erstelltVon: S.benutzerId
       };
@@ -6746,10 +7116,10 @@ ROUTEN['auftrag.stornieren'] = async el => {
       const { betrieb: b, Q, L } = ctx;
       const k = Q.kunde(a.kundeId), o = Q.objekt(a.objektId), v = Q.vorlage(a.vorlageId);
       const fotos = a.fotos || [];
-      const zeiten = (a.zeitLog || []).filter(z => z.ende);
+      const zeiten = L.zeitenVon(a.id).filter(z => z.ende);
       const proMa = {};
       zeiten.forEach(z => {
-        const min = Math.max(0, D.minuten(z.ende) - D.minuten(z.start));
+        const min = Math.max(0, D.minuten(z.ende) - D.minuten(z.start) - (z.pausenMin || 0));
         proMa[z.benutzerId] = proMa[z.benutzerId] || { arbeit: 0, fahrt: 0 };
         if (z.typ === 'fahrt') proMa[z.benutzerId].fahrt += min;
         else if (z.typ !== 'pause') proMa[z.benutzerId].arbeit += min;
@@ -9154,120 +9524,93 @@ ROUTEN['auftrag.stornieren'] = async el => {
 
     const vorlagen = [
       {
-        id: 'v-1', name: 'Dachcheck Jahreswartung', gewerk: 'dach', farbe: '#15803D',
-        beschreibung: 'Wiederkehrende Sichtkontrolle mit Reinigung – Grundlage jedes Wartungsvertrags.',
-        geschaetzteDauerMin: 150, fotoVorherPflicht: true, fotoNachherPflicht: true,
-        sicherheitPflicht: true, unterschriftPflicht: true,
-        punkte: [
-          P('p101', 'haken', 'Zugang, Leiter und Anschlagpunkte kontrolliert', { pflicht: true, gruppe: 'Vorbereitung', hilfe: 'Standfestigkeit und Zustand prüfen, bevor es aufs Dach geht.' }),
-          P('p102', 'auswahl', 'Witterung bei Arbeitsbeginn', { gruppe: 'Vorbereitung', optionen: ['Trocken', 'Leicht feucht', 'Nass', 'Windig'], pflicht: true }),
-          P('p103', 'ampel', 'Gesamteindruck Dachfläche', { pflicht: true, hilfe: 'Rot löst automatisch eine Mangelmeldung ans Büro aus.', mangelWenn: 'rot' }),
-          P('p104', 'zahl', 'Gebrochene oder verschobene Ziegel', { einheit: 'Stk', min: 0, max: 400, pflicht: true }),
-          P('p105', 'jaNein', 'Ziegel ersetzt?', { bedingung: { punktId: 'p104', gleich: '' }, hilfe: 'Nur ausfüllen, wenn Ziegel gefunden wurden.' }),
-          P('p106', 'haken', 'Dachrinnen und Einlaufsiebe gereinigt', { pflicht: true, fotoPflicht: true }),
-          P('p107', 'jaNeinNA', 'Abläufe frei und funktionsfähig', { pflicht: true, mangelWenn: 'nein' }),
-          P('p108', 'jaNeinNA', 'Anschlüsse an Kamin und Aufbauten dicht', { pflicht: true, mangelWenn: 'nein' }),
-          P('p109', 'messung', 'Kittfugen: grösster gemessener Riss', { einheit: 'mm', min: 0, max: 60 }),
-          P('p110', 'jaNeinNA', 'Schneefang vollständig und fest', {}),
-          P('p111', 'jaNeinNA', 'Unterdach von innen kontrolliert (Estrich)', { hilfe: 'Feuchtestellen, Lichteinfall, Nagelrost.' }),
-          P('p112', 'mehrfach', 'Festgestellte Auffälligkeiten', { optionen: ['Moosbewuchs', 'Nagelrost', 'Feuchteflecken', 'Vogelnester', 'Verstopfung', 'Blechschäden', 'keine'] }),
-          P('p113', 'ampel', 'Empfehlung für die nächste Saison', { pflicht: true, hilfe: 'Grün: nichts nötig. Gelb: beobachten. Rot: Offerte erstellen.' }),
-          P('p114', 'text', 'Bemerkung für den Kunden', { gruppe: 'Abschluss' }),
-          P('p115', 'haken', 'Arbeitsplatz geräumt, Material entsorgt', { pflicht: true, gruppe: 'Abschluss' })
-        ]
-      },
-      {
-        id: 'v-2', name: 'Sturmschaden Sofortmassnahme', gewerk: 'dach', farbe: '#C0261C',
-        beschreibung: 'Notfalleinsatz: Schaden sichern, dokumentieren, Versicherungsnachweis erstellen.',
+        id: 'v-1', name: 'Flachdach Service', gewerk: 'dach', farbe: '#15803D',
+        beschreibung: 'Der wiederkehrende Servicegang: Abläufe, Bewuchs, Kies, Anschlüsse. Abhaken und weiter.',
         geschaetzteDauerMin: 120, fotoVorherPflicht: true, fotoNachherPflicht: true,
         sicherheitPflicht: true, unterschriftPflicht: true,
         punkte: [
-          P('p201', 'haken', 'Gefahrenbereich abgesperrt, Personen gewarnt', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('p202', 'auswahl', 'Schadensursache', { pflicht: true, gruppe: 'Vorbereitung', optionen: ['Sturm', 'Hagel', 'Schneelast', 'Blitzschlag', 'Baum oder Ast', 'unklar'] }),
-          P('p203', 'mehrfach', 'Betroffene Bauteile', { pflicht: true, optionen: ['Eindeckung', 'Unterdach', 'Rinne', 'Ablaufrohr', 'Kaminanschluss', 'Dachfenster', 'Solaranlage', 'Spenglerarbeiten'] }),
-          P('p204', 'messung', 'Betroffene Fläche', { einheit: 'm²', min: 0, max: 2000, pflicht: true, fotoPflicht: true }),
-          P('p205', 'jaNein', 'Wasser bereits im Gebäude?', { pflicht: true, mangelWenn: 'ja' }),
-          P('p206', 'text', 'Wo genau dringt Wasser ein?', { bedingung: { punktId: 'p205', gleich: 'ja' }, pflicht: true, fotoPflicht: true }),
-          P('p207', 'auswahl', 'Getroffene Sofortmassnahme', { pflicht: true, optionen: ['Notabdeckung Plane', 'Ziegel provisorisch gelegt', 'Abdichtung geklebt', 'Rinne provisorisch gefasst', 'keine möglich'] }),
-          P('p208', 'jaNein', 'Ist das Gebäude nach der Massnahme dicht?', { pflicht: true, mangelWenn: 'nein' }),
-          P('p209', 'jaNein', 'Definitive Reparatur nötig', { pflicht: true, gruppe: 'Abschluss' }),
-          P('p210', 'text', 'Was ist für die definitive Reparatur nötig?', { bedingung: { punktId: 'p209', gleich: 'ja' }, gruppe: 'Abschluss' }),
-          P('p211', 'text', 'Angaben für die Gebäudeversicherung', { gruppe: 'Abschluss', hilfe: 'Schadendatum, Ereignis, Umfang – wird in den Rapport übernommen.' })
+          P('p101', 'haken', 'Zugang und Absturzsicherung in Ordnung', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('p102', 'zahl', 'Dachabläufe gereinigt', { einheit: 'Stk', min: 0, max: 60, pflicht: true, hilfe: 'Anzahl der gereinigten Abläufe.' }),
+          P('p103', 'haken', 'Notüberläufe frei', { pflicht: true }),
+          P('p104', 'haken', 'Laub, Schmutz und Fremdmaterial entfernt', { pflicht: true }),
+          P('p105', 'haken', 'Bewuchs und Unkraut entfernt', { pflicht: true }),
+          P('p106', 'haken', 'Kiesschicht kontrolliert und verteilt', {}),
+          P('p107', 'haken', 'Attika und Anschlüsse kontrolliert', {}),
+          P('p108', 'haken', 'Durchdringungen kontrolliert (Lüfter, Blitzschutz, Kabel)', {}),
+          P('p109', 'ampel', 'Gesamtzustand Dach', { pflicht: true, gruppe: 'Abschluss', hilfe: 'Rot meldet automatisch einen Mangel ans Büro.', mangelWenn: 'rot' }),
+          P('p110', 'text', 'Bemerkung', { gruppe: 'Abschluss' })
         ]
       },
       {
-        id: 'v-3', name: 'Ziegel- und Eindeckungsreparatur', gewerk: 'dach', farbe: '#D9531E',
-        beschreibung: 'Klassische Reparatur an geneigten Dächern.',
+        id: 'v-2', name: 'Solaranlage Service', gewerk: 'dach', farbe: '#B45309',
+        beschreibung: 'Module reinigen, Unterkonstruktion und Kabel prüfen, Bewuchs unter den Modulen entfernen.',
+        geschaetzteDauerMin: 150, fotoVorherPflicht: true, fotoNachherPflicht: true,
+        sicherheitPflicht: true, unterschriftPflicht: true,
+        punkte: [
+          P('p201', 'haken', 'Zugang und Absturzsicherung in Ordnung', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('p202', 'ampel', 'Verschmutzung vor der Reinigung', { gruppe: 'Vorbereitung', hilfe: 'Für den Bericht an den Kunden.' }),
+          P('p203', 'zahl', 'Module gereinigt', { einheit: 'Stk', min: 0, max: 600, pflicht: true }),
+          P('p204', 'haken', 'Bewuchs unter und zwischen den Modulen entfernt', { pflicht: true }),
+          P('p205', 'haken', 'Unterkonstruktion und Befestigungen kontrolliert', { pflicht: true }),
+          P('p206', 'haken', 'Kabelführung und Stecker kontrolliert', {}),
+          P('p207', 'haken', 'Abläufe im Modulbereich frei', { pflicht: true }),
+          P('p208', 'text', 'Bemerkung', { gruppe: 'Abschluss' })
+        ]
+      },
+      {
+        id: 'v-3', name: 'Dachbegrünung Pflege', gewerk: 'dach', farbe: '#0E7490',
+        beschreibung: 'Pflegegang auf dem begrünten Flachdach: Fremdbewuchs, vegetationsfreie Zonen, Substrat.',
         geschaetzteDauerMin: 180, fotoVorherPflicht: true, fotoNachherPflicht: true,
         sicherheitPflicht: true, unterschriftPflicht: true,
         punkte: [
-          P('p301', 'haken', 'Anschlagpunkt gesetzt, angeseilt', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('p302', 'haken', 'Material und Ziegeltyp mit Bestand abgeglichen', { pflicht: true, gruppe: 'Vorbereitung', hilfe: 'Farbabweichungen vor dem Einbau klären.' }),
-          P('p303', 'zahl', 'Ersetzte Ziegel', { einheit: 'Stk', min: 0, max: 500, pflicht: true }),
-          P('p304', 'jaNeinNA', 'Lattung im Bereich intakt', { pflicht: true, mangelWenn: 'nein' }),
-          P('p305', 'messung', 'Ersetzte Lattung', { einheit: 'lfm', bedingung: { punktId: 'p304', gleich: 'nein' } }),
-          P('p306', 'jaNeinNA', 'Unterdachbahn unbeschädigt', { pflicht: true, mangelWenn: 'nein' }),
-          P('p307', 'messung', 'Geflickte Unterdachfläche', { einheit: 'm²', bedingung: { punktId: 'p306', gleich: 'nein' }, fotoPflicht: true }),
-          P('p308', 'haken', 'Dichtigkeit mit Wasser geprüft', { pflicht: true, fotoPflicht: true }),
-          P('p309', 'text', 'Weitere Feststellungen am Dach', {}),
-          P('p310', 'haken', 'Altmaterial mitgenommen und entsorgt', { pflicht: true, gruppe: 'Abschluss' }),
-          P('p311', 'haken', 'Umgebung gereinigt, Rinne kontrolliert', { pflicht: true, gruppe: 'Abschluss' })
+          P('p301', 'haken', 'Zugang und Absturzsicherung in Ordnung', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('p302', 'haken', 'Fremdbewuchs und Gehölzaufwuchs entfernt', { pflicht: true, hilfe: 'Vor allem Birke und Weide – Wurzeln gehen in die Abdichtung.' }),
+          P('p303', 'haken', 'Vegetationsfreie Zonen an Attika und Abläufen freigelegt', { pflicht: true }),
+          P('p304', 'haken', 'Abläufe und Kontrollschächte frei', { pflicht: true }),
+          P('p305', 'messung', 'Substrathöhe stichprobenweise', { einheit: 'cm', min: 0, max: 40 }),
+          P('p306', 'ampel', 'Zustand der Begrünung', { mangelWenn: 'rot' }),
+          P('p307', 'haken', 'Grünschnitt abgeführt und entsorgt', { pflicht: true, gruppe: 'Abschluss' }),
+          P('p308', 'text', 'Bemerkung', { gruppe: 'Abschluss' })
         ]
       },
       {
-        id: 'v-4', name: 'Flachdach Kontrolle und Abdichtung', gewerk: 'dach', farbe: '#1D4ED8',
-        beschreibung: 'Für Flachdächer mit Bitumen- oder Kunststoffabdichtung.',
-        geschaetzteDauerMin: 210, fotoVorherPflicht: true, fotoNachherPflicht: true,
+        id: 'v-4', name: 'Wassereintritt und Sturmschaden', gewerk: 'dach', farbe: '#C0261C',
+        beschreibung: 'Notfalleinsatz: Ursache finden, sichern, dokumentieren – Nachweis für die Versicherung.',
+        geschaetzteDauerMin: 120, fotoVorherPflicht: true, fotoNachherPflicht: true,
         sicherheitPflicht: true, unterschriftPflicht: true,
         punkte: [
-          P('p401', 'haken', 'Absturzsicherung oder Geländer geprüft', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('p402', 'zahl', 'Kontrollierte Dachabläufe', { einheit: 'Stk', min: 0, max: 40, pflicht: true }),
-          P('p403', 'zahl', 'Davon verstopft', { einheit: 'Stk', min: 0, max: 40, pflicht: true }),
-          P('p404', 'jaNeinNA', 'Notüberläufe frei', { pflicht: true, mangelWenn: 'nein' }),
-          P('p405', 'ampel', 'Zustand der Abdichtung', { pflicht: true, fotoPflicht: true, mangelWenn: 'rot' }),
-          P('p406', 'mehrfach', 'Beobachtete Schäden', { optionen: ['Blasenbildung', 'Nahtöffnung', 'Risse', 'Durchwurzelung', 'Pfützen', 'mechanische Beschädigung', 'keine'] }),
-          P('p407', 'messung', 'Ausgeführte Abdichtungsfläche', { einheit: 'm²', min: 0, max: 3000 }),
-          P('p408', 'jaNeinNA', 'Anschlüsse an aufgehende Bauteile dicht', { pflicht: true, mangelWenn: 'nein' }),
-          P('p409', 'jaNeinNA', 'Kiesschicht bzw. Auflast vollständig', {}),
-          P('p410', 'jaNeinNA', 'Durchdringungen (Lüfter, Solar) dicht', { pflicht: true }),
-          P('p411', 'messung', 'Stehendes Wasser, grösste Tiefe', { einheit: 'mm', min: 0, max: 200 }),
-          P('p412', 'text', 'Empfehlung', { gruppe: 'Abschluss' }),
-          P('p413', 'haken', 'Dach besenrein verlassen', { pflicht: true, gruppe: 'Abschluss' })
+          P('p401', 'haken', 'Gefahrenbereich gesichert, Personen gewarnt', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('p402', 'auswahl', 'Ursache', { pflicht: true, optionen: ['Ablauf verstopft', 'Notüberlauf verstopft', 'Abdichtung beschädigt', 'Anschluss undicht', 'Sturm', 'Hagel', 'unklar'] }),
+          P('p403', 'auswahl', 'Sofortmassnahme', { pflicht: true, optionen: ['Ablauf freigelegt', 'Wasser abgepumpt', 'Notabdichtung geklebt', 'Plane verlegt', 'keine möglich'] }),
+          P('p404', 'jaNein', 'Gebäude nach der Massnahme dicht', { pflicht: true, mangelWenn: 'nein', fotoPflicht: true }),
+          P('p405', 'text', 'Angaben für die Versicherung', { gruppe: 'Abschluss', hilfe: 'Ereignis, Datum, Umfang – kommt so in den Rapport.' })
         ]
       },
       {
-        id: 'v-5', name: 'Spenglerarbeiten Rinne und Ablauf', gewerk: 'dach', farbe: '#0E7490',
-        beschreibung: 'Rinnen, Ablaufrohre, Verblechungen – vom Aufmass bis zur Dichtprobe.',
-        geschaetzteDauerMin: 240, fotoVorherPflicht: true, fotoNachherPflicht: true,
+        id: 'v-5', name: 'Rinnen und Ablaufrohre', gewerk: 'dach', farbe: '#1D4ED8',
+        beschreibung: 'Spenglerarbeiten am Wasserweg: reinigen, spülen, Dichtprobe.',
+        geschaetzteDauerMin: 150, fotoVorherPflicht: true, fotoNachherPflicht: true,
         sicherheitPflicht: true, unterschriftPflicht: true,
         punkte: [
-          P('p501', 'haken', 'Aufmass vor Ort geprüft', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('p502', 'auswahl', 'Material', { pflicht: true, gruppe: 'Vorbereitung', optionen: ['Titanzink', 'Kupfer', 'Verzinktes Stahlblech', 'Aluminium'] }),
-          P('p503', 'messung', 'Montierte Rinne', { einheit: 'lfm', min: 0, max: 300, pflicht: true }),
-          P('p504', 'messung', 'Montiertes Ablaufrohr', { einheit: 'lfm', min: 0, max: 200 }),
-          P('p505', 'zahl', 'Ersetzte Rinnenhalter', { einheit: 'Stk', min: 0, max: 200 }),
-          P('p506', 'jaNeinNA', 'Gefälle geprüft und eingehalten', { pflicht: true, mangelWenn: 'nein', hilfe: 'Mindestens 2 mm pro Laufmeter Richtung Ablauf.' }),
-          P('p507', 'haken', 'Löt- und Falznähte kontrolliert', { pflicht: true }),
-          P('p508', 'jaNein', 'Dichtprobe mit Wasser bestanden', { pflicht: true, fotoPflicht: true, mangelWenn: 'nein' }),
-          P('p509', 'jaNeinNA', 'Laubschutz montiert', {}),
-          P('p510', 'text', 'Bemerkung', { gruppe: 'Abschluss' }),
-          P('p511', 'haken', 'Altblech zur Entsorgung mitgenommen', { pflicht: true, gruppe: 'Abschluss' })
+          P('p501', 'haken', 'Zugang und Absturzsicherung in Ordnung', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('p502', 'messung', 'Rinnen gereinigt', { einheit: 'lfm', min: 0, max: 300, pflicht: true }),
+          P('p503', 'haken', 'Ablaufrohre durchgespült', { pflicht: true }),
+          P('p504', 'haken', 'Laubschutz kontrolliert und gereinigt', {}),
+          P('p505', 'haken', 'Dichtprobe mit Wasser bestanden', { pflicht: true, fotoPflicht: true }),
+          P('p506', 'text', 'Bemerkung', { gruppe: 'Abschluss' })
         ]
       },
       {
-        id: 'v-9', name: 'Sicherheitscheck vor Arbeitsbeginn', gewerk: 'dach', farbe: '#A65A05',
-        beschreibung: 'Wird vor jedem Dacheinsatz quittiert. Ohne diesen Check lässt die App den Auftrag nicht starten.',
-        geschaetzteDauerMin: 10, fotoVorherPflicht: false, fotoNachherPflicht: false,
+        id: 'v-9', name: 'Sicherheit vor Arbeitsbeginn', gewerk: 'dach', farbe: '#A65A05',
+        beschreibung: 'Fünf Punkte, ein Knopf. Wer will, geht sie einzeln durch.',
+        geschaetzteDauerMin: 3, fotoVorherPflicht: false, fotoNachherPflicht: false,
         sicherheitPflicht: false, unterschriftPflicht: false,
         punkte: [
-          P('s1', 'haken', 'Absturzsicherung vorhanden, geprüft und eingehängt', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('s2', 'haken', 'Auffanggurt und Verbindungsmittel ohne Beschädigung', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('s3', 'haken', 'Helm mit Kinnband, Schuhe und Handschuhe getragen', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('s4', 'haken', 'Leiter oder Gerüst standsicher, Zugang frei', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('s5', 'haken', 'Wetter geprüft: kein starker Wind, keine Nässe, kein Eis', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('s6', 'haken', 'Fallbereich am Boden abgesperrt', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('s7', 'haken', 'Lichtdurchlässige Flächen und schwache Stellen bekannt', { pflicht: true, gruppe: 'Vorbereitung' }),
-          P('s8', 'haken', 'Notruf und Standort im Ernstfall bekannt', { pflicht: true, gruppe: 'Vorbereitung' })
+          P('s1', 'haken', 'Absturzsicherung geprüft, angeseilt wo nötig', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('s2', 'haken', 'Persönliche Schutzausrüstung vollständig und intakt', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('s3', 'haken', 'Zugang, Leiter und Gerüst sicher', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('s4', 'haken', 'Wetter geeignet – kein starker Wind, keine Nässe, kein Eis', { pflicht: true, gruppe: 'Vorbereitung' }),
+          P('s5', 'haken', 'Fallbereich am Boden abgesperrt', { pflicht: true, gruppe: 'Vorbereitung' })
         ]
       }
     ];
@@ -9327,6 +9670,14 @@ ROUTEN['auftrag.stornieren'] = async el => {
       ['Kaminabdeckung Edelstahl 60x60 cm', 'Kleinmaterial', 'Stk', 138.00, 236.00, 'Kaminbau AG', 3, 6],
       ['Dachfenster 78x118 cm Holz', 'Dachfenster', 'Stk', 468.00, 785.00, 'Velux', 2, 5],
       ['Eindeckrahmen für Ziegel 78x118', 'Dachfenster', 'Stk', 128.00, 218.00, 'Velux', 3, 6],
+      ['Laubfangkorb Edelstahl DN 100', 'Flachdach', 'Stk', 18.50, 32.00, 'Sita', 20, 35],
+      ['Ablaufaufsatz mit Kiesfang DN 100', 'Flachdach', 'Stk', 34.00, 58.00, 'Sita', 12, 22],
+      ['Wurzelschutzvlies 2x25 m', 'Flachdach', 'Rolle', 96.00, 162.00, 'Swisspor', 4, 8],
+      ['Solarmodul-Reinigungsbürste 4 m Teleskop', 'Service', 'Stk', 285.00, 448.00, 'Kärcher', 2, 4],
+      ['Reinigungskonzentrat Solarmodule 5 l', 'Service', 'Stk', 62.00, 105.00, 'Kärcher', 4, 8],
+      ['Osmosefilter-Patrone', 'Service', 'Stk', 118.00, 198.00, 'Kärcher', 2, 4],
+      ['Kiesbesen und Rechen (Ersatzsatz)', 'Service', 'Stk', 46.00, 78.00, 'Werkzeug Zentralschweiz', 2, 5],
+      ['Entsorgungssack Grünschnitt 240 l', 'Service', 'Stk', 4.20, 8.50, 'Entsorgung Zentralschweiz', 30, 60],
       ['Entsorgungsmulde 7 m3 (Miete)', 'Diverses', 'Stk', 320.00, 420.00, 'Entsorgung Zentralschweiz', 0, 2],
       ['Gerüstmiete pro Woche und 100 m2', 'Diverses', 'Stk', 480.00, 640.00, 'Gerüstbau Luzern AG', 0, 3]
     ];
@@ -9348,23 +9699,39 @@ ROUTEN['auftrag.stornieren'] = async el => {
        ein paar hundert Byte, sofort sichtbar, kein externer Request. */
     function fotoBild(phase, n) {
       const himmel = ['#8FBEE8', '#A8C9E4', '#7BAEDC', '#C3D6E6'][n % 4];
-      const dach = phase === 'nachher' ? ['#9A5442', '#8A4A38'][n % 2] : ['#7E4636', '#6E4132'][n % 2];
-      const schaden = phase === 'vorher' || phase === 'mangel';
+      const kies = phase === 'nachher' ? '#B9B3A8' : '#A9A296';
+      const schmutzig = phase === 'vorher' || phase === 'mangel';
+      const solar = n % 3 === 0;
+      const bewuchs = schmutzig ? Array.from({ length: 6 }, (_, i) => {
+        const x = 44 + ((i * 61 + n * 13) % 240), y = 152 + ((i * 37) % 66);
+        return `<path d="M${x} ${y}l-4-13M${x} ${y}v-16M${x} ${y}l5-12" stroke="#4E7A3A" stroke-width="2.2" stroke-linecap="round"/>`;
+      }).join('') : '';
+      const laub = schmutzig ? Array.from({ length: 7 }, (_, i) => {
+        const x = 62 + ((i * 83 + n * 7) % 220), y = 132 + ((i * 29) % 86);
+        return `<ellipse cx="${x}" cy="${y}" rx="5" ry="3.2" fill="#8A6A3A" transform="rotate(${(i * 40) % 360} ${x} ${y})"/>`;
+      }).join('') : '';
+      // Der Kies kommt als Muster — ein paar Zeichen statt hundert Kreise.
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">
-<rect width="320" height="150" fill="${himmel}"/>
-<circle cx="${40 + n * 23 % 240}" cy="42" r="26" fill="#fff" opacity=".55"/>
-<circle cx="${90 + n * 31 % 200}" cy="34" r="19" fill="#fff" opacity=".45"/>
-<path d="M0 235 L160 88 L320 235 Z" fill="${dach}"/>
-${Array.from({ length: 9 }, (_, i) => {
-        const y = 104 + i * 15;
-        const w = (y - 88) * 1.09;
-        return `<path d="M${160 - w} ${y} L${160 + w} ${y}" stroke="rgba(0,0,0,.16)" stroke-width="1.4"/>`;
-      }).join('')}
-<rect x="196" y="112" width="26" height="46" fill="#B7B0A8"/><rect x="192" y="106" width="34" height="9" fill="#8E877F"/>
-${schaden ? `<path d="M${118 + n % 30} ${150 + n % 24} l16 5 -3 16 -17 -6 z" fill="#2B2320"/>
-<path d="M${140 + n % 20} ${168 + n % 18} l14 6 -4 14 -14 -6 z" fill="#2B2320"/>` : ''}
-${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width="3" opacity=".8"/>` : ''}
-<rect y="150" width="320" height="90" fill="#E8E2DA" opacity="0"/>
+<defs><pattern id="k" width="12" height="12" patternUnits="userSpaceOnUse">
+<rect width="12" height="12" fill="${kies}"/>
+<circle cx="3" cy="4" r="1.7" fill="rgba(0,0,0,.14)"/><circle cx="9" cy="9" r="2.1" fill="rgba(0,0,0,.11)"/>
+<circle cx="8" cy="2" r="1.2" fill="rgba(255,255,255,.16)"/><circle cx="2" cy="10" r="1.4" fill="rgba(255,255,255,.12)"/>
+</pattern></defs>
+<rect width="320" height="104" fill="${himmel}"/>
+<circle cx="${44 + n * 23 % 230}" cy="34" r="22" fill="#fff" opacity=".5"/>
+<circle cx="${96 + n * 31 % 190}" cy="26" r="16" fill="#fff" opacity=".42"/>
+<rect y="96" width="320" height="14" fill="#8E8B85"/><rect y="104" width="320" height="6" fill="#6E6B66"/>
+<rect y="110" width="320" height="130" fill="url(#k)"/>
+<rect y="110" width="320" height="8" fill="rgba(0,0,0,.10)"/>
+<circle cx="228" cy="176" r="17" fill="#6E6B66"/><circle cx="228" cy="176" r="10" fill="#3C3A37"/>
+<rect x="221" y="169" width="14" height="14" rx="2" fill="none" stroke="#9C9890" stroke-width="2"/>
+${solar ? `<rect x="26" y="126" width="112" height="40" rx="2" fill="#2B3E63" stroke="#8E9AAE" stroke-width="2"/>
+<path d="M26 139h112M26 152h112M63 126v40M100 126v40" stroke="#8E9AAE" stroke-width="1.2" fill="none"/>
+<rect x="26" y="166" width="112" height="5" fill="#7A828C"/>
+${schmutzig ? '<rect x="26" y="126" width="112" height="40" fill="rgba(150,130,90,.34)"/>' : ''}`
+          : `<rect x="34" y="128" width="70" height="26" rx="3" fill="#9A958D" stroke="#7A756E" stroke-width="2"/>`}
+${schmutzig ? `<ellipse cx="${152 + n % 34}" cy="198" rx="46" ry="11" fill="rgba(60,80,110,.32)"/>` : ''}
+<g fill="none">${bewuchs}</g>${laub}
 </svg>`;
       return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace(/\n/g, ''));
     }
@@ -9380,18 +9747,29 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
     }
 
     /* -------------------------------------------------------- Aufträge */
+    // Der Betrieb lebt vom wiederkehrenden Service am Flachdach: Abläufe,
+    // Bewuchs, Solaranlagen, Begrünung. Dazwischen Notfälle und Spenglerarbeit.
     const TITEL = {
-      reparatur: ['Ziegel ersetzen nach Sturm', 'Rinne undicht – Reparatur', 'Kaminanschluss neu abdichten',
-        'Ablaufrohr ersetzen', 'Firstziegel neu verlegen', 'Undichte Stelle über Schlafzimmer',
-        'Ortgang neu verblecht', 'Dachfenster undicht – Anschluss ersetzen', 'Schneefang nachrüsten',
-        'Lattung im Traufbereich ersetzen'],
-      wartung: ['Dachcheck Jahreswartung', 'Wartung Flachdach mit Rinnenreinigung', 'Halbjahreskontrolle Abläufe'],
-      notfall: ['Sturmschaden – Notabdeckung', 'Wassereintritt nach Gewitter'],
-      neubau: ['Flachdachsanierung Etappe 1', 'Neueindeckung Süd- und Westseite', 'Spenglerarbeiten Neubau'],
-      garantie: ['Garantiearbeit: Nahtöffnung Abdichtung', 'Garantie: nachgezogene Rinnenhalter'],
-      kontrolle: ['Zustandskontrolle vor Verkauf', 'Aufnahme für Offerte Dachsanierung']
+      wartung: ['Flachdach Service Frühling', 'Flachdach Service Herbst', 'Servicegang nach Laubfall',
+        'Halbjahreskontrolle Abläufe', 'Flachdach Service mit Kiesarbeiten'],
+      solar: ['Solaranlage reinigen und kontrollieren', 'Solarmodule reinigen nach Saharastaub',
+        'Solaranlage Herbstservice', 'Module reinigen und Bewuchs entfernen'],
+      begruenung: ['Dachbegrünung Pflegegang', 'Gehölzaufwuchs entfernen', 'Begrüntes Dach – Frühjahrspflege'],
+      reparatur: ['Dachablauf verstopft – freilegen', 'Notüberlauf freilegen', 'Attikaabdeckung neu befestigen',
+        'Anschluss am Lüfter neu abdichten', 'Kiesschicht ergänzen und verteilen'],
+      notfall: ['Wassereintritt – Ablauf verstopft', 'Sturmschaden – Notabdeckung', 'Wasser im Treppenhaus nach Gewitter'],
+      spenglerei: ['Rinne und Ablaufrohre spülen', 'Wasserfangkasten ersetzen', 'Ablaufrohr ersetzen'],
+      neubau: ['Flachdachsanierung Etappe 1', 'Abdichtung erneuern Westteil', 'Neue Attikaverblechung'],
+      garantie: ['Garantie: Nahtöffnung nachschweissen', 'Garantie: Ablauf nachgedichtet'],
+      kontrolle: ['Zustandsaufnahme für Offerte', 'Kontrolle vor Ablauf der Garantie']
     };
-    const VORLAGE_ZU_TYP = { reparatur: 'v-3', wartung: 'v-1', notfall: 'v-2', neubau: 'v-4', garantie: 'v-4', kontrolle: 'v-1' };
+    // solar, begruenung und spenglerei sind Servicearten – für Status und
+    // Abrechnung laufen sie als Wartung bzw. Reparatur.
+    const TYP_ECHT = { solar: 'wartung', begruenung: 'wartung', spenglerei: 'reparatur' };
+    const VORLAGE_ZU_TYP = {
+      wartung: 'v-1', solar: 'v-2', begruenung: 'v-3', notfall: 'v-4',
+      spenglerei: 'v-5', reparatur: 'v-1', neubau: 'v-1', garantie: 'v-1', kontrolle: 'v-1'
+    };
     const monteure = benutzer.filter(b => b.rolle === 'monteur');
 
     let auftragNr = 0;
@@ -9402,6 +9780,18 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
     const nachrichten = [];
 
     function neueNummer() { auftragNr++; return 'A-' + heute.slice(0, 4) + '-' + String(auftragNr).padStart(4, '0'); }
+
+    /** Ein Zeiteintrag mit allen Feldern, damit nirgends etwas fehlt. */
+    function zeitEintrag(o) {
+      const z = Object.assign({
+        id: 'z-' + zeiten.length, benutzerId: 'u-3', auftragId: null, datum: heute,
+        start: '08:00', ende: null, pausenMin: 0, typ: 'arbeit', bemerkung: '',
+        freigegeben: false, freigegebenVon: null, eingereicht: false
+      }, o);
+      if (z.freigegeben && !z.freigegebenVon) z.freigegebenVon = 'u-1';
+      zeiten.push(z);
+      return z;
+    }
 
     /** Fuellt die Checkliste plausibel aus. */
     function antwortenFuellen(v, vollstaendig, saatN) {
@@ -9447,7 +9837,8 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
       const teilweise = spec.status === 'vorort' || spec.status === 'pausiert';
 
       const a = {
-        id, nr, kundeId: kunde.id, objektId: objekt.id, typ: spec.typ,
+        id, nr, kundeId: kunde.id, objektId: objekt.id,
+        typ: TYP_ECHT[spec.typ] || spec.typ, serviceArt: spec.typ,
         titel: spec.titel, beschreibung: spec.beschreibung || '',
         prio: spec.prio || (spec.typ === 'notfall' ? 'notfall' : 'normal'),
         status: spec.status, vorlageId: v.id, vertragId: spec.vertragId || null, offerteId: null,
@@ -9457,7 +9848,7 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
         abrechnung: spec.pauschal ? 'pauschal' : 'regie', pauschalBetrag: spec.pauschal || 0,
         material: [], antworten: {}, fotos: [],
         sicherheit: { erledigt: false, antworten: {} },
-        zeitLog: [], nachtraege: [], maengel: [], chat: [],
+        nachtraege: [], maengel: [], chat: [],
         rapport: {}, rechnungId: null,
         erstellt: ts(plus(spec.datum, -zahl(2, 14)), '09:12'), erstelltVon: r() > .5 ? 'u-1' : 'u-2',
         geaendert: ts(spec.datum, von)
@@ -9474,14 +9865,22 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
 
       if (fertig || teilweise) {
         a.antworten = antwortenFuellen(v, fertig, auftragNr);
-        // Zeiten: Fahrt, Arbeit, ggf. Pause
+        // Zeiten: Fahrt und Arbeit, beides als normale Zeiteinträge
+        const freigabeReif = spec.datum < plus(heute, -7);
         team.forEach((bid, i) => {
-          a.zeitLog.push({ id: 'z' + id + '-' + i + 'f', benutzerId: bid, typ: 'fahrt', datum: spec.datum, start: hhmm(minuten(von) - 22), ende: von });
-          a.zeitLog.push({ id: 'z' + id + '-' + i + 'a', benutzerId: bid, typ: 'arbeit', datum: spec.datum, start: von, ende: fertig ? hhmm(minuten(von) + dauer + zahl(-25, 40, 5)) : null });
+          zeitEintrag({ id: 'z' + id + '-' + i + 'f', benutzerId: bid, auftragId: id, datum: spec.datum,
+            start: hhmm(minuten(von) - 22), ende: von, typ: 'fahrt', bemerkung: 'Anfahrt ' + objekt.ort,
+            freigegeben: freigabeReif });
+          zeitEintrag({ id: 'z' + id + '-' + i + 'a', benutzerId: bid, auftragId: id, datum: spec.datum,
+            start: von, ende: fertig ? hhmm(minuten(von) + dauer + zahl(-25, 40, 5)) : null,
+            pausenMin: fertig && dauer > 300 ? 30 : 0, typ: 'arbeit', bemerkung: spec.titel,
+            freigegeben: fertig && freigabeReif });
         });
         if (spec.status === 'pausiert') {
-          a.zeitLog[a.zeitLog.length - 1].ende = hhmm(minuten(von) + 95);
-          a.zeitLog.push({ id: 'z' + id + '-p', benutzerId: team[0], typ: 'pause', datum: spec.datum, start: hhmm(minuten(von) + 95), ende: null });
+          const arb = zeiten.find(z => z.id === 'z' + id + '-0a');
+          if (arb) arb.ende = hhmm(minuten(von) + 95);
+          zeitEintrag({ id: 'z' + id + '-p', benutzerId: team[0], auftragId: id, datum: spec.datum,
+            start: hhmm(minuten(von) + 95), ende: null, typ: 'pause', bemerkung: 'Znüni' });
         }
         // Material
         const anzahl = spec.typ === 'wartung' ? 2 : 3;
@@ -9507,12 +9906,6 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
           unterschriftZeit: ts(spec.datum, hhmm(minuten(von) + dauer + 12)),
           abgeschlossenZeit: ts(spec.datum, hhmm(minuten(von) + dauer + 14)), abgeschlossenVon: team[0] || 'u-3'
         };
-        team.forEach((bid, i) => {
-          const arb = a.zeitLog.find(z => z.benutzerId === bid && z.typ === 'arbeit');
-          const fa = a.zeitLog.find(z => z.benutzerId === bid && z.typ === 'fahrt');
-          if (arb) zeiten.push({ id: 'zz' + id + i, benutzerId: bid, auftragId: id, datum: spec.datum, start: arb.start, ende: arb.ende, pausenMin: 30, typ: 'arbeit', bemerkung: spec.titel, freigegeben: spec.datum < plus(heute, -7), freigegebenVon: spec.datum < plus(heute, -7) ? 'u-1' : null });
-          if (fa) zeiten.push({ id: 'zf' + id + i, benutzerId: bid, auftragId: id, datum: spec.datum, start: fa.start, ende: fa.ende, pausenMin: 0, typ: 'fahrt', bemerkung: 'Anfahrt ' + objekt.ort, freigegeben: spec.datum < plus(heute, -7), freigegebenVon: null });
-        });
       }
 
       if (spec.nachtrag) {
@@ -9541,79 +9934,116 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
     }
 
     /* — Vergangene Aufträge, quer über die letzten zehn Wochen — */
-    const teamA = ['u-3', 'u-5'], teamB = ['u-4'], teamC = ['u-3', 'u-4'], teamD = ['u-4', 'u-5'];
-    const teams = [teamA, teamB, teamC, teamD, ['u-3'], ['u-4', 'u-3']];
-    const typen = ['reparatur', 'wartung', 'reparatur', 'neubau', 'reparatur', 'wartung', 'garantie', 'reparatur', 'kontrolle', 'reparatur'];
+    const teams = [['u-3', 'u-5'], ['u-4'], ['u-3', 'u-4'], ['u-4', 'u-5'], ['u-3'], ['u-4', 'u-3']];
+    // Flachdächer für die Servicearbeiten, Schrägdächer für den Rest
+    const FLACH = objekte.map((o, i) => o.dach.form === 'Flachdach' ? i : -1).filter(i => i >= 0);
+    const STEIL = objekte.map((o, i) => o.dach.form !== 'Flachdach' ? i : -1).filter(i => i >= 0);
+    const flach = n => FLACH[n % FLACH.length];
+    const steil = n => STEIL[n % STEIL.length];
 
-    for (let i = 0; i < 20; i++) {
-      const typ = typen[i % typen.length];
+    const RUECKBLICK = [
+      ['wartung', 'flach'], ['solar', 'flach'], ['wartung', 'flach'], ['reparatur', 'flach'],
+      ['begruenung', 'flach'], ['wartung', 'flach'], ['spenglerei', 'steil'], ['solar', 'flach'],
+      ['wartung', 'flach'], ['kontrolle', 'flach'], ['reparatur', 'flach'], ['wartung', 'flach'],
+      ['begruenung', 'flach'], ['spenglerei', 'steil'], ['solar', 'flach'], ['wartung', 'flach'],
+      ['garantie', 'flach'], ['wartung', 'flach'], ['reparatur', 'steil'], ['neubau', 'flach']
+    ];
+    RUECKBLICK.forEach((eintrag, i) => {
+      const [typ, lage] = eintrag;
       const datum = werktag(plus(heute, -(3 + i * 3 + (i % 4))), -1);
       baueAuftrag({
-        objIdx: (i * 5 + 3) % objekte.length, typ,
-        titel: TITEL[typ][i % TITEL[typ].length],
-        beschreibung: ['Vom Kunden telefonisch gemeldet.', 'Aus der letzten Wartung übernommen.',
-          'Nach Sturm vom Wochenende.', 'Regelmässige Kontrolle gemäss Vertrag.'][i % 4],
+        objIdx: lage === 'flach' ? flach(i * 3 + 1) : steil(i * 2),
+        typ, titel: TITEL[typ][i % TITEL[typ].length],
+        beschreibung: ['Servicegang aus dem Wartungsvertrag.', 'Vom Kunden telefonisch gemeldet.',
+          'Aus dem letzten Servicegang übernommen.', 'Nach dem Regen der letzten Woche.'][i % 4],
         datum, team: teams[i % teams.length],
         status: i < 14 ? 'verrechnet' : (i < 17 ? 'abgeschlossen' : 'kontrolle'),
-        pauschal: typ === 'wartung' ? [380, 420, 560][i % 3] : 0,
-        mangel: i === 4 ? 'Rinnenhalter auf der Nordseite stark korrodiert, hält nur noch teilweise.' : (i === 11 ? 'Unterdachbahn im Kehlbereich brüchig – mittelfristig ersetzen.' : null),
+        pauschal: ['wartung', 'solar', 'begruenung'].indexOf(typ) >= 0 ? [420, 560, 680][i % 3] : 0,
+        mangel: i === 4 ? 'Birkenaufwuchs im Kiesbett an der Nordattika – Wurzeln gehen Richtung Abdichtung.'
+          : (i === 11 ? 'Ablauf Südseite läuft träge ab, Verdacht auf Verengung im Rohr.' : null),
         mangelSchwere: i === 4 ? 'mittel' : 'gering',
         mangelOffen: i === 4
       });
-    }
+    });
 
-    /* — Heute: drei Aufträge in Bewegung — */
+    /* — Heute: der Tag von Reto und Dario — */
     const heuteA = baueAuftrag({
-      objIdx: 2, typ: 'wartung', titel: 'Dachcheck Jahreswartung Rigiblick Haus 1',
-      beschreibung: 'Wartungsvertrag WV-002. Rinnen reinigen, Abläufe prüfen, Zustandsbericht.',
-      datum: heute, von: '07:30', team: ['u-3', 'u-5'], status: 'vorort', pauschal: 420,
-      nachtrag: 'Zwei Dachabläufe sind komplett zugewachsen – Wurzeln müssen mechanisch entfernt werden.',
-      chat: [['u-3', 'Ablauf Nordseite ist völlig dicht, da wächst schon ein Busch. Sollen wir das gleich mitmachen?']]
+      objIdx: 2, typ: 'wartung', titel: 'Flachdach Service Rigiblick Haus 1',
+      beschreibung: 'Wartungsvertrag WV-002: Abläufe reinigen, Bewuchs entfernen, Kies verteilen, Zustand festhalten.',
+      datum: heute, von: '07:30', team: ['u-3', 'u-5'], status: 'vorort', pauschal: 420, dauer: 120,
+      nachtrag: 'Zwei Abläufe sind komplett zugewachsen – Wurzeln müssen mechanisch heraus, das dauert länger.',
+      chat: [['u-3', 'Ablauf Nordseite ist völlig dicht, da wächst schon ein Busch drin. Sollen wir das gleich mitmachen?']]
     });
     const heuteB = baueAuftrag({
-      objIdx: 10, typ: 'reparatur', titel: 'Undichte Stelle über Schlafzimmer',
-      beschreibung: 'Kundin meldet Wasserfleck an der Decke, seit dem Regen letzte Woche.',
-      datum: heute, von: '09:00', team: ['u-4'], status: 'unterwegs'
+      objIdx: 20, typ: 'notfall', titel: 'Wassereintritt – Ablauf verstopft',
+      beschreibung: 'Praxis meldet Wasser an der Decke im Wartezimmer. Nach dem Gewitter von gestern Abend.',
+      datum: heute, von: '09:00', team: ['u-4'], status: 'unterwegs', prio: 'notfall', dauer: 120
     });
     const heuteC = baueAuftrag({
-      objIdx: 18, typ: 'neubau', titel: 'Flachdachsanierung Etappe 1',
-      beschreibung: 'Abdichtung erneuern, Dämmung ergänzen, zwei Abläufe ersetzen. Gerüst steht.',
-      datum: heute, von: '07:00', team: ['u-3', 'u-4', 'u-5'], status: 'pausiert', dauer: 480, pauschal: 0
+      objIdx: 18, typ: 'solar', titel: 'Solaranlage reinigen und kontrollieren',
+      beschreibung: '96 Module, letzte Reinigung vor 14 Monaten. Wasseranschluss auf dem Dach vorhanden.',
+      datum: heute, von: '13:00', team: ['u-3', 'u-5'], status: 'geplant', pauschal: 980, dauer: 210
     });
 
-    /* — Notfall von heute Morgen — */
+    /* — Gestern abgeschlossen, wartet auf die Verrechnung — */
     baueAuftrag({
-      objIdx: 6, typ: 'notfall', titel: 'Sturmschaden – Notabdeckung Schulhaus',
-      beschreibung: 'Nach dem Sturm heute Nacht fehlen Ziegel auf der Westseite, Wasser dringt ins Treppenhaus. Hauswart vor Ort.',
-      datum: heute, von: '06:30', team: ['u-3'], status: 'erledigt', prio: 'notfall', dauer: 150,
-      mangel: 'Lattung im Bereich der fehlenden Ziegel ist morsch – definitive Reparatur nötig.',
-      mangelSchwere: 'gravierend'
+      objIdx: 4, typ: 'begruenung', titel: 'Dachbegrünung Pflegegang',
+      beschreibung: 'Gehölzaufwuchs entfernen, vegetationsfreie Zonen freilegen, Grünschnitt abführen.',
+      datum: werktag(plus(heute, -1), -1), von: '07:00', team: ['u-3', 'u-5'], status: 'erledigt',
+      pauschal: 680, dauer: 240,
+      mangel: 'Wurzeln im Kiesstreifen an der Ostattika, stellenweise bis an die Abdichtung.',
+      mangelSchwere: 'mittel'
     });
 
     /* — Geplante Aufträge der nächsten zehn Tage — */
-    for (let i = 0; i < 13; i++) {
-      const typ = ['reparatur', 'wartung', 'reparatur', 'neubau', 'wartung', 'kontrolle'][i % 6];
+    const PLANUNG = [
+      ['wartung', 'flach'], ['solar', 'flach'], ['wartung', 'flach'], ['reparatur', 'flach'],
+      ['begruenung', 'flach'], ['wartung', 'flach'], ['spenglerei', 'steil'], ['wartung', 'flach'],
+      ['solar', 'flach'], ['kontrolle', 'flach'], ['wartung', 'flach'], ['reparatur', 'flach'],
+      ['neubau', 'flach']
+    ];
+    PLANUNG.forEach((eintrag, i) => {
+      const [typ, lage] = eintrag;
       baueAuftrag({
-        objIdx: (i * 7 + 1) % objekte.length, typ,
-        titel: TITEL[typ][(i + 2) % TITEL[typ].length],
+        objIdx: lage === 'flach' ? flach(i * 2 + 4) : steil(i + 1),
+        typ, titel: TITEL[typ][(i + 2) % TITEL[typ].length],
         beschreibung: ['Termin mit dem Kunden telefonisch vereinbart.', 'Aus dem Wartungsvertrag erzeugt.',
-          'Folgetermin zur letzten Kontrolle.', 'Kunde ist ab 8 Uhr vor Ort.'][i % 4],
+          'Folgetermin zum letzten Servicegang.', 'Hauswart ist ab 8 Uhr vor Ort.'][i % 4],
         datum: werktag(plus(heute, 1 + Math.floor(i * 0.85))), team: teams[(i + 2) % teams.length],
-        status: 'geplant', pauschal: typ === 'wartung' ? 380 : 0
+        status: 'geplant',
+        pauschal: ['wartung', 'solar', 'begruenung'].indexOf(typ) >= 0 ? [420, 560, 980][i % 3] : 0
       });
-    }
+    });
 
     /* — Noch nicht disponiert — */
     const offenTitel = [
-      ['reparatur', 'Rinne undicht – Reparatur', 'Kunde meldet Tropfen an der Ostseite, eilt nicht.'],
-      ['reparatur', 'Dachfenster undicht – Anschluss ersetzen', 'Beim letzten Regen Wasser am Rahmen.'],
-      ['kontrolle', 'Aufnahme für Offerte Dachsanierung', 'Eigentümer möchte eine Offerte für die Gesamtsanierung.'],
-      ['reparatur', 'Schneefang nachrüsten', 'Nachbar hat sich beschwert, Schnee rutscht auf den Gehweg.']
+      ['reparatur', 'Dachablauf verstopft – freilegen', 'Hauswart meldet stehendes Wasser nach Regen, eilt nicht.', 'flach'],
+      ['solar', 'Solarmodule reinigen nach Saharastaub', 'Betreiber meldet spürbaren Ertragsrückgang.', 'flach'],
+      ['kontrolle', 'Zustandsaufnahme für Offerte', 'Verwaltung möchte eine Offerte für die Abdichtung der Etappe 2.', 'flach'],
+      ['spenglerei', 'Wasserfangkasten ersetzt', 'Kasten ist durchgerostet, läuft über.', 'steil']
     ];
     offenTitel.forEach((t, i) => baueAuftrag({
-      objIdx: (i * 6 + 13) % objekte.length, typ: t[0], titel: t[1], beschreibung: t[2],
-      datum: plus(heute, 4 + i * 2), team: [], status: 'neu', prio: i === 3 ? 'hoch' : 'normal'
+      objIdx: t[3] === 'flach' ? flach(i * 4 + 2) : steil(i * 3 + 1),
+      typ: t[0], titel: t[1], beschreibung: t[2],
+      datum: plus(heute, 4 + i * 2), team: [], status: 'neu', prio: i === 0 ? 'normal' : (i === 3 ? 'hoch' : 'normal')
     }));
+
+    /* — Freie Zeiten ohne Auftrag: Werkstatt, Fahrten, Schlechtwetter — */
+    for (let i = 1; i <= 16; i++) {
+      const d = werktag(plus(heute, -i), -1);
+      if (i % 5 === 0) {
+        zeitEintrag({ benutzerId: 'u-3', datum: d, start: '07:00', ende: '11:30', typ: 'werkstatt',
+          bemerkung: 'Fahrzeug räumen, Material rüsten', freigegeben: i > 7 });
+      }
+      if (i % 7 === 3) {
+        zeitEintrag({ benutzerId: 'u-4', datum: d, start: '13:00', ende: '17:00', typ: 'schlechtwetter',
+          bemerkung: 'Regen, Dacharbeit abgebrochen', freigegeben: i > 7 });
+      }
+      if (i % 4 === 1) {
+        zeitEintrag({ benutzerId: 'u-5', datum: d, start: '16:30', ende: '17:15', typ: 'werkstatt',
+          bemerkung: 'Werkzeug kontrollieren', freigegeben: i > 7 });
+      }
+    }
 
     /* -------------------------------- Lagerbewegungen und Bestände */
     // Wareneingänge der letzten Wochen
@@ -9665,7 +10095,7 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
       delete m.startBestand;
     });
     // Drei Artikel gezielt unter das Minimum drücken, damit die Warnung sichtbar ist
-    [0, 14, 25].forEach((i, n) => {
+    [27, 29, 25].forEach((i, n) => {
       const m = material[i];
       const ziel = Math.max(0, Math.floor(m.mindestbestand * (n === 0 ? .35 : n === 1 ? .5 : .2)));
       const jetzt = Object.keys(m.bestand).reduce((t, k) => t + m.bestand[k], 0);
@@ -9734,8 +10164,8 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
       const kunde = kunden.find(k => k.id === a.kundeId);
       const positionen = [];
       const proMa = {};
-      a.zeitLog.filter(z => z.ende && z.typ === 'arbeit').forEach(z => {
-        proMa[z.benutzerId] = (proMa[z.benutzerId] || 0) + (minuten(z.ende) - minuten(z.start));
+      zeiten.filter(z => z.auftragId === a.id && z.ende && z.typ === 'arbeit').forEach(z => {
+        proMa[z.benutzerId] = (proMa[z.benutzerId] || 0) + Math.max(0, minuten(z.ende) - minuten(z.start) - (z.pausenMin || 0));
       });
       if (a.abrechnung === 'pauschal' && a.pauschalBetrag) {
         positionen.push({ id: 'rp' + i + 'x', art: 'pauschale', text: a.titel + ' (Pauschale gemäss Vertrag)', menge: 1, einheit: 'Pausch.', einzelpreis: a.pauschalBetrag, mwstSatz: betrieb.mwstSatz });
@@ -9747,7 +10177,8 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
             menge: Math.round(proMa[bid] / 60 * 100) / 100, einheit: 'h', einzelpreis: m.stundenansatz, mwstSatz: betrieb.mwstSatz
           });
         });
-        const fahrt = a.zeitLog.filter(z => z.ende && z.typ === 'fahrt').reduce((t, z) => t + (minuten(z.ende) - minuten(z.start)), 0);
+        const fahrt = zeiten.filter(z => z.auftragId === a.id && z.ende && z.typ === 'fahrt')
+          .reduce((t, z) => t + Math.max(0, minuten(z.ende) - minuten(z.start)), 0);
         if (fahrt) positionen.push({ id: 'rp' + i + 'f', art: 'fahrt', text: 'An- und Rückfahrt', menge: Math.round(fahrt / 60 * 100) / 100, einheit: 'h', einzelpreis: 58, mwstSatz: betrieb.mwstSatz });
       }
       a.material.filter(m => m.mengeVerbraucht > 0).forEach((m, j) => {
@@ -9908,11 +10339,8 @@ ${phase === 'nachher' ? `<path d="M118 150 l40 12" stroke="#C97A50" stroke-width
   setInterval(() => {
     if (!S.benutzerId) return;
     const el = $('#fldUhr');
-    if (el) {
-      const a = L.laufenderAuftrag(S.benutzerId);
-      const z = a && L.laufend(a, S.benutzerId);
-      if (z) el.textContent = Fmt.std(L.laufendeMinuten(z));
-    }
+    const z = L.laufendEintrag(S.benutzerId);
+    if (el && z) el.textContent = Fmt.std(L.dauer(z));
   }, 30000);
 
   // Als App installierbar, wenn ueber einen Server ausgeliefert
