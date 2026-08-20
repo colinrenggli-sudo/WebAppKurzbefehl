@@ -43,10 +43,11 @@ sich am Kundentermin auf dem Laptop zeigen lässt.
    einen Mitarbeitenden und Tag ziehen. Über den Tagen steht das Wetter;
    ab 45 km/h Wind sperrt die App die Dacharbeit.
 4. Abmelden, **3456** eingeben → Monteur-App. Der Tag steht als Liste da.
-   Auftrag öffnen → **Anfahrt starten** (der Kunde bekommt automatisch
-   „wir sind unterwegs") → **Angekommen** → **Sicherheitscheck** (ohne
-   Quittung geht nichts) → Checkliste abarbeiten → Foto → Material vom
-   Fahrzeug buchen → **Abschliessen** mit Unterschrift des Kunden.
+   Auftrag öffnen → **Arbeit starten** (ein Tipp, die Zeit läuft, der Kunde
+   bekommt automatisch „wir sind unterwegs") → **Alles geprüft – bestätigen**
+   für die Sicherheit → Checkliste abhaken (die Liste bleibt stehen, „Alle
+   abhaken" erledigt den Rest) → **Foto** → Material vom Fahrzeug buchen →
+   **Fertig** mit Unterschrift des Kunden.
 5. Zurück mit **1234**: Der Auftrag steht auf „Erledigt", Zeiten und
    Material sind da, der Nachtrag wartet auf Freigabe. **Verrechnen** →
    fertige Rechnung mit Schweizer QR-Zahlteil. **Drucken / PDF** ergibt
@@ -74,18 +75,54 @@ ganze App zieht mit).
 | Zeit & Personal | Wochenübersicht, Freigabe, Qualifikationen mit Ablaufdatum, Absenzen |
 | Offerten & Rechnungen | Offertenkette, Rechnungen mit QR-Zahlteil, Mahnwesen, Deckungsbeitrag |
 | Checklisten | Baukasten mit zwölf Feldtypen, Folgefragen, Mangelregeln, Pflichtangaben |
+| Zeitfreigabe | Eingereichte Wochen der Monteure, Freigabe einzeln oder gesammelt |
 | Team & Codes | Personen, Anmeldecodes, Ansätze, Fahrzeuge |
 | Einstellungen | Firma, Farbe, Ansätze, Wettergrenzen, Sync, Demo zurücksetzen |
 
 **Monteur-App**
 
-Tagesliste mit Wetterampel · Anfahrt mit Navigation nach Google oder Apple
-Karten · blockierender Sicherheitscheck · Checkliste mit grossen Zielen,
-Folgefragen und automatischer Mangelmeldung · Fotos vorher und nachher ·
-Materialbuchung ab Fahrzeuglager mit Barcode-Scan · Nachtrag melden ·
-Mangel mit Foto · Rückfrage ans Büro · Zeiterfassung mit Pause ·
-Kundenunterschrift auf dem Glas · Spesen, Absenzen, PSA-Kontrolle,
-Unfallmeldung, Notfallnummern.
+Gebaut nach einem Grundsatz: **die App hält niemanden auf.** Nichts muss
+erledigt sein, bevor die Arbeit beginnen kann.
+
+- **Arbeit starten** mit einem Tipp – Zeit läuft, Kunde ist informiert
+- **Sicherheit** mit einem Knopf für alle fünf Punkte, festgehalten mit
+  Name und Uhrzeit. Wer sie einzeln durchgehen will, kann
+- **Checkliste** mit grossen Feldern; die Liste bleibt stehen, wo sie war.
+  „Alle abhaken" erledigt die restlichen Haken auf einmal
+- **Foto** öffnet direkt die Kamera, ohne Zwischenfrage. Daneben liegt ein
+  Feld für ein erzeugtes Beispielbild – für die Vorführung am Laptop
+- **Material** ab Fahrzeuglager, mit Barcode-Scan
+- **Nachtrag**, **Mangel** mit Foto, **Rückfrage ans Büro**
+- **Fertig** ist nie gesperrt. Was fehlt, steht im Abschluss mit einem
+  Knopf zum Erledigen daneben – oder man schliesst trotzdem ab, dann geht
+  ein Vermerk ans Büro statt den Monteur aufzuhalten
+- **Zeit** als eigener Bereich: Stempeluhr mit Start, Pause und Beenden,
+  wahlweise auf einen Auftrag oder frei. Vergessene Zeiten lassen sich
+  nachtragen, bestehende ändern oder löschen, die Woche geht auf Knopfdruck
+  ans Büro
+- Spesen, Absenzen, PSA-Kontrolle, Unfallmeldung, Notfallnummern
+
+Die Monteur-Ansicht läuft auch am grossen Bildschirm – dann in einem
+Telefonrahmen mit Erklärspalte daneben.
+
+## Die Checklisten
+
+Der Demo-Betrieb lebt vom wiederkehrenden Service am Flachdach. Die
+Vorlagen bilden genau das ab – kurz, zum Abhaken, ohne Fragen nach Dingen,
+die man von oben gar nicht sieht:
+
+| Vorlage | Inhalt |
+|---|---|
+| **Flachdach Service** | Abläufe reinigen (mit Anzahl), Notüberläufe, Laub, Bewuchs, Kies, Attika, Durchdringungen, Gesamtzustand als Ampel |
+| **Solaranlage Service** | Verschmutzung vorher, Module reinigen (Anzahl), Bewuchs unter den Modulen, Unterkonstruktion, Kabel, Abläufe im Modulbereich |
+| **Dachbegrünung Pflege** | Fremdbewuchs, vegetationsfreie Zonen, Abläufe, Substrathöhe, Zustand, Grünschnitt abgeführt |
+| **Wassereintritt und Sturmschaden** | Bereich sichern, Ursache, Sofortmassnahme, dicht ja/nein, Angaben für die Versicherung |
+| **Rinnen und Ablaufrohre** | Rinnen gereinigt (lfm), Rohre gespült, Laubschutz, Dichtprobe |
+| **Sicherheit vor Arbeitsbeginn** | Fünf Punkte, ein Knopf |
+
+Was ein erfahrener Monteur ohnehin als Mangel oder Nachtrag meldet, steht
+bewusst nicht als Frage in der Liste. Das Büro baut die Vorlagen selbst um –
+unter **Checklisten**, mit sofortiger Wirkung auf allen Geräten.
 
 ## Schweizer Besonderheiten
 
