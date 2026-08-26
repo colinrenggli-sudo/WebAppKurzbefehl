@@ -727,6 +727,30 @@
     font-weight: 600; font-family: 'SF Mono', ui-monospace, monospace;
   }
 
+  .task-alarm-pill {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11px; padding: 2px 7px; border-radius: 6px;
+    background: rgba(244,63,94,0.14); color: #FB7185;
+    font-weight: 600; font-family: 'SF Mono', ui-monospace, monospace;
+    margin-left: 6px;
+  }
+  .task-alarm-pill.fired { background: rgba(244,63,94,0.3); }
+  .alarm-form-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .alarm-clear-btn {
+    padding: 8px 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.6);
+    font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+  }
+  .alarm-form-hint {
+    font-size: 12px; color: rgba(255,255,255,0.35);
+    margin-top: 8px; line-height: 1.4;
+  }
+
   .notif-hint {
     font-size: 12px; color: rgba(255,255,255,0.35);
     line-height: 1.45; margin-top: 14px;
@@ -876,7 +900,7 @@
     <input class="time-input" id="notifTime" type="time" onchange="changeNotifTime(this.value)">
   </div>
   <div class="notif-hint">
-    Hinweis: Eine Erinnerung erscheint, wenn offene oder heute fällige To-Dos vorhanden sind. Damit Benachrichtigungen zuverlässig erscheinen, installiere die App (Zur Startseite hinzufügen) und öffne sie regelmässig.
+    Hinweis: Eine Erinnerung erscheint, wenn offene oder heute fällige To-Dos vorhanden sind. Zusätzlich kannst du bei jedem Task einen ⏰ Alarm setzen – du wirst benachrichtigt, wenn die Routine bis zu dieser Uhrzeit nicht erledigt ist. Damit Benachrichtigungen zuverlässig erscheinen, installiere die App (Teilen → Zum Home-Bildschirm) und öffne sie regelmässig – auf dem iPhone funktionieren Benachrichtigungen nur in der installierten App (iOS 16.4 oder neuer).
   </div>
   <div class="modal-actions">
     <button class="btn-save" onclick="closeNotifSettings()">Fertig</button>
@@ -920,6 +944,13 @@
     <button class="subtask-add-btn" onclick="addSubtaskToForm()">+</button>
   </div>
   <div class="subtask-edit-list" id="subtaskEditList"></div>
+
+  <div class="form-label">⏰ Alarm (optional)</div>
+  <div class="alarm-form-row">
+    <input class="time-input" id="inputAlarmTime" type="time">
+    <button class="alarm-clear-btn" type="button" onclick="clearAlarmField()">Kein Alarm</button>
+  </div>
+  <div class="alarm-form-hint">Du bekommst eine Benachrichtigung, wenn der Task bis zu dieser Uhrzeit noch nicht erledigt ist.</div>
 
   <div class="form-label" id="counterLabel" style="display:none">Absolviert</div>
   <div class="counter-row" id="counterRow" style="display:none">
@@ -1142,7 +1173,7 @@ function render() {
             <span class="task-emoji">${t.emoji}</span>
             <div class="task-info">
               <span class="task-label${t.completed ? ' completed' : ''}" style="color:${t.completed ? '#34D399' : t.color}">${t.label}</span>
-              <span class="task-counter">${t.counter}× absolviert</span>
+              <span class="task-counter">${t.counter}× absolviert${t.alarmTime && !t.completed ? `<span class="task-alarm-pill${isAlarmOverdue(t) ? ' fired' : ''}">⏰ ${t.alarmTime}</span>` : ''}</span>
             </div>
           </div>
           <div class="task-right">${rightHtml}</div>
@@ -1152,6 +1183,7 @@ function render() {
     container.appendChild(card);
   });
   updateProgressBar();
+  scheduleTaskAlarms();
 }
 
 // --- Task interactions ---
@@ -1226,6 +1258,7 @@ function openModal(index) {
   formSubtasks = isEdit && t.subtasks ? t.subtasks.map(s => s.name) : [];
   formCounter = isEdit ? t.counter : 0;
   document.getElementById('counterValue').textContent = formCounter;
+  document.getElementById('inputAlarmTime').value = isEdit && t.alarmTime ? t.alarmTime : '';
 
   // Build emoji grid
   const selEmoji = isEdit ? t.emoji : EMOJIS[0];
@@ -1428,6 +1461,7 @@ function saveTask() {
   const colorObj = COLORS.find(c => c.color === colorHex) || COLORS[0];
   const finalColor = colorObj.color;
   const finalBg = colorObj.bg;
+  const alarmTime = document.getElementById('inputAlarmTime').value || null;
 
   if (editingIndex !== null) {
     // Update existing
@@ -1437,6 +1471,8 @@ function saveTask() {
     t.color = finalColor;
     t.bg = finalBg;
     t.counter = formCounter;
+    if (t.alarmTime !== alarmTime) t.alarmNotifiedDate = null;
+    t.alarmTime = alarmTime;
     // Update subtasks: keep completion state for existing ones
     const oldNames = t.subtasks ? t.subtasks.map(s => s.name) : [];
     t.subtasks = formSubtasks.map(sName => {
@@ -1458,12 +1494,24 @@ function saveTask() {
       completed: false,
       counter: 0,
       subtasks: formSubtasks.map(s => ({ name: s, completed: false })),
+      alarmTime,
+      alarmNotifiedDate: null,
+    });
+  }
+
+  if (alarmTime) {
+    ensureNotifPermission().then(ok => {
+      if (!ok) alert('Damit der Alarm klappt, bitte Benachrichtigungen erlauben (App installieren und in den Einstellungen freigeben).');
     });
   }
 
   saveTasks();
   closeModal();
   render();
+}
+
+function clearAlarmField() {
+  document.getElementById('inputAlarmTime').value = '';
 }
 
 function deleteTask() {
@@ -2224,6 +2272,25 @@ function importDataFromInput(input) {
 }
 
 // --- Notifications ---
+// Service Worker: nötig, damit Benachrichtigungen auch auf iOS (installierte PWA)
+// und bei App im Hintergrund angezeigt werden können.
+let swRegistration = null;
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(reg => { swRegistration = reg; })
+    .catch(() => {});
+}
+
+async function showAppNotification(title, body, tag) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+  const opts = { body, icon: 'icon-192.png', badge: 'icon-192.png', tag };
+  try {
+    const reg = swRegistration || (navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null);
+    if (reg && reg.showNotification) { await reg.showNotification(title, opts); return true; }
+  } catch {}
+  try { new Notification(title, opts); return true; } catch { return false; }
+}
+
 function getNotifPermLabel() {
   if (!('Notification' in window)) return 'vom Browser nicht unterstützt';
   if (Notification.permission === 'granted') return 'Erlaubt';
@@ -2304,11 +2371,9 @@ function tryFireDailyNotif() {
   if (todoSettings.lastNotifiedDate === today) return;
   const body = buildNotifBody();
   if (!body) return;
-  try {
-    new Notification('To-Do Erinnerung', { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'focus-todo-daily' });
-    todoSettings.lastNotifiedDate = today;
-    saveTodoSettings();
-  } catch {}
+  showAppNotification('To-Do Erinnerung', body, 'focus-todo-daily');
+  todoSettings.lastNotifiedDate = today;
+  saveTodoSettings();
 }
 function scheduleNextNotification() {
   if (notifTimer) { clearTimeout(notifTimer); notifTimer = null; }
@@ -2327,6 +2392,58 @@ function scheduleNextNotification() {
 function checkNotifOnOpen() {
   tryFireDailyNotif();
   scheduleNextNotification();
+  checkTaskAlarms();
+  scheduleTaskAlarms();
+}
+
+// --- Task-Alarme ---
+// Meldet sich, wenn eine Routine bis zur eingestellten Uhrzeit nicht erledigt ist.
+let taskAlarmTimer = null;
+
+function isAlarmOverdue(t) {
+  if (!t.alarmTime || t.completed) return false;
+  const [hh, mm] = t.alarmTime.split(':').map(Number);
+  const target = new Date(); target.setHours(hh, mm, 0, 0);
+  return new Date() >= target;
+}
+
+function checkTaskAlarms() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const today = todayISO();
+  let changed = false;
+  tasks.forEach(t => {
+    if (!isAlarmOverdue(t)) return;
+    if (t.alarmNotifiedDate === today) return;
+    showAppNotification(
+      '⏰ ' + t.emoji + ' ' + t.label,
+      'Bis ' + t.alarmTime + ' nicht erledigt – jetzt dranbleiben!',
+      'focus-task-alarm-' + t.id
+    );
+    t.alarmNotifiedDate = today;
+    changed = true;
+  });
+  if (changed) { saveTasks(); render(); }
+}
+
+function scheduleTaskAlarms() {
+  if (taskAlarmTimer) { clearTimeout(taskAlarmTimer); taskAlarmTimer = null; }
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const today = todayISO();
+  let next = null;
+  tasks.forEach(t => {
+    if (!t.alarmTime || t.completed || t.alarmNotifiedDate === today) return;
+    const [hh, mm] = t.alarmTime.split(':').map(Number);
+    const target = new Date(now); target.setHours(hh, mm, 0, 0);
+    if (target <= now) return; // fällig – wird von checkTaskAlarms direkt behandelt
+    if (!next || target < next) next = target;
+  });
+  if (!next) return;
+  const delay = Math.min(Math.max(next - now, 1000), 24*60*60*1000);
+  taskAlarmTimer = setTimeout(() => {
+    checkTaskAlarms();
+    scheduleTaskAlarms();
+  }, delay);
 }
 
 // --- Setup ---
@@ -2373,6 +2490,7 @@ function checkNotifOnOpen() {
   setInterval(() => {
     const v = document.getElementById('viewTodos');
     if (v && v.classList.contains('active')) renderTodos();
+    checkTaskAlarms(); // Fallback, falls der präzise Timer gedrosselt wurde
   }, 60 * 1000);
 })();
 
