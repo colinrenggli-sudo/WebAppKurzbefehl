@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FLUSSWERK – Flussschwimmen in der Schweiz</title>
+<meta name="description" content="Wassertemperatur, Abfluss und Einschätzung für die schönsten Flussschwimmstrecken der Schweiz – Aare, Rhein, Limmat, Reuss und Rhone. Mit Live-Daten der BAFU-Messstationen.">
+<meta name="theme-color" content="#0b3954">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%230b3954"/><path d="M8 26c6-6 10-6 16 0s10 6 16 0 10-6 16 0" stroke="%2367e8f9" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M8 42c6-6 10-6 16 0s10 6 16 0 10-6 16 0" stroke="%23a5f3fc" stroke-width="5" fill="none" stroke-linecap="round"/></svg>'>
+<style>
+/* ============================================================
+   FLUSSWERK – Design
+   Eine Datei, kein Build. Farben und Abstände als Variablen,
+   damit sich der Auftritt an einem Ort umstellen lässt.
+   ============================================================ */
+:root{
+  --tinte:#12303f;          /* Text, tiefes Wasser            */
+  --tinte-2:#4a6675;        /* Nebentext                      */
+  --fluss:#0e7490;          /* Hauptfarbe, Flussgrün-Blau     */
+  --fluss-dunkel:#0b3954;   /* Hero, Kopf, Fusszeile          */
+  --gischt:#e7f4f7;         /* helle Flächen mit Wasserton    */
+  --grund:#f5f8f9;          /* Seitenhintergrund              */
+  --karte:#ffffff;          /* Kartenflächen                  */
+  --linie:#dbe7ec;          /* Trennlinien                    */
+  --gut:#177245;   --gut-f:#e5f5ec;
+  --acht:#a2570a;  --acht-f:#fdf0e0;
+  --hoch:#b42318;  --hoch-f:#fdecea;
+  --radius:18px;
+  --schatten:0 1px 2px rgba(11,57,84,.06),0 8px 28px rgba(11,57,84,.09);
+  --schrift:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{font-family:var(--schrift);background:var(--grund);color:var(--tinte);line-height:1.55;-webkit-font-smoothing:antialiased}
+img,svg{display:block;max-width:100%}
+a{color:var(--fluss)}
+button{font-family:inherit;cursor:pointer}
+.innen{max-width:1100px;margin:0 auto;padding:0 20px}
+
+/* ---------- Kopfzeile ---------- */
+header.kopf{position:sticky;top:0;z-index:40;background:rgba(11,57,84,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff}
+.kopf-innen{max-width:1100px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.06em;font-size:17px;color:#fff;text-decoration:none}
+.logo svg{width:30px;height:30px}
+nav.haupt{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+nav.haupt a{color:#cfe8f0;text-decoration:none;font-size:14.5px;font-weight:600;padding:7px 12px;border-radius:99px;transition:background .15s,color .15s}
+nav.haupt a:hover{background:rgba(255,255,255,.12);color:#fff}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;background:linear-gradient(165deg,#0b3954 0%,#0e5972 55%,#0e7490 100%);color:#fff;overflow:hidden}
+.hero-innen{max-width:1100px;margin:0 auto;padding:64px 20px 130px;position:relative;z-index:2}
+.hero h1{font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.12;max-width:640px}
+.hero p.unter{margin-top:14px;font-size:clamp(16px,2.2vw,19px);color:#cfe8f0;max-width:560px}
+.hero .chips{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:10px 16px;min-width:130px}
+.chip .cw{font-size:22px;font-weight:800;line-height:1.1}
+.chip .cl{font-size:12.5px;color:#bfe2ec;margin-top:2px}
+.wellen{position:absolute;left:0;right:0;bottom:-2px;z-index:1;pointer-events:none}
+.wellen svg{width:200%;height:110px;animation:treiben 14s linear infinite}
+.wellen.w2 svg{animation-duration:9s;animation-direction:reverse;opacity:.55;height:90px}
+@keyframes treiben{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.wellen svg{animation:none}}
+
+/* ---------- Datenleiste ---------- */
+.datenleiste{background:var(--karte);border-bottom:1px solid var(--linie)}
+.datenleiste .innen{display:flex;align-items:center;gap:10px;padding-top:10px;padding-bottom:10px;flex-wrap:wrap;font-size:13.5px;color:var(--tinte-2)}
+.punkt{width:9px;height:9px;border-radius:50%;background:#94a3b8;flex:none}
+.punkt.live{background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.18)}
+.datenleiste button{margin-left:auto;border:1px solid var(--linie);background:var(--gischt);color:var(--fluss-dunkel);font-weight:600;font-size:13px;padding:6px 14px;border-radius:99px}
+.datenleiste button:hover{background:#d9edf2}
+
+/* ---------- Abschnitte ---------- */
+section{padding:54px 0}
+.ab-titel{font-size:clamp(23px,3.4vw,30px);font-weight:800;letter-spacing:-.015em}
+.ab-lead{margin-top:8px;color:var(--tinte-2);max-width:640px}
+.kicker{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fluss);margin-bottom:8px}
+
+/* ---------- Spot-Karten ---------- */
+.spots-gitter{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.spot{background:var(--karte);border:1px solid var(--linie);border-radius:var(--radius);box-shadow:var(--schatten);overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s}
+.spot:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(11,57,84,.07),0 14px 36px rgba(11,57,84,.13)}
+.spot-kopf{padding:16px 18px 0;display:flex;align-items:flex-start;gap:10px}
+.spot-kopf h3{font-size:18.5px;font-weight:750;letter-spacing:-.01em;line-height:1.25}
+.spot-kopf .ort{font-size:13.5px;color:var(--tinte-2);margin-top:1px}
+.fluss-marke{margin-left:auto;flex:none;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--fluss-dunkel);background:var(--gischt);border-radius:99px;padding:4px 10px}
+.spot-werte{display:flex;gap:18px;align-items:flex-end;padding:14px 18px 4px}
+.wert-gross{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.wert-gross small{font-size:17px;font-weight:600;color:var(--tinte-2)}
+.wert-neben{padding-bottom:5px}
+.wert-neben .wn{font-size:16.5px;font-weight:700}
+.wert-neben .wl{font-size:12px;color:var(--tinte-2)}
+.quelle-tag{margin-left:auto;align-self:flex-start;font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px;letter-spacing:.03em}
+.quelle-tag.live{color:#166534;background:#e5f5ec}
+.quelle-tag.demo{color:#64748b;background:#eef2f5}
+.pegel{margin:12px 18px 0;height:8px;border-radius:99px;background:linear-gradient(90deg,#8fd6b4 0 55%,#f2c48c 55% 80%,#eb9c95 80% 100%);position:relative}
+.pegel .zeiger{position:absolute;top:-4px;width:4px;height:16px;border-radius:3px;background:var(--fluss-dunkel);box-shadow:0 0 0 2px #fff;transform:translateX(-50%);transition:left .6s ease}
+.spot-status{margin:12px 18px 0;font-size:13.5px;font-weight:700;border-radius:10px;padding:8px 12px;display:flex;gap:8px;align-items:center}
+.spot-status svg{width:16px;height:16px;flex:none}
+.s-gut{color:var(--gut);background:var(--gut-f)}
+.s-acht{color:var(--acht);background:var(--acht-f)}
+.s-hoch{color:var(--hoch);background:var(--hoch-f)}
+.spot-text{padding:12px 18px 0;font-size:14px;color:var(--tinte-2)}
+.spot-fuss{padding:14px 18px 18px;margin-top:auto;display:flex;align-items:center;gap:10px}
+.spot-fuss .fakten{font-size:12.5px;color:var(--tinte-2)}
+.spot-fuss button{margin-left:auto;border:none;background:var(--fluss-dunkel);color:#fff;font-weight:650;font-size:13.5px;padding:9px 16px;border-radius:99px}
+.spot-fuss button:hover{background:#0e5972}
+
+/* ---------- Detail-Dialog ---------- */
+dialog.detail{border:none;border-radius:22px;padding:0;max-width:660px;width:calc(100% - 32px);max-height:calc(100dvh - 48px);box-shadow:0 24px 80px rgba(3,25,38,.4);overscroll-behavior:contain}
+dialog.detail::backdrop{background:rgba(6,32,46,.55);backdrop-filter:blur(3px)}
+.d-kopf{background:linear-gradient(150deg,var(--fluss-dunkel),#0e6a86);color:#fff;padding:24px 26px 20px;position:relative}
+.d-kopf h3{font-size:24px;font-weight:800;letter-spacing:-.015em;padding-right:40px}
+.d-kopf .ort{color:#bfe2ec;font-size:14.5px;margin-top:2px}
+.d-schliessen{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:17px;line-height:1;display:grid;place-items:center}
+.d-schliessen:hover{background:rgba(255,255,255,.28)}
+.d-messwerte{display:flex;gap:24px;margin-top:18px;flex-wrap:wrap}
+.d-messwerte .mw b{font-size:26px;font-weight:800}
+.d-messwerte .mw span{display:block;font-size:12px;color:#bfe2ec}
+.d-koerper{padding:22px 26px 26px;overflow-y:auto}
+.d-fakten{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.d-fakt{background:var(--gischt);border-radius:12px;padding:10px 12px}
+.d-fakt .fl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--tinte-2)}
+.d-fakt .fw{font-size:14.5px;font-weight:650;margin-top:2px}
+.d-block{margin-bottom:16px}
+.d-block h4{font-size:13px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--fluss);margin-bottom:6px}
+.d-block p,.d-block li{font-size:14.5px;color:var(--tinte)}
+.d-block ul{padding-left:20px;display:grid;gap:4px}
+.d-gefahr{background:var(--hoch-f);border-left:4px solid var(--hoch);border-radius:0 12px 12px 0;padding:12px 14px}
+.d-gefahr li{color:#7a1d15}
+.d-fuss{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.d-fuss a{flex:none;display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-weight:650;font-size:13.5px;padding:9px 16px;border-radius:99px;border:1.5px solid var(--linie);color:var(--fluss-dunkel)}
+.d-fuss a:hover{background:var(--gischt)}
+.d-station{margin-top:16px;font-size:12px;color:var(--tinte-2)}
+
+/* ---------- Sicherheit ---------- */
+#sicherheit{background:var(--fluss-dunkel);color:#fff}
+#sicherheit .kicker{color:#67d8f0}
+#sicherheit .ab-lead{color:#bfe2ec}
+.regeln{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.regel{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:18px}
+.regel .nr{width:32px;height:32px;border-radius:10px;background:#67d8f0;color:#0b3954;font-weight:800;font-size:16px;display:grid;place-items:center;margin-bottom:10px}
+.regel h3{font-size:16px;font-weight:750;line-height:1.3}
+.regel p{margin-top:6px;font-size:14px;color:#c8e6ef}
+.regel-quelle{margin-top:18px;font-size:12.5px;color:#9fcedd}
+.regel-quelle a{color:#9fe4f5}
+
+/* ---------- Kaltwasser ---------- */
+.kalt-tabelle{margin-top:26px;width:100%;border-collapse:collapse;background:var(--karte);border-radius:var(--radius);overflow:hidden;box-shadow:var(--schatten);font-size:14.5px}
+.kalt-tabelle th,.kalt-tabelle td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--linie);vertical-align:top}
+.kalt-tabelle th{background:var(--gischt);font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinte-2)}
+.kalt-tabelle tr:last-child td{border-bottom:none}
+.kalt-tabelle td:first-child{font-weight:750;white-space:nowrap}
+.tab-huelle{overflow-x:auto;border-radius:var(--radius)}
+
+/* ---------- Wissen ---------- */
+.wissen-gitter{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.wissen-karte{background:var(--karte);border:1px solid var(--linie);border-radius:var(--radius);box-shadow:var(--schatten);padding:20px}
+.wissen-karte .wk-icon{width:42px;height:42px;border-radius:12px;background:var(--gischt);display:grid;place-items:center;margin-bottom:12px}
+.wissen-karte .wk-icon svg{width:24px;height:24px;stroke:var(--fluss);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.wissen-karte h3{font-size:16.5px;font-weight:750}
+.wissen-karte p{margin-top:6px;font-size:14px;color:var(--tinte-2)}
+.wissen-karte ul{margin-top:8px;padding-left:18px;font-size:14px;color:var(--tinte-2);display:grid;gap:3px}
+
+/* ---------- Fusszeile ---------- */
+footer{background:#092e44;color:#9fcedd;padding:44px 0 36px;font-size:13.5px}
+footer .innen{display:grid;gap:22px}
+footer h4{color:#fff;font-size:13px;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
+footer a{color:#9fe4f5}
+footer .hinweis{border-top:1px solid rgba(255,255,255,.14);padding-top:18px;font-size:12.5px;line-height:1.6}
+@media(min-width:760px){footer .oben{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:28px}}
+</style>
+</head>
+<body>
+
+<header class="kopf">
+  <div class="kopf-innen">
+    <a class="logo" href="#">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#67d8f0" opacity=".15"/><path d="M8 26c6-6 10-6 16 0s10 6 16 0 10-6 16 0" stroke="#67d8f0" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M8 42c6-6 10-6 16 0s10 6 16 0 10-6 16 0" stroke="#a5f3fc" stroke-width="5" fill="none" stroke-linecap="round"/></svg>
+      FLUSSWERK
+    </a>
+    <nav class="haupt" aria-label="Hauptnavigation">
+      <a href="#spots">Strecken</a>
+      <a href="#sicherheit">Sicherheit</a>
+      <a href="#kaltwasser">Kaltes Wasser</a>
+      <a href="#wissen">Wissen</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-innen">
+    <h1>Der Fluss ist das schönste Schwimmbad der Schweiz.</h1>
+    <p class="unter">Wassertemperatur, Abfluss und eine ehrliche Einschätzung für sechs
+    klassische Flussschwimmstrecken – von der Aare in Bern bis zur Rhone in Genf.
+    Mit Live-Werten der eidgenössischen Messstationen.</p>
+    <div class="chips" id="heroChips" aria-live="polite">
+      <div class="chip"><div class="cw">–</div><div class="cl">wärmster Fluss</div></div>
+      <div class="chip"><div class="cw">–</div><div class="cl">Strecken mit guten Bedingungen</div></div>
+      <div class="chip"><div class="cw">6</div><div class="cl">Strecken im Überblick</div></div>
+    </div>
+  </div>
+  <div class="wellen"><svg viewBox="0 0 2880 110" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 C 240 20 480 20 720 60 S 1200 100 1440 60 1920 20 2160 60 2640 100 2880 60 L2880 110 0 110 Z" fill="#f5f8f9" opacity=".35"/></svg></div>
+  <div class="wellen w2"><svg viewBox="0 0 2880 110" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70 C 240 30 480 30 720 70 S 1200 110 1440 70 1920 30 2160 70 2640 110 2880 70 L2880 110 0 110 Z" fill="#f5f8f9"/></svg></div>
+</div>
+
+<div class="datenleiste">
+  <div class="innen">
+    <span class="punkt" id="datenPunkt"></span>
+    <span id="datenText">Messwerte werden geladen …</span>
+    <button id="btnAktualisieren" type="button">Aktualisieren</button>
+  </div>
+</div>
+
+<main>
+  <section id="spots">
+    <div class="innen">
+      <span class="kicker">Die Strecken</span>
+      <h2 class="ab-titel">Sechs Flüsse, sechs Klassiker</h2>
+      <p class="ab-lead">Jede Karte zeigt die aktuelle Wassertemperatur, den Abfluss und
+      eine Ampel nach den Richtwerten dieser Seite. Der Zeiger auf dem Balken steht dort,
+      wo der Abfluss gerade liegt – links ruhig, rechts Hochwasser.</p>
+      <div class="spots-gitter" id="spotsGitter"></div>
+    </div>
+  </section>
+
+  <section id="sicherheit">
+    <div class="innen">
+      <span class="kicker">Bevor du reingehst</span>
+      <h2 class="ab-titel">Die Flussregeln</h2>
+      <p class="ab-lead">Ein Fluss ist kein Schwimmbecken: Er ist kälter, schneller und
+      kennt keine Pause. Diese Regeln folgen den Fluss- und Baderegeln der Schweizerischen
+      Lebensrettungs-Gesellschaft SLRG – sie sind kurz, und sie retten Leben.</p>
+      <div class="regeln">
+        <article class="regel"><div class="nr">1</div><h3>Nur gute, geübte Schwimmerinnen und Schwimmer</h3><p>Fliessendes Wasser verlangt Kraft und Ruhe. Wer sich im See schwertut, gehört nicht in den Fluss.</p></article>
+        <article class="regel"><div class="nr">2</div><h3>Unbekannte Abschnitte zuerst vom Ufer erkunden</h3><p>Einstieg, alle Ausstiege und Hindernisse vor dem Schwimmen anschauen – der Fluss bringt dich nicht zurück.</p></article>
+        <article class="regel"><div class="nr">3</div><h3>Nie in trübe oder Hochwasser führende Flüsse</h3><p>Treibholz, Walzen und Druck machen Hochwasser unberechenbar. Steht die Ampel auf Rot: an Land bleiben.</p></article>
+        <article class="regel"><div class="nr">4</div><h3>Brückenpfeiler, Wehre und Hindernisse weiträumig meiden</h3><p>Vor Hindernissen entsteht Druck, dahinter ziehen Walzen nach unten. Ausstieg immer deutlich vor jedem Wehr.</p></article>
+        <article class="regel"><div class="nr">5</div><h3>Nie alleine, nie überhitzt, nie mit Alkohol</h3><p>Zu zweit schwimmen, vor dem Einstieg abkühlen, nüchtern bleiben – die drei häufigsten Fehler kosten die meisten Leben.</p></article>
+        <article class="regel"><div class="nr">6</div><h3>Auffällige Schwimmboje mitnehmen</h3><p>Ein Schwimmsack oder eine Boje macht dich für Schifffahrt und Rettung sichtbar und trägt dich im Notfall – Kleider bleiben trocken obendrein.</p></article>
+      </div>
+      <p class="regel-quelle">Nach den Bade- und Flussregeln der
+      <a href="https://www.slrg.ch/de/baderegeln" target="_blank" rel="noopener">SLRG – Schweizerische Lebensrettungs-Gesellschaft</a>.
+      Im Notfall: <b>Sanität 144</b> · <b>Polizei 117</b>.</p>
+    </div>
+  </section>
+
+  <section id="kaltwasser">
+    <div class="innen">
+      <span class="kicker">Temperatur richtig lesen</span>
+      <h2 class="ab-titel">Was die Wassertemperatur bedeutet</h2>
+      <p class="ab-lead">Schweizer Flüsse tragen Schmelz- und Bergwasser. Auch im Hochsommer
+      können sie deutlich kälter sein als jeder Badesee – und Kälte nimmt schneller Kraft,
+      als man denkt.</p>
+      <div class="tab-huelle">
+      <table class="kalt-tabelle">
+        <thead><tr><th>Temperatur</th><th>Einordnung</th><th>Empfehlung</th></tr></thead>
+        <tbody>
+          <tr><td>über 20 °C</td><td>Angenehm, sommerlich</td><td>Normale Vorsicht – abkühlen vor dem Einstieg genügt.</td></tr>
+          <tr><td>17–20 °C</td><td>Frisch</td><td>Aufenthalt begrenzen, Strecke nicht zu lang wählen.</td></tr>
+          <tr><td>12–17 °C</td><td>Kalt – Kälteschock möglich</td><td>Nur Geübte, kurz bleiben, langsam einsteigen statt springen.</td></tr>
+          <tr><td>unter 12 °C</td><td>Sehr kalt</td><td>Ohne Neopren und Erfahrung nicht schwimmen – Muskeln versagen in Minuten.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="wissen">
+    <div class="innen">
+      <span class="kicker">Gut vorbereitet</span>
+      <h2 class="ab-titel">Kleines Flussschwimm-Wissen</h2>
+      <div class="wissen-gitter">
+        <article class="wissen-karte">
+          <div class="wk-icon"><svg viewBox="0 0 24 24"><path d="M4 15c2-2 4-2 6 0s4 2 6 0 3-2 4-1"/><circle cx="9" cy="7" r="2.4"/><path d="M12.5 9.5 16 12"/></svg></div>
+          <h3>Treiben lassen, nicht kämpfen</h3>
+          <p>Im Fluss schwimmt man mit der Strömung, nicht gegen sie. Zum Ausstieg schräg
+          ans Ufer halten und den Zug des Wassers arbeiten lassen. Füsse voraus, wenn es
+          seicht oder steinig wird.</p>
+        </article>
+        <article class="wissen-karte">
+          <div class="wk-icon"><svg viewBox="0 0 24 24"><path d="M12 3c3.5 3.6 6 6.8 6 10a6 6 0 0 1-12 0c0-3.2 2.5-6.4 6-10Z"/></svg></div>
+          <h3>Die Ausrüstung</h3>
+          <ul>
+            <li><b>Schwimmsack oder Boje</b> in Signalfarbe – Pflicht auf langen Strecken</li>
+            <li><b>Badeschuhe</b> für steinige Ein- und Ausstiege</li>
+            <li><b>Neopren</b>, sobald das Wasser unter etwa 17 °C liegt</li>
+            <li>Kein Wertsachen-Risiko: Was nicht in den Sack passt, bleibt zu Hause</li>
+          </ul>
+        </article>
+        <article class="wissen-karte">
+          <div class="wk-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></div>
+          <h3>Die Saison</h3>
+          <p>Flussschwimmen ist ein Sommerhandwerk: Von <b>Juni bis September</b> stimmen
+          Temperatur und Tageslicht. Im Frühsommer drückt die Schneeschmelze den Abfluss
+          hoch und die Temperatur tief – dann lieber noch warten.</p>
+        </article>
+        <article class="wissen-karte">
+          <div class="wk-icon"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3.2"/></svg></div>
+          <h3>Nach dem Gewitter: warten</h3>
+          <p>Regen im Einzugsgebiet lässt Flüsse innert Stunden anschwellen und trüben –
+          auch bei schönstem Wetter am Fluss selbst. Nach kräftigen Gewittern ein bis zwei
+          Tage warten und die Messwerte prüfen.</p>
+        </article>
+        <article class="wissen-karte">
+          <div class="wk-icon"><svg viewBox="0 0 24 24"><path d="M3 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M7 12l5-7 5 7"/><path d="M9.2 9.5h5.6"/></svg></div>
+          <h3>Der Abfluss ist die Währung</h3>
+          <p>Kubikmeter pro Sekunde sagen mehr als jeder Blick vom Ufer. Die Richtwerte
+          dieser Seite markieren, ab wann eine Strecke nur noch Geübten – oder niemandem
+          mehr – gehört. Massgebend bleiben die amtlichen Warnungen.</p>
+        </article>
+        <article class="wissen-karte">
+          <div class="wk-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></svg></div>
+          <h3>Kurz vor knapp</h3>
+          <p>Den Ausstieg <b>nie</b> auf den letzten Metern planen. Wer eine Treppe
+          verpasst, braucht eine zweite Chance – deshalb vorher wissen, wo die nächste
+          Möglichkeit liegt und wo die Strecke endgültig endet.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="innen">
+    <div class="oben">
+      <div>
+        <h4>FLUSSWERK</h4>
+        <p>Ein Überblick über das Flussschwimmen in der Schweiz: Live-Wasserdaten,
+        Streckenporträts und die Regeln, die dazugehören. Eine einzige HTML-Datei,
+        ohne Konto, ohne Tracking.</p>
+      </div>
+      <div>
+        <h4>Datenquellen</h4>
+        <p><a href="https://www.hydrodaten.admin.ch" target="_blank" rel="noopener">BAFU – hydrologische Daten</a><br>
+        bereitgestellt über die <a href="https://api.existenz.ch" target="_blank" rel="noopener">existenz.ch-API</a><br>
+        Wetter: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a></p>
+      </div>
+      <div>
+        <h4>Sicherheit</h4>
+        <p><a href="https://www.slrg.ch/de/baderegeln" target="_blank" rel="noopener">SLRG Bade- und Flussregeln</a><br>
+        <a href="https://www.naturgefahren.ch" target="_blank" rel="noopener">Naturgefahrenportal des Bundes</a><br>
+        Notruf: Sanität 144 · Polizei 117</p>
+      </div>
+    </div>
+    <p class="hinweis"><b>Wichtig:</b> FLUSSWERK ist eine Informationsseite und ersetzt weder
+    amtliche Hochwasserwarnungen noch die eigene Erkundung vor Ort. Die Ampeln beruhen auf
+    Richtwerten dieser Seite (siehe <i>RECHERCHE.md</i>); Messwerte können verzögert oder
+    ausgefallen sein – ohne Verbindung zeigt die Seite gekennzeichnete Richtwerte. Wer in
+    einen Fluss steigt, tut das in eigener Verantwortung.</p>
+  </div>
+</footer>
+
+<dialog class="detail" id="dlgDetail"></dialog>
+
+<script>
+'use strict';
+/* ============================================================
+   FLUSSWERK – Logik
+   Live-Werte von den BAFU-Messstationen (über api.existenz.ch)
+   und Open-Meteo. Ohne Verbindung zeigt die Seite Richtwerte
+   aus einem typischen Augusttag – klar als solche markiert.
+   ============================================================ */
+
+/* Die Strecken. `station` ist die BAFU-Stationsnummer der nächst-
+   gelegenen Messstelle; `naehe` vermerkt, wenn die Station nicht
+   direkt an der Strecke liegt. `acht`/`hoch` sind die Abfluss-
+   Richtwerte dieser Seite in m³/s (Begründung in RECHERCHE.md). */
+const SPOTS = [
+  {
+    id: 'bern', fluss: 'Aare', name: 'Eichholz – Marzili', ort: 'Bern',
+    lat: 46.9392, lon: 7.4430, station: '2135', stationName: 'Aare – Bern, Schönau',
+    acht: 250, hoch: 360, demoTemp: 19.6, demoFluss: 171,
+    laenge: '1,4 km', dauer: '15–25 Min.', niveau: 'Geübte',
+    kurz: 'Der Klassiker schlechthin: vom Eichholz durch das grüne Aarebecken bis zu den Treppen des Marzilibads – halb Bern schwimmt hier heim.',
+    einstieg: 'Wiese beim Camping Eichholz, flacher Kiesuferbereich.',
+    ausstieg: 'Treppen entlang des Marzilibads; der letzte markierte Ausstieg liegt deutlich vor dem Schwellenmätteli-Wehr.',
+    gefahren: [
+      'Das Schwellenmätteli-Wehr unterhalb des Marzili: Ausstieg zwingend bei den Bad-Treppen.',
+      'Nach Gewittern im Berner Oberland steigt die Aare innert Stunden.',
+      'Brückenpfeiler (Monbijou-, Dalmazibrücke) weiträumig umschwimmen.'
+    ],
+    oepv: 'Tram/Bus bis «Marzilistrasse», zurück zum Eichholz mit Bus 19 (Haltestelle Eichholz) oder zu Fuss dem Ufer entlang.',
+    tipp: 'Die Berner schwimmen mit dem «Aare-Blick»: vor dem Einstieg kurz auf Abfluss und Temperatur schauen – genau dafür stehen die Werte oben.'
+  },
+  {
+    id: 'basel', fluss: 'Rhein', name: 'St. Alban – Dreirosen', ort: 'Basel',
+    lat: 47.5614, lon: 7.6050, station: '2289', stationName: 'Rhein – Basel, Rheinhalle',
+    acht: 1800, hoch: 2500, demoTemp: 21.4, demoFluss: 1050,
+    laenge: 'ca. 2 km', dauer: '25–40 Min.', niveau: 'Geübte',
+    kurz: 'Grossstadtschwimmen mit Münsterblick: Mit dem Schwimmsack vom St. Alban-Rheinweg gemütlich durch die halbe Stadt treiben.',
+    einstieg: 'St. Alban-Rheinweg unterhalb des Museums Tinguely, Treppen ans Wasser.',
+    ausstieg: 'Mehrere Treppen am Kleinbasler Ufer; spätestens vor der Dreirosenbrücke aussteigen – danach beginnt das Hafengebiet.',
+    gefahren: [
+      'Berufsschifffahrt: in Ufernähe auf der Kleinbasler Seite bleiben, nie in die Fahrrinne.',
+      'Das Hafenbecken unterhalb der Dreirosenbrücke ist absolut tabu.',
+      'Buhnen und Strömungskanten bei tiefem Wasserstand.'
+    ],
+    oepv: 'Tram 2 «Wettsteinplatz» zum Einstieg; vom Ausstieg bringt einen der Bus 34 oder ein Spaziergang dem Rhein entlang zurück.',
+    tipp: 'Der «Wickelfisch» – der wasserdichte Basler Schwimmsack – wurde genau für diese Strecke erfunden. Kleider rein, aufblasen, und er trägt dich mit.'
+  },
+  {
+    id: 'zuerich', fluss: 'Limmat', name: 'Flussbad Oberer Letten', ort: 'Zürich',
+    lat: 47.3861, lon: 8.5341, station: '2243', stationName: 'Limmat – Zürich, KW Letten',
+    acht: 180, hoch: 250, demoTemp: 20.8, demoFluss: 98,
+    laenge: '400 m Kanal', dauer: 'beliebig oft', niveau: 'auch Einsteiger',
+    kurz: 'Der 400-Meter-Schwimmkanal mitten in der Stadt: einsteigen, sich vom klaren Limmatwasser tragen lassen, an der Leiter raus – und gleich nochmals.',
+    einstieg: 'Steg am oberen Ende des Flussbads Oberer Letten.',
+    ausstieg: 'Leitern entlang des ganzen Kanals; das Ende ist vor dem Kraftwerk Letten klar abgesperrt.',
+    gefahren: [
+      'Die Absperrung vor dem Kraftwerk Letten respektieren – dahinter hat es nichts zu suchen.',
+      'Springen nur an den markierten Stellen; der Kanal ist stellenweise seicht.',
+      'An Sommerabenden sehr viel Betrieb – Rücksicht auf Schwächere.'
+    ],
+    oepv: 'Tram/Bus bis «Limmatplatz», fünf Gehminuten. Eintritt frei, Betrieb im Sommer mit Bademeister.',
+    tipp: 'Die sanfteste Art, Flussschwimmen zu lernen: kurze Strecke, Aufsicht, Leitern alle paar Meter. Ideal, bevor man sich an Aare oder Rhein wagt.'
+  },
+  {
+    id: 'toessegg', fluss: 'Rhein', name: 'Tössegg – Eglisau', ort: 'Zürcher Unterland',
+    lat: 47.5586, lon: 8.5701, station: '2143', stationName: 'Rhein – Rekingen', naehe: true,
+    acht: 600, hoch: 800, demoTemp: 20.1, demoFluss: 452,
+    laenge: 'ca. 5 km', dauer: '60–90 Min.', niveau: 'sehr Geübte',
+    kurz: 'Die grosse Fahrt: von der Töss-Mündung in weiten Schlaufen durch bewaldete Ufer bis zur Rheinbadi Eglisau. Lang, still, eindrücklich.',
+    einstieg: 'Kiesufer bei der Tössegg, wo die Töss in den Rhein mündet.',
+    ausstieg: 'Rhybadi Eglisau vor der Brücke; unterwegs nur wenige Ausstiegsstellen.',
+    gefahren: [
+      'Lange Strecke ohne Ausstiege – Kräfte ehrlich einteilen, Boje ist Pflicht.',
+      'Kursschiffe auf dem Rhein: sichtbar bleiben, Ufernähe halten.',
+      'Der Rhein bleibt auch im Sommer tief und kühl – Auskühlung unterschätzt man auf 90 Minuten leicht.'
+    ],
+    oepv: 'S-Bahn nach Eglisau; zur Tössegg mit dem Kursschiff ab Eglisau oder mit Bus und kurzem Fussweg ab Rorbas.',
+    tipp: 'Nichts für den Feierabend, alles für den Sonntag: Diese Strecke plant man zu zweit, mit Boje, Proviant und ohne Uhr.'
+  },
+  {
+    id: 'bremgarten', fluss: 'Reuss', name: 'Reussschlaufe Bremgarten', ort: 'Bremgarten AG',
+    lat: 47.3512, lon: 8.3420, station: '2018', stationName: 'Reuss – Mellingen', naehe: true,
+    acht: 250, hoch: 350, demoTemp: 19.2, demoFluss: 138,
+    laenge: 'ca. 700 m', dauer: '10–15 Min.', niveau: 'Geübte',
+    kurz: 'Grünes Wasser unter der Holzbrücke: kurze Treibstrecke oberhalb des mittelalterlichen Städtlis, mit dem Flussbad als Basis.',
+    einstieg: 'Oberhalb des Flussbads Bremgarten am linken Ufer.',
+    ausstieg: 'Beim Flussbad; die Strecke endet dort verbindlich – flussabwärts folgt das Kraftwerkswehr.',
+    gefahren: [
+      'Das Wehr des Kraftwerks unterhalb des Städtlis: nie über das Flussbad hinaus treiben.',
+      'Die Reuss führt Alpenwasser – nach Schlechtwetter schnell trüb und stark.',
+      'Steiniger Grund, Badeschuhe lohnen sich.'
+    ],
+    oepv: 'Bremgarten-Dietikon-Bahn bis «Bremgarten», zehn Gehminuten zum Fluss.',
+    tipp: 'Nach dem Schwumm über die gedeckte Holzbrücke ins Städtli – kaum eine Strecke verbindet Wasser und Altstadt so direkt.'
+  },
+  {
+    id: 'genf', fluss: 'Rhone', name: 'Pointe de la Jonction', ort: 'Genf',
+    lat: 46.2016, lon: 6.1290, station: '2606', stationName: 'Rhone – Genf, Halle de l’Ile', naehe: true,
+    acht: 400, hoch: 550, demoTemp: 21.9, demoFluss: 312,
+    laenge: 'ca. 600 m', dauer: '10–15 Min.', niveau: 'Geübte',
+    kurz: 'Wo die türkisblaue Rhone auf die graue Arve trifft: Die Genferinnen und Genfer treiben am Sentier des Saules die warme Seewasser-Seite hinab.',
+    einstieg: 'Sentier des Saules, Leitern und Kiesufer oberhalb der Pointe.',
+    ausstieg: 'Leitern entlang des Sentier des Saules; vor dem Zusammenfluss mit der Arve aussteigen.',
+    gefahren: [
+      'Die Arve-Seite meiden: Gletscherwasser, trüb, mehrere Grad kälter und stark.',
+      'Das Wehr Seujet oberhalb reguliert den See – der Abfluss kann sich rasch ändern.',
+      'Viel Betrieb an Sommerabenden, Sprünge nur wo frei und tief.'
+    ],
+    oepv: 'Tram 14 oder Bus 2/19 bis «Jonction», fünf Gehminuten.',
+    tipp: 'Die Rhone führt hier Oberflächenwasser aus dem Genfersee – deshalb ist sie oft der wärmste Fluss der Schweiz. Der Farbkontrast zur Arve ist das Foto wert.'
+  }
+];
+
+/* ---------- Zustand ---------- */
+const ZUSTAND = {
+  hydro: {},        // Stationsnummer -> {temp, fluss, zeit}
+  wetter: {},       // Spot-Id -> {temp, code}
+  live: false,
+  stand: null
+};
+
+const $  = s => document.querySelector(s);
+const de = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 1 });
+const deGanz = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
+
+function zeitText(d) {
+  return d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    + ', ' + d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+}
+
+/* ---------- Messwerte je Spot (live oder Richtwert) ---------- */
+function werte(spot) {
+  const h = ZUSTAND.hydro[spot.station];
+  return {
+    temp:  h && h.temp  != null ? h.temp  : spot.demoTemp,
+    fluss: h && h.fluss != null ? h.fluss : spot.demoFluss,
+    live:  !!(h && (h.temp != null || h.fluss != null))
+  };
+}
+
+/* Ampel aus dem Abfluss: unter `acht` gut, bis `hoch` Vorsicht, darüber rot. */
+function ampel(spot, fluss) {
+  if (fluss >= spot.hoch) return { stufe: 'hoch', klasse: 's-hoch', text: 'Hoher Abfluss – nicht schwimmen' };
+  if (fluss >= spot.acht) return { stufe: 'acht', klasse: 's-acht', text: 'Erhöhter Abfluss – nur sehr Geübten' };
+  return { stufe: 'gut', klasse: 's-gut', text: 'Bedingungen im gewohnten Rahmen' };
+}
+
+/* Zeigerposition auf dem Pegelbalken: 0–55 % grün (bis `acht`),
+   55–80 % gelb (bis `hoch`), Rest rot. */
+function zeigerPos(spot, fluss) {
+  let p;
+  if (fluss <= spot.acht)      p = (fluss / spot.acht) * 55;
+  else if (fluss <= spot.hoch) p = 55 + (fluss - spot.acht) / (spot.hoch - spot.acht) * 25;
+  else                         p = 80 + Math.min(1, (fluss - spot.hoch) / spot.hoch) * 18;
+  return Math.max(2, Math.min(98, p));
+}
+
+const ICON_STATUS = {
+  gut:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg>',
+  acht: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 2.8 20h18.4L12 4Z"/><path d="M12 10v4.2M12 17.3v.1"/></svg>',
+  hoch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg>'
+};
+
+const WETTER_TEXT = c =>
+  c === 0 ? 'sonnig' : c <= 2 ? 'heiter' : c === 3 ? 'bewölkt' :
+  c <= 48 ? 'Nebel' : c <= 67 ? 'Regen' : c <= 77 ? 'Schnee' :
+  c <= 82 ? 'Schauer' : c >= 95 ? 'Gewitter' : 'wechselhaft';
+
+/* ---------- Karten zeichnen ---------- */
+function zeichneSpots() {
+  $('#spotsGitter').innerHTML = SPOTS.map(spot => {
+    const w = werte(spot);
+    const a = ampel(spot, w.fluss);
+    const wetter = ZUSTAND.wetter[spot.id];
+    return `
+    <article class="spot" id="spot-${spot.id}">
+      <div class="spot-kopf">
+        <div>
+          <h3>${spot.name}</h3>
+          <div class="ort">${spot.ort}${wetter ? ` · ${de.format(wetter.temp)} °C Luft, ${WETTER_TEXT(wetter.code)}` : ''}</div>
+        </div>
+        <span class="fluss-marke">${spot.fluss}</span>
+      </div>
+      <div class="spot-werte">
+        <div class="wert-gross">${de.format(w.temp)}<small> °C</small></div>
+        <div class="wert-neben">
+          <div class="wn">${deGanz.format(w.fluss)} m³/s</div>
+          <div class="wl">Abfluss</div>
+        </div>
+        <span class="quelle-tag ${w.live ? 'live' : 'demo'}">${w.live ? 'LIVE' : 'RICHTWERT'}</span>
+      </div>
+      <div class="pegel" role="img" aria-label="Abfluss ${deGanz.format(w.fluss)} von Richtwert ${deGanz.format(spot.hoch)} Kubikmeter pro Sekunde">
+        <span class="zeiger" style="left:${zeigerPos(spot, w.fluss)}%"></span>
+      </div>
+      <div class="spot-status ${a.klasse}">${ICON_STATUS[a.stufe]}<span>${a.text}</span></div>
+      <p class="spot-text">${spot.kurz}</p>
+      <div class="spot-fuss">
+        <span class="fakten">${spot.laenge} · ${spot.dauer} · ${spot.niveau}</span>
+        <button type="button" data-spot="${spot.id}">Zur Strecke</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function zeichneChips() {
+  const alle = SPOTS.map(s => ({ s, w: werte(s) }));
+  const waermster = alle.reduce((a, b) => (b.w.temp > a.w.temp ? b : a));
+  const gute = alle.filter(x => ampel(x.s, x.w.fluss).stufe === 'gut').length;
+  $('#heroChips').innerHTML = `
+    <div class="chip"><div class="cw">${de.format(waermster.w.temp)} °C</div><div class="cl">wärmster Fluss: ${waermster.s.fluss} in ${waermster.s.ort}</div></div>
+    <div class="chip"><div class="cw">${gute} von ${SPOTS.length}</div><div class="cl">Strecken mit guten Bedingungen</div></div>
+    <div class="chip"><div class="cw">${SPOTS.length}</div><div class="cl">Strecken im Überblick</div></div>`;
+}
+
+function zeichneLeiste() {
+  const punkt = $('#datenPunkt'), text = $('#datenText');
+  punkt.classList.toggle('live', ZUSTAND.live);
+  text.textContent = ZUSTAND.live
+    ? `Live-Werte der BAFU-Messstationen · Stand ${zeitText(ZUSTAND.stand)}`
+    : 'Keine Verbindung zu den Messstationen – die Seite zeigt gekennzeichnete Richtwerte eines typischen Augusttags.';
+}
+
+function zeichneAlles() { zeichneSpots(); zeichneChips(); zeichneLeiste(); }
+
+/* ---------- Detail-Dialog ---------- */
+function oeffneDetail(id) {
+  const spot = SPOTS.find(s => s.id === id);
+  if (!spot) return;
+  const w = werte(spot);
+  const a = ampel(spot, w.fluss);
+  const karte = `https://www.openstreetmap.org/?mlat=${spot.lat}&mlon=${spot.lon}#map=15/${spot.lat}/${spot.lon}`;
+  const dlg = $('#dlgDetail');
+  dlg.innerHTML = `
+    <div class="d-kopf">
+      <button class="d-schliessen" type="button" aria-label="Schliessen">✕</button>
+      <h3>${spot.fluss}: ${spot.name}</h3>
+      <div class="ort">${spot.ort}</div>
+      <div class="d-messwerte">
+        <div class="mw"><b>${de.format(w.temp)} °C</b><span>Wasser (${w.live ? 'live' : 'Richtwert'})</span></div>
+        <div class="mw"><b>${deGanz.format(w.fluss)} m³/s</b><span>Abfluss</span></div>
+        <div class="mw"><b>${deGanz.format(spot.acht)} / ${deGanz.format(spot.hoch)}</b><span>Richtwerte Vorsicht / Stopp</span></div>
+      </div>
+    </div>
+    <div class="d-koerper">
+      <div class="spot-status ${a.klasse}" style="margin:0 0 16px">${ICON_STATUS[a.stufe]}<span>${a.text}</span></div>
+      <div class="d-fakten">
+        <div class="d-fakt"><div class="fl">Strecke</div><div class="fw">${spot.laenge}</div></div>
+        <div class="d-fakt"><div class="fl">Dauer</div><div class="fw">${spot.dauer}</div></div>
+        <div class="d-fakt"><div class="fl">Für wen</div><div class="fw">${spot.niveau}</div></div>
+      </div>
+      <div class="d-block"><h4>Einstieg</h4><p>${spot.einstieg}</p></div>
+      <div class="d-block"><h4>Ausstieg</h4><p>${spot.ausstieg}</p></div>
+      <div class="d-block"><h4>Darauf achten</h4>
+        <div class="d-gefahr"><ul>${spot.gefahren.map(g => `<li>${g}</li>`).join('')}</ul></div>
+      </div>
+      <div class="d-block"><h4>Anreise</h4><p>${spot.oepv}</p></div>
+      <div class="d-block"><h4>Gut zu wissen</h4><p>${spot.tipp}</p></div>
+      <div class="d-fuss">
+        <a href="${karte}" target="_blank" rel="noopener">📍 Auf der Karte zeigen</a>
+        <a href="https://www.hydrodaten.admin.ch/de/seen-und-fluesse/stationen-und-daten/${spot.station}" target="_blank" rel="noopener">📈 Amtliche Messstation</a>
+      </div>
+      <p class="d-station">Messstelle: ${spot.stationName} (BAFU-Station ${spot.station})${spot.naehe ? ' – liegt nicht direkt an der Strecke, die Werte sind eine Näherung.' : ''}
+      Erkunde jede Strecke vor dem ersten Schwumm selbst vom Ufer aus.</p>
+    </div>`;
+  dlg.querySelector('.d-schliessen').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  dlg.showModal();
+}
+
+/* ---------- Live-Daten ---------- */
+async function holJson(url, ms) {
+  const ab = new AbortController();
+  const t = setTimeout(() => ab.abort(), ms || 8000);
+  try {
+    const r = await fetch(url, { signal: ab.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+async function ladeHydro() {
+  const stationen = [...new Set(SPOTS.map(s => s.station))].join(',');
+  const url = 'https://api.existenz.ch/apiv1/hydro/latest?locations=' + stationen
+            + '&parameters=temperature,flow&app=flusswerk&version=1.0.0';
+  const daten = await holJson(url);
+  const liste = Array.isArray(daten && daten.payload) ? daten.payload : [];
+  let treffer = 0;
+  for (const m of liste) {
+    if (!m || m.val == null) continue;
+    const eintrag = ZUSTAND.hydro[m.loc] || (ZUSTAND.hydro[m.loc] = {});
+    if (m.par === 'temperature') { eintrag.temp = +m.val; treffer++; }
+    if (m.par === 'flow')        { eintrag.fluss = +m.val; treffer++; }
+  }
+  return treffer > 0;
+}
+
+async function ladeWetter() {
+  const lat = SPOTS.map(s => s.lat).join(','), lon = SPOTS.map(s => s.lon).join(',');
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon
+            + '&current=temperature_2m,weather_code&timezone=Europe%2FZurich';
+  const daten = await holJson(url);
+  const liste = Array.isArray(daten) ? daten : [daten];
+  liste.forEach((d, i) => {
+    if (d && d.current && SPOTS[i])
+      ZUSTAND.wetter[SPOTS[i].id] = { temp: d.current.temperature_2m, code: d.current.weather_code };
+  });
+}
+
+async function aktualisieren() {
+  const knopf = $('#btnAktualisieren');
+  knopf.disabled = true; knopf.textContent = 'Lädt …';
+  const [hydro] = await Promise.allSettled([ladeHydro(), ladeWetter()]);
+  ZUSTAND.live = hydro.status === 'fulfilled' && hydro.value === true;
+  if (ZUSTAND.live) ZUSTAND.stand = new Date();
+  knopf.disabled = false; knopf.textContent = 'Aktualisieren';
+  zeichneAlles();
+}
+
+/* ---------- Start ---------- */
+document.addEventListener('click', e => {
+  const knopf = e.target.closest('button[data-spot]');
+  if (knopf) oeffneDetail(knopf.dataset.spot);
+});
+$('#btnAktualisieren').addEventListener('click', aktualisieren);
+
+zeichneAlles();          // sofort etwas zeigen (Richtwerte) …
+aktualisieren();         // … dann die Live-Werte holen
+setInterval(aktualisieren, 10 * 60 * 1000);   // alle 10 Minuten nachladen
+</script>
+</body>
+</html>
