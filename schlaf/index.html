@@ -1,0 +1,2468 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<!-- ==================================================================
+     SCHLAFWERK — Wecker, der deinen Rhythmus kennt
+     ------------------------------------------------------------------
+     Eine einzige, self-contained Datei: kein Build, kein Server, keine
+     externen Requests. Doppelklick genügt.
+
+     Was die App macht
+       · Wecker stellen — fix ("um 07:00") oder als Dauer ("in 4½ h")
+       · Zyklus-Vorschläge aus DEINER gemessenen Zykluslänge
+       · Fitbit verbinden (OAuth PKCE, direkt im Browser) oder Daten
+         manuell erfassen / importieren / Demo-Daten laden
+       · Muster erkennen: Chronotyp, Schlafbedarf, Regelmässigkeit,
+         sozialer Jetlag, Schlafschuld, Einschlafdauer, Durchschlafen
+       · Schlafpläne rechnen: einphasig, Siesta (zweiphasig),
+         Powernap-Ergänzung, Schichtbetrieb — aus den eigenen Daten
+       · Hinweise mit Budget: höchstens so viele, wie du erlaubst.
+         Standard ist 1 pro Tag. Nie in der Ruhezeit.
+
+     Alle Daten bleiben im Browser (localStorage). Nichts geht an uns.
+     Recherche & Quellen: schlaf/RECHERCHE.md
+     ================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCHLAFWERK – Wecker &amp; Schlafmuster aus deinen Fitbit-Daten</title>
+
+<meta name="description" content="Wecker mit Zyklus-Vorschlägen, Nap-Planung und Musteranalyse: Chronotyp, Schlafbedarf, Regelmässigkeit und Schlafschuld – aus den eigenen Fitbit-Daten oder manuell erfasst.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://colinrenggli-sudo.github.io/WebAppKurzbefehl/schlaf/">
+<meta name="theme-color" content="#F5F5FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0D16" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SCHLAFWERK">
+<meta name="format-detection" content="telephone=no">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SCHLAFWERK">
+<meta property="og:title" content="SCHLAFWERK – Wecker, der deinen Rhythmus kennt">
+<meta property="og:description" content="Zyklus-Wecker, Nap-Pläne und Musteranalyse aus den eigenen Schlafdaten.">
+<meta property="og:locale" content="de_CH">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235A5AD6'/%3E%3Cpath d='M40.5 38.5A15 15 0 0 1 25.5 20a13 13 0 1 0 15 18.5Z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235A5AD6'/%3E%3Cpath d='M40.5 38.5A15 15 0 0 1 25.5 20a13 13 0 1 0 15 18.5Z' fill='%23fff'/%3E%3C/svg%3E">
+
+<style>
+/* ==================================================================
+   1 · Design-Tokens
+   Ruhige Nachtpalette: tiefes Indigo als Akzent, kühles Papier im
+   Hellmodus. Systemeinstellung entscheidet, manuell umschaltbar.
+   ================================================================== */
+:root{
+  --bg:#F5F5FA; --bg-2:#ECEDF5; --card:#FFFFFF; --card-2:#F8F8FC;
+  --txt:#14151F; --txt-2:#535569; --txt-3:#8A8CA0;
+  --sep:#E3E4EE; --sep-2:#D2D4E2;
+  --tint:#5A5AD6; --tint-soft:#E7E7FA; --tint-txt:#4342B0;
+  --ok:#2F7D57; --ok-soft:#E2F1E9;
+  --warn:#8F6410; --warn-soft:#F8EED8;
+  --bad:#A63A46; --bad-soft:#F8E4E6;
+  --deep:#3C3C9E; --rem:#6E8FE0; --light:#A9B6EC; --wake:#D9AF6B;
+  --shadow:0 1px 2px rgba(20,21,31,.05), 0 8px 24px -14px rgba(20,21,31,.22);
+  --shadow-lg:0 2px 6px rgba(20,21,31,.07), 0 26px 60px -26px rgba(20,21,31,.34);
+  --r-s:10px; --r-m:16px; --r-l:22px; --r-xl:28px;
+  --ff:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --fn:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",Inter,Roboto,sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C0D16; --bg-2:#12141F; --card:#171929; --card-2:#1E2032;
+    --txt:#F1F1F7; --txt-2:#AEB0C4; --txt-3:#7B7E94;
+    --sep:#262940; --sep-2:#343853;
+    --tint:#8E8EF6; --tint-soft:#232349; --tint-txt:#A9A9FB;
+    --ok:#6FC79A; --ok-soft:#16281F;
+    --warn:#E0B45E; --warn-soft:#2E2617;
+    --bad:#EE8A94; --bad-soft:#2E1A1D;
+    --deep:#5F5FD8; --rem:#7FA0EE; --light:#4A5385;
+    --wake:#C99A4F;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -14px rgba(0,0,0,.7);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.5), 0 26px 60px -26px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C0D16; --bg-2:#12141F; --card:#171929; --card-2:#1E2032;
+  --txt:#F1F1F7; --txt-2:#AEB0C4; --txt-3:#7B7E94;
+  --sep:#262940; --sep-2:#343853;
+  --tint:#8E8EF6; --tint-soft:#232349; --tint-txt:#A9A9FB;
+  --ok:#6FC79A; --ok-soft:#16281F;
+  --warn:#E0B45E; --warn-soft:#2E2617;
+  --bad:#EE8A94; --bad-soft:#2E1A1D;
+  --deep:#5F5FD8; --rem:#7FA0EE; --light:#4A5385; --wake:#C99A4F;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -14px rgba(0,0,0,.7);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.5), 0 26px 60px -26px rgba(0,0,0,.8);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--txt); font-family:var(--ff);
+  font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden; padding-bottom:calc(78px + var(--safe-b));
+}
+button,input,select,textarea{font:inherit; color:inherit}
+button{cursor:pointer; background:none; border:0; padding:0}
+h1,h2,h3,h4{margin:0; line-height:1.22; letter-spacing:-.015em}
+p{margin:0}
+a{color:var(--tint-txt)}
+:focus-visible{outline:2.5px solid var(--tint); outline-offset:2px; border-radius:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none !important}
+
+/* ==================================================================
+   2 · Gerüst — Kopf, Tabs, Karten
+   ================================================================== */
+.wrap{max-width:760px; margin:0 auto; padding:0 16px}
+header.top{
+  position:sticky; top:0; z-index:60; padding-top:var(--safe-t);
+  background:color-mix(in srgb,var(--bg) 84%,transparent);
+  backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--sep);
+}
+.top-in{display:flex; align-items:center; gap:10px; height:54px}
+.brand{display:flex; align-items:center; gap:9px; font-weight:750; letter-spacing:.15em; font-size:13px}
+.brand svg{width:24px;height:24px;flex:none}
+.top-sp{flex:1}
+.icon-btn{
+  width:36px;height:36px;border:1px solid var(--sep);background:var(--card);border-radius:11px;
+  display:grid;place-items:center;color:var(--txt-2);transition:.15s;
+}
+.icon-btn:hover{background:var(--card-2); color:var(--txt)}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+nav.tabs{
+  position:fixed; left:0; right:0; bottom:0; z-index:70;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:saturate(180%) blur(22px); -webkit-backdrop-filter:saturate(180%) blur(22px);
+  border-top:1px solid var(--sep); padding-bottom:var(--safe-b);
+}
+.tabs-in{display:flex; max-width:760px; margin:0 auto}
+.tab{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:9px 2px 8px; color:var(--txt-3); font-size:10.5px; font-weight:600; letter-spacing:.01em;
+  transition:color .15s;
+}
+.tab svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-selected="true"]{color:var(--tint)}
+.tab:active{opacity:.6}
+
+main{padding:18px 0 26px}
+.page{display:none; animation:fade .22s ease}
+.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l); padding:18px; box-shadow:var(--shadow); margin-bottom:14px}
+.card.tight{padding:14px}
+.card.flat{box-shadow:none; background:var(--card-2)}
+.card-h{display:flex; align-items:center; gap:9px; margin-bottom:12px}
+.card-h h2{font-size:17px; font-weight:700}
+.card-h .sp{flex:1}
+.eyebrow{font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--txt-3); margin-bottom:8px}
+.muted{color:var(--txt-2); font-size:14px}
+.small{font-size:13px; color:var(--txt-3); line-height:1.45}
+.sec-title{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-3);margin:22px 2px 10px}
+
+/* Buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:12px 18px; border-radius:14px; font-weight:650; font-size:15px;
+  background:var(--card-2); border:1px solid var(--sep); color:var(--txt); transition:.15s;
+}
+.btn:hover{background:var(--bg-2)}
+.btn.pri{background:var(--tint); border-color:var(--tint); color:#fff}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.ghost{background:none; border-color:var(--sep-2)}
+.btn.danger{color:var(--bad); border-color:var(--bad-soft)}
+.btn.wide{width:100%}
+.btn.sm{padding:8px 13px; font-size:13.5px; border-radius:11px}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.row{display:flex; gap:9px; flex-wrap:wrap}
+.row.tight{gap:7px}
+
+/* Chips */
+.chip{
+  padding:9px 14px; border-radius:999px; border:1px solid var(--sep-2); background:var(--card);
+  font-size:14px; font-weight:600; color:var(--txt-2); transition:.14s; white-space:nowrap;
+}
+.chip:hover{border-color:var(--tint); color:var(--txt)}
+.chip[aria-pressed="true"], .chip.on{background:var(--tint-soft); border-color:var(--tint); color:var(--tint-txt)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:650;background:var(--bg-2);color:var(--txt-2)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.tint{background:var(--tint-soft);color:var(--tint-txt)}
+
+/* Formulare */
+label.fld{display:block; margin-bottom:12px}
+label.fld > span{display:block; font-size:12.5px; font-weight:650; color:var(--txt-2); margin-bottom:6px}
+input[type=text],input[type=time],input[type=date],input[type=number],select,textarea{
+  width:100%; padding:11px 13px; border-radius:13px; border:1px solid var(--sep-2);
+  background:var(--card-2); color:var(--txt); transition:.15s;
+}
+input:focus,select:focus,textarea:focus{outline:none; border-color:var(--tint); background:var(--card)}
+input[type=range]{width:100%; accent-color:var(--tint)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--sep)}
+.switch:last-child{border-bottom:0}
+.switch .lab{font-size:14.5px;font-weight:600}
+.switch .sub{font-size:12.5px;color:var(--txt-3);margin-top:2px;line-height:1.4}
+.tgl{width:50px;height:30px;border-radius:999px;background:var(--sep-2);position:relative;flex:none;transition:.18s}
+.tgl::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.18s}
+.tgl[aria-checked="true"]{background:var(--tint)}
+.tgl[aria-checked="true"]::after{transform:translateX(20px)}
+.seg{display:flex;background:var(--bg-2);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;padding:8px 6px;border-radius:9px;font-size:13.5px;font-weight:640;color:var(--txt-2);transition:.15s}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--txt);box-shadow:var(--shadow)}
+
+/* ==================================================================
+   3 · Heute — Uhr, Zyklus-Vorschläge, Hinweis
+   ================================================================== */
+.hero{
+  background:linear-gradient(165deg,var(--tint) 0%,color-mix(in srgb,var(--tint) 62%,#101024) 100%);
+  color:#fff; border-radius:var(--r-xl); padding:22px 20px; box-shadow:var(--shadow-lg);
+  margin-bottom:14px; position:relative; overflow:hidden;
+}
+.hero::after{content:"";position:absolute;right:-40px;top:-60px;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.09)}
+.hero .now{font-family:var(--fn); font-size:52px; font-weight:700; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums}
+.hero .sub{opacity:.86; font-size:14px; margin-top:6px}
+.hero .state{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);padding:5px 11px;border-radius:999px;font-size:12.5px;font-weight:650;margin-bottom:12px}
+.hero .next{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.22);display:flex;align-items:center;gap:12px}
+.hero .next .big{font-family:var(--fn);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.hero .next .sp{flex:1}
+.hero button.mini{background:rgba(255,255,255,.2);color:#fff;border-radius:11px;padding:8px 13px;font-size:13px;font-weight:650}
+
+.cyc{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:9px}
+.cyc button{
+  background:var(--card-2);border:1px solid var(--sep);border-radius:15px;padding:12px 10px;text-align:left;transition:.15s;
+}
+.cyc button:hover{border-color:var(--tint);transform:translateY(-1px)}
+.cyc .t{font-family:var(--fn);font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.cyc .d{font-size:12px;color:var(--txt-3);margin-top:3px}
+.cyc .z{font-size:11px;color:var(--tint-txt);font-weight:650;margin-top:5px}
+.cyc button.best{background:var(--tint-soft);border-color:var(--tint)}
+
+.insight{border-left:3px solid var(--tint); background:var(--card); border-radius:var(--r-m); padding:15px 16px; box-shadow:var(--shadow); margin-bottom:14px}
+.insight h3{font-size:15.5px;font-weight:700;margin-bottom:5px}
+.insight p{font-size:14px;color:var(--txt-2);line-height:1.5}
+.insight .acts{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.insight.warn{border-left-color:var(--warn)}
+.insight.ok{border-left-color:var(--ok)}
+
+/* ==================================================================
+   4 · Wecker
+   ================================================================== */
+.alarm{display:flex;align-items:center;gap:13px;padding:14px 0;border-bottom:1px solid var(--sep)}
+.alarm:last-child{border-bottom:0}
+.alarm .time{font-family:var(--fn);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
+.alarm .meta{font-size:12.5px;color:var(--txt-3);margin-top:4px}
+.alarm .sp{flex:1}
+.alarm.off .time,.alarm.off .meta{opacity:.42}
+.days{display:flex;gap:5px}
+.days button{width:36px;height:36px;border-radius:50%;border:1px solid var(--sep-2);font-size:12.5px;font-weight:650;color:var(--txt-2)}
+.days button[aria-pressed="true"]{background:var(--tint);border-color:var(--tint);color:#fff}
+
+/* Klingel-Overlay */
+.ring{
+  position:fixed;inset:0;z-index:200;background:linear-gradient(170deg,#1B1B3A,#0A0A14);
+  color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:30px;text-align:center;
+}
+.ring .big{font-family:var(--fn);font-size:74px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ring .lbl{font-size:17px;opacity:.8}
+.ring .pulse{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);display:grid;place-items:center;margin-bottom:14px;animation:pulse 2.4s ease-in-out infinite}
+.ring .pulse svg{width:54px;height:54px;fill:none;stroke:#fff;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,255,255,.18)}50%{transform:scale(1.05);box-shadow:0 0 0 26px rgba(255,255,255,0)}}
+.ring .acts{display:flex;flex-direction:column;gap:11px;margin-top:26px;width:100%;max-width:300px}
+.ring .acts .btn{padding:16px;font-size:16px}
+.ring .acts .btn.pri{background:#fff;color:#1B1B3A;border-color:#fff}
+.ring .acts .btn.ghost{color:#fff;border-color:rgba(255,255,255,.35)}
+
+/* ==================================================================
+   5 · Daten & Diagramme
+   ================================================================== */
+.night{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--sep)}
+.night:last-child{border-bottom:0}
+.night .date{width:56px;flex:none;font-size:12.5px;font-weight:650;color:var(--txt-2);line-height:1.25}
+.night .date b{display:block;font-size:15px;color:var(--txt)}
+.bar{flex:1;height:26px;border-radius:7px;background:var(--bg-2);position:relative;overflow:hidden}
+.bar .seg2{position:absolute;top:0;bottom:0}
+.night .dur{width:52px;flex:none;text-align:right;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:13px;flex-wrap:wrap;font-size:12px;color:var(--txt-2);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--card-2);border:1px solid var(--sep);border-radius:var(--r-m);padding:13px 14px}
+.kpi .v{font-family:var(--fn);font-size:25px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .k{font-size:12px;color:var(--txt-3);margin-top:5px;font-weight:600}
+.kpi .n{font-size:11.5px;color:var(--txt-3);margin-top:6px;line-height:1.35}
+
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+.axis{font-size:10px;fill:var(--txt-3)}
+
+/* Analyse-Zeilen */
+.finding{padding:14px 0;border-bottom:1px solid var(--sep)}
+.finding:last-child{border-bottom:0}
+.finding .top{display:flex;align-items:baseline;gap:9px;margin-bottom:5px}
+.finding h3{font-size:15px;font-weight:700}
+.finding .val{font-family:var(--fn);font-size:17px;font-weight:700;color:var(--tint-txt);margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
+.finding p{font-size:13.5px;color:var(--txt-2);line-height:1.5}
+
+/* Plan */
+.planopt{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--sep-2);border-radius:var(--r-m);margin-bottom:9px;text-align:left;width:100%;transition:.15s;background:var(--card)}
+.planopt:hover{border-color:var(--tint)}
+.planopt[aria-pressed="true"]{border-color:var(--tint);background:var(--tint-soft)}
+.planopt .ic{width:38px;height:38px;border-radius:11px;background:var(--bg-2);display:grid;place-items:center;flex:none;font-size:19px}
+.planopt h3{font-size:15px;font-weight:700;margin-bottom:3px}
+.planopt p{font-size:13px;color:var(--txt-2);line-height:1.45}
+.block{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--sep)}
+.block:last-child{border-bottom:0}
+.block .t{font-family:var(--fn);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;width:112px;flex:none}
+.block .n{font-size:13px;color:var(--txt-2);line-height:1.4}
+.block .sp{flex:1}
+
+/* Sheet */
+.sheet-bg{position:fixed;inset:0;z-index:100;background:rgba(8,8,16,.5);backdrop-filter:blur(3px);animation:fade .18s}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:101;background:var(--bg);
+  border-radius:var(--r-xl) var(--r-xl) 0 0;max-height:92vh;overflow-y:auto;
+  padding:8px 0 calc(24px + var(--safe-b));box-shadow:var(--shadow-lg);
+  animation:up .26s cubic-bezier(.22,1,.36,1);
+}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet .grab{width:38px;height:5px;border-radius:99px;background:var(--sep-2);margin:6px auto 12px}
+.sheet-h{display:flex;align-items:center;gap:10px;padding:0 16px 12px;border-bottom:1px solid var(--sep);margin-bottom:14px}
+.sheet-h h2{font-size:18px;font-weight:750}
+.sheet-h .sp{flex:1}
+@media(min-width:640px){
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);border-radius:var(--r-xl);animation:pop .2s cubic-bezier(.22,1,.36,1)}
+  @keyframes pop{from{opacity:0;transform:translate(-50%,-46%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+}
+
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(94px + var(--safe-b));z-index:150;
+  background:var(--txt);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:14px;font-weight:600;
+  box-shadow:var(--shadow-lg);animation:fade .2s;max-width:88vw;text-align:center;
+}
+.empty{text-align:center;padding:26px 16px;color:var(--txt-3)}
+.empty svg{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:1.4;margin-bottom:10px;opacity:.6}
+.topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.topic{display:flex;gap:9px;align-items:center;padding:12px;border:1px solid var(--sep-2);border-radius:14px;text-align:left;font-size:13.5px;font-weight:600;line-height:1.3;background:var(--card);transition:.14s}
+.topic[aria-pressed="true"]{background:var(--tint-soft);border-color:var(--tint);color:var(--tint-txt)}
+.topic .e{font-size:17px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--tint)"/><path d="M40.5 38.5A15 15 0 0 1 25.5 20a13 13 0 1 0 15 18.5Z" fill="#fff"/></svg>
+      SCHLAFWERK
+    </div>
+    <div class="top-sp"></div>
+    <button class="icon-btn" id="btnTheme" title="Hell / Dunkel" aria-label="Hell oder Dunkel umschalten">
+      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+    </button>
+    <button class="icon-btn" id="btnSettings" title="Einstellungen" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.4-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============================ HEUTE ============================ -->
+  <section class="page on" id="p-heute" role="tabpanel" aria-label="Heute">
+    <div class="hero">
+      <div class="state" id="heroState">–</div>
+      <div class="now" id="heroClock">--:--</div>
+      <div class="sub" id="heroSub">–</div>
+      <div class="next" id="heroNext" hidden>
+        <div>
+          <div class="small" style="opacity:.8;color:#fff">Nächster Wecker</div>
+          <div class="big" id="heroNextTime">–</div>
+        </div>
+        <div class="sp"></div>
+        <button class="mini" id="heroNextCancel">Abbrechen</button>
+      </div>
+    </div>
+
+    <div id="heroInsight"></div>
+
+    <div class="card">
+      <div class="card-h">
+        <h2 id="cycTitle">Wenn du jetzt einschläfst</h2>
+        <div class="sp"></div>
+        <span class="pill tint" id="cycPill">–</span>
+      </div>
+      <p class="small" style="margin-bottom:12px" id="cycNote">–</p>
+      <div class="cyc" id="cycGrid"></div>
+      <div class="row" style="margin-top:13px">
+        <button class="btn sm" id="btnNap20">Powernap 20 min</button>
+        <button class="btn sm" id="btnNap90">Voller Zyklus</button>
+        <button class="btn sm ghost" id="btnGoWecker">Eigene Zeit …</button>
+      </div>
+    </div>
+
+    <div class="card" id="cardPlanToday" hidden>
+      <div class="card-h"><h2>Dein Plan heute</h2><div class="sp"></div>
+        <button class="btn sm ghost" data-goto="plan">Ändern</button></div>
+      <div id="planTodayBlocks"></div>
+    </div>
+
+    <div class="card" id="cardLastNight">
+      <div class="card-h"><h2>Letzte Nacht</h2><div class="sp"></div>
+        <button class="btn sm ghost" data-goto="schlaf">Alle Nächte</button></div>
+      <div id="lastNightBody"></div>
+    </div>
+  </section>
+
+  <!-- ============================ WECKER ============================ -->
+  <section class="page" id="p-wecker" role="tabpanel" aria-label="Wecker">
+    <div class="card">
+      <div class="card-h"><h2>Timer-Wecker</h2></div>
+      <p class="small" style="margin-bottom:12px">Weck mich in … — die Zeiten sind an deine Zykluslänge angepasst, damit du am Ende eines Zyklus aufwachst statt mitten im Tiefschlaf.</p>
+      <div class="row tight" id="timerChips"></div>
+      <div class="row" style="margin-top:12px;align-items:flex-end;gap:10px">
+        <label class="fld" style="flex:1;min-width:120px;margin:0"><span>Eigene Dauer (Minuten)</span>
+          <input type="number" id="customMin" min="1" max="1440" step="5" placeholder="z. B. 75"></label>
+        <button class="btn pri" id="btnCustomTimer">Stellen</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Feste Wecker</h2><div class="sp"></div>
+        <button class="btn sm pri" id="btnAddAlarm">+ Neu</button></div>
+      <div id="alarmList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Wann ins Bett?</h2></div>
+      <p class="small" style="margin-bottom:12px">Rückwärts gerechnet: Aufstehzeit eingeben, passende Zubettgeh-Zeiten erhalten (inkl. deiner typischen Einschlafdauer).</p>
+      <label class="fld"><span>Ich muss aufstehen um</span><input type="time" id="bedCalcTime" value="07:00"></label>
+      <div class="cyc" id="bedCalcGrid"></div>
+    </div>
+
+    <div class="card flat">
+      <div class="card-h"><h2>Klingelt der Wecker zuverlässig?</h2></div>
+      <p class="small" id="reliabilityNote">–</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn sm" id="btnAskNotif">Benachrichtigungen erlauben</button>
+        <button class="btn sm ghost" id="btnTestRing">Klingelton testen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ SCHLAF ============================ -->
+  <section class="page" id="p-schlaf" role="tabpanel" aria-label="Schlafdaten">
+    <div class="card" id="cardFitbit">
+      <div class="card-h">
+        <h2>Fitbit</h2><div class="sp"></div><span class="pill" id="fitbitPill">nicht verbunden</span>
+      </div>
+      <div id="fitbitBody"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Nächte</h2><div class="sp"></div>
+        <span class="pill" id="nightsCount">0</span></div>
+      <div class="seg" style="margin-bottom:14px" id="rangeSeg">
+        <button data-range="14" aria-pressed="true">14 Tage</button>
+        <button data-range="30" aria-pressed="false">30 Tage</button>
+        <button data-range="90" aria-pressed="false">90 Tage</button>
+      </div>
+      <div id="nightsChart"></div>
+      <div id="nightsList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Selbst erfassen</h2></div>
+      <p class="small" style="margin-bottom:12px">Ohne Uhr oder als Ergänzung: eine Nacht oder ein Nickerchen von Hand eintragen. Zählt in der Analyse gleich viel.</p>
+      <div class="row">
+        <button class="btn" id="btnAddNight">Nacht eintragen</button>
+        <button class="btn ghost" id="btnImport">Datei importieren</button>
+        <button class="btn ghost" id="btnDemo">Demo-Daten laden</button>
+      </div>
+      <input type="file" id="fileInput" accept=".json,application/json" hidden>
+    </div>
+  </section>
+
+  <!-- ============================ MUSTER ============================ -->
+  <section class="page" id="p-muster" role="tabpanel" aria-label="Muster">
+    <div class="card">
+      <div class="card-h"><h2>Was beschäftigt dich?</h2></div>
+      <p class="small" style="margin-bottom:12px">Wähle, was du verbessern willst. Die App sucht danach gezielt in deinen Daten – und blendet den Rest aus.</p>
+      <div class="topics" id="topicGrid"></div>
+    </div>
+
+    <div id="topicFindings"></div>
+
+    <div class="card">
+      <div class="card-h"><h2>Dein Profil</h2><div class="sp"></div>
+        <span class="pill" id="confPill">–</span></div>
+      <div class="kpis" id="profileKpis"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Wann du schläfst</h2></div>
+      <p class="small" style="margin-bottom:10px">Deine typischen Zeiten je Wochentag – der Median aus allen erfassten Nächten. Der Sprung zum Wochenende hin ist dein sozialer Jetlag.</p>
+      <div id="rhythmChart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Befunde</h2></div>
+      <div id="findings"></div>
+    </div>
+  </section>
+
+  <!-- ============================ PLAN ============================ -->
+  <section class="page" id="p-plan" role="tabpanel" aria-label="Plan">
+    <div class="card">
+      <div class="card-h"><h2>Wie willst du schlafen?</h2></div>
+      <p class="small" style="margin-bottom:12px">Die App rechnet den Plan mit deinen Werten durch – Schlafbedarf, Chronotyp, Zykluslänge – und sagt dir, ob er zu dir passt.</p>
+      <div id="planOpts"></div>
+    </div>
+
+    <div class="card" id="planResultCard" hidden>
+      <div class="card-h"><h2 id="planResultTitle">Vorschlag</h2><div class="sp"></div>
+        <span class="pill tint" id="planFitPill">–</span></div>
+      <div id="planRing"></div>
+      <div id="planBlocks" style="margin-top:6px"></div>
+      <div id="planNotes" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn pri" id="btnApplyPlan">Plan übernehmen</button>
+        <button class="btn ghost" id="btnClearPlan">Plan entfernen</button>
+      </div>
+    </div>
+
+    <div class="card flat">
+      <div class="card-h"><h2>Feineinstellung</h2></div>
+      <label class="fld"><span>Frühester Aufstehzeitpunkt an Arbeitstagen</span><input type="time" id="planWake" value="07:00"></label>
+      <label class="fld"><span>Fixe Termine, die den Tag bestimmen (optional)</span><input type="text" id="planAnchor" placeholder="z. B. Schicht ab 06:00"></label>
+      <div class="switch"><div><div class="lab">Nickerchen sind mir erlaubt</div><div class="sub">Aus, wenn du tagsüber nie schlafen kannst – dann rechnet die App nur mit der Nacht.</div></div>
+        <button class="tgl" id="tglNapsOk" role="switch" aria-checked="true"></button></div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="tabs" role="tablist">
+  <div class="tabs-in">
+    <button class="tab" data-tab="heute" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg>Heute</button>
+    <button class="tab" data-tab="wecker" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 1.5M5 3 2.5 5.5M19 3l2.5 2.5"/></svg>Wecker</button>
+    <button class="tab" data-tab="schlaf" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7.5 7.5 0 1 0 10.5 10.5Z"/></svg>Schlaf</button>
+    <button class="tab" data-tab="muster" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24"><path d="M3 15l4.5-5 3.5 3.5L15 8l3 3.5"/><path d="M3 20h18M3 4v16"/></svg>Muster</button>
+    <button class="tab" data-tab="plan" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Plan</button>
+  </div>
+</nav>
+
+<div id="sheetHost"></div>
+<div id="ringHost"></div>
+<div id="toastHost"></div>
+
+<script>
+'use strict';
+/* ==================================================================
+   1 · Speicher & Zustand
+   Alles liegt im localStorage des Browsers. Kein Server, kein Konto.
+   ================================================================== */
+const KEY = 'schlafwerk.v1';
+
+const DEFAULTS = {
+  version: 1,
+  profile: { sleepNeedMin: null, cycleMin: null, latencyMin: null },
+  settings: {
+    theme: 'auto',
+    hintBudget: 1,               // 0 = aus, sonst Hinweise pro Tag
+    quietFrom: '21:30', quietTo: '08:00',
+    smartWindowMin: 20,          // sanftes Fenster vor der Weckzeit
+    snoozeMin: 9,
+    sound: 'sanft', volume: 0.7, fadeIn: true, vibrate: true,
+    wakeLock: true,
+    napsOk: true,
+    freeDays: [0, 6]             // So, Sa
+  },
+  fitbit: { clientId: '', token: '', refresh: '', expires: 0, userId: '', lastSync: 0, scope: '' },
+  nights: [],
+  alarms: [],
+  plan: null,
+  topics: [],
+  nudges: { shown: [], muted: [] },
+  onboarded: false
+};
+
+let S = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return structuredClone(DEFAULTS);
+    const d = JSON.parse(raw);
+    return deepMerge(structuredClone(DEFAULTS), d);
+  } catch (e) { return structuredClone(DEFAULTS); }
+}
+function deepMerge(base, over) {
+  if (!over || typeof over !== 'object') return base;
+  for (const k of Object.keys(over)) {
+    if (Array.isArray(over[k])) base[k] = over[k];
+    else if (over[k] && typeof over[k] === 'object' && base[k] && typeof base[k] === 'object') deepMerge(base[k], over[k]);
+    else if (over[k] !== undefined) base[k] = over[k];
+  }
+  return base;
+}
+let saveTimer = null;
+function save(immediate) {
+  clearTimeout(saveTimer);
+  const write = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Speicher voll – ältere Nächte löschen?'); } };
+  if (immediate) write(); else saveTimer = setTimeout(write, 220);
+}
+
+/* ==================================================================
+   2 · Kleine Helfer
+   ================================================================== */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+const pad2 = n => String(n).padStart(2, '0');
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+const DAY_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const DAY_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+function hhmm(mins) {
+  const m = ((Math.round(mins) % 1440) + 1440) % 1440;
+  return pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
+}
+function parseHM(s) {
+  const [h, m] = String(s || '0:0').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+function minOfDay(d) { return d.getHours() * 60 + d.getMinutes(); }
+function fmtDur(mins, long) {
+  const m = Math.max(0, Math.round(mins));
+  const h = Math.floor(m / 60), r = m % 60;
+  if (h === 0) return r + ' min';
+  if (long) return h + ' h ' + pad2(r) + ' min';
+  return h + ':' + pad2(r) + ' h';
+}
+function fmtDurShort(mins) {
+  const m = Math.max(0, Math.round(mins)); const h = Math.floor(m / 60), r = m % 60;
+  return h ? (h + 'h' + (r ? ' ' + pad2(r) : '')) : (r + 'm');
+}
+function dayKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function keyToDate(k) { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function daysBetween(a, b) { return Math.round((keyToDate(dayKey(b)) - keyToDate(dayKey(a))) / 86400000); }
+
+/* Zeiten liegen um Mitternacht herum. Deshalb wird in einer Achse
+   gerechnet, deren Nullpunkt der Mittag ist – dort liegt garantiert
+   keine Zubettgeh- oder Aufstehzeit, und der Median wird sinnvoll. */
+const NOON = 720;
+const toNoonAxis = m => (((m - NOON) % 1440) + 1440) % 1440;
+const fromNoonAxis = m => (((m + NOON) % 1440) + 1440) % 1440;
+
+function median(arr) {
+  if (!arr.length) return null;
+  const a = arr.slice().sort((x, y) => x - y);
+  const i = Math.floor(a.length / 2);
+  return a.length % 2 ? a[i] : (a[i - 1] + a[i]) / 2;
+}
+function quantile(arr, q) {
+  if (!arr.length) return null;
+  const a = arr.slice().sort((x, y) => x - y);
+  const p = (a.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p);
+  return lo === hi ? a[lo] : a[lo] + (a[hi] - a[lo]) * (p - lo);
+}
+function medianTime(minsArr) {
+  if (!minsArr.length) return null;
+  return fromNoonAxis(median(minsArr.map(toNoonAxis)));
+}
+function mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null; }
+function sd(arr) {
+  if (arr.length < 2) return null;
+  const m = mean(arr);
+  return Math.sqrt(arr.reduce((a, b) => a + (b - m) * (b - m), 0) / (arr.length - 1));
+}
+
+function toast(msg, ms) {
+  const host = $('#toastHost');
+  host.innerHTML = '<div class="toast">' + esc(msg) + '</div>';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { host.innerHTML = ''; }, ms || 2600);
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function haptic(ms) { if (S.settings.vibrate && navigator.vibrate) { try { navigator.vibrate(ms || 12); } catch (e) {} } }
+
+/* ==================================================================
+   3 · Blatt (Sheet) und Dialoge
+   ================================================================== */
+let sheetOpen = false;
+function sheet(title, bodyHtml, onMount) {
+  const host = $('#sheetHost');
+  host.innerHTML =
+    '<div class="sheet-bg" data-close></div>' +
+    '<div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
+      '<div class="grab"></div>' +
+      '<div class="sheet-h"><h2>' + esc(title) + '</h2><div class="sp"></div>' +
+        '<button class="icon-btn" data-close aria-label="Schliessen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>' +
+      '<div class="wrap" id="sheetBody">' + bodyHtml + '</div>' +
+    '</div>';
+  sheetOpen = true;
+  $$('[data-close]', host).forEach(b => b.addEventListener('click', closeSheet));
+  if (onMount) onMount($('#sheetBody', host));
+}
+function closeSheet() { $('#sheetHost').innerHTML = ''; sheetOpen = false; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetOpen) closeSheet(); });
+
+/* ==================================================================
+   4 · Navigation & Erscheinungsbild
+   ================================================================== */
+function goto(tab) {
+  $$('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + tab));
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  renderTab(tab);
+}
+$$('.tab').forEach(t => t.addEventListener('click', () => { haptic(); goto(t.dataset.tab); }));
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-goto]');
+  if (g) { goto(g.dataset.goto); }
+});
+
+function applyTheme() {
+  const t = S.settings.theme;
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+}
+$('#btnTheme').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+    (S.settings.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  S.settings.theme = dark ? 'light' : 'dark';
+  applyTheme(); save(); haptic();
+});
+
+/* ==================================================================
+   5 · Analyse
+   Aus den Nächten wird ein Profil gerechnet: Schlafbedarf, Chronotyp,
+   Zykluslänge, Regelmässigkeit, sozialer Jetlag, Schlafschuld.
+   Alles mit ehrlicher Angabe, wie sicher der Wert ist.
+   ================================================================== */
+const H = 60;
+
+function sortedNights() {
+  return S.nights.slice().sort((a, b) => a.start - b.start);
+}
+function isFreeDay(dateKey) {
+  const wd = keyToDate(dateKey).getDay();
+  return S.settings.freeDays.includes(wd);
+}
+function recentNights(days) {
+  const all = sortedNights();
+  if (!all.length) return [];
+  const last = new Date(all[all.length - 1].end);
+  const cut = addDays(last, -days + 1).setHours(0, 0, 0, 0);
+  return all.filter(n => n.end >= cut);
+}
+
+function analyse() {
+  const all = sortedNights();
+  const mains = all.filter(n => n.isMain);
+  const naps = all.filter(n => !n.isMain);
+  const A = {
+    total: all.length, nMain: mains.length, nNap: naps.length,
+    naps, mains, all
+  };
+
+  A.conf = mains.length >= 21 ? 'gut' : mains.length >= 7 ? 'solide' : mains.length >= 3 ? 'wenig' : 'keine';
+  A.confText = { keine: 'noch keine Daten', wenig: mains.length + ' Nächte – grobe Richtung', solide: mains.length + ' Nächte – solide', gut: mains.length + ' Nächte – belastbar' }[A.conf];
+
+  // --- Zeiten ---
+  const bedMin = n => minOfDay(new Date(n.start));
+  const wakeMin = n => minOfDay(new Date(n.end));
+  const midSleep = n => fromNoonAxis(toNoonAxis(bedMin(n)) + n.inBedMin / 2);
+
+  const work = mains.filter(n => !isFreeDay(n.date));
+  const free = mains.filter(n => isFreeDay(n.date));
+
+  A.bedAll = medianTime(mains.map(bedMin));
+  A.wakeAll = medianTime(mains.map(wakeMin));
+  A.bedWork = medianTime(work.map(bedMin));
+  A.wakeWork = medianTime(work.map(wakeMin));
+  A.bedFree = medianTime(free.map(bedMin));
+  A.wakeFree = medianTime(free.map(wakeMin));
+  A.nWork = work.length; A.nFree = free.length;
+
+  A.durAll = median(mains.map(n => n.asleepMin));
+  A.durWork = median(work.map(n => n.asleepMin));
+  A.durFree = median(free.map(n => n.asleepMin));
+
+  // --- Schlafbedarf ---
+  // An freien Tagen schläft man so lang, wie man von sich aus mag.
+  // Genommen wird die Mitte dieser Nächte, nicht die längste – die
+  // enthält Nachholschlaf und würde den Bedarf überschätzen.
+  if (S.profile.sleepNeedMin) { A.need = S.profile.sleepNeedMin; A.needSource = 'von dir gesetzt'; }
+  else if (free.length >= 5) { A.need = Math.round(median(free.map(n => n.asleepMin)) / 5) * 5; A.needSource = 'Mitte deiner ' + free.length + ' freien Nächte'; }
+  else if (mains.length >= 7) { A.need = Math.round(quantile(mains.map(n => n.asleepMin), 0.8) / 5) * 5; A.needSource = 'geschätzt aus allen Nächten – für den echten Wert braucht es freie Tage'; }
+  else { A.need = 480; A.needSource = 'Annahme, bis genug Daten da sind'; }
+  A.need = clamp(A.need, 330, 630);
+
+  // --- Zykluslänge aus REM-Beginn-Abständen ---
+  const diffs = [];
+  for (const n of mains) {
+    if (!n.remOnsets || n.remOnsets.length < 2) continue;
+    for (let i = 1; i < n.remOnsets.length; i++) {
+      const d = n.remOnsets[i] - n.remOnsets[i - 1];
+      if (d >= 55 && d <= 135) diffs.push(d);
+    }
+  }
+  if (S.profile.cycleMin) { A.cycle = S.profile.cycleMin; A.cycleSource = 'von dir gesetzt'; A.cycleN = 0; }
+  else if (diffs.length >= 6) { A.cycle = Math.round(median(diffs)); A.cycleSource = 'gemessen an ' + diffs.length + ' Zyklen'; A.cycleN = diffs.length; }
+  else { A.cycle = 90; A.cycleSource = 'Standardwert – der eigene Wert braucht mehrere Nächte mit Schlafphasen'; A.cycleN = diffs.length; }
+  A.cycle = clamp(A.cycle, 60, 130);
+
+  // --- Einschlafdauer, Effizienz, Durchschlafen ---
+  const lat = mains.map(n => n.latencyMin).filter(v => v != null);
+  A.latency = S.profile.latencyMin || (lat.length >= 3 ? Math.round(median(lat)) : null);
+  A.latencyN = lat.length;
+  const eff = mains.map(n => n.efficiency).filter(v => v != null);
+  A.eff = eff.length ? Math.round(median(eff)) : null;
+  const waso = mains.map(n => n.awakeMin).filter(v => v != null);
+  A.waso = waso.length ? Math.round(median(waso)) : null;
+  const awk = mains.map(n => n.awakenings).filter(v => v != null);
+  A.awakenings = awk.length ? Math.round(median(awk) * 10) / 10 : null;
+
+  // --- Chronotyp (Mittelpunkt des Schlafs an freien Tagen) ---
+  if (free.length >= 3) {
+    const msf = medianTime(free.map(midSleep));
+    const sdF = median(free.map(n => n.asleepMin));
+    const sdW = work.length ? median(work.map(n => n.asleepMin)) : sdF;
+    const nW = Math.max(1, Math.min(7, 7 - S.settings.freeDays.length));
+    const sdWeek = (sdW * nW + sdF * (7 - nW)) / 7;
+    // Korrektur nach Roenneberg: an freien Tagen wird Schlafschuld
+    // nachgeholt, das verschiebt den Mittelpunkt nach hinten.
+    A.msfsc = sdF > sdW ? fromNoonAxis(toNoonAxis(msf) - (sdF - sdWeek) / 2) : msf;
+    A.msf = msf;
+    A.msw = work.length >= 3 ? medianTime(work.map(midSleep)) : null;
+    A.socialJetlag = (A.msw != null) ? Math.abs(toNoonAxis(A.msf) - toNoonAxis(A.msw)) : null;
+    const t = A.msfsc;
+    A.chrono = t < 150 ? 'ausgeprägter Frühtyp' : t < 210 ? 'Frühtyp' : t < 270 ? 'leichter Frühtyp'
+      : t < 330 ? 'Normaltyp' : t < 390 ? 'leichter Spättyp' : t < 450 ? 'Spättyp' : 'ausgeprägter Spättyp';
+  } else { A.msfsc = null; A.msf = null; A.msw = null; A.socialJetlag = null; A.chrono = null; }
+
+  // --- Regelmässigkeit (Sleep Regularity Index) ---
+  A.sri = sleepRegularity(28);
+
+  // --- Schlafschuld der letzten 14 Tage ---
+  const byDay = {};
+  for (const n of all) { byDay[n.date] = (byDay[n.date] || 0) + n.asleepMin; }
+  const dayKeys = Object.keys(byDay).sort().slice(-14);
+  let debt = 0, covered = 0;
+  for (const k of dayKeys) { debt += (A.need - byDay[k]); covered++; }
+  A.debt = covered >= 5 ? Math.round(debt) : null;
+  A.debtDays = covered;
+
+  // --- Trend: letzte 7 gegen die 21 davor ---
+  const last7 = mains.slice(-7), prev = mains.slice(-28, -7);
+  A.trendDur = (last7.length >= 4 && prev.length >= 7) ? Math.round(median(last7.map(n => n.asleepMin)) - median(prev.map(n => n.asleepMin))) : null;
+  A.trendBed = (last7.length >= 4 && prev.length >= 7) ? Math.round(median(last7.map(n => toNoonAxis(bedMin(n)))) - median(prev.map(n => toNoonAxis(bedMin(n))))) : null;
+
+  // --- Streuung der Zubettgehzeit ---
+  A.bedSd = mains.length >= 5 ? Math.round(sd(mains.map(n => toNoonAxis(bedMin(n))))) : null;
+  A.wakeSd = mains.length >= 5 ? Math.round(sd(mains.map(n => toNoonAxis(wakeMin(n))))) : null;
+
+  // --- Nickerchen ---
+  A.napMed = naps.length >= 2 ? Math.round(median(naps.map(n => n.asleepMin))) : null;
+  A.napStart = naps.length >= 2 ? medianTime(naps.map(n => minOfDay(new Date(n.start)))) : null;
+  A.napEffect = napEffect(all);
+
+  // --- Zusammenhang späte Nacht / kurze Nacht ---
+  // Nur Arbeitstage vergleichen: an freien Tagen darf man ausschlafen,
+  // dort kostet ein später Abend nichts – das würde den Wert verwässern.
+  if (work.length >= 8) {
+    const med = median(work.map(n => toNoonAxis(bedMin(n))));
+    const late = work.filter(n => toNoonAxis(bedMin(n)) > med).map(n => n.asleepMin);
+    const early = work.filter(n => toNoonAxis(bedMin(n)) <= med).map(n => n.asleepMin);
+    A.lateCost = (late.length >= 3 && early.length >= 3) ? Math.round(median(early) - median(late)) : null;
+  } else A.lateCost = null;
+
+  A.stageNights = mains.filter(n => n.stages).length;
+  if (A.stageNights >= 3) {
+    const st = mains.filter(n => n.stages);
+    A.deepPct = Math.round(mean(st.map(n => n.stages.deep / Math.max(1, n.asleepMin) * 100)));
+    A.remPct = Math.round(mean(st.map(n => n.stages.rem / Math.max(1, n.asleepMin) * 100)));
+  }
+  return A;
+}
+
+/* Regelmässigkeit: Wie wahrscheinlich ist es, dass du zur gleichen
+   Minute an zwei aufeinanderfolgenden Tagen im gleichen Zustand bist
+   (schlafend oder wach)? 100 = jeden Tag identisch, 0 = Zufall.
+   Gerechnet in 5-Minuten-Schritten, das genügt völlig. */
+function sleepRegularity(days) {
+  const all = sortedNights();
+  if (all.length < 5) return null;
+  const end = new Date(all[all.length - 1].end);
+  const start = addDays(end, -days);
+  const step = 5, slots = Math.floor((end - start) / (step * 60000));
+  if (slots < (24 * 60 / step) * 5) return null;
+  const state = new Uint8Array(slots);
+  for (const n of all) {
+    const a = Math.max(0, Math.floor((n.start - start) / (step * 60000)));
+    const b = Math.min(slots, Math.ceil((n.end - start) / (step * 60000)));
+    for (let i = a; i < b; i++) state[i] = 1;
+  }
+  const shift = 24 * 60 / step;
+  let same = 0, cnt = 0;
+  for (let i = 0; i + shift < slots; i++) { if (state[i] === state[i + shift]) same++; cnt++; }
+  if (!cnt) return null;
+  return Math.round((200 * (same / cnt) - 100));
+}
+
+/* Wirkt sich ein Nickerchen auf die folgende Nacht aus? */
+function napEffect(all) {
+  const naps = all.filter(n => !n.isMain);
+  if (naps.length < 3) return null;
+  const mains = all.filter(n => n.isMain);
+  const withNap = [], without = [];
+  for (const m of mains) {
+    const napSame = naps.find(p => p.end < m.start && (m.start - p.end) < 14 * H * 60000 && p.asleepMin >= 25);
+    (napSame ? withNap : without).push(m);
+  }
+  if (withNap.length < 3 || without.length < 3) return null;
+  return {
+    n: withNap.length,
+    durDiff: Math.round(median(withNap.map(n => n.asleepMin)) - median(without.map(n => n.asleepMin))),
+    latDiff: (() => {
+      const a = withNap.map(n => n.latencyMin).filter(v => v != null), b = without.map(n => n.latencyMin).filter(v => v != null);
+      return (a.length >= 3 && b.length >= 3) ? Math.round(median(a) - median(b)) : null;
+    })()
+  };
+}
+
+/* ==================================================================
+   6 · Weckerlogik
+   Ein fixer Wecker wiederholt sich an gewählten Wochentagen, ein
+   Timer-Wecker klingelt einmal zu einem festen Zeitpunkt.
+   ================================================================== */
+function nextOccurrence(al, from) {
+  const now = from || Date.now();
+  if (al.kind === 'timer') return al.at;   // auch überfällig – der Ticker entscheidet
+  const t = parseHM(al.time);
+  for (let i = 0; i < 8; i++) {
+    const d = addDays(new Date(now), i);
+    d.setHours(Math.floor(t / 60), t % 60, 0, 0);
+    if (d.getTime() <= now) continue;
+    if (al.days && al.days.length && !al.days.includes(d.getDay())) continue;
+    return d.getTime();
+  }
+  return null;
+}
+/* Sanftes Fenster: innerhalb der letzten Minuten vor der Weckzeit
+   wird der Zeitpunkt gesucht, an dem laut Zyklusrechnung ein Zyklus
+   endet – dort ist der Schlaf am leichtesten. Reine Schätzung aus
+   Einschlafzeitpunkt und deiner gemessenen Zykluslänge, kein Live-Messwert. */
+function smartAdjust(al, targetMs, A) {
+  if (!al.smart || !S.settings.smartWindowMin) return { ms: targetMs, shifted: 0 };
+  const win = S.settings.smartWindowMin;
+  const onset = sleepOnsetEstimate(al, targetMs, A);
+  if (!onset) return { ms: targetMs, shifted: 0 };
+  const cyc = A.cycle;
+  let best = null;
+  for (let k = 1; k <= 12; k++) {
+    const b = onset + k * cyc * 60000;
+    if (b <= targetMs && b >= targetMs - win * 60000) best = b;
+  }
+  if (!best) return { ms: targetMs, shifted: 0 };
+  return { ms: best, shifted: Math.round((targetMs - best) / 60000) };
+}
+function sleepOnsetEstimate(al, targetMs, A) {
+  if (al.kind === 'timer' && al.setAt) return al.setAt + (A.latency != null ? A.latency : 15) * 60000;
+  // Fixer Wecker: typische Zubettgehzeit vor dem Weckzeitpunkt annehmen.
+  if (A.bedAll == null) return null;
+  const d = new Date(targetMs);
+  const bed = new Date(targetMs);
+  bed.setHours(Math.floor(A.bedAll / 60), A.bedAll % 60, 0, 0);
+  if (bed.getTime() >= targetMs) bed.setDate(bed.getDate() - 1);
+  if (targetMs - bed.getTime() > 14 * H * 60000) return null;
+  return bed.getTime() + (A.latency != null ? A.latency : 15) * 60000;
+}
+function nextAlarmInfo() {
+  const A = window.__A || analyse();
+  let best = null;
+  for (const al of S.alarms) {
+    if (!al.enabled) continue;
+    const t = nextOccurrence(al);
+    if (t == null) continue;
+    const adj = smartAdjust(al, t, A);
+    if (!best || adj.ms < best.ms) best = { al, ms: adj.ms, target: t, shifted: adj.shifted };
+  }
+  return best;
+}
+
+function addTimerAlarm(minutes, label) {
+  const at = Date.now() + minutes * 60000;
+  const al = { id: uid(), kind: 'timer', at, setAt: Date.now(), label: label || ('in ' + fmtDurShort(minutes)), enabled: true, smart: minutes >= 150 };
+  S.alarms.push(al); save(true);
+  armWakeLock();
+  toast('Wecker gestellt: ' + hhmm(minOfDay(new Date(at))));
+  renderAll();
+  return al;
+}
+function addFixedAlarm(time, days, label, smart) {
+  const al = { id: uid(), kind: 'fix', time, days: days || [1, 2, 3, 4, 5], label: label || '', enabled: true, smart: smart !== false };
+  S.alarms.push(al); save(true); renderAll();
+  return al;
+}
+function removeAlarm(id) { S.alarms = S.alarms.filter(a => a.id !== id); save(true); renderAll(); }
+
+/* --- Ticker: Uhr, fällige Wecker, Countdown --- */
+let ringing = null;
+setInterval(tick, 1000);
+function tick() {
+  const now = new Date();
+  const clk = $('#heroClock');
+  if (clk) clk.textContent = hhmm(minOfDay(now));
+  if (!ringing) {
+    const next = nextAlarmInfo();
+    if (next && Date.now() >= next.ms) {
+      // Verpasst? Nur klingeln, wenn es höchstens 45 min her ist.
+      if (Date.now() - next.ms < 45 * 60000) startRing(next.al, next.shifted);
+      else { if (next.al.kind === 'timer') removeAlarm(next.al.id); }
+    }
+    updateHeroNext(next);
+  }
+}
+function updateHeroNext(next) {
+  const box = $('#heroNext');
+  if (!box) return;
+  if (!next) { box.hidden = true; return; }
+  box.hidden = false;
+  const mins = Math.max(0, Math.round((next.ms - Date.now()) / 60000));
+  $('#heroNextTime').textContent = hhmm(minOfDay(new Date(next.ms))) +
+    '  ·  in ' + (mins >= 60 ? fmtDur(mins) : mins + ' min');
+}
+
+/* --- Klingeln --- */
+let audioCtx = null, ringNodes = [], ringTimer = null, wakeLock = null;
+function startRing(al, shifted) {
+  ringing = { al, shifted, since: Date.now() };
+  document.body.style.overflow = 'hidden';
+  const t = hhmm(minOfDay(new Date()));
+  $('#ringHost').innerHTML =
+    '<div class="ring">' +
+      '<div class="pulse"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.5 1.5M5 3 2.5 5.5M19 3l2.5 2.5"/></svg></div>' +
+      '<div class="big">' + t + '</div>' +
+      '<div class="lbl">' + esc(al.label || 'Wecker') + (shifted ? ' · ' + shifted + ' min früher, Zyklusende' : '') + '</div>' +
+      '<div class="acts">' +
+        '<button class="btn pri" id="ringStop">Ich bin wach</button>' +
+        '<button class="btn ghost" id="ringSnooze">Noch ' + S.settings.snoozeMin + ' min</button>' +
+      '</div>' +
+    '</div>';
+  $('#ringStop').addEventListener('click', () => stopRing(true));
+  $('#ringSnooze').addEventListener('click', snooze);
+  playAlarm();
+  notify('Wecker: ' + t, al.label || 'Zeit aufzustehen');
+  vibratePattern();
+}
+function stopRing(done) {
+  if (!ringing) return;
+  const al = ringing.al;
+  stopAudio();
+  clearInterval(ringTimer); ringTimer = null;
+  if (navigator.vibrate) { try { navigator.vibrate(0); } catch (e) {} }
+  $('#ringHost').innerHTML = '';
+  document.body.style.overflow = '';
+  ringing = null;
+  if (al.kind === 'timer') removeAlarm(al.id);
+  else renderAll();
+  if (done) { releaseWakeLock(); askWakeFeedback(al); }
+}
+function snooze() {
+  if (!ringing) return;
+  const al = ringing.al;
+  stopAudio(); clearInterval(ringTimer); ringTimer = null;
+  if (navigator.vibrate) { try { navigator.vibrate(0); } catch (e) {} }
+  $('#ringHost').innerHTML = ''; document.body.style.overflow = '';
+  ringing = null;
+  if (al.kind === 'timer') { al.at = Date.now() + S.settings.snoozeMin * 60000; save(true); }
+  else S.alarms.push({ id: uid(), kind: 'timer', at: Date.now() + S.settings.snoozeMin * 60000, setAt: Date.now(), label: 'Schlummer', enabled: true, smart: false });
+  save(true); renderAll();
+  toast('Nochmal ' + S.settings.snoozeMin + ' Minuten');
+}
+function vibratePattern() {
+  if (!S.settings.vibrate || !navigator.vibrate) return;
+  try { navigator.vibrate([400, 250, 400, 250, 700, 900]); } catch (e) {}
+  ringTimer = setInterval(() => { try { navigator.vibrate([400, 250, 400, 250, 700, 900]); } catch (e) {} }, 3000);
+}
+
+/* Töne werden erzeugt, nicht geladen – so bleibt die Datei eigenständig. */
+function ensureAudio() {
+  if (!audioCtx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; audioCtx = new C(); }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playAlarm(preview) {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  stopAudio();
+  const master = ctx.createGain();
+  master.connect(ctx.destination);
+  const vol = clamp(S.settings.volume, 0.05, 1);
+  const fade = S.settings.fadeIn && !preview ? 30 : 1.2;
+  master.gain.setValueAtTime(0.0001, ctx.currentTime);
+  master.gain.exponentialRampToValueAtTime(vol, ctx.currentTime + fade);
+  ringNodes.push(master);
+  const kind = S.settings.sound;
+  const step = kind === 'klar' ? 1.1 : kind === 'natur' ? 5.5 : 3.2;
+  let i = 0;
+  const fire = () => {
+    if (!ringNodes.length) return;
+    if (kind === 'natur') swell(ctx, master, i);
+    else chime(ctx, master, kind, i);
+    i++;
+  };
+  fire();
+  const iv = setInterval(fire, step * 1000);
+  ringNodes.push({ interval: iv });
+  if (preview) setTimeout(stopAudio, 6000);
+}
+function chime(ctx, out, kind, i) {
+  const base = kind === 'klar' ? 880 : 523.25;
+  const seq = kind === 'klar' ? [1, 1.5] : [1, 1.2, 1.5, 2];
+  seq.forEach((mult, k) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = kind === 'klar' ? 'square' : 'sine';
+    o.frequency.value = base * mult;
+    const t0 = ctx.currentTime + k * (kind === 'klar' ? 0.22 : 0.34);
+    const len = kind === 'klar' ? 0.18 : 0.9;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(kind === 'klar' ? 0.28 : 0.2, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+    o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + len + 0.05);
+  });
+}
+function swell(ctx, out, i) {
+  const len = 5.2, sr = ctx.sampleRate;
+  const buf = ctx.createBuffer(1, Math.floor(sr * len), sr);
+  const d = buf.getChannelData(0);
+  let last = 0;
+  for (let j = 0; j < d.length; j++) { const w = Math.random() * 2 - 1; last = (last * 0.985 + w * 0.015); d[j] = last * 6; }
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700;
+  const g = ctx.createGain();
+  const t0 = ctx.currentTime;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(0.5, t0 + 2.2);
+  g.gain.linearRampToValueAtTime(0.0001, t0 + len);
+  src.connect(f); f.connect(g); g.connect(out); src.start(t0); src.stop(t0 + len);
+  // ein heller Ton obendrauf, damit es weckt und nicht nur rauscht
+  const o = ctx.createOscillator(), og = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = 660 + (i % 3) * 110;
+  og.gain.setValueAtTime(0.0001, t0 + 1.6);
+  og.gain.exponentialRampToValueAtTime(0.14, t0 + 1.9);
+  og.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.4);
+  o.connect(og); og.connect(out); o.start(t0 + 1.6); o.stop(t0 + 3.5);
+}
+function stopAudio() {
+  ringNodes.forEach(n => {
+    if (n && n.interval) clearInterval(n.interval);
+    else if (n && n.gain) { try { n.gain.cancelScheduledValues(0); n.gain.setValueAtTime(0.0001, audioCtx.currentTime); n.disconnect(); } catch (e) {} }
+  });
+  ringNodes = [];
+}
+
+/* --- Benachrichtigungen & Bildschirmsperre --- */
+async function notify(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const opts = { body, tag: 'schlafwerk-alarm', renotify: true, requireInteraction: true, silent: false };
+    if (reg) await reg.showNotification(title, opts); else new Notification(title, opts);
+  } catch (e) {}
+}
+async function askNotif() {
+  if (!('Notification' in window)) { toast('Dieser Browser kann keine Benachrichtigungen'); return; }
+  const p = await Notification.requestPermission();
+  toast(p === 'granted' ? 'Benachrichtigungen sind erlaubt' : 'Bleibt aus – der Wecker klingelt trotzdem, solange die App offen ist');
+  renderTab('wecker');
+}
+async function armWakeLock() {
+  if (!S.settings.wakeLock || !('wakeLock' in navigator)) return;
+  try { if (!wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+}
+function releaseWakeLock() { try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {} }
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') { if (nextAlarmInfo()) armWakeLock(); renderTab(currentTab()); }
+});
+
+/* ==================================================================
+   7 · Fitbit
+   OAuth 2.0 mit PKCE, direkt im Browser – ohne Server und ohne
+   Client-Secret. Der Token bleibt im localStorage dieses Geräts.
+   ================================================================== */
+const FITBIT_AUTH = 'https://www.fitbit.com/oauth2/authorize';
+const FITBIT_TOKEN = 'https://api.fitbit.com/oauth2/token';
+const FITBIT_SCOPE = 'sleep profile';
+
+function redirectUri() { return location.origin + location.pathname; }
+
+function b64url(bytes) {
+  let s = '';
+  bytes.forEach(b => { s += String.fromCharCode(b); });
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function pkcePair() {
+  const v = b64url(crypto.getRandomValues(new Uint8Array(64)));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v));
+  return { verifier: v, challenge: b64url(new Uint8Array(digest)) };
+}
+async function fitbitConnect() {
+  const id = (S.fitbit.clientId || '').trim();
+  if (!id) { toast('Zuerst die Client-ID eintragen'); return; }
+  const { verifier, challenge } = await pkcePair();
+  const state = uid() + uid();
+  localStorage.setItem('schlafwerk.pkce', JSON.stringify({ verifier, state, t: Date.now() }));
+  const u = new URL(FITBIT_AUTH);
+  u.searchParams.set('client_id', id);
+  u.searchParams.set('response_type', 'code');
+  u.searchParams.set('code_challenge', challenge);
+  u.searchParams.set('code_challenge_method', 'S256');
+  u.searchParams.set('scope', FITBIT_SCOPE);
+  u.searchParams.set('redirect_uri', redirectUri());
+  u.searchParams.set('state', state);
+  u.searchParams.set('expires_in', '31536000');
+  location.href = u.toString();
+}
+async function fitbitHandleRedirect() {
+  const p = new URLSearchParams(location.search);
+  const code = p.get('code'), state = p.get('state'), err = p.get('error');
+  if (!code && !err) return false;
+  history.replaceState(null, '', redirectUri());
+  if (err) { toast('Fitbit: ' + (p.get('error_description') || err)); return true; }
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('schlafwerk.pkce') || 'null'); } catch (e) {}
+  localStorage.removeItem('schlafwerk.pkce');
+  if (!saved || saved.state !== state) { toast('Sicherheitsprüfung fehlgeschlagen – bitte nochmal verbinden'); return true; }
+  try {
+    const tok = await fitbitToken({
+      client_id: S.fitbit.clientId, grant_type: 'authorization_code',
+      redirect_uri: redirectUri(), code, code_verifier: saved.verifier
+    });
+    storeToken(tok);
+    toast('Fitbit verbunden');
+    await fitbitSync(90);
+  } catch (e) {
+    toast('Token-Tausch fehlgeschlagen: ' + e.message);
+  }
+  return true;
+}
+async function fitbitToken(params) {
+  const body = new URLSearchParams(params).toString();
+  const r = await fetch(FITBIT_TOKEN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((j.errors && j.errors[0] && j.errors[0].message) || j.error_description || ('HTTP ' + r.status));
+  return j;
+}
+function storeToken(t) {
+  S.fitbit.token = t.access_token || '';
+  S.fitbit.refresh = t.refresh_token || S.fitbit.refresh;
+  S.fitbit.expires = Date.now() + (t.expires_in || 28800) * 1000;
+  S.fitbit.userId = t.user_id || S.fitbit.userId;
+  S.fitbit.scope = t.scope || '';
+  save(true);
+}
+async function fitbitFresh() {
+  if (!S.fitbit.token) throw new Error('nicht verbunden');
+  if (Date.now() < S.fitbit.expires - 60000) return S.fitbit.token;
+  if (!S.fitbit.refresh) throw new Error('Sitzung abgelaufen – bitte neu verbinden');
+  const t = await fitbitToken({ grant_type: 'refresh_token', refresh_token: S.fitbit.refresh, client_id: S.fitbit.clientId });
+  storeToken(t);
+  return S.fitbit.token;
+}
+async function fitbitGet(path) {
+  const tok = await fitbitFresh();
+  const r = await fetch('https://api.fitbit.com' + path, {
+    headers: { Authorization: 'Bearer ' + tok, 'Accept-Language': 'de_DE' }
+  });
+  if (r.status === 401) { S.fitbit.expires = 0; save(true); throw new Error('Zugriff abgelaufen – bitte neu verbinden'); }
+  if (r.status === 429) throw new Error('Fitbit-Limit erreicht (150 Abfragen pro Stunde) – später nochmal');
+  if (!r.ok) throw new Error('Fitbit antwortet mit HTTP ' + r.status);
+  return r.json();
+}
+async function fitbitSync(days) {
+  const btn = $('#btnSync');
+  if (btn) { btn.disabled = true; btn.textContent = 'Hole Daten …'; }
+  try {
+    const end = new Date();
+    let added = 0, chunks = Math.ceil(days / 100);
+    for (let c = 0; c < chunks; c++) {
+      const to = addDays(end, -c * 100);
+      const from = addDays(to, -Math.min(99, days - c * 100 - 1));
+      const j = await fitbitGet('/1.2/user/-/sleep/date/' + dayKey(from) + '/' + dayKey(to) + '.json');
+      added += mergeFitbitLogs(j.sleep || []);
+    }
+    S.fitbit.lastSync = Date.now(); save(true);
+    toast(added ? (added + ' Nächte übernommen') : 'Alles schon aktuell');
+    renderAll();
+  } catch (e) {
+    const msg = String(e.message || e);
+    const cors = /Failed to fetch|NetworkError|Load failed/i.test(msg);
+    toast(cors ? 'Verbindung zu Fitbit blockiert – Daten stattdessen importieren' : msg, 4200);
+    if (cors) fitbitCorsHelp();
+  } finally { if (btn) { btn.disabled = false; btn.textContent = 'Jetzt abgleichen'; } renderTab('schlaf'); }
+}
+function mergeFitbitLogs(logs) {
+  let added = 0;
+  const known = new Set(S.nights.map(n => n.logId).filter(Boolean));
+  for (const log of logs) {
+    if (known.has(String(log.logId))) continue;
+    const n = fitbitLogToNight(log);
+    if (!n) continue;
+    S.nights = S.nights.filter(x => !(Math.abs(x.start - n.start) < 20 * 60000 && x.source !== 'fitbit'));
+    S.nights.push(n); added++;
+  }
+  if (added) save(true);
+  return added;
+}
+function fitbitLogToNight(log) {
+  const start = new Date(log.startTime).getTime();
+  const end = new Date(log.endTime).getTime();
+  if (!start || !end || end <= start) return null;
+  const n = {
+    id: uid(), logId: String(log.logId || ''), source: 'fitbit',
+    date: log.dateOfSleep || dayKey(new Date(end)),
+    start, end,
+    inBedMin: log.timeInBed != null ? log.timeInBed : Math.round((end - start) / 60000),
+    asleepMin: log.minutesAsleep != null ? log.minutesAsleep : Math.round((end - start) / 60000),
+    awakeMin: log.minutesAwake != null ? log.minutesAwake : null,
+    latencyMin: log.minutesToFallAsleep > 0 ? log.minutesToFallAsleep : null,
+    efficiency: log.efficiency != null ? log.efficiency : null,
+    isMain: log.isMainSleep !== false,
+    stages: null, remOnsets: null, awakenings: null
+  };
+  const sum = log.levels && log.levels.summary;
+  if (sum) {
+    if (sum.deep || sum.rem) {
+      n.stages = {
+        deep: (sum.deep && sum.deep.minutes) || 0,
+        light: (sum.light && sum.light.minutes) || 0,
+        rem: (sum.rem && sum.rem.minutes) || 0,
+        wake: (sum.wake && sum.wake.minutes) || 0
+      };
+      n.awakenings = (sum.wake && sum.wake.count) != null ? sum.wake.count : null;
+    } else if (sum.asleep || sum.restless) {
+      n.awakenings = (sum.awake && sum.awake.count) != null ? sum.awake.count : null;
+    }
+  }
+  const data = log.levels && log.levels.data;
+  if (data && data.length) {
+    const onsets = [];
+    let prev = null;
+    for (const seg of data) {
+      if (seg.level === 'rem' && prev !== 'rem') {
+        onsets.push(Math.round((new Date(seg.dateTime).getTime() - start) / 60000));
+      }
+      prev = seg.level;
+    }
+    if (onsets.length) n.remOnsets = onsets;
+  }
+  return n;
+}
+function fitbitCorsHelp() {
+  sheet('Fitbit antwortet nicht', '<div class="card flat"><p class="small">' +
+    'Der Browser konnte api.fitbit.com nicht erreichen. Meist liegt das an einem der drei Punkte:</p>' +
+    '<ul class="small" style="padding-left:18px;margin-top:10px;line-height:1.7">' +
+    '<li>Die App bei Fitbit ist als <b>Server</b> statt als <b>Client</b> registriert. Ohne Typ «Client» geht PKCE im Browser nicht.</li>' +
+    '<li>Die <b>Redirect-URL</b> stimmt nicht exakt mit <code>' + esc(redirectUri()) + '</code> überein.</li>' +
+    '<li>Ein Werbe- oder Tracking-Blocker hält die Anfrage an.</li></ul>' +
+    '<p class="small" style="margin-top:12px">Solange das klemmt: Daten aus der Fitbit-App exportieren und hier importieren – die Analyse ist danach dieselbe.</p></div>');
+}
+function fitbitDisconnect() {
+  S.fitbit.token = ''; S.fitbit.refresh = ''; S.fitbit.expires = 0; S.fitbit.userId = '';
+  save(true); renderAll(); toast('Fitbit getrennt (Daten bleiben)');
+}
+
+/* ==================================================================
+   8 · Import, Export, Demo, manuelle Erfassung
+   ================================================================== */
+function importFile(file) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    let data;
+    try { data = JSON.parse(rd.result); } catch (e) { toast('Das ist keine lesbare JSON-Datei'); return; }
+    let added = 0;
+    if (data && data.version && Array.isArray(data.nights)) {           // eigener Export
+      const known = new Set(S.nights.map(n => n.start));
+      data.nights.forEach(n => { if (!known.has(n.start)) { S.nights.push(n); added++; } });
+      if (data.settings) deepMerge(S.settings, data.settings);
+    } else {
+      const logs = Array.isArray(data) ? data : (data.sleep || data.sleepLogs || []);
+      const fit = logs.filter(l => l && l.startTime && (l.dateOfSleep || l.endTime));
+      added = mergeFitbitLogs(fit);
+    }
+    save(true); renderAll();
+    toast(added ? (added + ' Einträge importiert') : 'Keine neuen Einträge gefunden');
+  };
+  rd.readAsText(file);
+}
+function exportData() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'schlafwerk-' + dayKey(new Date()) + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function addManualNight(dateStr, bed, wake, latency, awakenings, isNap) {
+  const d = keyToDate(dateStr);
+  const bm = parseHM(bed), wm = parseHM(wake);
+  const startD = new Date(d); startD.setHours(Math.floor(bm / 60), bm % 60, 0, 0);
+  const endD = new Date(d); endD.setHours(Math.floor(wm / 60), wm % 60, 0, 0);
+  if (endD <= startD) { if (isNap) endD.setTime(startD.getTime() + 30 * 60000); else startD.setDate(startD.getDate() - 1); }
+  const inBed = Math.round((endD - startD) / 60000);
+  const lat = latency || 0, awk = awakenings || 0;
+  const asleep = Math.max(10, inBed - lat - awk * 8);
+  S.nights.push({
+    id: uid(), source: 'manuell', date: dayKey(endD),
+    start: startD.getTime(), end: endD.getTime(),
+    inBedMin: inBed, asleepMin: asleep, awakeMin: awk * 8,
+    latencyMin: latency != null ? latency : null,
+    efficiency: Math.round(asleep / inBed * 100),
+    isMain: !isNap, stages: null, remOnsets: null, awakenings: awk
+  });
+  save(true); renderAll(); toast(isNap ? 'Nickerchen erfasst' : 'Nacht erfasst');
+}
+function deleteNight(id) { S.nights = S.nights.filter(n => n.id !== id); save(true); renderAll(); }
+
+/* Demo-Daten: ein plausibler Spättyp mit Wochenend-Verschiebung,
+   zwei kurzen Nächten und gelegentlichem Nickerchen. Nur zum
+   Ausprobieren – erkennbar an der Quelle «demo». */
+function loadDemo() {
+  S.nights = S.nights.filter(n => n.source !== 'demo');
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  for (let i = 63; i >= 1; i--) {
+    const wakeDate = addDays(today, -i);
+    const wd = wakeDate.getDay();
+    const free = wd === 0 || wd === 6;
+    const bedBase = free ? 1 * 60 + 20 : 23 * 60 + 40;      // Spättyp
+    const bed = bedBase + rnd(-38, 46);
+    const dur = (free ? rnd(470, 545) : rnd(395, 470)) - (i % 17 === 0 ? 100 : 0);
+    const lat = clamp(rnd(9, 38) + (bed > 24 * 60 ? 8 : 0), 4, 70);
+    const bedM = (((Math.round(bed) % 1440) + 1440) % 1440);
+    const startD = new Date(wakeDate);
+    startD.setHours(0, 0, 0, 0);
+    if (bedM >= 12 * 60) startD.setDate(startD.getDate() - 1);   // Abend davor
+    startD.setMinutes(bedM);
+    const inBed = dur + lat + rnd(12, 42);
+    const endD = new Date(startD.getTime() + inBed * 60000);
+    const deep = dur * rnd(.13, .19), rem = dur * rnd(.18, .25), wake = inBed - dur;
+    const cyc = rnd(84, 96);
+    const onsets = [];
+    for (let k = 1; k * cyc + 55 < dur; k++) onsets.push(Math.round(lat + k * cyc - rnd(8, 18)));
+    S.nights.push({
+      id: uid(), source: 'demo', date: dayKey(endD),
+      start: startD.getTime(), end: endD.getTime(),
+      inBedMin: Math.round(inBed), asleepMin: Math.round(dur), awakeMin: Math.round(wake),
+      latencyMin: Math.round(lat), efficiency: Math.round(dur / inBed * 100),
+      isMain: true, awakenings: Math.round(rnd(1, 5)),
+      stages: { deep: Math.round(deep), rem: Math.round(rem), light: Math.round(dur - deep - rem), wake: Math.round(wake) },
+      remOnsets: onsets
+    });
+    if (!free && i % 6 === 0) {                                  // gelegentliches Nickerchen
+      const nd = new Date(wakeDate); nd.setHours(14, Math.round(rnd(0, 50)), 0, 0);
+      const nl = Math.round(rnd(18, 65));
+      S.nights.push({
+        id: uid(), source: 'demo', date: dayKey(nd), start: nd.getTime(), end: nd.getTime() + nl * 60000,
+        inBedMin: nl + 8, asleepMin: nl, awakeMin: 8, latencyMin: 8, efficiency: Math.round(nl / (nl + 8) * 100),
+        isMain: false, stages: null, remOnsets: null, awakenings: 0
+      });
+    }
+  }
+  save(true); renderAll(); toast('Demo-Daten geladen – 63 Nächte');
+}
+
+/* ==================================================================
+   9 · Themen — was jemand an seinem Schlaf stört
+   Zu jedem Thema sucht die App gezielt nach Belegen in den Daten und
+   nennt Zahlen statt Allgemeinplätzen.
+   ================================================================== */
+const TOPICS = [
+  { id: 'einschlafen', e: '🌙', label: 'Ich liege lange wach' },
+  { id: 'durchschlafen', e: '🌗', label: 'Ich wache nachts auf' },
+  { id: 'aufstehen', e: '⛰️', label: 'Ich komme morgens nicht hoch' },
+  { id: 'rhythmus', e: '🔀', label: 'Mein Rhythmus ist unregelmässig' },
+  { id: 'zuwenig', e: '📉', label: 'Ich schlafe zu wenig' },
+  { id: 'tief', e: '🥱', label: 'Nachmittags falle ich um' },
+  { id: 'verschlafen', e: '⏰', label: 'Ich verschlafe / überhöre den Wecker' },
+  { id: 'schicht', e: '🔁', label: 'Wechselnde Zeiten / Schicht' }
+];
+
+function topicFindings(A) {
+  const out = [];
+  const has = id => S.topics.includes(id);
+  const enough = A.nMain >= 5;
+
+  if (has('einschlafen')) {
+    const f = { topic: 'Einschlafen', items: [] };
+    if (A.latency != null) {
+      const ok = A.latency <= 20;
+      f.items.push({
+        h: 'Deine Einschlafdauer', v: A.latency + ' min', tone: ok ? 'ok' : 'warn',
+        p: ok ? 'Das liegt im üblichen Bereich (bis etwa 20 Minuten). Wenn es sich trotzdem lang anfühlt, liegt es eher an einzelnen Nächten als am Schnitt.'
+              : 'Über 20 Minuten im Median. Häufigster Grund: zu früh im Bett für den eigenen Rhythmus. Deine Daten sagen, dass du frühestens um ' + hhmm(A.bedAll) + ' wirklich müde bist.'
+      });
+    } else f.items.push({ h: 'Einschlafdauer', v: '–', tone: '', p: 'Fitbit misst das nur selten. Trag ein paar Nächte von Hand ein («wie lange lag ich wach»), dann rechnet die App damit.' });
+    if (A.napEffect && A.napEffect.latDiff != null && A.napEffect.latDiff > 6) {
+      f.items.push({ h: 'Nach einem Nickerchen', v: '+' + A.napEffect.latDiff + ' min', tone: 'warn', p: 'An Tagen mit einem längeren Nickerchen brauchst du abends messbar länger zum Einschlafen. Kürzer (20 min) oder früher am Tag hilft meist.' });
+    }
+    if (A.bedSd != null) f.items.push({ h: 'Streuung der Zubettgehzeit', v: '±' + A.bedSd + ' min', tone: A.bedSd > 60 ? 'warn' : 'ok', p: A.bedSd > 60 ? 'Wer jeden Abend zu einer anderen Zeit ins Bett geht, braucht länger zum Einschlafen – der Körper kann sich nicht vorbereiten.' : 'Recht konstant. Das ist die halbe Miete.' });
+    out.push(f);
+  }
+  if (has('durchschlafen')) {
+    const f = { topic: 'Durchschlafen', items: [] };
+    if (A.waso != null) f.items.push({ h: 'Wachzeit in der Nacht', v: A.waso + ' min', tone: A.waso > 45 ? 'warn' : 'ok', p: A.waso > 45 ? 'Mehr als eine dreiviertel Stunde wach pro Nacht. Bei Fitbit sind kurze Wachmomente allerdings grosszügig gezählt – entscheidend ist, ob du dich morgens erholt fühlst.' : 'Kurze Wachphasen sind normal, jeder hat sie am Ende eines Zyklus.' });
+    if (A.awakenings != null) f.items.push({ h: 'Aufwachmomente', v: A.awakenings + '×', tone: A.awakenings > 6 ? 'warn' : 'ok', p: 'Gemessen pro Nacht im Median.' });
+    if (A.eff != null) f.items.push({ h: 'Schlafeffizienz', v: A.eff + '%', tone: A.eff >= 85 ? 'ok' : 'warn', p: A.eff >= 85 ? 'Über 85 % gilt als gut: du liegst kaum unnötig im Bett.' : 'Unter 85 %: du verbringst viel Zeit im Bett, ohne zu schlafen. Weniger Zeit im Bett (nicht mehr!) verdichtet den Schlaf oft wieder.' });
+    out.push(f);
+  }
+  if (has('aufstehen')) {
+    const f = { topic: 'Morgens hochkommen', items: [] };
+    if (A.msfsc != null) f.items.push({ h: 'Dein Chronotyp', v: hhmm(A.msfsc), tone: '', p: 'Mitte deines Schlafs an freien Tagen: ' + A.chrono + '. Wenn dein Wecker weit vor dem liegt, was dein Körper vorsieht, ist Aufstehen dauerhaft anstrengend – das ist keine Willensfrage.' });
+    if (A.socialJetlag != null) f.items.push({ h: 'Sozialer Jetlag', v: fmtDur(A.socialJetlag), tone: A.socialJetlag > 60 ? 'warn' : 'ok', p: A.socialJetlag > 60 ? 'Dein Wochenende liegt ' + fmtDur(A.socialJetlag) + ' später als deine Arbeitswoche. Das fühlt sich montags an wie ein Flug über Zeitzonen.' : 'Wochenende und Woche liegen nah beieinander. Gut so.' });
+    if (A.durWork != null && A.need) {
+      const miss = Math.round(A.need - A.durWork);
+      f.items.push({ h: 'Fehlt an Arbeitstagen', v: (miss > 0 ? '−' : '+') + fmtDur(Math.abs(miss)), tone: miss > 45 ? 'warn' : 'ok', p: miss > 45 ? 'Du stehst mit einem Defizit auf. Nicht der Wecker ist das Problem, sondern die Uhrzeit davor.' : 'Deine Nächte decken deinen Bedarf weitgehend.' });
+    }
+    out.push(f);
+  }
+  if (has('rhythmus') || has('schicht')) {
+    const f = { topic: has('schicht') ? 'Wechselnde Zeiten' : 'Regelmässigkeit', items: [] };
+    if (A.sri != null) f.items.push({ h: 'Regelmässigkeit', v: A.sri + ' / 100', tone: A.sri >= 80 ? 'ok' : A.sri >= 65 ? '' : 'warn', p: 'Wie oft du zur selben Uhrzeit im selben Zustand bist wie am Vortag. Über 80 heisst: sehr verlässlicher Takt. Unter 65 schwankt der Rhythmus stark.' });
+    if (A.wakeSd != null) f.items.push({ h: 'Streuung Aufstehzeit', v: '±' + A.wakeSd + ' min', tone: A.wakeSd > 60 ? 'warn' : 'ok', p: 'Die Aufstehzeit ist der stärkste Anker für den Rhythmus – stärker als die Zubettgehzeit. Wer sie festhält, stabilisiert alles andere fast von allein.' });
+    if (A.bedFree != null && A.bedWork != null) {
+      const shift = Math.round(((toNoonAxis(A.bedFree) - toNoonAxis(A.bedWork)) + 1440) % 1440);
+      const s = shift > 720 ? shift - 1440 : shift;
+      f.items.push({ h: 'Wochenende gegen Woche', v: (s >= 0 ? '+' : '') + fmtDur(Math.abs(s)), tone: Math.abs(s) > 75 ? 'warn' : 'ok', p: 'Verschiebung deiner Zubettgehzeit an freien Tagen.' });
+    }
+    out.push(f);
+  }
+  if (has('zuwenig')) {
+    const f = { topic: 'Zu wenig Schlaf', items: [] };
+    f.items.push({ h: 'Dein Bedarf', v: fmtDur(A.need), tone: '', p: A.needSource.charAt(0).toUpperCase() + A.needSource.slice(1) + '. Nicht der Durchschnitt, sondern das, was du dir nimmst, wenn dich niemand weckt.' });
+    if (A.debt != null) f.items.push({ h: 'Schlafschuld (14 Tage)', v: (A.debt > 0 ? '−' : '+') + fmtDur(Math.abs(A.debt)), tone: A.debt > 300 ? 'warn' : 'ok', p: A.debt > 300 ? 'Aufgelaufenes Defizit. Es lässt sich nicht in einer langen Nacht abbauen, aber mit 30–45 Minuten früher pro Abend über eine Woche.' : 'Im grünen Bereich.' });
+    if (A.lateCost != null && A.lateCost > 15) f.items.push({ h: 'Späte Abende kosten dich', v: fmtDur(A.lateCost), tone: 'warn', p: 'In Nächten, in denen du später als üblich ins Bett gehst, schläfst du im Median ' + fmtDur(A.lateCost) + ' weniger – du stehst ja trotzdem gleich auf.' });
+    out.push(f);
+  }
+  if (has('tief')) {
+    const f = { topic: 'Nachmittagstief', items: [] };
+    const dip = dipWindow(A);
+    f.items.push({ h: 'Dein Tief liegt bei', v: hhmm(dip.start) + '–' + hhmm(dip.end), tone: '', p: 'Etwa sieben Stunden nach deiner typischen Aufstehzeit (' + hhmm(A.wakeAll != null ? A.wakeAll : 420) + ') sinkt die Wachheit körperlich ab. Das ist normal und kein Zeichen von Faulheit.' });
+    if (A.napMed != null) f.items.push({ h: 'Deine Nickerchen', v: A.napMed + ' min', tone: A.napMed > 45 ? 'warn' : 'ok', p: A.napMed > 45 ? 'Zwischen 30 und 60 Minuten wacht man häufig aus dem Tiefschlaf auf – daher die Benommenheit danach. Entweder unter 25 Minuten bleiben oder gleich einen ganzen Zyklus (' + A.cycle + ' min).' : 'Gute Länge: kurz genug, um ohne Benommenheit aufzuwachen.' });
+    else f.items.push({ h: 'Nickerchen', v: '–', tone: '', p: 'Noch keine erfasst. Der Plan-Tab rechnet dir aus, wann eines am besten passt, ohne die Nacht zu stören.' });
+    out.push(f);
+  }
+  if (has('verschlafen')) {
+    const f = { topic: 'Wecker überhören', items: [] };
+    f.items.push({ h: 'Sanftes Fenster', v: S.settings.smartWindowMin ? S.settings.smartWindowMin + ' min' : 'aus', tone: '', p: 'Wer aus dem Tiefschlaf gerissen wird, braucht bis zu 30 Minuten, bis der Kopf wieder da ist. Mit dem sanften Fenster weckt die App bis zu ' + (S.settings.smartWindowMin || 20) + ' Minuten früher an einem geschätzten Zyklusende.' });
+    f.items.push({ h: 'Weckzeit gegen Chronotyp', v: A.msfsc != null ? hhmm(A.msfsc) : '–', tone: '', p: 'Je weiter dein Wecker vor der Mitte deines natürlichen Schlafs liegt, desto tiefer schläfst du zum Weckzeitpunkt. Eine halbe Stunde früher ins Bett wirkt hier stärker als ein lauterer Ton.' });
+    out.push(f);
+  }
+  if (!enough && out.length) out.forEach(f => f.thin = true);
+  return out;
+}
+
+/* ==================================================================
+   10 · Hinweise mit Budget
+   Kernversprechen: die App meldet sich höchstens so oft, wie du es
+   erlaubst – und nie in der Ruhezeit. Standard ist ein Hinweis am Tag.
+   ================================================================== */
+function inQuiet(now) {
+  const m = minOfDay(now || new Date());
+  const a = parseHM(S.settings.quietFrom), b = parseHM(S.settings.quietTo);
+  return a <= b ? (m >= a && m < b) : (m >= a || m < b);
+}
+function nudgeCandidates(A) {
+  const c = [];
+  const push = (id, prio, tone, title, text, act, quietOk) => c.push({ id, prio, tone, title, text, act, quietOk });
+
+  if (A.total === 0) {
+    push('start', 100, '', 'Noch keine Daten', 'Verbinde Fitbit oder lade Demo-Daten – danach rechnet die App mit deinen echten Zeiten statt mit Annahmen.', { label: 'Daten holen', tab: 'schlaf' });
+    return c;
+  }
+  const bed = recommendedBedtime(A);
+  if (bed != null) {
+    const now = minOfDay(new Date());
+    const diff = ((toNoonAxis(bed) - toNoonAxis(now)) + 1440) % 1440;
+    if (diff <= 45) push('bedtime', 90, '', 'In ' + Math.round(diff) + ' Minuten wäre deine Zeit', 'Um ' + hhmm(bed) + ' ins Bett heisst: ' + fmtDur(A.need) + ' Schlaf bis ' + hhmm((bed + (A.latency != null ? A.latency : 15) + A.need) % 1440) + '.', { label: 'Wecker stellen', tab: 'wecker' }, true);
+  }
+  if (A.debt != null && A.debt > 300) push('debt', 70, 'warn', 'Dir fehlen ' + fmtDur(A.debt) + ' aus zwei Wochen', 'Nachholen lässt sich davon nur ein Teil, und nicht in einer langen Nacht. ' + clamp(Math.round(A.debt / 14 / 5) * 5, 10, 60) + ' Minuten früher ins Bett, zwei Wochen lang, holt den Grossteil zurück.', { label: 'Plan rechnen', tab: 'plan' });
+  if (A.sri != null && A.sri < 65) push('irregular', 60, 'warn', 'Dein Takt schwankt stark', 'Regelmässigkeit ' + A.sri + ' von 100. Der stärkste Hebel ist eine feste Aufstehzeit – auch am Wochenende, notfalls mit einer Stunde Spielraum.', { label: 'Ansehen', tab: 'muster' });
+  if (A.socialJetlag != null && A.socialJetlag > 75) push('jetlag', 55, 'warn', 'Sozialer Jetlag: ' + fmtDur(A.socialJetlag), 'Am Wochenende lebst du ' + fmtDur(A.socialJetlag) + ' später als unter der Woche. Montag fühlt sich deshalb an wie ein Zeitzonenwechsel.', { label: 'Details', tab: 'muster' });
+  if (A.latency != null && A.latency > 28) push('latency', 50, '', 'Du liegst im Schnitt ' + A.latency + ' min wach', 'Das deutet eher darauf hin, dass du zu früh im Bett bist, als auf ein Schlafproblem. Probier eine Woche lang, 20 Minuten später hinzugehen – aber gleich aufzustehen.', { label: 'Was noch?', tab: 'muster' });
+  if (A.durWork != null && A.need - A.durWork > 45) push('short', 45, 'warn', 'Unter der Woche fehlt dir Schlaf', 'Du kommst an Arbeitstagen auf ' + fmtDur(A.durWork) + ', dein Bedarf liegt bei ' + fmtDur(A.need) + '.', { label: 'Plan rechnen', tab: 'plan' });
+  if (A.eff != null && A.eff < 82) push('eff', 40, '', 'Viel Zeit im Bett, wenig Schlaf', 'Effizienz ' + A.eff + ' %. Weniger Zeit im Bett verdichtet den Schlaf oft wieder – klingt falsch, wirkt aber.', { label: 'Details', tab: 'muster' });
+  if (A.trendDur != null && A.trendDur >= 20) push('good', 30, 'ok', 'Läuft: ' + fmtDur(A.trendDur) + ' mehr Schlaf', 'Die letzten sieben Nächte liegen deutlich über den Wochen davor. Was immer du geändert hast – behalte es.', null);
+  if (A.napEffect && A.napEffect.durDiff != null && A.napEffect.durDiff < -35) push('napcost', 35, '', 'Nickerchen kosten dich Nachtschlaf', 'Nach einem längeren Nickerchen schläfst du nachts ' + fmtDur(Math.abs(A.napEffect.durDiff)) + ' weniger. Unter 25 Minuten bleiben, dann passiert das kaum.', { label: 'Plan ansehen', tab: 'plan' });
+  if (A.stageNights >= 5 && A.cycleN >= 6) push('cycle', 25, '', 'Dein Zyklus dauert ' + A.cycle + ' Minuten', 'Gemessen an deinen REM-Phasen, nicht aus dem Lehrbuch (dort stehen 90). Alle Weckvorschläge rechnen ab jetzt mit deinem Wert.', null);
+  return c;
+}
+function pickNudge(A) {
+  if (!S.settings.hintBudget) return null;
+  const today = dayKey(new Date());
+  const shownToday = S.nudges.shown.filter(x => x.d === today);
+  const already = shownToday.find(x => !x.done);
+  const cands = nudgeCandidates(A)
+    .filter(c => !S.nudges.muted.includes(c.id))
+    .filter(c => !inQuiet() || c.quietOk)
+    .sort((a, b) => b.prio - a.prio);
+  if (already) { const c = cands.find(x => x.id === already.id); if (c) return c; }
+  if (shownToday.length >= S.settings.hintBudget) return null;
+  const recent = S.nudges.shown.filter(x => daysBetween(keyToDate(x.d), new Date()) < 4).map(x => x.id);
+  const pick = cands.find(c => !recent.includes(c.id)) || null;
+  if (pick) {
+    S.nudges.shown.push({ id: pick.id, d: today, done: false });
+    S.nudges.shown = S.nudges.shown.slice(-60);
+    save();
+  }
+  return pick;
+}
+function dismissNudge(id, forever) {
+  const today = dayKey(new Date());
+  S.nudges.shown.forEach(x => { if (x.id === id && x.d === today) x.done = true; });
+  if (forever && !S.nudges.muted.includes(id)) S.nudges.muted.push(id);
+  save(true); renderTab('heute');
+}
+
+/* ==================================================================
+   11 · Pläne
+   Aus Bedarf, Chronotyp und Zykluslänge wird ein konkreter Tagesplan
+   gerechnet – mit ehrlicher Einschätzung, ob er zur Person passt.
+   ================================================================== */
+const PLANS = [
+  { id: 'mono', e: '🌙', name: 'Eine Nacht', desc: 'Der Normalfall: alles am Stück. Am wenigsten anfällig für Störungen.' },
+  { id: 'siesta', e: '🌤️', name: 'Zweiphasig (Siesta)', desc: 'Kürzere Nacht plus ein voller Zyklus am Nachmittag. Klassisch in warmen Ländern.' },
+  { id: 'powernap', e: '⚡', name: 'Nacht + Powernap', desc: 'Volle Nacht, dazu 20 Minuten im Tief. Fängt den Nachmittag ab, ohne die Nacht zu stören.' },
+  { id: 'geteilt', e: '🔀', name: 'Zweimal pennen', desc: 'Schlaf bewusst auf zwei Blöcke verteilt – für wechselnde Zeiten, lange Abende oder Schicht.' }
+];
+
+function wakeGoal(A) {
+  if (S.profile.wakeGoal) return parseHM(S.profile.wakeGoal);
+  if (A && A.wakeWork != null) return Math.round(A.wakeWork);
+  if (A && A.wakeAll != null) return Math.round(A.wakeAll);
+  return 7 * H;
+}
+function dipWindow(A) {
+  const w = A && A.wakeAll != null ? A.wakeAll : wakeGoal(A);
+  let c = w + 7 * H;
+  c = clamp(((c % 1440) + 1440) % 1440, 12 * H + 30, 16 * H);
+  return { center: c, start: c - 45, end: c + 45 };
+}
+function recommendedBedtime(A) {
+  if (S.plan && S.plan.blocks && S.plan.blocks.length) {
+    const core = S.plan.blocks.find(b => b.kind === 'kern');
+    if (core) return core.start;
+  }
+  const lat = A.latency != null ? A.latency : 15;
+  return (((wakeGoal(A) - A.need - lat) % 1440) + 1440) % 1440;
+}
+
+function computePlan(id, A) {
+  const lat = A.latency != null ? A.latency : 15;
+  const wake = wakeGoal(A);
+  const dip = dipWindow(A);
+  const naturalBed = A.msfsc != null ? (((A.msfsc - A.need / 2 - lat) % 1440) + 1440) % 1440 : null;
+  const blocks = [], notes = [];
+  let flags = [];
+
+  if (id === 'mono') {
+    const bed = (((wake - A.need - lat) % 1440) + 1440) % 1440;
+    blocks.push({ kind: 'kern', start: bed, dur: A.need + lat, label: 'Nacht', note: hhmm(bed) + ' ins Bett, ' + hhmm(wake) + ' raus' });
+    notes.push('Gerechnet mit ' + fmtDur(A.need) + ' Schlafbedarf plus ' + lat + ' min Einschlafzeit.');
+  }
+
+  if (id === 'siesta') {
+    let nap = A.cycle;
+    let core = A.need - nap;
+    if (core < 5 * H) { core = 5 * H; nap = Math.max(20, A.need - core); }
+    const bed = (((wake - core - lat) % 1440) + 1440) % 1440;
+    const napStart = dip.center - Math.round(nap / 2);
+    blocks.push({ kind: 'kern', start: bed, dur: core + lat, label: 'Kernschlaf', note: hhmm(bed) + ' bis ' + hhmm(wake) });
+    blocks.push({ kind: 'nap', start: napStart, dur: nap, label: 'Zyklus-Nap', note: hhmm(napStart) + ' bis ' + hhmm(napStart + nap) });
+    notes.push('Ein ganzer Zyklus (' + Math.round(nap) + ' min) endet in leichtem Schlaf – deshalb ist das Aufwachen danach angenehmer als nach 45 Minuten.');
+    notes.push('Der Nap liegt in deinem körperlichen Tief um ' + hhmm(dip.center) + '. Später als 16 Uhr würde er die Nacht kosten.');
+    if (napStart + nap > 16 * H + 30) flags.push('Der Nap endet spät – das kann das Einschlafen am Abend verzögern.');
+  }
+
+  if (id === 'powernap') {
+    const bed = (((wake - A.need - lat) % 1440) + 1440) % 1440;
+    const napStart = dip.center - 10;
+    blocks.push({ kind: 'kern', start: bed, dur: A.need + lat, label: 'Nacht', note: hhmm(bed) + ' bis ' + hhmm(wake) });
+    blocks.push({ kind: 'nap', start: napStart, dur: 20, label: 'Powernap', note: hhmm(napStart) + ' bis ' + hhmm(napStart + 20) });
+    notes.push('Unter 25 Minuten bleibst du im leichten Schlaf. Genau deshalb wachst du klar auf statt benommen.');
+    notes.push('Wecker vorher stellen und wirklich hinlegen – im Sitzen dauert das Einschlafen länger als der Nap.');
+  }
+
+  if (id === 'geteilt') {
+    // Der lange Block liegt in der Nacht (dort steckt der Tiefschlaf),
+    // der zweite füllt den Rest im Nachmittagstief.
+    let second = clamp(Math.round(A.need * 0.3 / A.cycle) * A.cycle || A.cycle, A.cycle, 2 * A.cycle);
+    let core = A.need - second;
+    if (core < 4 * H) { core = 4 * H; second = A.need - core; }
+    const bed = (((wake - core - lat) % 1440) + 1440) % 1440;
+    const secStart = dip.center - Math.round(second / 2);
+    blocks.push({ kind: 'kern', start: bed, dur: core + lat, label: 'Hauptblock (Nacht)', note: hhmm(bed) + ' bis ' + hhmm(wake) });
+    blocks.push({ kind: 'nap', start: secStart, dur: second, label: 'Zweiter Block', note: hhmm(secStart) + ' bis ' + hhmm(secStart + second) });
+    notes.push('Beide Blöcke sind Vielfache deiner Zykluslänge (' + A.cycle + ' min), damit du jeweils am Zyklusende aufwachst.');
+    notes.push('Der Hauptblock bleibt in der Nacht: Tiefschlaf holt sich der Körper vor allem in den ersten Stunden nach dem Einschlafen und bevorzugt nachts.');
+    if (core < 5 * H) flags.push('Unter fünf Stunden Kernschlaf wird es anspruchsvoll – gib dem Umbau mindestens zwei Wochen, und nicht in einer stressigen Phase.');
+  }
+
+  const totalSleep = blocks.reduce((s, b) => s + b.dur, 0) - lat;
+  // --- Passt der Plan? ---
+  let score = 100;
+  if (totalSleep < A.need - 20) { score -= 30; flags.push('Der Plan deckt deinen Bedarf von ' + fmtDur(A.need) + ' nicht.'); }
+  if (blocks.some(b => b.kind === 'nap') && !S.settings.napsOk) { score -= 40; flags.push('Du hast angegeben, dass Nickerchen für dich nicht gehen – dieser Plan braucht eines.'); }
+  if (naturalBed != null) {
+    const core = blocks.find(b => b.kind === 'kern');
+    const diff = ((toNoonAxis(naturalBed) - toNoonAxis(core.start)) + 1440) % 1440;
+    const d = diff > 720 ? diff - 1440 : diff;
+    if (d > 75) { score -= 20; flags.push('Die Zubettgehzeit liegt ' + fmtDur(d) + ' vor dem, was dein Körper von sich aus wählt (' + hhmm(naturalBed) + '). Verschiebe sie in Schritten von 15 Minuten, sonst liegst du nur wach.'); }
+    else if (d < -75) { score -= 10; flags.push('Du gehst später ins Bett, als dein Rhythmus nahelegt.'); }
+  }
+  if (A.conf === 'keine' || A.conf === 'wenig') { score -= 10; flags.push('Noch wenig Daten – die Zahlen sind Schätzungen, keine Messwerte.'); }
+  const fit = score >= 85 ? { label: 'passt zu dir', tone: 'ok' } : score >= 60 ? { label: 'geht, mit Abstrichen', tone: 'warn' } : { label: 'schwierig', tone: 'bad' };
+
+  return { id, name: (PLANS.find(p => p.id === id) || {}).name, blocks, notes, flags, fit, totalSleep, wake, lat };
+}
+
+/* 24-Stunden-Ring: der Plan als Zifferblatt, dahinter blass die
+   tatsächlich gemessenen Schlafzeiten der letzten Wochen. */
+function planRingSvg(plan, A) {
+  const R = 86, r = 62, cx = 100, cy = 100;
+  const pol = (rad, min) => {
+    const a = (min / 1440) * Math.PI * 2 - Math.PI / 2;
+    return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)];
+  };
+  const arc = (rad0, rad1, from, dur, fill, op) => {
+    const to = from + Math.min(dur, 1439);
+    const large = dur > 720 ? 1 : 0;
+    const [x0, y0] = pol(rad1, from), [x1, y1] = pol(rad1, to);
+    const [x2, y2] = pol(rad0, to), [x3, y3] = pol(rad0, from);
+    return '<path d="M' + x0.toFixed(1) + ' ' + y0.toFixed(1) +
+      ' A' + rad1 + ' ' + rad1 + ' 0 ' + large + ' 1 ' + x1.toFixed(1) + ' ' + y1.toFixed(1) +
+      ' L' + x2.toFixed(1) + ' ' + y2.toFixed(1) +
+      ' A' + rad0 + ' ' + rad0 + ' 0 ' + large + ' 0 ' + x3.toFixed(1) + ' ' + y3.toFixed(1) + ' Z" fill="' + fill + '"' + (op ? ' opacity="' + op + '"' : '') + '/>';
+  };
+  let s = '<svg class="chart" viewBox="0 0 200 200" role="img" aria-label="Tagesplan als 24-Stunden-Ring">';
+  s += '<circle cx="100" cy="100" r="' + ((R + r) / 2) + '" fill="none" stroke="var(--bg-2)" stroke-width="' + (R - r) + '"/>';
+  if (A.bedAll != null && A.durAll) s += arc(r - 9, r - 3, A.bedAll, A.durAll, 'var(--txt-3)', .45);
+  for (const b of plan.blocks) s += arc(r, R, b.start, b.dur, b.kind === 'kern' ? 'var(--tint)' : 'var(--rem)');
+  const dip = dipWindow(A);
+  s += arc(R + 3, R + 8, dip.start, 90, 'var(--wake)', .75);
+  for (let h = 0; h < 24; h += 3) {
+    const [x, y] = pol(R + 17, h * 60);
+    s += '<text class="axis" x="' + x.toFixed(1) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="middle">' + h + '</text>';
+  }
+  const tot = fmtDur(plan.totalSleep);
+  s += '<text x="100" y="95" text-anchor="middle" font-size="19" font-weight="700" fill="var(--txt)">' + tot + '</text>';
+  s += '<text x="100" y="112" text-anchor="middle" font-size="9.5" fill="var(--txt-3)">Schlaf pro Tag</text>';
+  s += '</svg>';
+  const nap = plan.blocks.find(b => b.kind !== 'kern');
+  return '<div style="max-width:280px;margin:0 auto">' + s +
+    '<div class="legend" style="justify-content:center">' +
+    '<span><i style="background:var(--tint)"></i>' + (nap ? 'Kernschlaf' : 'Nacht') + '</span>' +
+    (nap ? '<span><i style="background:var(--rem)"></i>' + esc(nap.label) + '</span>' : '') +
+    '<span><i style="background:var(--wake);opacity:.75"></i>dein Tief</span>' +
+    (A.bedAll != null ? '<span><i style="background:var(--txt-3);opacity:.45"></i>bisher gemessen</span>' : '') +
+    '</div></div>';
+}
+
+function applyPlan(plan) {
+  S.plan = { id: plan.id, blocks: plan.blocks.map(b => ({ kind: b.kind, start: b.start, dur: b.dur, label: b.label })), createdAt: Date.now() };
+  // Für jeden Block einen Wecker anlegen (Kernschlaf an Arbeitstagen,
+  // zweiter Block täglich) – bestehende Planwecker vorher entfernen.
+  S.alarms = S.alarms.filter(a => !a.fromPlan);
+  for (const b of plan.blocks) {
+    const end = (b.start + b.dur) % 1440;
+    const al = {
+      id: uid(), kind: 'fix', time: hhmm(end),
+      days: b.kind === 'kern' ? [1, 2, 3, 4, 5] : [1, 2, 3, 4, 5],
+      label: b.label, enabled: true, smart: b.kind === 'kern', fromPlan: true
+    };
+    S.alarms.push(al);
+  }
+  save(true); renderAll();
+  toast('Plan übernommen – Wecker sind gestellt');
+}
+
+/* ==================================================================
+   12 · Darstellung
+   ================================================================== */
+function currentTab() { const p = $('.page.on'); return p ? p.id.slice(2) : 'heute'; }
+function renderAll() { window.__A = analyse(); renderTab(currentTab()); }
+function renderTab(tab) {
+  window.__A = window.__A || analyse();
+  const A = window.__A = analyse();
+  if (tab === 'heute') renderHeute(A);
+  if (tab === 'wecker') renderWecker(A);
+  if (tab === 'schlaf') renderSchlaf(A);
+  if (tab === 'muster') renderMuster(A);
+  if (tab === 'plan') renderPlan(A);
+}
+
+/* --- Heute --- */
+function renderHeute(A) {
+  const now = new Date();
+  const m = minOfDay(now);
+  $('#heroClock').textContent = hhmm(m);
+  const bed = recommendedBedtime(A);
+  const dip = dipWindow(A);
+  let state = '☀️ Tag';
+  if (A.plan) {
+    const core = S.plan.blocks.find(b => b.kind === 'kern');
+    if (core && inBlock(m, core.start, core.dur)) state = '🌙 Schlafzeit';
+  }
+  if (state === '☀️ Tag') {
+    if (m >= dip.start && m <= dip.end) state = '🥱 dein Tief';
+    else if (m < 5 * H) state = '🌙 Nacht';
+    else if (m < 11 * H) state = '🌅 Morgen';
+    else if (m >= 21 * H) state = '🌆 Abend';
+  }
+  $('#heroState').textContent = state;
+  const wd = DAY_LONG[now.getDay()];
+  $('#heroSub').textContent = wd + ' · ' + (bed != null ? 'ab ' + hhmm(bed) + ' ins Bett für ' + fmtDur(A.need) : 'noch keine Empfehlung');
+
+  // Hinweis
+  const n = pickNudge(A);
+  const box = $('#heroInsight');
+  if (!n) box.innerHTML = '';
+  else {
+    box.innerHTML = '<div class="insight ' + (n.tone || '') + '">' +
+      '<h3>' + esc(n.title) + '</h3><p>' + esc(n.text) + '</p><div class="acts">' +
+      (n.act ? '<button class="btn sm pri" data-goto="' + n.act.tab + '">' + esc(n.act.label) + '</button>' : '') +
+      '<button class="btn sm ghost" data-nudge-ok="' + n.id + '">Verstanden</button>' +
+      '<button class="btn sm ghost" data-nudge-mute="' + n.id + '">Nicht mehr zeigen</button>' +
+      '</div></div>';
+    $$('[data-nudge-ok]', box).forEach(b => b.addEventListener('click', () => dismissNudge(b.dataset.nudgeOk, false)));
+    $$('[data-nudge-mute]', box).forEach(b => b.addEventListener('click', () => { dismissNudge(b.dataset.nudgeMute, true); toast('Dieser Hinweis kommt nicht wieder'); }));
+  }
+
+  // Zyklus-Vorschläge
+  const daytime = m > 9 * H && m < 19 * H;
+  $('#cycTitle').textContent = daytime ? 'Wenn du dich jetzt hinlegst' : 'Wenn du jetzt einschläfst';
+  $('#cycPill').textContent = 'Zyklus ' + A.cycle + ' min';
+  const lat = A.latency != null ? A.latency : 15;
+  $('#cycNote').textContent = 'Gerechnet mit ' + lat + ' min Einschlafzeit und deiner Zykluslänge (' + A.cycleSource + '). Am Zyklusende ist der Schlaf leicht – dort weckt es sich am besten.';
+  const bestK = Math.round(A.need / A.cycle);
+  $('#cycGrid').innerHTML = [3, 4, 5, 6].map(k => {
+    const mins = lat + k * A.cycle;
+    const t = (m + mins) % 1440;
+    return '<button data-timer="' + mins + '" class="' + (k === bestK ? 'best' : '') + '">' +
+      '<div class="t">' + hhmm(t) + '</div><div class="d">in ' + fmtDur(mins) + '</div>' +
+      '<div class="z">' + k + ' Zyklen' + (k === bestK ? ' · dein Bedarf' : '') + '</div></button>';
+  }).join('');
+  $$('#cycGrid button').forEach(b => b.addEventListener('click', () => { addTimerAlarm(Number(b.dataset.timer)); }));
+
+  // Plan heute
+  const pc = $('#cardPlanToday');
+  if (S.plan && S.plan.blocks) {
+    pc.hidden = false;
+    $('#planTodayBlocks').innerHTML = S.plan.blocks.map(b => {
+      const end = (b.start + b.dur) % 1440;
+      const active = inBlock(m, b.start, b.dur);
+      return '<div class="block"><div class="t">' + hhmm(b.start) + '–' + hhmm(end) + '</div>' +
+        '<div><div style="font-weight:650;font-size:14.5px">' + esc(b.label) + '</div>' +
+        '<div class="n">' + fmtDur(b.dur) + (active ? ' · läuft gerade' : '') + '</div></div>' +
+        '<div class="sp"></div>' + (active ? '<span class="pill tint">jetzt</span>' : '') + '</div>';
+    }).join('');
+  } else pc.hidden = true;
+
+  // Letzte Nacht
+  const last = sortedNights().filter(n2 => n2.isMain).slice(-1)[0];
+  const body = $('#lastNightBody');
+  if (!last) {
+    body.innerHTML = emptyBox('Noch keine Nacht erfasst', 'Verbinde Fitbit, trag eine Nacht von Hand ein oder lade Demo-Daten.') +
+      '<div class="row" style="justify-content:center"><button class="btn sm pri" data-goto="schlaf">Daten hinzufügen</button></div>';
+  } else {
+    const dd = new Date(last.end);
+    body.innerHTML =
+      '<div class="kpis" style="margin-bottom:12px">' +
+      kpi(fmtDur(last.asleepMin), 'Schlaf', hhmm(minOfDay(new Date(last.start))) + '–' + hhmm(minOfDay(dd)) + ' · ' + DAY_SHORT[dd.getDay()]) +
+      kpi((last.efficiency != null ? last.efficiency + '%' : '–'), 'Effizienz', last.efficiency >= 85 ? 'gut' : 'du lagst wach im Bett') +
+      (A.need ? kpi((last.asleepMin >= A.need ? '+' : '−') + fmtDurShort(Math.abs(last.asleepMin - A.need)), 'gegen Bedarf', 'Bedarf ' + fmtDur(A.need)) : '') +
+      '</div>' + stageBar(last) + stageLegend(last);
+  }
+}
+function inBlock(m, start, dur) {
+  const rel = ((m - start) % 1440 + 1440) % 1440;
+  return rel < dur;
+}
+function kpi(v, k, n) { return '<div class="kpi"><div class="v">' + v + '</div><div class="k">' + esc(k) + '</div>' + (n ? '<div class="n">' + esc(n) + '</div>' : '') + '</div>'; }
+function emptyBox(t, s) {
+  return '<div class="empty"><svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7.5 7.5 0 1 0 10.5 10.5Z"/></svg>' +
+    '<div style="font-weight:650;color:var(--txt-2)">' + esc(t) + '</div><div class="small" style="margin-top:5px">' + esc(s) + '</div></div>';
+}
+function stageBar(n) {
+  if (!n.stages) {
+    const eff = n.efficiency != null ? n.efficiency : 90;
+    return '<div class="bar"><div class="seg2" style="left:0;width:' + eff + '%;background:var(--light)"></div>' +
+      '<div class="seg2" style="left:' + eff + '%;width:' + (100 - eff) + '%;background:var(--wake)"></div></div>';
+  }
+  const s = n.stages, tot = Math.max(1, s.deep + s.light + s.rem + s.wake);
+  let x = 0, out = '';
+  [['deep', 'var(--deep)'], ['rem', 'var(--rem)'], ['light', 'var(--light)'], ['wake', 'var(--wake)']].forEach(([k, c]) => {
+    const w = s[k] / tot * 100;
+    out += '<div class="seg2" style="left:' + x + '%;width:' + w + '%;background:' + c + '"></div>';
+    x += w;
+  });
+  return '<div class="bar" style="height:30px">' + out + '</div>';
+}
+function stageLegend(n) {
+  if (!n.stages) return '<div class="legend"><span><i style="background:var(--light)"></i>Schlaf</span><span><i style="background:var(--wake)"></i>wach</span></div>';
+  const s = n.stages;
+  return '<div class="legend">' +
+    '<span><i style="background:var(--deep)"></i>Tief ' + fmtDurShort(s.deep) + '</span>' +
+    '<span><i style="background:var(--rem)"></i>REM ' + fmtDurShort(s.rem) + '</span>' +
+    '<span><i style="background:var(--light)"></i>Leicht ' + fmtDurShort(s.light) + '</span>' +
+    '<span><i style="background:var(--wake)"></i>Wach ' + fmtDurShort(s.wake) + '</span></div>';
+}
+
+/* --- Wecker --- */
+function renderWecker(A) {
+  const c = A.cycle;
+  const chips = [
+    { m: 20, l: 'Powernap 20 min' }, { m: c, l: '1 Zyklus' }, { m: 2 * c, l: '2 Zyklen' },
+    { m: 3 * c, l: '3 Zyklen' }, { m: 4 * c, l: '4 Zyklen' }, { m: 5 * c, l: '5 Zyklen' }
+  ];
+  $('#timerChips').innerHTML = chips.map(x =>
+    '<button class="chip" data-timer="' + Math.round(x.m) + '">' + esc(x.l) + ' · ' + fmtDurShort(x.m) +
+    ' <span style="opacity:.6">→ ' + hhmm(minOfDay(new Date()) + x.m) + '</span></button>').join('');
+  $$('#timerChips [data-timer]').forEach(b => b.addEventListener('click', () => addTimerAlarm(Number(b.dataset.timer))));
+
+  const list = $('#alarmList');
+  const alarms = S.alarms.slice().sort((a, b) => (nextOccurrence(a) || 9e15) - (nextOccurrence(b) || 9e15));
+  if (!alarms.length) list.innerHTML = emptyBox('Kein Wecker gestellt', 'Oben eine Dauer wählen oder unten einen festen Wecker anlegen.');
+  else list.innerHTML = alarms.map(al => {
+    const t = nextOccurrence(al);
+    const when = al.kind === 'timer'
+      ? 'einmalig · ' + (t ? 'in ' + fmtDur(Math.max(0, (t - Date.now()) / 60000)) : 'abgelaufen')
+      : (al.days && al.days.length === 7 ? 'täglich' : (al.days || []).map(d => DAY_SHORT[d]).join(' ') || 'einmalig');
+    const time = al.kind === 'timer' ? hhmm(minOfDay(new Date(al.at))) : al.time;
+    return '<div class="alarm ' + (al.enabled ? '' : 'off') + '">' +
+      '<div><div class="time">' + time + '</div><div class="meta">' + esc(when) +
+      (al.label ? ' · ' + esc(al.label) : '') + (al.smart && S.settings.smartWindowMin ? ' · sanftes Fenster' : '') + '</div></div>' +
+      '<div class="sp"></div>' +
+      '<button class="tgl" role="switch" aria-checked="' + (al.enabled ? 'true' : 'false') + '" data-toggle="' + al.id + '" aria-label="Wecker ein oder aus"></button>' +
+      '<button class="icon-btn" data-edit="' + al.id + '" aria-label="Bearbeiten"><svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="m14.5 5.5 4 4"/></svg></button>' +
+      '</div>';
+  }).join('');
+  $$('#alarmList [data-toggle]').forEach(b => b.addEventListener('click', () => {
+    const al = S.alarms.find(a => a.id === b.dataset.toggle);
+    al.enabled = !al.enabled; save(true); renderTab('wecker'); if (al.enabled) armWakeLock();
+  }));
+  $$('#alarmList [data-edit]').forEach(b => b.addEventListener('click', () => editAlarm(b.dataset.edit)));
+
+  // Rückwärts rechnen
+  const bedWake = parseHM($('#bedCalcTime').value || '07:00');
+  const lat = A.latency != null ? A.latency : 15;
+  $('#bedCalcGrid').innerHTML = [6, 5, 4].map(k => {
+    const mins = k * A.cycle + lat;
+    const t = (bedWake - mins + 1440 * 2) % 1440;
+    const best = k === Math.round(A.need / A.cycle);
+    return '<button data-bed="' + t + '" class="' + (best ? 'best' : '') + '">' +
+      '<div class="t">' + hhmm(t) + '</div><div class="d">' + fmtDur(k * A.cycle) + ' Schlaf</div>' +
+      '<div class="z">' + k + ' Zyklen' + (best ? ' · dein Bedarf' : '') + '</div></button>';
+  }).join('');
+  $$('#bedCalcGrid [data-bed]').forEach(b => b.addEventListener('click', () => {
+    addFixedAlarm($('#bedCalcTime').value, [1, 2, 3, 4, 5], 'Aufstehen', true);
+    toast('Wecker um ' + $('#bedCalcTime').value + ' angelegt – ab ' + hhmm(Number(b.dataset.bed)) + ' ins Bett');
+  }));
+
+  // Zuverlässigkeit ehrlich benennen
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  let txt = 'Der Wecker läuft im Browser. Sicher klingelt er, solange diese Seite offen und der Bildschirm an ist – dafür hält die App den Bildschirm wach, wenn ein Wecker gestellt ist. ';
+  txt += perm === 'granted' ? 'Benachrichtigungen sind erlaubt, damit meldet er sich auch, wenn du in einem anderen Tab bist. '
+    : 'Erlaube Benachrichtigungen, dann meldet er sich auch aus einem anderen Tab. ';
+  txt += standalone ? 'Die App läuft als installierte App – das ist die zuverlässigste Variante im Browser.'
+    : 'Tipp: über «Zum Home-Bildschirm» installieren, das ist deutlich zuverlässiger. Für einen Wecker, auf den es wirklich ankommt, stell zusätzlich den Wecker deines Handys.';
+  $('#reliabilityNote').textContent = txt;
+}
+
+/* --- Schlaf --- */
+let rangeDays = 14;
+function renderSchlaf(A) {
+  // Fitbit-Karte
+  const fb = S.fitbit, pill = $('#fitbitPill'), body = $('#fitbitBody');
+  const connected = !!fb.token;
+  pill.textContent = connected ? 'verbunden' : 'nicht verbunden';
+  pill.className = 'pill ' + (connected ? 'ok' : '');
+  if (connected) {
+    const cnt = S.nights.filter(n => n.source === 'fitbit').length;
+    body.innerHTML =
+      '<p class="small">' + cnt + ' Nächte von Fitbit übernommen' +
+      (fb.lastSync ? ' · zuletzt ' + new Date(fb.lastSync).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + '.</p>' +
+      '<div class="row" style="margin-top:12px">' +
+      '<button class="btn pri" id="btnSync">Jetzt abgleichen</button>' +
+      '<button class="btn ghost" id="btnSync365">Ein Jahr holen</button>' +
+      '<button class="btn ghost danger" id="btnDisc">Trennen</button></div>' +
+      '<p class="small" style="margin-top:10px">Fitbit erlaubt 150 Abfragen pro Stunde. Ein Abgleich braucht eine davon.</p>';
+    $('#btnSync').addEventListener('click', () => fitbitSync(90));
+    $('#btnSync365').addEventListener('click', () => fitbitSync(365));
+    $('#btnDisc').addEventListener('click', fitbitDisconnect);
+  } else {
+    body.innerHTML =
+      '<p class="small">Fitbit lässt keine App ohne eigene Registrierung an die Daten. Einmalig einrichten, danach läuft es von allein:</p>' +
+      '<ol class="small" style="padding-left:18px;line-height:1.75;margin:10px 0 14px">' +
+      '<li>Auf <b>dev.fitbit.com</b> anmelden → «Register an app».</li>' +
+      '<li>OAuth 2.0 Application Type: <b>Client</b> wählen (nur so geht es ohne Server).</li>' +
+      '<li>Als Redirect URL exakt eintragen:<br><code style="word-break:break-all;font-size:12px">' + esc(redirectUri()) + '</code></li>' +
+      '<li>Die <b>OAuth 2.0 Client ID</b> hier einsetzen.</li></ol>' +
+      '<label class="fld"><span>Client ID</span><input type="text" id="fbId" placeholder="z. B. 23XYZ7" value="' + esc(fb.clientId || '') + '" autocomplete="off" spellcheck="false"></label>' +
+      '<div class="row"><button class="btn pri" id="btnConnect">Mit Fitbit verbinden</button>' +
+      '<button class="btn ghost" id="btnCopyRedir">Redirect-URL kopieren</button></div>' +
+      '<p class="small" style="margin-top:10px">Der Zugriff gilt nur für Schlafdaten und dein Profil. Token und Daten bleiben auf diesem Gerät.</p>';
+    $('#fbId').addEventListener('input', e => { S.fitbit.clientId = e.target.value.trim(); save(); });
+    $('#btnConnect').addEventListener('click', fitbitConnect);
+    $('#btnCopyRedir').addEventListener('click', () => {
+      navigator.clipboard && navigator.clipboard.writeText(redirectUri());
+      toast('Kopiert: ' + redirectUri());
+    });
+  }
+
+  // Nächte
+  $$('#rangeSeg button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.range) === rangeDays)));
+  const ns = recentNights(rangeDays);
+  $('#nightsCount').textContent = ns.length + ' Einträge';
+  $('#nightsChart').innerHTML = ns.length ? timelineSvg(ns) : '';
+  const list = $('#nightsList');
+  if (!ns.length) list.innerHTML = emptyBox('Keine Einträge im Zeitraum', 'Fitbit verbinden, selbst erfassen oder Demo-Daten laden.');
+  else list.innerHTML = ns.slice().reverse().map(n => {
+    const s = new Date(n.start), e = new Date(n.end);
+    return '<div class="night"><div class="date"><b>' + DAY_SHORT[e.getDay()] + '</b>' + e.getDate() + '.' + (e.getMonth() + 1) + '.</div>' +
+      '<div style="flex:1;min-width:0">' + stageBar(n) +
+      '<div class="small" style="margin-top:4px">' + hhmm(minOfDay(s)) + '–' + hhmm(minOfDay(e)) +
+      (n.isMain ? '' : ' · Nickerchen') + (n.source === 'demo' ? ' · demo' : n.source === 'manuell' ? ' · selbst erfasst' : '') + '</div></div>' +
+      '<div class="dur">' + fmtDurShort(n.asleepMin) + '</div>' +
+      '<button class="icon-btn" data-del="' + n.id + '" aria-label="Löschen"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button></div>';
+  }).join('');
+  $$('#nightsList [data-del]').forEach(b => b.addEventListener('click', () => { deleteNight(b.dataset.del); toast('Eintrag gelöscht'); }));
+}
+
+/* Zeitstrahl: jede Nacht eine Zeile, Uhrzeit von 17 Uhr bis 13 Uhr. */
+function timelineSvg(nights) {
+  const W = 320, L = 24, R = 4, span = 24 * H, from = 17 * H;
+  const rows = nights.length, rh = Math.max(7, Math.min(15, 220 / Math.max(1, rows)));
+  const Hgt = rows * rh + 20;
+  const x = min => L + ((((min - from) % 1440) + 1440) % 1440) / span * (W - L - R);
+  let s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + Hgt + '" role="img" aria-label="Schlafzeiten der letzten Nächte">';
+  for (let t = 18 * H; t < from + span; t += 3 * H) {
+    const xx = x(t % 1440);
+    s += '<line x1="' + xx.toFixed(1) + '" y1="0" x2="' + xx.toFixed(1) + '" y2="' + (Hgt - 16) + '" stroke="var(--sep)" stroke-width="1"/>';
+    s += '<text class="axis" x="' + xx.toFixed(1) + '" y="' + (Hgt - 4) + '" text-anchor="middle">' + pad2((t / 60) % 24) + '</text>';
+  }
+  nights.forEach((n, i) => {
+    const y = i * rh, d = new Date(n.end);
+    const x0 = x(minOfDay(new Date(n.start)));
+    const w = Math.max(1.5, n.inBedMin / span * (W - L - R));
+    const free = isFreeDay(n.date);
+    const col = n.isMain ? 'var(--tint)' : 'var(--rem)';
+    s += '<text class="axis" x="0" y="' + (y + rh * .78) + '">' + DAY_SHORT[d.getDay()] + '</text>';
+    s += '<rect x="' + x0.toFixed(1) + '" y="' + (y + 1) + '" width="' + Math.max(0.8, Math.min(w, W - R - x0)).toFixed(1) + '" height="' + (rh - 2.5) + '" rx="' + Math.min(3, rh / 3) + '" fill="' + col + '" opacity="' + (free ? .62 : 1) + '"/>';
+    if (x0 + w > W - R) {
+      const rest = x0 + w - (W - R);
+      s += '<rect x="' + L + '" y="' + (y + 1) + '" width="' + Math.max(0.8, Math.min(rest, W - L - R)).toFixed(1) + '" height="' + (rh - 2.5) + '" rx="2" fill="' + col + '" opacity=".35"/>';
+    }
+  });
+  s += '</svg><div class="legend"><span><i style="background:var(--tint)"></i>Nacht (Arbeitstag)</span>' +
+    '<span><i style="background:var(--tint);opacity:.62"></i>freier Tag</span>' +
+    '<span><i style="background:var(--rem)"></i>Nickerchen</span></div>';
+  return s;
+}
+
+/* --- Muster --- */
+function renderMuster(A) {
+  $('#topicGrid').innerHTML = TOPICS.map(t =>
+    '<button class="topic" data-topic="' + t.id + '" aria-pressed="' + (S.topics.includes(t.id) ? 'true' : 'false') + '">' +
+    '<span class="e">' + t.e + '</span><span>' + esc(t.label) + '</span></button>').join('');
+  $$('#topicGrid [data-topic]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.topic;
+    S.topics = S.topics.includes(id) ? S.topics.filter(x => x !== id) : S.topics.concat([id]);
+    save(true); haptic(); renderTab('muster');
+  }));
+
+  const tf = topicFindings(A);
+  $('#topicFindings').innerHTML = tf.length ? tf.map(f =>
+    '<div class="card"><div class="card-h"><h2>' + esc(f.topic) + '</h2></div>' +
+    f.items.map(i => '<div class="finding"><div class="top"><h3>' + esc(i.h) + '</h3>' +
+      '<div class="val" style="' + (i.tone === 'warn' ? 'color:var(--warn)' : i.tone === 'ok' ? 'color:var(--ok)' : '') + '">' + esc(i.v) + '</div></div>' +
+      '<p>' + esc(i.p) + '</p></div>').join('') +
+    (f.thin ? '<p class="small" style="margin-top:10px">' + (A.nMain ? 'Erst ' + A.nMain + ' Nächte erfasst – ' : 'Noch keine Nacht erfasst – ') + 'die Zahlen werden mit jeder Nacht belastbarer.</p>' : '') +
+    '</div>').join('') : '';
+
+  $('#confPill').textContent = A.confText;
+  $('#confPill').className = 'pill ' + (A.conf === 'gut' ? 'ok' : A.conf === 'keine' ? 'bad' : '');
+  $('#profileKpis').innerHTML =
+    kpi(A.chrono ? hhmm(A.msfsc) : '–', 'Chronotyp', A.chrono ? A.chrono + ' (Mitte des Schlafs an freien Tagen)' : 'braucht 3 freie Nächte') +
+    kpi(fmtDur(A.need), 'Schlafbedarf', A.needSource) +
+    kpi(A.cycle + ' min', 'Zykluslänge', A.cycleSource) +
+    kpi(A.sri != null ? A.sri + '/100' : '–', 'Regelmässigkeit', A.sri != null ? (A.sri >= 80 ? 'sehr verlässlicher Takt' : A.sri >= 65 ? 'ordentlich' : 'schwankt stark') : 'braucht ~2 Wochen am Stück') +
+    kpi(A.socialJetlag != null ? fmtDur(A.socialJetlag) : '–', 'Sozialer Jetlag', 'Woche gegen Wochenende') +
+    kpi(A.latency != null ? A.latency + ' min' : '–', 'Einschlafdauer', A.latencyN ? 'aus ' + A.latencyN + ' Nächten' : 'Fitbit misst das selten – selbst erfassen') +
+    kpi(A.eff != null ? A.eff + '%' : '–', 'Effizienz', 'Schlaf gegen Zeit im Bett') +
+    kpi(A.debt != null ? (A.debt > 0 ? '−' : '+') + fmtDurShort(Math.abs(A.debt)) : '–', 'Schlafschuld', A.debtDays + ' Tage betrachtet');
+
+  $('#rhythmChart').innerHTML = weekdaySvg(A);
+
+  const f = [];
+  if (A.bedWork != null) f.push(['Arbeitstage', hhmm(A.bedWork) + ' – ' + hhmm(A.wakeWork), 'Median aus ' + A.nWork + ' Nächten, das sind ' + fmtDur(A.durWork) + ' Schlaf.']);
+  if (A.bedFree != null) f.push(['Freie Tage', hhmm(A.bedFree) + ' – ' + hhmm(A.wakeFree), 'Median aus ' + A.nFree + ' Nächten, das sind ' + fmtDur(A.durFree) + ' Schlaf.']);
+  if (A.bedSd != null) f.push(['Wie fest dein Takt sitzt', '±' + A.bedSd + ' / ±' + A.wakeSd + ' min', 'Streuung von Zubettgeh- und Aufstehzeit. Die Aufstehzeit ist der wirksamere Anker – sie festzuhalten stabilisiert den Rest.']);
+  if (A.trendDur != null) f.push(['Trend der letzten Woche', (A.trendDur >= 0 ? '+' : '−') + fmtDurShort(Math.abs(A.trendDur)), 'Verglichen mit den drei Wochen davor.']);
+  if (A.deepPct != null) f.push(['Tief- und REM-Anteil', A.deepPct + '% / ' + A.remPct + '%', 'Übliche Werte liegen bei etwa 13–23 % Tiefschlaf und 20–25 % REM. Einzelne Nächte schwanken stark, der Schnitt zählt.']);
+  if (A.napMed != null) f.push(['Deine Nickerchen', A.napMed + ' min um ' + hhmm(A.napStart), A.nNap + ' erfasst.']);
+  if (A.lateCost != null && A.lateCost > 10) f.push(['Preis eines späten Abends', fmtDur(A.lateCost), A.lateCost > 0 ? 'So viel weniger schläfst du an Arbeitstagen, an denen du später als üblich ins Bett gehst – der Wecker wartet ja nicht.' : 'An Arbeitstagen kostet dich ein später Abend nichts Messbares – du kommst trotzdem auf deine Stunden.']);
+  const jf = journalFinding(A);
+  if (jf) f.push(jf);
+  $('#findings').innerHTML = f.length ? f.map(x =>
+    '<div class="finding"><div class="top"><h3>' + esc(x[0]) + '</h3><div class="val">' + esc(x[1]) + '</div></div><p>' + esc(x[2]) + '</p></div>').join('')
+    : emptyBox('Noch nichts zu sagen', 'Ab etwa sieben Nächten wird das hier interessant.');
+}
+
+/* Verknüpft die kurze Rückmeldung nach dem Wecken mit der Nacht davor:
+   Bei welcher Schlafdauer fühlst du dich tatsächlich frisch? */
+function journalFinding(A) {
+  const j = (S.journal || []).filter(x => x.wake);
+  if (j.length < 5) return null;
+  const byDate = {};
+  A.mains.forEach(n => { byDate[n.date] = n; });
+  const good = [], bad = [];
+  j.forEach(x => {
+    const n = byDate[x.date];
+    if (!n) return;
+    (x.wake >= 3 ? good : x.wake <= 1 ? bad : []).push(n.asleepMin);
+  });
+  if (good.length < 2 || bad.length < 2) return null;
+  const g = median(good), b = median(bad);
+  return ['Wann du dich frisch fühlst', fmtDur(g),
+    'An Morgen, die du als frisch bewertet hast, lagen ' + fmtDur(g) + ' Schlaf dahinter – an den zähen ' + fmtDur(b) + '. Aus ' + (good.length + bad.length) + ' Rückmeldungen.'];
+}
+
+/* Wochentagsprofil: zeigt auf einen Blick die Wochenendverschiebung. */
+function weekdaySvg(A) {
+  const mains = A.mains;
+  if (mains.length < 5) return emptyBox('Zu wenig Nächte', 'Ab fünf Nächten zeichnet die App dein Wochenprofil.');
+  const W = 320, L = 26, R = 6, from = 18 * H, span = 18 * H, rh = 22;
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  const Hgt = order.length * rh + 20;
+  const x = min => L + clamp(((((min - from) % 1440) + 1440) % 1440) / span, 0, 1) * (W - L - R);
+  let s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + Hgt + '" role="img" aria-label="Schlafzeiten nach Wochentag">';
+  for (let t = 18 * H; t <= from + span; t += 3 * H) {
+    const xx = x(t % 1440);
+    s += '<line x1="' + xx.toFixed(1) + '" y1="0" x2="' + xx.toFixed(1) + '" y2="' + (Hgt - 16) + '" stroke="var(--sep)"/>';
+    s += '<text class="axis" x="' + xx.toFixed(1) + '" y="' + (Hgt - 4) + '" text-anchor="middle">' + pad2((t / 60) % 24) + '</text>';
+  }
+  order.forEach((wd, i) => {
+    const rows = mains.filter(n => keyToDate(n.date).getDay() === wd);
+    const y = i * rh + 4;
+    s += '<text class="axis" x="0" y="' + (y + 12) + '">' + DAY_SHORT[wd] + '</text>';
+    if (!rows.length) return;
+    const bed = medianTime(rows.map(n => minOfDay(new Date(n.start))));
+    const wake = medianTime(rows.map(n => minOfDay(new Date(n.end))));
+    const x0 = x(bed);
+    const dur = ((wake - bed) + 1440) % 1440;
+    const w = Math.max(0, Math.min(dur / span * (W - L - R), W - R - x0));
+    s += '<rect x="' + x0.toFixed(1) + '" y="' + y + '" width="' + Math.max(2, w).toFixed(1) + '" height="' + (rh - 8) + '" rx="6" fill="var(--tint)" opacity="' + (S.settings.freeDays.includes(wd) ? .55 : .95) + '"/>';
+    s += '<text class="axis" x="' + (x0 + 4) + '" y="' + (y + rh - 12) + '" fill="#fff" font-size="8.5">' + hhmm(bed) + '</text>';
+  });
+  s += '</svg>';
+  return s;
+}
+
+/* --- Plan --- */
+let planSel = null;
+function renderPlan(A) {
+  if (!planSel) planSel = (S.plan && S.plan.id) || 'mono';
+  $('#planOpts').innerHTML = PLANS.map(p =>
+    '<button class="planopt" data-plan="' + p.id + '" aria-pressed="' + (planSel === p.id ? 'true' : 'false') + '">' +
+    '<div class="ic">' + p.e + '</div><div><h3>' + esc(p.name) + '</h3><p>' + esc(p.desc) + '</p></div></button>').join('');
+  $$('#planOpts [data-plan]').forEach(b => b.addEventListener('click', () => { planSel = b.dataset.plan; haptic(); renderTab('plan'); }));
+
+  $('#planWake').value = S.profile.wakeGoal || hhmm(wakeGoal(A));
+  $('#tglNapsOk').setAttribute('aria-checked', String(!!S.settings.napsOk));
+
+  const plan = computePlan(planSel, A);
+  $('#planResultCard').hidden = false;
+  $('#planResultTitle').textContent = plan.name;
+  const fp = $('#planFitPill');
+  fp.textContent = plan.fit.label; fp.className = 'pill ' + (plan.fit.tone === 'ok' ? 'ok' : plan.fit.tone === 'warn' ? 'warn' : 'bad');
+  $('#planRing').innerHTML = planRingSvg(plan, A);
+  $('#planBlocks').innerHTML = plan.blocks.map(b =>
+    '<div class="block"><div class="t">' + hhmm(b.start) + '–' + hhmm((b.start + b.dur) % 1440) + '</div>' +
+    '<div><div style="font-weight:650;font-size:14.5px">' + esc(b.label) + '</div><div class="n">' + fmtDur(b.dur) + '</div></div>' +
+    '<div class="sp"></div><span class="pill' + (b.kind === 'kern' ? ' tint' : '') + '">' + (b.kind === 'kern' ? 'Kern' : 'Nap') + '</span></div>').join('');
+  $('#planNotes').innerHTML =
+    plan.notes.map(n => '<p class="small" style="margin-bottom:7px">· ' + esc(n) + '</p>').join('') +
+    plan.flags.map(n => '<p class="small" style="margin-bottom:7px;color:var(--warn)">⚠ ' + esc(n) + '</p>').join('');
+}
+
+/* ==================================================================
+   13 · Blätter: Einstellungen, Wecker, Nacht erfassen
+   ================================================================== */
+function openSettings() {
+  const A = window.__A || analyse();
+  const seg = (name, opts, val) => '<div class="seg">' + opts.map(o =>
+    '<button data-set="' + name + '" data-val="' + o[0] + '" aria-pressed="' + (String(val) === String(o[0]) ? 'true' : 'false') + '">' + esc(o[1]) + '</button>').join('') + '</div>';
+  const sw = (id, lab, sub, on) => '<div class="switch"><div><div class="lab">' + esc(lab) + '</div><div class="sub">' + esc(sub) + '</div></div>' +
+    '<button class="tgl" role="switch" data-tgl="' + id + '" aria-checked="' + (on ? 'true' : 'false') + '"></button></div>';
+
+  sheet('Einstellungen',
+    '<div class="card"><div class="card-h"><h2>Hinweise</h2></div>' +
+    '<p class="small" style="margin-bottom:10px">Wie oft darf sich die App von sich aus melden? Weniger ist meistens mehr – die App wählt dann den wichtigsten Hinweis aus.</p>' +
+    seg('hintBudget', [[0, 'Aus'], [1, '1 pro Tag'], [3, '3 pro Tag']], S.settings.hintBudget) +
+    '<div class="row" style="margin-top:12px">' +
+    '<label class="fld" style="flex:1"><span>Ruhe ab</span><input type="time" data-val-set="quietFrom" value="' + S.settings.quietFrom + '"></label>' +
+    '<label class="fld" style="flex:1"><span>Ruhe bis</span><input type="time" data-val-set="quietTo" value="' + S.settings.quietTo + '"></label></div>' +
+    '<p class="small">In der Ruhezeit kommt höchstens die Erinnerung ans Zubettgehen.</p>' +
+    (S.nudges.muted.length ? '<button class="btn sm ghost" id="unmute" style="margin-top:10px">' + S.nudges.muted.length + ' ausgeblendete Hinweise zurückholen</button>' : '') +
+    '</div>' +
+
+    '<div class="card"><div class="card-h"><h2>Wecken</h2></div>' +
+    '<p class="small" style="margin-bottom:8px">Sanftes Fenster – wie viel früher darf die App wecken, um ein Zyklusende zu treffen?</p>' +
+    seg('smartWindowMin', [[0, 'Aus'], [15, '15 min'], [20, '20 min'], [30, '30 min']], S.settings.smartWindowMin) +
+    '<p class="small" style="margin:8px 0 14px">Geschätzt aus Einschlafzeit und Zykluslänge – die Uhr misst nicht live mit.</p>' +
+    '<p class="small" style="margin-bottom:8px">Klingelton</p>' +
+    seg('sound', [['sanft', 'Sanft'], ['klar', 'Klar'], ['natur', 'Wellen']], S.settings.sound) +
+    '<label class="fld" style="margin-top:14px"><span>Lautstärke</span><input type="range" min="10" max="100" value="' + Math.round(S.settings.volume * 100) + '" data-range-set="volume"></label>' +
+    '<p class="small" style="margin-bottom:8px">Schlummer</p>' +
+    seg('snoozeMin', [[5, '5 min'], [9, '9 min'], [15, '15 min']], S.settings.snoozeMin) +
+    '<div style="margin-top:6px">' +
+    sw('fadeIn', 'Langsam lauter werden', 'Startet leise und wird über eine halbe Minute lauter – weckt sanfter.', S.settings.fadeIn) +
+    sw('vibrate', 'Vibrieren', 'Nur auf Geräten, die es können.', S.settings.vibrate) +
+    sw('wakeLock', 'Bildschirm wach halten', 'Solange ein Wecker gestellt ist. Braucht Strom, macht den Wecker aber verlässlich.', S.settings.wakeLock) +
+    '</div></div>' +
+
+    '<div class="card"><div class="card-h"><h2>Dein Profil</h2></div>' +
+    '<p class="small" style="margin-bottom:12px">Leer lassen heisst: die App rechnet den Wert aus deinen Daten. Eintragen überschreibt ihn.</p>' +
+    '<div class="row"><label class="fld" style="flex:1"><span>Schlafbedarf (min) · jetzt ' + fmtDur(A.need) + '</span>' +
+    '<input type="number" min="300" max="660" step="5" placeholder="automatisch" data-num-set="sleepNeedMin" value="' + (S.profile.sleepNeedMin || '') + '"></label>' +
+    '<label class="fld" style="flex:1"><span>Zyklus (min) · jetzt ' + A.cycle + '</span>' +
+    '<input type="number" min="60" max="130" step="1" placeholder="automatisch" data-num-set="cycleMin" value="' + (S.profile.cycleMin || '') + '"></label></div>' +
+    '<label class="fld"><span>Einschlafdauer (min) · jetzt ' + (A.latency != null ? A.latency : '15') + '</span>' +
+    '<input type="number" min="0" max="120" step="1" placeholder="automatisch" data-num-set="latencyMin" value="' + (S.profile.latencyMin || '') + '"></label>' +
+    '<p class="small" style="margin-bottom:8px">Freie Tage – an ihnen misst die App deinen natürlichen Rhythmus.</p>' +
+    '<div class="row tight" id="freeDays">' + [1, 2, 3, 4, 5, 6, 0].map(d =>
+      '<button class="chip" data-free="' + d + '" aria-pressed="' + (S.settings.freeDays.includes(d) ? 'true' : 'false') + '">' + DAY_SHORT[d] + '</button>').join('') + '</div>' +
+    '</div>' +
+
+    '<div class="card"><div class="card-h"><h2>Daten</h2></div>' +
+    '<p class="small" style="margin-bottom:12px">' + S.nights.length + ' Einträge auf diesem Gerät. Nichts davon verlässt den Browser.</p>' +
+    '<div class="row"><button class="btn" id="setExport">Exportieren</button>' +
+    '<button class="btn ghost" id="setImport">Importieren</button>' +
+    (S.nights.some(n => n.source === 'demo') ? '<button class="btn ghost" id="setNoDemo">Demo-Daten entfernen</button>' : '') +
+    '<button class="btn ghost danger" id="setWipe">Alles löschen</button></div></div>' +
+
+    '<div class="card flat"><div class="card-h"><h2>Wie das gemeint ist</h2></div>' +
+    '<p class="small">SCHLAFWERK ersetzt keine ärztliche Abklärung. Wenn du über Wochen schlecht schläfst, tagsüber einschläfst, schnarchst mit Atemaussetzern oder dich trotz genug Schlaf erschöpft fühlst, gehört das in fachliche Hände – keine App misst das zuverlässig.</p>' +
+    '<p class="small" style="margin-top:10px">Die Werte einer Uhr am Handgelenk sind Schätzungen aus Bewegung und Puls. Für Trends taugen sie gut, für die einzelne Nacht nur bedingt.</p></div>',
+    root => {
+      $$('[data-set]', root).forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.set, v = isNaN(Number(b.dataset.val)) ? b.dataset.val : Number(b.dataset.val);
+        S.settings[k] = v; save(true);
+        $$('[data-set="' + k + '"]', root).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        if (k === 'sound') playAlarm(true);
+        renderAll();
+      }));
+      $$('[data-tgl]', root).forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.tgl; S.settings[k] = !S.settings[k];
+        b.setAttribute('aria-checked', String(S.settings[k])); save(true);
+      }));
+      $$('[data-val-set]', root).forEach(i => i.addEventListener('change', () => { S.settings[i.dataset.valSet] = i.value; save(true); }));
+      $$('[data-range-set]', root).forEach(i => i.addEventListener('input', () => { S.settings[i.dataset.rangeSet] = Number(i.value) / 100; save(); }));
+      $$('[data-num-set]', root).forEach(i => i.addEventListener('change', () => {
+        const v = i.value.trim() === '' ? null : clamp(Number(i.value), 0, 700);
+        S.profile[i.dataset.numSet] = v; save(true); renderAll();
+      }));
+      $$('[data-free]', root).forEach(b => b.addEventListener('click', () => {
+        const d = Number(b.dataset.free);
+        S.settings.freeDays = S.settings.freeDays.includes(d) ? S.settings.freeDays.filter(x => x !== d) : S.settings.freeDays.concat([d]);
+        b.setAttribute('aria-pressed', String(S.settings.freeDays.includes(d))); save(true); renderAll();
+      }));
+      const um = $('#unmute', root);
+      if (um) um.addEventListener('click', () => { S.nudges.muted = []; save(true); closeSheet(); toast('Hinweise sind wieder aktiv'); });
+      $('#setExport', root).addEventListener('click', exportData);
+      $('#setImport', root).addEventListener('click', () => $('#fileInput').click());
+      const nd = $('#setNoDemo', root);
+      if (nd) nd.addEventListener('click', () => { S.nights = S.nights.filter(n => n.source !== 'demo'); save(true); renderAll(); closeSheet(); toast('Demo-Daten entfernt'); });
+      $('#setWipe', root).addEventListener('click', () => {
+        if (!confirm('Wirklich alle Daten dieser App auf diesem Gerät löschen?')) return;
+        localStorage.removeItem(KEY); S = load(); applyTheme(); renderAll(); closeSheet(); toast('Alles gelöscht');
+      });
+    });
+}
+
+function editAlarm(id) {
+  const al = id ? S.alarms.find(a => a.id === id) : null;
+  const time = al ? (al.kind === 'timer' ? hhmm(minOfDay(new Date(al.at))) : al.time) : hhmm(wakeGoal(window.__A));
+  const days = al && al.days ? al.days : [1, 2, 3, 4, 5];
+  sheet(al ? 'Wecker bearbeiten' : 'Neuer Wecker',
+    '<div class="card">' +
+    '<label class="fld"><span>Zeit</span><input type="time" id="alTime" value="' + time + '"></label>' +
+    '<p class="small" style="margin-bottom:8px">Wochentage</p><div class="days" id="alDays">' +
+    [1, 2, 3, 4, 5, 6, 0].map(d => '<button data-d="' + d + '" aria-pressed="' + (days.includes(d) ? 'true' : 'false') + '">' + DAY_SHORT[d] + '</button>').join('') + '</div>' +
+    '<label class="fld" style="margin-top:14px"><span>Beschriftung</span><input type="text" id="alLabel" placeholder="z. B. Arbeit" value="' + esc(al && al.label || '') + '"></label>' +
+    '<div class="switch"><div><div class="lab">Sanftes Fenster</div><div class="sub">Weckt bis zu ' + (S.settings.smartWindowMin || 20) + ' Minuten früher, wenn dort ein Zyklus endet.</div></div>' +
+    '<button class="tgl" role="switch" id="alSmart" aria-checked="' + (!al || al.smart !== false ? 'true' : 'false') + '"></button></div>' +
+    '<div class="row" style="margin-top:16px"><button class="btn pri" id="alSave">Speichern</button>' +
+    (al ? '<button class="btn ghost danger" id="alDel">Löschen</button>' : '') + '</div></div>',
+    root => {
+      let smart = !al || al.smart !== false;
+      $('#alSmart', root).addEventListener('click', e => { smart = !smart; e.currentTarget.setAttribute('aria-checked', String(smart)); });
+      $$('#alDays button', root).forEach(b => b.addEventListener('click', () => b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true')));
+      $('#alSave', root).addEventListener('click', () => {
+        const d = $$('#alDays button', root).filter(b => b.getAttribute('aria-pressed') === 'true').map(b => Number(b.dataset.d));
+        const t = $('#alTime', root).value || '07:00';
+        const lab = $('#alLabel', root).value.trim();
+        if (al) { al.kind = 'fix'; al.time = t; al.days = d; al.label = lab; al.smart = smart; al.enabled = true; delete al.at; }
+        else S.alarms.push({ id: uid(), kind: 'fix', time: t, days: d, label: lab, smart, enabled: true });
+        save(true); renderAll(); closeSheet(); armWakeLock(); toast('Wecker gespeichert');
+      });
+      const del = $('#alDel', root);
+      if (del) del.addEventListener('click', () => { removeAlarm(al.id); closeSheet(); toast('Wecker gelöscht'); });
+    });
+}
+
+function addNightSheet() {
+  const A = window.__A || analyse();
+  sheet('Nacht erfassen',
+    '<div class="card">' +
+    '<div class="seg" style="margin-bottom:14px"><button id="mNight" aria-pressed="true">Nacht</button><button id="mNap" aria-pressed="false">Nickerchen</button></div>' +
+    '<label class="fld"><span>Datum des Aufwachens</span><input type="date" id="nDate" value="' + dayKey(new Date()) + '"></label>' +
+    '<div class="row"><label class="fld" style="flex:1"><span>Ins Bett</span><input type="time" id="nBed" value="' + hhmm(A.bedAll != null ? A.bedAll : 23 * H) + '"></label>' +
+    '<label class="fld" style="flex:1"><span>Aufgestanden</span><input type="time" id="nWake" value="' + hhmm(A.wakeAll != null ? A.wakeAll : 7 * H) + '"></label></div>' +
+    '<div class="row"><label class="fld" style="flex:1"><span>Wach gelegen (min)</span><input type="number" id="nLat" min="0" max="180" step="5" value="15"></label>' +
+    '<label class="fld" style="flex:1"><span>Nachts aufgewacht (Anzahl)</span><input type="number" id="nAwk" min="0" max="20" step="1" value="1"></label></div>' +
+    '<button class="btn pri wide" id="nSave">Speichern</button>' +
+    '<p class="small" style="margin-top:10px">Selbst erfasste Nächte zählen in der Analyse gleich viel wie Messwerte der Uhr – bei der Einschlafdauer sind sie sogar zuverlässiger.</p></div>',
+    root => {
+      let nap = false;
+      $('#mNight', root).addEventListener('click', () => { nap = false; $('#mNight', root).setAttribute('aria-pressed', 'true'); $('#mNap', root).setAttribute('aria-pressed', 'false'); });
+      $('#mNap', root).addEventListener('click', () => { nap = true; $('#mNap', root).setAttribute('aria-pressed', 'true'); $('#mNight', root).setAttribute('aria-pressed', 'false'); $('#nBed', root).value = '14:00'; $('#nWake', root).value = '14:25'; });
+      $('#nSave', root).addEventListener('click', () => {
+        addManualNight($('#nDate', root).value, $('#nBed', root).value, $('#nWake', root).value,
+          Number($('#nLat', root).value) || 0, Number($('#nAwk', root).value) || 0, nap);
+        closeSheet();
+      });
+    });
+}
+
+/* Kurze Rückmeldung nach dem Wecken – höchstens einmal am Tag und nur,
+   wenn Hinweise überhaupt erlaubt sind. */
+function askWakeFeedback(al) {
+  if (!S.settings.hintBudget) return;
+  const today = dayKey(new Date());
+  S.journal = S.journal || [];
+  if (S.journal.some(j => j.date === today)) return;
+  setTimeout(() => {
+    sheet('Wie wach bist du?',
+      '<div class="card"><p class="small" style="margin-bottom:14px">Eine Sekunde – damit die App lernt, welche Weckzeit dir wirklich bekommt.</p>' +
+      '<div class="row"><button class="btn" data-fb="1">🥱 Gerädert</button><button class="btn" data-fb="2">😐 Geht so</button><button class="btn" data-fb="3">🙂 Frisch</button></div></div>',
+      root => $$('[data-fb]', root).forEach(b => b.addEventListener('click', () => {
+        S.journal.push({ date: today, wake: Number(b.dataset.fb), at: Date.now() });
+        S.journal = S.journal.slice(-120); save(true); closeSheet(); toast('Notiert');
+      })));
+  }, 400);
+}
+
+/* ==================================================================
+   14 · Verdrahtung & Start
+   ================================================================== */
+$('#btnSettings').addEventListener('click', openSettings);
+$('#btnAddAlarm').addEventListener('click', () => editAlarm(null));
+$('#btnNap20').addEventListener('click', () => addTimerAlarm(20, 'Powernap'));
+$('#btnNap90').addEventListener('click', () => addTimerAlarm(Math.round((window.__A || analyse()).cycle), 'Ein Zyklus'));
+$('#btnGoWecker').addEventListener('click', () => goto('wecker'));
+$('#btnCustomTimer').addEventListener('click', () => {
+  const v = Number($('#customMin').value);
+  if (!v || v < 1) { toast('Bitte Minuten eintragen'); return; }
+  addTimerAlarm(clamp(v, 1, 1440));
+  $('#customMin').value = '';
+});
+$('#bedCalcTime').addEventListener('input', () => renderTab('wecker'));
+$$('#rangeSeg button').forEach(b => b.addEventListener('click', () => { rangeDays = Number(b.dataset.range); renderTab('schlaf'); }));
+$('#btnAddNight').addEventListener('click', addNightSheet);
+$('#btnImport').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => { if (e.target.files[0]) importFile(e.target.files[0]); e.target.value = ''; });
+$('#btnDemo').addEventListener('click', loadDemo);
+$('#btnAskNotif').addEventListener('click', askNotif);
+$('#btnTestRing').addEventListener('click', () => { playAlarm(true); toast('So klingt es – Ton in den Einstellungen wechselbar'); });
+$('#planWake').addEventListener('change', e => { S.profile.wakeGoal = e.target.value; save(true); renderTab('plan'); });
+$('#planAnchor').addEventListener('change', e => { S.profile.anchorNote = e.target.value; save(); });
+$('#tglNapsOk').addEventListener('click', e => {
+  S.settings.napsOk = !S.settings.napsOk;
+  e.currentTarget.setAttribute('aria-checked', String(S.settings.napsOk));
+  save(true); renderTab('plan');
+});
+$('#btnApplyPlan').addEventListener('click', () => applyPlan(computePlan(planSel, window.__A || analyse())));
+$('#btnClearPlan').addEventListener('click', () => {
+  S.plan = null; S.alarms = S.alarms.filter(a => !a.fromPlan); save(true); renderAll(); toast('Plan entfernt');
+});
+$('#heroNextCancel').addEventListener('click', () => {
+  const next = nextAlarmInfo();
+  if (!next) return;
+  if (next.al.kind === 'timer') removeAlarm(next.al.id);
+  else { next.al.enabled = false; save(true); renderAll(); }
+  toast('Wecker abgestellt');
+});
+
+function onboarding() {
+  sheet('Willkommen bei SCHLAFWERK',
+    '<div class="card">' +
+    '<p class="small" style="margin-bottom:14px">Ein Wecker, der deinen Rhythmus kennt – und der dich in Ruhe lässt, wenn es nichts zu sagen gibt.</p>' +
+    '<div class="finding"><div class="top"><h3>Wecker mit Zyklen</h3></div><p>Fix um 07:00 oder «weck mich in viereinhalb Stunden». Die App rechnet mit deiner gemessenen Zykluslänge, nicht mit den 90 Minuten aus dem Lehrbuch.</p></div>' +
+    '<div class="finding"><div class="top"><h3>Muster statt Zahlenfriedhof</h3></div><p>Chronotyp, Schlafbedarf, Regelmässigkeit, sozialer Jetlag – gerechnet aus Fitbit-Daten oder aus dem, was du selbst einträgst.</p></div>' +
+    '<div class="finding"><div class="top"><h3>Höchstens ein Hinweis am Tag</h3></div><p>Voreingestellt meldet sich die App einmal täglich – mit dem, was gerade am meisten bringt. Auf null stellen geht auch.</p></div>' +
+    '<div class="row" style="margin-top:16px"><button class="btn pri" id="obDemo">Mit Demo-Daten ansehen</button>' +
+    '<button class="btn" id="obFitbit">Fitbit verbinden</button>' +
+    '<button class="btn ghost" id="obSkip">Erstmal umsehen</button></div></div>',
+    root => {
+      const done = () => { S.onboarded = true; save(true); closeSheet(); };
+      $('#obDemo', root).addEventListener('click', () => { done(); loadDemo(); goto('muster'); });
+      $('#obFitbit', root).addEventListener('click', () => { done(); goto('schlaf'); });
+      $('#obSkip', root).addEventListener('click', done);
+    });
+}
+
+async function init() {
+  applyTheme();
+  if (!Array.isArray(S.journal)) S.journal = [];
+  if ('serviceWorker' in navigator) {
+    try { await navigator.serviceWorker.register('sw.js'); } catch (e) {}
+  }
+  const cameBack = await fitbitHandleRedirect();
+  renderAll();
+  tick();
+  if (!S.onboarded && !cameBack) setTimeout(onboarding, 350);
+  if (nextAlarmInfo()) armWakeLock();
+  // Tonwiedergabe braucht auf Mobilgeräten eine Nutzergeste – die
+  // erste beliebige Berührung schaltet sie frei.
+  const unlock = () => { ensureAudio(); document.removeEventListener('pointerdown', unlock); };
+  document.addEventListener('pointerdown', unlock);
+}
+init();
+</script>
+</body>
+</html>
