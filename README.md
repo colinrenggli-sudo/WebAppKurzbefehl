@@ -26,3 +26,16 @@
   Monteur-App am Handy (Sicherheitscheck, Checkliste, Fotos, Material,
   Zeit, Unterschrift). `dach/index.html` im Browser öffnen, Code `1234`
   für das Büro, `3456` für den Monteur.
+
+## Selbst hosten
+
+Alle Apps sind statische Dateien. Für den Betrieb auf dem eigenen Server
+liegt unter [`deploy/`](deploy/) ein fertiges Setup: nginx im Container,
+optional per Cloudflare Tunnel unter eigener Domain oder per Tailscale
+nur im eigenen Netz.
+
+- [`deploy/README.md`](deploy/README.md) – Schritt für Schritt auf Unraid
+- [`deploy/HOMESERVER.md`](deploy/HOMESERVER.md) – was so ein Server sonst
+  noch kann und was sich zuerst zu verbessern lohnt
+- [`deploy/serverinfo.sh`](deploy/serverinfo.sh) – Bestandsaufnahme der
+  Hardware, ändert nichts
