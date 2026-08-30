@@ -457,6 +457,7 @@ svg.chart{width:100%;height:auto;display:block;overflow:visible}
 
   <!-- ============================ SCHLAF ============================ -->
   <section class="page" id="p-schlaf" role="tabpanel" aria-label="Schlafdaten">
+    <div id="serverCard"></div>
     <div class="card" id="cardFitbit">
       <div class="card-h">
         <h2>Fitbit</h2><div class="sp"></div><span class="pill" id="fitbitPill">nicht verbunden</span>
@@ -594,6 +595,7 @@ const DEFAULTS = {
   plan: null,
   topics: [],
   nudges: { shown: [], muted: [] },
+  server: null,
   onboarded: false
 };
 
@@ -1446,6 +1448,37 @@ function addManualNight(dateStr, bed, wake, latency, awakenings, isNap) {
 }
 function deleteNight(id) { S.nights = S.nights.filter(n => n.id !== id); save(true); renderAll(); }
 
+/* Serverdaten: Liegt die App auf dem eigenen Server und läuft dort der
+   Abgleich aus deploy/fitbit-sync, steht eine gemeinsame Datei bereit.
+   Dann muss sich kein Gerät mehr einzeln mit Fitbit verbinden – jedes
+   liest beim Öffnen einfach mit. Fehlt die Datei, passiert nichts. */
+async function ladeServerdaten(laut) {
+  // Gibt es die Datei nicht, wird höchstens einmal am Tag nachgesehen –
+  // sonst fragt jede Ansicht ins Leere.
+  const merk = 'schlafwerk.kein-server';
+  if (!laut && !S.server) {
+    const letzt = Number(localStorage.getItem(merk) || 0);
+    if (Date.now() - letzt < 86400000) return false;
+  }
+  try {
+    const r = await fetch('../daten/schlaf.json', { cache: 'no-store' });
+    if (!r.ok) { localStorage.setItem(merk, String(Date.now())); return false; }
+    localStorage.removeItem(merk);
+    const j = await r.json();
+    const logs = Array.isArray(j) ? j : (j.sleep || []);
+    if (!logs.length) return false;
+    const added = mergeFitbitLogs(logs);
+    S.server = { stand: j.aktualisiert || null, anzahl: logs.length, geholt: Date.now() };
+    save(true);
+    if (added) { renderAll(); toast(added + ' Nächte vom Server übernommen'); }
+    else { renderTab(currentTab()); if (laut) toast('Alles schon aktuell'); }
+    return true;
+  } catch (e) {
+    try { localStorage.setItem(merk, String(Date.now())); } catch (e2) {}
+    return false;                  // keine Serverdaten – dann eben nicht
+  }
+}
+
 /* Demo-Daten: ein plausibler Spättyp mit Wochenend-Verschiebung,
    zwei kurzen Nächten und gelegentlichem Nickerchen. Nur zum
    Ausprobieren – erkennbar an der Quelle «demo». */
@@ -2005,6 +2038,19 @@ function renderWecker(A) {
 /* --- Schlaf --- */
 let rangeDays = 14;
 function renderSchlaf(A) {
+  // Karte für den Abgleich über den eigenen Server
+  const sc = $('#serverCard');
+  if (S.server) {
+    const stand = S.server.stand ? new Date(S.server.stand) : null;
+    sc.innerHTML = '<div class="card"><div class="card-h"><h2>Vom Server</h2><div class="sp"></div>' +
+      '<span class="pill ok">' + S.server.anzahl + ' Einträge</span></div>' +
+      '<p class="small">Dein Server holt die Fitbit-Daten selbst und legt sie für alle deine Geräte bereit' +
+      (stand && !isNaN(stand) ? ' – zuletzt am ' + stand.toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') +
+      '. Auf diesem Gerät musst du dich dafür nicht mit Fitbit verbinden.</p>' +
+      '<button class="btn sm" id="btnServerReload" style="margin-top:12px">Jetzt nachladen</button></div>';
+    $('#btnServerReload').addEventListener('click', () => ladeServerdaten(true));
+  } else sc.innerHTML = '';
+
   // Fitbit-Karte
   const fb = S.fitbit, pill = $('#fitbitPill'), body = $('#fitbitBody');
   const connected = !!fb.token;
@@ -2454,6 +2500,7 @@ async function init() {
   }
   const cameBack = await fitbitHandleRedirect();
   renderAll();
+  ladeServerdaten();
   tick();
   if (!S.onboarded && !cameBack) setTimeout(onboarding, 350);
   if (nextAlarmInfo()) armWakeLock();

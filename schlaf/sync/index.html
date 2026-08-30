@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<!-- ==================================================================
+     Landeseite für den Server-Abgleich (deploy/fitbit-sync).
+
+     Fitbit schickt den Browser nach der Freigabe hierher zurück. Die
+     Seite tut nichts weiter, als den Code gross anzuzeigen – er wird
+     einmalig ins Einrichtungsskript auf dem Server eingefügt. Nichts
+     wird gespeichert, nichts gesendet.
+
+     Diese Adresse gehört als zusätzliche Redirect-URL in die eigene
+     Fitbit-App, z. B.
+       https://schlaf.colin-renggli.ch/schlaf/sync/
+     ================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCHLAFWERK – Code für den Server</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235A5AD6'/%3E%3Cpath d='M40.5 38.5A15 15 0 0 1 25.5 20a13 13 0 1 0 15 18.5Z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#F5F5FA; --card:#FFFFFF; --txt:#14151F; --txt-2:#535569; --txt-3:#8A8CA0;
+  --sep:#E3E4EE; --tint:#5A5AD6; --tint-soft:#E7E7FA; --tint-txt:#4342B0;
+  --bad:#A63A46; --bad-soft:#F8E4E6;
+  --ff:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0C0D16; --card:#171929; --txt:#F1F1F7; --txt-2:#AEB0C4; --txt-3:#7B7E94;
+  --sep:#262940; --tint:#8E8EF6; --tint-soft:#232349; --tint-txt:#A9A9FB;
+  --bad:#EE8A94; --bad-soft:#2E1A1D;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--ff);line-height:1.5;
+  display:grid;place-items:center;min-height:100dvh;padding:24px}
+.card{background:var(--card);border:1px solid var(--sep);border-radius:22px;padding:26px;
+  max-width:520px;width:100%;box-shadow:0 1px 2px rgba(20,21,31,.05),0 8px 24px -14px rgba(20,21,31,.22)}
+h1{font-size:19px;margin:0 0 6px;letter-spacing:-.015em}
+p{margin:0;color:var(--txt-2);font-size:14.5px}
+.small{font-size:13px;color:var(--txt-3);line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.code{margin:18px 0 12px;padding:15px;border-radius:14px;background:var(--tint-soft);
+  color:var(--tint-txt);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:15px;word-break:break-all;user-select:all;border:1px solid var(--tint)}
+button{font:inherit;font-weight:650;padding:12px 18px;border-radius:14px;border:1px solid var(--tint);
+  background:var(--tint);color:#fff;cursor:pointer}
+button.ghost{background:none;color:var(--txt);border-color:var(--sep)}
+.row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+.err{background:var(--bad-soft);color:var(--bad);border-radius:14px;padding:14px;font-size:14px;margin:16px 0}
+ol{padding-left:19px;margin:14px 0 0;font-size:13.5px;color:var(--txt-2);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="titel">Code für den Server</h1>
+  <p id="text">Einen Moment …</p>
+  <div id="ausgabe"></div>
+  <ol>
+    <li>Code kopieren.</li>
+    <li>Im Terminal des Servers ins Einrichtungsskript einfügen, dort wo
+        <code>Code:</code> steht.</li>
+    <li>Fertig – ab dann holt der Server die Daten von selbst.</li>
+  </ol>
+  <p class="small" style="margin-top:16px">Der Code ist nur wenige Minuten
+     gültig und einmal verwendbar. Diese Seite speichert und sendet nichts;
+     alles steht ausschliesslich in der Adresszeile deines Browsers.</p>
+</div>
+
+<script>
+(function () {
+  var p = new URLSearchParams(location.search);
+  var code = p.get('code'), fehler = p.get('error');
+  var out = document.getElementById('ausgabe');
+  var txt = document.getElementById('text');
+
+  if (fehler) {
+    document.getElementById('titel').textContent = 'Das hat nicht geklappt';
+    txt.textContent = 'Fitbit hat die Freigabe abgelehnt oder abgebrochen.';
+    out.innerHTML = '<div class="err">' + esc(p.get('error_description') || fehler) + '</div>';
+    return;
+  }
+  if (!code) {
+    document.getElementById('titel').textContent = 'Nichts zu sehen';
+    txt.textContent = 'Diese Seite zeigt den Fitbit-Code an, nachdem du den ' +
+      'Zugriff freigegeben hast. Ruf sie nicht direkt auf, sondern starte das ' +
+      'Einrichtungsskript auf dem Server.';
+    return;
+  }
+
+  txt.textContent = 'Diesen Code auf dem Server einfügen:';
+  out.innerHTML = '<div class="code" id="c">' + esc(code) + '</div>' +
+    '<div class="row"><button id="kopieren">Code kopieren</button>' +
+    '<button class="ghost" id="alles">Ganze Adresse kopieren</button></div>';
+
+  document.getElementById('kopieren').addEventListener('click', function (e) {
+    kopiere(code, e.target, 'Kopiert ✓', 'Code kopieren');
+  });
+  document.getElementById('alles').addEventListener('click', function (e) {
+    kopiere(location.href, e.target, 'Kopiert ✓', 'Ganze Adresse kopieren');
+  });
+
+  function kopiere(wert, knopf, ja, zurueck) {
+    var fertig = function () {
+      knopf.textContent = ja;
+      setTimeout(function () { knopf.textContent = zurueck; }, 1800);
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(wert).then(fertig, markiere);
+    else markiere();
+    function markiere() {
+      var el = document.getElementById('c'), r = document.createRange();
+      r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      knopf.textContent = 'Von Hand kopieren';
+    }
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+})();
+</script>
+</body>
+</html>
