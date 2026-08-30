@@ -128,7 +128,70 @@ neu verbinden, und die alten Daten liegen weiterhin unter der alten
 Adresse. Vorher in den Einstellungen **Exportieren**, danach unter der
 neuen Adresse **Importieren** – dann ist alles wieder da.
 
-## Schritt 5 · Aktuell halten
+## Schritt 5 · Daten vom Server holen lassen
+
+Optional, aber der eigentliche Grund, selbst zu hosten: Statt dass sich
+jedes Gerät einzeln mit Fitbit verbindet, holt der Server die Daten
+einmal und legt sie für alle bereit. SCHLAFWERK liest sie beim Öffnen
+von selbst – auf dem Handy, am Laptop, überall dieselbe Grundlage. Und
+du hast ein Archiv, das bleibt, falls Fitbit die Schnittstelle
+irgendwann abstellt.
+
+**1. Redirect-URL ergänzen.** Auf dev.fitbit.com in deiner App eine
+zweite Zeile hinzufügen – das Skript darf nicht dieselbe Adresse
+benutzen wie die App selbst, sonst greifen sich beide den Code weg:
+
+```
+https://schlaf.colin-renggli.ch/schlaf/sync/
+```
+
+Diese Seite gehört zum Repo und zeigt nach der Freigabe nur den Code
+gross an, mit Knopf zum Kopieren.
+
+**2. Zugangsdaten hinterlegen** in `deploy/.env`:
+
+```
+FITBIT_CLIENT_ID=23XYZ7
+FITBIT_REDIRECT=https://schlaf.colin-renggli.ch/schlaf/sync/
+DAYS=365
+```
+
+**3. Einmalig verknüpfen:**
+
+```bash
+docker compose --profile sync run --rm fitbit-sync python sync.py setup
+```
+
+Das Skript zeigt eine Adresse, die du im Browser öffnest. Nach der
+Freigabe landest du auf der Code-Seite, kopierst den Code und fügst ihn
+im Terminal ein. Danach holt sich das Skript neue Zugriffstoken selbst –
+ein zweites Mal ist das nie nötig.
+
+**4. Dauerbetrieb starten:**
+
+```bash
+docker compose --profile sync up -d
+docker compose logs -f fitbit-sync
+```
+
+Alle sechs Stunden ein Abgleich, Ergebnis in
+`/mnt/user/appdata/webapps/daten/schlaf.json`. Beim nächsten Öffnen der
+App erscheint oben im Tab *Schlaf* die Karte „Vom Server“.
+
+> **Diese Datei enthält deine Gesundheitsdaten.** Deshalb ist sie in
+> `.gitignore` ausgenommen (landet also nie in GitHub) und liegt
+> ausserhalb des Repo-Verzeichnisses. Die mitgelieferte nginx-Regel
+> liefert `/daten/` ausserdem nicht durch den Cloudflare-Tunnel aus:
+> Anfragen von dort bekommen 404, im Heimnetz und über Tailscale
+> funktioniert es normal. Wenn du das anders willst, ist die Zeile in
+> `nginx.conf` mit dem `CF-Ray`-Kopf die richtige Stelle – aber
+> überleg es dir gut.
+
+Der Token liegt in `daten/token.json` mit Rechten 600. Wer ihn hat,
+kommt an deine Fitbit-Daten – bei einem Backup dieses Verzeichnisses
+also mitdenken.
+
+## Schritt 6 · Aktuell halten
 
 ```bash
 bash /mnt/user/appdata/webapps/repo/deploy/update.sh

@@ -1,0 +1,7 @@
+# Vom Server geholte Schlafdaten – persönlich, gehört nicht nach GitHub.
+# Wird von deploy/fitbit-sync geschrieben und nur lokal ausgeliefert.
+daten/
+
+# Zugangsdaten der Selbsthosting-Umgebung
+deploy/.env
+deploy/fitbit-sync/token.json

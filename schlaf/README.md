@@ -40,6 +40,11 @@ kein Server, keine externen Requests.
   eigener Export.
 * **Demo-Daten** – 63 erfundene Nächte eines Spättyps, um die Analyse ohne
   eigene Daten anzuschauen.
+* **Vom eigenen Server** – läuft die App auf dem eigenen Server und dort
+  der Abgleich aus [`deploy/fitbit-sync`](../deploy/fitbit-sync/), liest
+  sie beim Öffnen einfach `daten/schlaf.json` mit. Dann muss sich kein
+  einzelnes Gerät mehr mit Fitbit verbinden, und die Daten bleiben auch
+  dann erhalten, wenn Fitbit die Schnittstelle abstellt.
 
 ### Muster
 
