@@ -1,0 +1,26 @@
+{
+  "name": "SCHLAFWERK – Wecker & Schlafmuster",
+  "short_name": "SCHLAFWERK",
+  "description": "Wecker mit Zyklus-Vorschlägen, Nap-Planung und Musteranalyse aus den eigenen Schlafdaten.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0C0D16",
+  "theme_color": "#0C0D16",
+  "lang": "de-CH",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
