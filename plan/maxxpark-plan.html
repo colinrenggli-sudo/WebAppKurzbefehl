@@ -1,0 +1,1272 @@
+<title>Vom Auftrag zum Produkt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --bg:#EFF1ED; --surface:#FFFFFF; --surface-2:#E5E9E2; --surface-3:#DCE1D8;
+  --ink:#15191A; --ink-2:#3A4143; --muted:#69726F;
+  --line:#D6DBD3; --line-strong:#BCC3B8;
+  --accent:#12595F; --accent-ink:#0D4247; --accent-wash:#DFECEC;
+  --ok:#276046; --ok-wash:#E2EDE7;
+  --warn:#8A6212; --warn-wash:#F3EDDB;
+  --crit:#94382A; --crit-wash:#F4E6E2;
+  --open:#2C5480; --open-wash:#E4EAF2;
+  --shadow:0 1px 2px rgba(21,25,26,.05), 0 6px 20px -12px rgba(21,25,26,.22);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101312; --surface:#171B19; --surface-2:#1E2321; --surface-3:#262C29;
+    --ink:#E9ECE7; --ink-2:#C0C6BF; --muted:#8B938E;
+    --line:#2A302D; --line-strong:#3E4642;
+    --accent:#4FADB3; --accent-ink:#7FCBD0; --accent-wash:#122726;
+    --ok:#68BC90; --ok-wash:#14251C;
+    --warn:#D3AC55; --warn-wash:#282013;
+    --crit:#DE8875; --crit-wash:#2A1815;
+    --open:#7FA9D9; --open-wash:#141F2A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101312; --surface:#171B19; --surface-2:#1E2321; --surface-3:#262C29;
+  --ink:#E9ECE7; --ink-2:#C0C6BF; --muted:#8B938E;
+  --line:#2A302D; --line-strong:#3E4642;
+  --accent:#4FADB3; --accent-ink:#7FCBD0; --accent-wash:#122726;
+  --ok:#68BC90; --ok-wash:#14251C;
+  --warn:#D3AC55; --warn-wash:#282013;
+  --crit:#DE8875; --crit-wash:#2A1815;
+  --open:#7FA9D9; --open-wash:#141F2A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,.ui{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+code,kbd,.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+
+.shell{max-width:1240px;margin:0 auto;padding:0 24px 96px}
+
+/* masthead */
+.mast{padding:60px 0 36px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-family:Archivo,sans-serif;font-weight:600;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent-ink);margin:0 0 18px}
+h1{font-size:clamp(2.4rem,6vw,4rem);line-height:1.02;letter-spacing:-.025em;font-weight:700;
+  margin:0 0 20px;text-wrap:balance}
+.standfirst{font-size:clamp(1.05rem,1.9vw,1.26rem);line-height:1.5;color:var(--ink-2);
+  max-width:62ch;margin:0 0 30px}
+.mast-meta{display:flex;flex-wrap:wrap;gap:0 34px;row-gap:10px;
+  font-family:Archivo,sans-serif;font-size:12.5px;color:var(--muted)}
+.mast-meta b{color:var(--ink);font-weight:600}
+
+/* layout */
+.cols{display:block}
+@media (min-width:1080px){
+  .cols{display:grid;grid-template-columns:216px minmax(0,1fr);gap:56px;align-items:start}
+  .rail{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto;padding-top:44px}
+}
+.rail{font-family:Archivo,sans-serif;font-size:12.5px}
+.rail-title{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.rail a{display:grid;grid-template-columns:20px 1fr;gap:8px;text-decoration:none;color:var(--ink-2);
+  padding:5px 6px;border-radius:4px;line-height:1.3}
+.rail a span:first-child{color:var(--muted);font-variant-numeric:tabular-nums}
+.rail a:hover{background:var(--surface-2);color:var(--ink)}
+@media (max-width:1079px){
+  .rail{padding:28px 0 0}
+  .rail ol{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px}
+}
+main{padding-top:44px;min-width:0}
+
+/* sections */
+section{margin:0 0 68px;scroll-margin-top:20px}
+.sec-head{display:flex;gap:16px;align-items:baseline;margin:0 0 8px;padding-top:8px;
+  border-top:1px solid var(--line-strong)}
+.sec-num{font-family:Archivo,sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;
+  color:var(--accent-ink);padding-top:9px;flex:none}
+h2{font-size:clamp(1.45rem,3vw,1.95rem);line-height:1.12;letter-spacing:-.02em;font-weight:700;
+  margin:0;text-wrap:balance}
+.sec-sub{color:var(--muted);font-size:15px;margin:6px 0 26px;max-width:72ch}
+h3{font-size:1.05rem;font-weight:600;letter-spacing:-.005em;margin:34px 0 10px;
+  padding-bottom:6px;border-bottom:1px solid var(--line);text-wrap:balance}
+h4{font-size:.82rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+  margin:24px 0 8px}
+p{margin:0 0 14px;max-width:74ch}
+ul,ol{margin:0 0 16px;padding-left:20px;max-width:74ch}
+li{margin-bottom:7px}
+a{color:var(--accent-ink);text-underline-offset:2px}
+strong{font-weight:600}
+
+/* chips */
+.ev{display:inline-block;font-family:Archivo,sans-serif;font-size:9.5px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;padding:2px 6px;border-radius:3px;
+  vertical-align:2px;white-space:nowrap;border:1px solid transparent}
+.ev-b{background:var(--ok-wash);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 24%,transparent)}
+.ev-a{background:var(--warn-wash);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 26%,transparent)}
+.ev-o{background:var(--open-wash);color:var(--open);border-color:color-mix(in srgb,var(--open) 26%,transparent)}
+.ev-n{background:var(--crit-wash);color:var(--crit);border-color:color-mix(in srgb,var(--crit) 26%,transparent)}
+.tag{display:inline-block;font-family:Archivo,sans-serif;font-size:9.5px;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:3px;white-space:nowrap;
+  background:var(--surface-3);color:var(--ink-2)}
+.tag.k{background:var(--accent-wash);color:var(--accent-ink)}
+.tag.br{background:var(--warn-wash);color:var(--warn)}
+.tag.md{background:var(--surface-3);color:var(--muted)}
+
+.legend{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));margin:0 0 16px}
+.legend div{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line-strong);
+  padding:12px 14px;border-radius:0 5px 5px 0;font-size:14.5px;line-height:1.45}
+.legend div.l-b{border-left-color:var(--ok)}
+.legend div.l-a{border-left-color:var(--warn)}
+.legend div.l-o{border-left-color:var(--open)}
+.legend div.l-n{border-left-color:var(--crit)}
+
+/* key findings */
+.keys{display:grid;gap:0;margin:0 0 8px;border-top:1px solid var(--line)}
+.key{display:grid;grid-template-columns:34px minmax(0,1fr);gap:16px;padding:16px 0;
+  border-bottom:1px solid var(--line)}
+.key-n{font-family:Archivo,sans-serif;font-weight:700;font-size:12px;color:var(--accent);
+  padding-top:5px;font-variant-numeric:tabular-nums}
+.key h4{margin:0 0 4px;font-size:1rem;text-transform:none;letter-spacing:-.005em;color:var(--ink);font-weight:600}
+.key p{margin:0;font-size:15px;color:var(--ink-2)}
+
+/* tables */
+.tw{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;font-family:Archivo,sans-serif;min-width:520px}
+caption{caption-side:top;text-align:left;font-family:Archivo,sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:11px 14px;
+  border-bottom:1px solid var(--line);background:var(--surface-2)}
+th,td{padding:9px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);line-height:1.42}
+thead th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted);
+  background:var(--surface-2);white-space:nowrap;border-bottom:1px solid var(--line-strong)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td .mono,th .mono{font-size:12.5px}
+.nw{white-space:nowrap}
+
+/* callouts */
+.note{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+  padding:16px 18px;border-radius:0 6px 6px 0;margin:0 0 20px}
+.note p:last-child{margin-bottom:0}
+.note-t{font-family:Archivo,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--accent-ink);margin:0 0 6px}
+.note.alt{border-left-color:var(--open)}
+.note.alt .note-t{color:var(--open)}
+.note.flag{border-left-color:var(--warn)}
+.note.flag .note-t{color:var(--warn)}
+.note.stop{border-left-color:var(--crit)}
+.note.stop .note-t{color:var(--crit)}
+
+blockquote{margin:0 0 18px;padding:2px 0 2px 18px;border-left:2px solid var(--line-strong);
+  color:var(--ink-2);font-size:15.5px}
+blockquote p:last-child{margin-bottom:0}
+blockquote cite{display:block;margin-top:8px;font-family:Archivo,sans-serif;font-size:12px;
+  font-style:normal;color:var(--muted)}
+
+/* stats */
+.stats{display:grid;gap:1px;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));background:var(--line);
+  border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0 0 24px}
+.stat{background:var(--surface);padding:14px 16px}
+.stat b{display:block;font-family:Archivo,sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.03em;
+  line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-family:Archivo,sans-serif;font-size:11px;color:var(--muted);margin-top:3px;line-height:1.35}
+
+/* decisions */
+.dec{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;
+  margin:0 0 14px;box-shadow:var(--shadow)}
+.dec-h{display:flex;gap:12px;align-items:baseline;margin-bottom:10px;flex-wrap:wrap}
+.dec-n{font-family:Archivo,sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;
+  color:var(--surface);background:var(--accent);padding:3px 8px;border-radius:3px;flex:none}
+.dec-h b{font-family:Archivo,sans-serif;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.dec dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 16px;
+  font-family:Archivo,sans-serif;font-size:13.5px;align-items:baseline}
+.dec dt{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;white-space:nowrap;padding-top:2px}
+.dec dd{margin:0;color:var(--ink-2);line-height:1.5}
+
+/* layer diagram */
+.layers{display:flex;flex-direction:column;gap:8px;margin:0 0 22px}
+.layer{border:1px solid var(--line);border-radius:6px;padding:14px 18px;background:var(--surface)}
+.layer.mid{border-color:var(--accent);border-width:2px;background:var(--accent-wash)}
+.layer-h{display:flex;justify-content:space-between;gap:14px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.layer-h b{font-family:Archivo,sans-serif;font-size:15px;font-weight:600}
+.layer-h span{font-family:Archivo,sans-serif;font-size:11.5px;color:var(--muted)}
+.layer p{margin:0;font-size:14.5px;color:var(--ink-2);max-width:none}
+
+/* question cards */
+.qs{display:grid;gap:0;border-top:1px solid var(--line);margin:0 0 20px}
+.q{display:grid;grid-template-columns:30px minmax(0,1fr);gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.q-n{font-family:Archivo,sans-serif;font-weight:700;font-size:12px;color:var(--accent);
+  font-variant-numeric:tabular-nums;padding-top:4px}
+.q b{display:block;font-family:Archivo,sans-serif;font-size:15px;font-weight:600;
+  letter-spacing:-.005em;margin-bottom:3px;line-height:1.35}
+.q em{display:block;font-style:normal;font-size:14px;color:var(--muted)}
+.q em::before{content:"Entscheidet: ";font-family:Archivo,sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink)}
+
+/* phases */
+.phase{display:grid;grid-template-columns:96px minmax(0,1fr);gap:18px;padding:15px 0;border-bottom:1px solid var(--line)}
+.phase:first-of-type{border-top:1px solid var(--line)}
+.phase-k{font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--accent-ink);padding-top:3px}
+.phase h4{margin:0 0 4px;text-transform:none;letter-spacing:-.005em;font-size:15px;color:var(--ink)}
+.phase p{margin:0 0 6px;font-size:14.5px;color:var(--ink-2)}
+.phase .crit{font-family:Archivo,sans-serif;font-size:12.5px;color:var(--muted)}
+.phase .crit b{color:var(--ink-2);font-weight:600}
+
+/* agenda */
+.ag{display:grid;grid-template-columns:74px minmax(0,1fr);gap:16px;padding:11px 0;border-bottom:1px solid var(--line)}
+.ag:first-of-type{border-top:1px solid var(--line)}
+.ag-t{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--accent-ink);padding-top:3px;
+  font-variant-numeric:tabular-nums}
+.ag b{font-family:Archivo,sans-serif;font-size:14.5px;font-weight:600;display:block;margin-bottom:2px}
+.ag p{margin:0;font-size:14px;color:var(--ink-2)}
+
+.say{background:var(--surface-2);border-radius:6px;padding:13px 16px;margin:0 0 12px;
+  font-size:15.5px;color:var(--ink)}
+.say::before{content:"So sagt ihr es";display:block;font-family:Archivo,sans-serif;font-size:10px;
+  font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+
+hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+footer{border-top:2px solid var(--ink);margin-top:20px;padding:24px 0 0;font-family:Archivo,sans-serif;
+  font-size:12.5px;color:var(--muted)}
+footer p{max-width:80ch}
+a:focus-visible,.rail a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="shell">
+
+<header class="mast">
+  <p class="eyebrow">Plan für das Gespräch vom 31.08.2026 und für die zwölf Monate danach</p>
+  <h1>Vom Auftrag zum Produkt</h1>
+  <p class="standfirst">Was ihr für MAXXPARK baut, welcher Teil davon an 200 bis 350 weitere Schweizer Betriebe verkaufbar ist — und die vier Entscheide, die vor der ersten Zeile Code fallen müssen.</p>
+  <div class="mast-meta">
+    <span>Stand <b>30.08.2026</b></span>
+    <span>Erstkunde <b>MAXXPARK AG &amp; MAXX Factory AG, Oftringen AG</b></span>
+    <span>Grundlage <b>20 Rechercheläufe mit Gegenprüfung, jede Aussage belegstufig markiert</b></span>
+    <span>Anschluss an <b>das ERP-Dossier vom 28.08.2026</b></span>
+  </div>
+</header>
+
+<div class="cols">
+
+<nav class="rail" aria-label="Inhalt">
+  <p class="rail-title">Inhalt</p>
+  <ol>
+    <li><a href="#kurz"><span>00</span><span>Kurzfassung</span></a></li>
+    <li><a href="#belege"><span>—</span><span>Belegstufen</span></a></li>
+    <li><a href="#ziel"><span>A</span><span>Das Ziel</span></a></li>
+    <li><a href="#entscheide"><span>B</span><span>Die vier Entscheide</span></a></li>
+    <li><a href="#fachkern"><span>C</span><span>Der Fachkern</span></a></li>
+    <li><a href="#module"><span>D</span><span>Modulschnitt</span></a></li>
+    <li><a href="#konfigurator"><span>E</span><span>Der Konfigurator</span></a></li>
+    <li><a href="#architektur"><span>F</span><span>Architektur</span></a></li>
+    <li><a href="#artikel"><span>G</span><span>Artikelstamm</span></a></li>
+    <li><a href="#partner"><span>H</span><span>Partnernetz</span></a></li>
+    <li><a href="#ki"><span>I</span><span>KI-Schicht</span></a></li>
+    <li><a href="#recht"><span>J</span><span>Schweizer Pflichtteil</span></a></li>
+    <li><a href="#bestand"><span>K</span><span>Was ihr schon habt</span></a></li>
+    <li><a href="#geld"><span>L</span><span>Nutzen und Preis</span></a></li>
+    <li><a href="#vertrag"><span>M</span><span>Vertrag und Eigentum</span></a></li>
+    <li><a href="#markt"><span>N</span><span>Der Markt danach</span></a></li>
+    <li><a href="#fahrplan"><span>O</span><span>Kapazität und Fahrplan</span></a></li>
+    <li><a href="#einfuehrung"><span>P</span><span>Einführung und Betrieb</span></a></li>
+    <li><a href="#morgen"><span>Q</span><span>Morgen</span></a></li>
+    <li><a href="#risiken"><span>R</span><span>Risiken &amp; Abbruch</span></a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============ 00 KURZFASSUNG ============ -->
+<section id="kurz">
+  <div class="sec-head"><span class="sec-num">00</span><h2>Kurzfassung</h2></div>
+  <p class="sec-sub">Zwölf Befunde aus der Recherche. Fünf davon widersprechen der Ausgangsannahme, zwei korrigieren Zahlen, die in der ersten Fassung dieses Papiers noch anders standen. Alles Weitere ist Begründung.</p>
+
+  <div class="stats">
+    <div class="stat"><b>220</b><span>Personentage Jahreskapazität zu zweit</span></div>
+    <div class="stat"><b>771</b><span>Personentage für den Vollausbau</span></div>
+    <div class="stat"><b>81 %</b><span>davon branchenneutral — wenn ab Tag 1 mandantenfähig</span></div>
+    <div class="stat"><b>35–40</b><span>Betriebe bis Break-even</span></div>
+    <div class="stat"><b>20–40</b><span>Partner statt „hunderte"</span></div>
+    <div class="stat"><b>1</b><span>echter Graben im Markt</span></div>
+  </div>
+
+  <div class="keys">
+    <div class="key"><div class="key-n">01</div><div>
+      <h4>Die These „das kann kein Standardsystem" hält nicht — und das ist die gute Nachricht</h4>
+      <p>Charge- und Nuancenführung, Objektgeschäft, Streckengeschäft und Palettenverwaltung sind im Baustoff- und Fliesenhandel dokumentierte Standardfunktionen. Opacc weist bei einem Schweizer Baustoffhändler Chargen, unterschiedliche Einheiten für Menge und Preis und Fremdwährungen aus; Lobos vertreibt eNVenta an Häuser wie Josias Gasser in Chur; im italienischen Fliesenhandel führen Ceramio und Ceram Retailer <span class="mono">tonalità</span> und <span class="mono">calibro</span> pro Warenbewegung. Von den zehn harten Stellen des Dossiers sind fünf mit hoher Wahrscheinlichkeit Standard, vier konfigurationsabhängig — und genau <b>eine</b> ist ein echter Graben. <span class="ev ev-b">belegt</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">02</div><div>
+      <h4>Der eine Graben ist das 44-seitige Kundendokument — und er ist euer Produkt</h4>
+      <p>Für „Ihr fertiges Bad-Design" mit Stildefinition, Raumkonzept, Sanitärofferte und Auswahlschein Platten gibt es kein Produkt am Markt. Es ist zugleich das Artefakt, an dem MAXXPARK öffentlich scheitert: falsch zugeordnete Räume, falsche Mengen, falsche Auftragsbestätigungen. Wer diese Kette als Daten führt statt in InDesign zu setzen, löst den belegten Schmerz und besitzt etwas, das kein ERP mitbringt. <span class="ev ev-b">belegt</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">03</div><div>
+      <h4>Verkauft wird nicht ein ERP, sondern die fehlende Schicht dazwischen</h4>
+      <p>Auswahl → Angebot → Beschaffungszusage → Teillieferung → Montagepartner → Abrechnung. Unten kaufen (Artikelstamm, Lager, Debitoren, MWST, QR, Archiv), oben bauen. Das ist gleichzeitig die einzige Bauart, die mit zwei Personen machbar ist, <b>und</b> die einzige Schicht, die beim nächsten Kunden wiederverwendbar ist: der ERP-Kern sitzt bei jedem Zielkunden schon, die Schicht darüber fehlt überall. <span class="ev ev-a">abgeleitet</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">04</div><div>
+      <h4>Die wichtigste Frage von morgen ist eine Frage, keine Aussage</h4>
+      <p>Welches ERP läuft heute, in welcher Version, und kann es Chargen führen? Es ist ernsthaft möglich, dass das vorhandene System Chargenführung, Einheitenumrechnung und Objektpreise bereits kann und nie konfiguriert wurde. Dann ist das Projekt Prozessarbeit von Wochen statt Systementwicklung von einem Jahr — und ihr wärt die Ersten, die das sagen. <span class="ev ev-o">offen</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">05</div><div>
+      <h4>Der halbe Artikelstamm ist geschenkt, der andere halbe ist der grösste Kostenblock</h4>
+      <p>Für Sanitär betreibt die IGH die zentrale Schweizer Artikeldatenbank mit über 240 Lieferantenkatalogen im Format DataExpert; die Kosten trägt der Lieferant, für Kunden von IGH-Mitgliedern ist der Bezug kostenlos. Für Platten und Keramik existiert nichts Vergleichbares — weder in der Schweiz noch in Italien. Dort sind es Excel- und PDF-Preislisten, jede in eigenem Layout. <span class="ev ev-b">belegt</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">06</div><div>
+      <h4>„Hunderte günstige Handwerker" ist für diesen Betrieb die falsche Zahl — und rechtlich der gefährlichste Satz im Plan</h4>
+      <p>Weil die AGB den Einbau als eigene Leistung mit eigener Rügefrist regeln und den Werkvertrag nennen, ist MAXXPARK Erstunternehmer nach Art. 5 Entsendegesetz und haftet solidarisch für Löhne und Arbeitsbedingungen jedes Nachunternehmers über die ganze Kette — auch für den Sub des Subs. Der LGAV Plattenlegergewerbe ist im Kanton Aargau allgemeinverbindlich. „Günstig" ist damit kein Einkaufsziel, sondern ein Haftungsindikator. Realistischer Bedarf: 20 bis 40 aktive Partnerbetriebe, nicht hunderte. <span class="ev ev-b">belegt</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">07</div><div>
+      <h4>Der grösste sichtbare Hebel ist kein KI-Projekt</h4>
+      <p>Das Bad-Dokument ist zu rund neun Zehnteln ein Satz- und Datenprojekt, und der Motor dafür liegt fertig im eigenen Bestand: millimetergenauer A4-Druck mit Swiss-QR-Zahlteil. Auch der belegte Terminschmerz braucht kein Modell, sondern zwei Datenfelder und einen Nachtlauf. Wer das als KI verkauft, setzt eine Erwartung, an der ein perfektes deterministisches Ergebnis gemessen und für zu wenig befunden wird. <span class="ev ev-a">abgeleitet</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">08</div><div>
+      <h4>Euer bestes Einzelstück ist möglicherweise seit November 2025 nicht mehr konform</h4>
+      <p>Der handgebaute Swiss-QR-Zahlteil in DACHWERK arbeitet mit kombinierten Adressen. Seit dem 21.11.2025 lassen die Implementation Guidelines im Swiss QR Code nur noch strukturierte Adressen (Typ S) zu; Version 2.4 vom 24.02.2026 gilt ab 14.11.2026. Das ist in einem Tag reparierbar — aber es muss <em>vor</em> dem ersten Auftritt passieren, ausgerechnet in der Disziplin, in der ihr besser sein wollt. <span class="ev ev-b">geprüft 30.08.</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">09</div><div>
+      <h4>Der Markt ist klein genug, um ihn abzulaufen — und zu klein für einen Funnel</h4>
+      <p>Der adressierbare Kern in der Deutschschweiz liegt bei geschätzt 200 bis 350 Betrieben. 350 Betriebe kann man in zwölf Monaten physisch besuchen. Der naheliegendste Kanal ist zu: die Swissbau ist zweijährlich, die nächste Ausgabe ist Januar 2028. Der beste Kanal ist stattdessen der Werkslieferant und der Einkaufsverband — und beide Zielisten bekommt ihr morgen gratis, wenn ihr danach fragt. <span class="ev ev-a">abgeleitet</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">10</div><div>
+      <h4>Der Vollausbau in zwölf Monaten ist nicht knapp, sondern arithmetisch unmöglich</h4>
+      <p>Zwei Gründer, die nebenher Geld verdienen, schaffen realistisch je 2.5 Tage pro Woche über 44 Wochen — rund <b>220 Personentage im Jahr, zu zweit</b>. Die zwanzig Bausteine summieren sich auf rund 617 Personentage netto, mit 25 % Reserve auf 771. Das sind dreieinhalb Jahre. Jeder Plan, der zwölf Monate behauptet, ist falsch — und es ist besser, das selbst zu sagen. <span class="ev ev-a">abgeleitet</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">11</div><div>
+      <h4>Das anvisierte Abo von 15'000.00 ist rund der doppelte Marktpreis</h4>
+      <p>Belegte Vergleichspreise für diese Betriebsgrösse: Proffix Px5 Auftragsbearbeitung 57.00 pro Nutzer und Monat, Dynamics 365 Business Central Essentials rund 62.70, Odoo Online Schweiz 35.00, bexio 35.00 bis 119.00 pro Monat. Zwölf Nutzer bei Proffix ergeben 8'208.00 im Jahr. Bei realistischen 9'600.00 braucht es statt 26 rund 41 Betriebe, bei 7'200.00 rund 54 — und mit dem ignorierten Supportaufwand landet der Break-even bei <b>35 bis 40 Betrieben</b>. Das sind 15 bis 20 Prozent Marktanteil. Erreichbar, aber nicht in zwei Jahren. <span class="ev ev-b">belegt</span></p>
+    </div></div>
+    <div class="key"><div class="key-n">12</div><div>
+      <h4>Und die eine Zahl, die nirgends in einer Buchhaltung auftaucht</h4>
+      <p>220 Personentage zum Schweizer Freelancer-Ansatz von rund 120.00 pro Stunde sind <b>rund 211'200.00 nicht fakturierte Zeit im ersten Jahr</b>. Das ist eure Produktinvestition — und das stärkste Argument dafür, die Rechte am Ergebnis zu behalten. Sie gehört auf den Tisch, bevor irgendjemand programmiert. <span class="ev ev-a">abgeleitet</span></p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ BELEGSTUFEN ============ -->
+<section id="belege">
+  <div class="sec-head"><span class="sec-num">—</span><h2>Belegstufen</h2></div>
+  <p class="sec-sub">Gleiche Konvention wie im Dossier vom 28.08., um eine Stufe erweitert. Damit im Gespräch niemand eine Ableitung für eine Tatsache hält.</p>
+  <div class="legend">
+    <div class="l-b"><span class="ev ev-b">belegt</span> — mit Quelle nachweisbar und im Rechercheverlauf gegengeprüft.</div>
+    <div class="l-a"><span class="ev ev-a">abgeleitet</span> — logisch aus Belegen oder aus Branchenlogik geschlossen. Plausibel, nicht bewiesen.</div>
+    <div class="l-o"><span class="ev ev-o">offen</span> — gezielt gesucht, nicht ermittelbar. Gehört auf die Frageliste an den Inhaber.</div>
+    <div class="l-n"><span class="ev ev-n">nachprüfen</span> — inhaltlich mit hoher Sicherheit richtig, aber in dieser Recherche <b>nicht</b> an der Primärquelle verifiziert. Nicht ungeprüft in ein Kundendokument oder einen Vertrag übernehmen.</div>
+  </div>
+  <div class="note flag">
+    <p class="note-t">Ehrliche Einschränkung zur Recherche</p>
+    <p>Ein Teil der Läufe lief gegen ein erschöpftes Suchbudget und einen Egress-Filter, der unter anderem <span class="mono">fedlex.admin.ch</span>, <span class="mono">seco.admin.ch</span> und <span class="mono">bfs.admin.ch</span> blockiert hat. Betroffen sind vor allem die Abschnitte zu Recht, KI und Konfigurator: dort steht Fachwissen, kein Primärquellenbeleg. Diese Stellen tragen <span class="ev ev-n">nachprüfen</span>. Selbst an der Quelle geprüft wurden am 30.08.: die QR-Implementation-Guidelines, der MWST-Normalsatz, Art. 5 Entsendegesetz und die Allgemeinverbindlichkeit des LGAV Plattenlegergewerbe. Der eigene Code-Bestand ist durchgehend belegt, mit Zeilennummern.</p>
+  </div>
+</section>
+
+<!-- ============ A DAS ZIEL ============ -->
+<section id="ziel">
+  <div class="sec-head"><span class="sec-num">A</span><h2>Das Ziel: drei Schichten, und nur die mittlere ist verkaufbar</h2></div>
+  <p class="sec-sub">Der Baukasten ist keine Konstruktion, sondern eine Extraktion. Was ihr baut, ist nicht ein System für jede Branche, sondern ein Kern plus eine Branchenschicht plus eine Mandantenkonfiguration — und der Wert liegt in der Mitte.</p>
+
+  <div class="layers">
+    <div class="layer">
+      <div class="layer-h"><b>Generischer Kern</b><span>gebaut oder gekauft — austauschbar</span></div>
+      <p>Stammdaten, Belegkette, Nummernkreise, Journal, Rechte, Audit, Faktura, Dokumentenerzeugung, Aufgaben und Wiedervorlage. Notwendig, aber ohne Differenzierung. Wer ihn selbst baut, verkauft ein Jahr Arbeit zum Preis von null Unterscheidbarkeit und konkurriert danach mit 35.00 pro Nutzer und Monat.</p>
+    </div>
+    <div class="layer mid">
+      <div class="layer-h"><b>Branchenschicht „Handel mit Ausstellung und Montagepartnern"</b><span>hier liegt euer Geld</span></div>
+      <p>Charge / Nuance / Kaliber. Mengenkaskade m² → Verschnitt → Paket → Palette. Werksware mit Produktionsslot gegen Lagerware. Auswahlschein mit Raumzuordnung. Versionierte Lieferterminzusage. Partnernetz mit Nachunternehmer-Compliance. Das ist die Schicht, die bei 200 bis 350 Schweizer Betrieben genau gleich fehlt.</p>
+    </div>
+    <div class="layer">
+      <div class="layer-h"><b>Mandantenkonfiguration MAXXPARK</b><span>bezahlt der Kunde, nie im Kern</span></div>
+      <p>Preisregeln, Belegbilder, Textbausteine, Nummernkreise, Rollen, Schnittstellen zu CAS, ViSoft und WooCommerce, Migrationsdaten. Alles, was nur hier gilt. Der Kunde zahlt für seine Lösung, nicht für euer Produkt.</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <p class="note-t">Der Fehler, den ihr am wahrscheinlichsten macht</p>
+    <p>Wer nur „Kern gegen Kunde" trennt, legt die Branchenlogik falsch ab und verschenkt genau das Stück, das man weiterverkaufen kann. Drei Schichten, nicht zwei — und die Zuordnung wird bei jedem Feature <em>bewusst</em> entschieden und protokolliert, nicht im Nachhinein rationalisiert.</p>
+  </div>
+
+  <h3>Und was der Baukasten in den ersten zwölf Monaten wirklich ist</h3>
+  <p>Er ist eine Tabelle <span class="mono">mandant_modul</span> und eine Handvoll geprüfter Branchenvorlagen. Kein Laufzeitsystem, das fremde Module nachlädt. Das ist ab Monat drei vorführbar, während echtes Nachladen erst dann Sinn ergibt, wenn jemand anderes als ihr ein Modul schreibt. Die Vision bleibt, der Zeitpunkt verschiebt sich — und das gehört morgen so gesagt, nicht in Monat sieben.</p>
+  <p>Die Regel der drei gilt dabei nicht nur für Code, sondern für Anforderungen: <b>eine Sonderlösung wandert erst dann in den Kern, wenn sie der dritte unabhängige Kunde verlangt.</b> Vorher bleibt sie Mandantenerweiterung, auch wenn sie offensichtlich generisch wirkt. Zu früh alles generisch zu bauen ist bei zwei Gründern der wahrscheinlichere Weg in den Ruin.</p>
+</section>
+
+<!-- ============ B ENTSCHEIDE ============ -->
+<section id="entscheide">
+  <div class="sec-head"><span class="sec-num">B</span><h2>Die vier Entscheide, die vor der ersten Zeile Code fallen</h2></div>
+  <p class="sec-sub">Drei davon entscheidet ihr unter euch, einer gehört auf den Tisch des Inhabers. Alle vier sind später nur mit Datenmigration, Vertragsänderung oder Neustart korrigierbar.</p>
+
+  <div class="dec">
+    <div class="dec-h"><span class="dec-n">E1</span><b>Fundament: eigener Kern, Aufsatz oder Standard plus eigene Schicht?</b></div>
+    <dl>
+      <dt>Frage</dt><dd>Verkauft ihr Software — dann braucht ihr eigenes Eigentum ohne Pro-Sitz-Zoll — oder führt ihr Systeme ein und betreibt sie? Das sind zwei verschiedene Firmen, und mit zwei Personen kann man nicht beide sein.</dd>
+      <dt>Befund</dt><dd>Odoo Community 19 steht unter LGPL-3, aber genau der Schweizer Pflichtteil fehlt dort: <span class="mono">account_iso20022</span> (pain.001), camt-Import, MWST-Formular und Studio liegen in Enterprise. Die Enterprise-Lizenz verlangt für jeden Kunden eine gültige Subskription — auf jedem eurer Franken sässe ein Zoll, dessen Höhe Odoo bestimmt. Die OCA-Module, die die Lücke schliessen, tragen AGPL-3 mit Netzwerkklausel. Frappe Framework dagegen ist MIT, ERPNext GPLv3 ohne Netzwerkklausel — rechtlich die freieste Basis für ein eigenes Produkt, dafür mit dünner Schweizer Schicht. <span class="ev ev-b">belegt</span></dd>
+      <dt>Empfehlung</dt><dd><b>Fünf Tage Prüfung, dann entscheiden — nicht umgekehrt.</b> Fünf Testfälle aus MAXXPARKs echtem Geschäft: Charge und Nuance über Reservation, Teillieferung und Retoure; Mengenkaskade auf ganze Pakete; Preisfindung über zwei Segmente in einem Beleg; Teilfakturierung mit Anzahlung; QR-Rechnung mit zwei MWST-Subjekten. Wer sie besteht, gewinnt. Ohne diese Prüfung ist „wir bauen selbst" keine Entscheidung, sondern eine Annahme.</dd>
+      <dt>Frist</dt><dd>Vor der Offerte an MAXXPARK. Danach ist der Preis geraten.</dd>
+    </dl>
+  </div>
+
+  <div class="dec">
+    <div class="dec-h"><span class="dec-n">E2</span><b>Ein Mandant mit zwei Gesellschaften — nicht zwei Mandanten</b></div>
+    <dl>
+      <dt>Frage</dt><dd>Die Dossier-Frage „ein Mandant oder zwei" greift zu kurz. Unsere Empfehlung — und das ist eine Designentscheidung, keine Tatsache — ist zweistufig: <span class="mono">Mandant</span> (Kunde der Plattform) über <span class="mono">Gesellschaft</span> (MWST-, FiBu- und QR-Subjekt). Zwei getrennte Mandanten verlieren den gemeinsamen Artikelstamm und den gemeinsamen Bestand; ein einstufiges Modell verliert die zwei Abschlüsse.</dd>
+      <dt>Konsequenz</dt><dd>Der Bestand trägt den Eigentümer als Pflichtfeld. Eine Umlagerung zwischen den zwei AGs ist auch am selben Standort rechtlich ein Verkauf und erzeugt zwingend ein Belegpaar aus zwei Nummernkreisen, verbunden über eine Korrelations-ID. Ob diese Innenumsätze MWST tragen, hängt an einer einzigen Tatsache, die niemand kennt: besteht eine MWST-Gruppe nach Art. 13 MWSTG? <span class="ev ev-n">nachprüfen</span></dd>
+      <dt>Empfehlung</dt><dd>Zweistufig ab Tag 1, in jeder einzelnen Tabelle. Die Datenbankverbindung wird ab Tag 1 aus der <span class="mono">tenant_id</span> aufgelöst, nie aus einer Konstante. Das kostet heute fast nichts und später eine Migration auf Livebelegen.</dd>
+      <dt>Frage an den Inhaber</dt><dd>Soll der Artikelstamm zwischen MAXXPARK AG und MAXX Factory AG geteilt werden — ja oder nein? Und: besteht eine MWST-Gruppe?</dd>
+    </dl>
+  </div>
+
+  <div class="dec">
+    <div class="dec-h"><span class="dec-n">E3</span><b>Das Wiederverwendungsrecht, schriftlich, vor Projektstart</b></div>
+    <dl>
+      <dt>Warum jetzt</dt><dd>Euer Geschäftszweck ist die Weitervermarktung. Wenn der Inhaber in Monat acht sagt „das haben wir bezahlt, das gehört uns", ist das Geschäftsmodell tot — und beim Kumpel ist genau dieses Gespräch das, das niemand führen will. Später angesprochen wirkt es wie ein nachgeschobener Anspruch.</dd>
+      <dt>Das faire Angebot</dt><dd>Er wird <b>Design-Partner</b>: Pilotpreis mit sichtbarer Rabattzeile, unbefristetes Nutzungsrecht, Priorisierungskontingent, dauerhafte Vorzugskondition, Referenzstatus und eine Vermittlungsprämie je vermitteltem Abschluss. Ohne Eigentum am Code, ohne Vetorecht, ohne Branchenexklusivität. Seine Preise, Konditionen, Kundendaten und Lieferantenbeziehungen bleiben selbstverständlich seine.</dd>
+      <dt>Rechtlicher Kern</dt><dd>Beim Werkvertrag über Software gehen die Urheberrechte in der Schweiz nicht automatisch auf den Besteller über — es braucht eine ausdrückliche Regelung. Genau deshalb ist die Klausel machbar. Der Text gehört trotzdem einmal an einen Anwalt. <span class="ev ev-n">nachprüfen</span></dd>
+      <dt>Frist</dt><dd>Im ersten schriftlichen Dokument, also im bezahlten Analysemandat — nicht erst im Projektvertrag.</dd>
+    </dl>
+  </div>
+
+  <div class="dec">
+    <div class="dec-h"><span class="dec-n">E4</span><b>Die Nicht-Liste: was ihr unter keinen Umständen baut</b></div>
+    <dl>
+      <dt>Nie</dt><dd>Lohnbuchhaltung (Swissdec ELM 5.0 ist seit Januar 2026 verbindlich, eine Zertifizierung ist ein eigenes Produktprojekt). Finanzbuchhaltung und Abschluss. MWST-Abrechnung. Zahlungsverkehr über das Nötige hinaus. Revisionssicheres Archiv als Eigenbau. CRM, solange CAS genesisWorld läuft. 3D-Planung — ViSoft ist Branchenstandard und praktisch nicht ersetzbar.</dd>
+      <dt>Warum das ein Verkaufsargument ist</dt><dd>„Wir bauen Ihre Buchhaltung nicht, weil OR und GeBüV technische Unveränderbarkeit über zehn Jahre verlangen und Sie mit BDO eine Revisionsstelle haben" ist der Satz, der euch von jedem ERP-Verkäufer unterscheidet. Er nimmt gleichzeitig das grösste Risiko aus eurem Zwölfmonatsplan.</dd>
+      <dt>Die unbequeme Zahl</dt><dd>Allein die fünf Anbindungen (CAS, ViSoft, WooCommerce, Lohn, Bank) sind zusammen grob 100 bis 160 Personentage. Gemessen an eurer realen Jahreskapazität von rund 220 Personentagen zu zweit ist das <b>die Hälfte bis drei Viertel eines Jahres</b> — für Arbeit, die der Kunde nie sieht und ungern bezahlt. Wenn ihr sie alle im ersten Jahr zusagt, betreibt ihr zu zweit fünf fremde Systeme und baut kein Produkt. <span class="ev ev-a">abgeleitet</span></dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ============ C FACHKERN ============ -->
+<section id="fachkern">
+  <div class="sec-head"><span class="sec-num">C</span><h2>Der Fachkern in fünf Regeln</h2></div>
+  <p class="sec-sub">Das ist der Teil, den ihr wirklich verstehen müsst — und der euch morgen in fünf Minuten als Fachleute ausweist. Jede dieser Regeln ist gleichzeitig eine Antwort auf eine belegte Kundenbeschwerde.</p>
+
+  <h3>1 — Nuance, Kaliber und Charge sind drei Dinge, also drei Felder</h3>
+  <p>Weil Platten beim Brand schwinden, weicht das tatsächliche Mass vom Nennmass ab — deshalb deklariert das Werk neben dem Nennmass (etwa 20×20 cm) ein <b>Werkmass</b> (etwa 198×198 mm). Das <b>Kaliber</b> (<span class="mono">calibro</span>) ist die davon zu unterscheidende Grössenklasse, in die eine konkrete Produktion nach dem Brand einsortiert wird. <b>Nuance</b> oder Ton (<span class="mono">tono</span>) ist der Farbton <em>einer</em> Charge — je Werk als Buchstabe, Zahl oder alphanumerischer Code gestempelt. <b>Charge</b> ist der Produktionslauf selbst. Dazu kommt als viertes, davon unabhängiges Merkmal das <b>Farbspiel der Serie</b> (V0 bis V4, wobei V0 und V1 nicht dasselbe sind). Wer „Nuance" als ein Feld führt, vermischt Produkteigenschaft und Chargeneigenschaft und verliert damit sowohl das Verkaufsargument als auch die Reklamationsverteidigung. <span class="ev ev-a">abgeleitet</span> <span class="ev ev-n">Normbezüge und Toleranzwerte vor Kundenverwendung an ISO 13006/EN 14411 prüfen</span></p>
+  <p>Daraus folgt die härteste Regel des ganzen Systems: <b>der Bestand hängt nie am Artikel, sondern am Los.</b> Bestandsschlüssel ist (Artikel, Los, Lagerort, Wahl). Reservation, Kommissionierung, Lieferschein und Retoure referenzieren immer ein Los. „Freier Bestand ohne Los" existiert im Plattengeschäft nicht. Ohne diese Ebene ist die eigene AGB-Klausel „keine Retoure, wenn Nuance oder Charge ausverkauft ist" technisch gar nicht prüfbar und damit toter Buchstabe.</p>
+
+  <h3>2 — Die Mengenkaskade läuft in genau dieser Reihenfolge</h3>
+  <p>Basiseinheit im Lager ist <b>Stück</b>, nicht Quadratmeter. Wer m² als Basiseinheit führt, hat nach drei Monaten Restbestände von 0.37 m², die es physisch nicht gibt.</p>
+  <div class="tw"><table>
+    <caption>Die Kaskade — und wo der heutige Fehler entsteht</caption>
+    <thead><tr><th>Schritt</th><th>Regel</th><th>Falle</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 Nettofläche</b></td><td>je Raum und je Fläche einzeln erfassen, nie summiert</td><td>Summiert man zuerst, ist die Raumzuordnung weg — genau die Beschwerde aus den Bewertungen</td></tr>
+      <tr><td><b>2 Verschnitt</b></td><td>je Fläche zuschlagen, abhängig von Verlegebild, Format, Rapport</td><td>nie in den Einheitspreis rechnen — eigene sichtbare Zeile</td></tr>
+      <tr><td><b>3 Summieren</b></td><td>je Artikel <em>und</em> Los</td><td>—</td></tr>
+      <tr><td><b>4 Aufrunden</b></td><td>erst jetzt auf ganze Pakete</td><td>Wer pro Raum rundet, verkauft systematisch zu viel</td></tr>
+      <tr><td><b>5 Palette</b></td><td>für Transport aufrunden, für den Preis nicht</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p>Handelsübliche Verschnitt-Richtwerte, keine Norm: gerade Verlegung 5–10 %, viele Ecken oder Kleinformat 10–15 %, Grossformat gerade 10–15 %, Grossformat mit vielen Ecken 15–20 %, Diagonalverlegung rund 5 Prozentpunkte Zuschlag, Musteransatz deutlich mehr. Das System schlägt vor, der Verkäufer entscheidet, die Entscheidung wird protokolliert. <span class="ev ev-a">abgeleitet</span></p>
+  <div class="note">
+    <p class="note-t">Die Folie, die morgen mehr wert ist als jedes Konzeptpapier</p>
+    <p>Der Auswahlschein bekommt je Position sechs Spalten: <span class="mono">Fläche netto m² | Verschnitt % | Bedarf m² | m²/Paket | Pakete | Fakturamenge m²</span>, plus die Zeile „Mehrmenge X.XX m², Lieferung nur in ganzen Paketen". Das kostet keinen Franken mehr als die intransparente Variante und nimmt einen der drei häufigsten Reklamationsgründe weg. Rechnet es an <em>einer</em> echten Offerte von ihm vor.</p>
+  </div>
+
+  <h3>3 — Sechs Kundensegmente sind keine sechs Preislisten, sondern eine Kaskade</h3>
+  <ol>
+    <li><b>Objektpreis</b> — projekt- und artikelbezogen, werkseitig bestätigt, mit Werksobjektnummer, Mindestmenge und Ablaufdatum. Schlägt alles.</li>
+    <li><b>Verhandelter Kunden-Artikel-Preis</b></li>
+    <li><b>Aktion</b>, gegebenenfalls losgebunden („nur Los X, solange Vorrat")</li>
+    <li><b>Kundenrabattgruppe × Artikelrabattgruppe</b> als Matrix — das Arbeitspferd</li>
+    <li><b>Mengenstaffel</b> auf m²-Schwellen</li>
+    <li><b>Basispreis</b></li>
+  </ol>
+  <p>Jede Preisfindung schreibt ein Protokoll: welche Ebene, welcher Wert, wer, wann, gültig bis. Ohne dieses Protokoll ist weder eine Reklamation noch eine Revision zu bestehen.</p>
+  <p>Die AGB-Regel <b>„Preis gilt nur für die offerierte Menge"</b> ist implementierbar und muss in beide Richtungen wirken: bei Mehrmenge Neufindung für die Gesamtmenge mit Anzeige der Differenz — und <b>bei Mindermenge ebenfalls</b>, weil die Mengenstaffel wegfällt. Genau diese dritte Regel mag der Verkauf nicht, und genau sie rettet den Deckungsbeitrag.</p>
+
+  <h3>4 — Der Liefertermin ist eine versionierte Zusage, keine Lieferantenfrist</h3>
+  <p>Heute hängt die Lieferfrist am Lieferanten statt an der Position. Eine Lieferantenfrist kann „Werksware aus Sassuolo, Produktionsslot KW 42" gar nicht ausdrücken — das ist die Wurzel der Rezension „zugesagt 4–6 Wochen, in Woche 8 noch nicht komplett". Richtig ist: Werksslot + Transit + Einlagerung + Kommissionierung + Abholtag, mit Zusagetyp <span class="mono">geschätzt</span> oder <span class="mono">werksbestätigt</span> und Zusagedatum. Nur werksbestätigte Daten werden als Datum kommuniziert, geschätzte nur als Spanne mit Vorbehalt.</p>
+  <div class="note alt">
+    <p class="note-t">Der billigste Doppelnutzen im ganzen Projekt</p>
+    <p>Der Geschäftswert liegt nicht im richtigen Datum, sondern im <em>aktiven Melden der Verschiebung</em>, bevor der Kunde anruft. Dazu kommt die Meldung „abholbereit": nach den eigenen AGB tritt Erfüllung ein, sobald die Ware erstmals zur Abholung angezeigt ist — wer diese Meldung systematisch erzeugt und protokolliert, verbessert gleichzeitig den Service und startet die 10-Tage-Zahlungsfrist. Zwei Datenfelder und ein Nachtlauf.</p>
+  </div>
+
+  <h3>5 — Verfügbarkeit braucht vier Zahlen, und jede Reservation ein Verfallsdatum</h3>
+  <p>Physisch (aus dem Bewegungsjournal), reserviert (harte Zuteilung an einen Beleg), avisiert (beim Werk bestellt, mit Termin), verfügbar = physisch minus reserviert. Reserviert wird immer ein <b>Los</b>, nie ein Artikel — sonst kommt die zweite Palette aus einer anderen Charge. Weiche Reservation aus einer Offerte verfällt automatisch, harte mit Losbindung. Reservation ohne Verfall führt garantiert dazu, dass nach sechs Monaten das halbe Lager reserviert und nichts verkaufbar ist.</p>
+  <p>Und: <b>Werksware gegen Lagerware ist ein Positions-, kein Artikelmerkmal</b>, und eine Position kann zerfallen — fünf Paletten ab Lager, drei ab Werk. Diese Teilzuteilungsebene ist zugleich die Voraussetzung für Teillieferung und Teilfakturierung.</p>
+</section>
+
+<!-- ============ D MODULE ============ -->
+<section id="module">
+  <div class="sec-head"><span class="sec-num">D</span><h2>Der Modulschnitt</h2></div>
+  <p class="sec-sub">Acht Kernbausteine, die niemand abwählen kann, und rund zwanzig Module. Nicht zweihundert Apps. Entscheidend ist die Spalte ganz rechts: sie sagt, was ihr beim zweiten Kunden wiederverwendet.</p>
+
+  <div class="tw"><table>
+    <caption>Kernel — nicht abwählbar, alles Rechtliche gehört hierhin</caption>
+    <thead><tr><th>Baustein</th><th>Inhalt</th><th>Schicht</th></tr></thead>
+    <tbody>
+      <tr><td><b>Mandant, Identität, Fähigkeiten</b></td><td>Mandant über Gesellschaft, Mitgliedschaft, Fähigkeiten statt Rollen, Mandantenwechsel ohne Neuanmeldung</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Partnerstamm</b></td><td>Kunde, Lieferant, Handwerker, Mitarbeitende als eine Entität mit Rollen</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Beleg, Nummernkreis, Journal</b></td><td>append-only, Storno statt Löschung, lückenlose Nummern</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Datei und Foto</b></td><td>Ablage, Zeitstempel, Verknüpfung mit Beleg und Position</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Suche</b></td><td>über Artikel, Belege, Partner, Dokumente</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Audit nach OR und GeBüV</b></td><td>Zugriffsprotokoll, Änderungsnachweis, Exportarchiv</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Druck, PDF, Swiss QR</b></td><td>millimetergenaues A4, Zahlteil, Vorlagensystem</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Benachrichtigung</b></td><td>Mail, SMS, Wiedervorlage, Eskalation</td><td><span class="tag k">Kern</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tw"><table>
+    <caption>Module — was in welcher Reihenfolge, und was davon weiterverkaufbar ist</caption>
+    <thead><tr><th>Modul</th><th>Warum</th><th class="nw">Stufe</th><th class="nw">Schicht</th></tr></thead>
+    <tbody>
+      <tr><td><b>Auswahlschein &amp; Raumzuordnung</b></td><td>Position → Raum → Artikel → Menge → Charge, versioniert, für den Kunden freigebbar. Der belegte Schmerzpunkt.</td><td class="nw">1</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Mengenermittlung</b></td><td>Die Kaskade als System statt im Kopf. Nimmt die Reklamation „falsche Mengen" weg.</td><td class="nw">1</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Dokumentgenerator</b></td><td>Das 44-seitige Bad-Design auf Knopfdruck statt aus InDesign. Versioniert, beweisfest.</td><td class="nw">1</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Lieferterminzusage</b></td><td>Zusagetyp, Zusagedatum, Nachtlauf, aktive Abweichungsmeldung.</td><td class="nw">1</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Artikelstamm mit Serie, Finish, Einheiten</b></td><td>Serienkopf plus Varianten, datierte Verpackungstabelle.</td><td class="nw">2</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Chargen- und Losführung</b></td><td>Bestand am Los, Ton, Kaliber, Wahl. Nicht nachrüstbar.</td><td class="nw">2</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Preisfindung</b></td><td>Sechsstufige Kaskade mit Protokoll und Mengenbindung.</td><td class="nw">2</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Offerte und Auftrag</b></td><td>Belegkette, Versionierung, Teilabruf.</td><td class="nw">2</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Beschaffung mit Werkstermin</b></td><td>Bestellung, Auftragsbestätigung des Werks mit Produktionsslot, Rückstandsverfolgung.</td><td class="nw">3</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Wareneingang mit Chargenerfassung</b></td><td>Etiketten-Parserprofile je Werk plus manueller Rückfall.</td><td class="nw">3</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Bestand und Reservation</b></td><td>Vier Zahlen, Losbindung, Verfall.</td><td class="nw">3</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Kommissionierung</b></td><td>Pickliste, Scan, Chargenzwang, Bruchmeldung mit Foto.</td><td class="nw">3</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Lieferschein &amp; Ablieferquittung</b></td><td>Unterschrift auf dem Glas, Schadensfoto — die AGB machen die Rüge vor dem Ablad zur Ausschlussfrist.</td><td class="nw">3</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Faktura mit QR, Teilfaktura, Anzahlung</b></td><td>Zwei Gesellschaften, zwei QR-IBAN.</td><td class="nw">3</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Partnernetz &amp; Nachunternehmer-Compliance</b></td><td>Dossier mit Ablaufüberwachung und Auftragssperre. Das wertvollste Produktstück — siehe Abschnitt H.</td><td class="nw">4</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>Abnahme &amp; Reklamation mit Regress</b></td><td>Mangel → Partner oder Material, davon hängt der Regress ab.</td><td class="nw">4</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Kundenportal B2B</b></td><td>Segmentpreise, Objektpreise, Bestellhistorie — gehört nicht in WooCommerce.</td><td class="nw">4</td><td><span class="tag k">Kern</span></td></tr>
+      <tr><td><b>POS Handwerkershop</b></td><td>Theke ab 07:00, offlinefähig, Notbetrieb zwingend.</td><td class="nw">4</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Preislisten-Import</b></td><td>Parametrischer Mapper für beliebige Lieferantenformate. Produktmodul, kein Migrationsskript.</td><td class="nw">2</td><td><span class="tag br">Branche</span></td></tr>
+      <tr><td><b>Schnittstellen CAS / ViSoft / Woo / Bank</b></td><td>Anbinden, nicht bauen.</td><td class="nw">3</td><td><span class="tag md">Mandant</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note flag">
+    <p class="note-t">Die Streichliste gehört morgen auf den Tisch</p>
+    <p>Zwanzig Module und fünf Anbindungen sind zu zweit in zwölf Monaten nicht machbar. Es ist besser, das selbst zu sagen, als in Monat sieben danach gefragt zu werden. Der Vorschlag: Stufe 1 und 2 im ersten Jahr, Stufe 3 begonnen, Stufe 4 benannt und datiert.</p>
+  </div>
+</section>
+
+<!-- ============ E KONFIGURATOR ============ -->
+<section id="konfigurator">
+  <div class="sec-head"><span class="sec-num">E</span><h2>Der Konfigurator, ehrlich gerechnet</h2></div>
+  <p class="sec-sub">Die Vision „Branche auswählen, Module vorschlagen lassen, Zusatzfunktionen dazuklicken" ist richtig — aber sie hat eine Mathematik, die man kennen muss, bevor man sie verspricht.</p>
+
+  <p>Zweiundzwanzig boolesche Module ergeben <b>4'194'304 Kombinationen</b>. Das ist weder testbar noch supportbar. Die Antwort darauf ist nicht mehr Testautomatisierung, sondern weniger Freiheit: <b>die Branchenvorlagen sind die einzigen offiziell getesteten Konfigurationen.</b> Alles andere ist Sonderfall mit Ablaufdatum.</p>
+
+  <h3>Nicht fünfzehn Branchen, sondern vier Prozessarchetypen</h3>
+  <p>NOGA taugt zur Marktsegmentierung, nicht zur Konfiguration: die Systematik bildet ab, <em>was</em> eine Firma verkauft, der Modulzuschnitt hängt aber davon ab, <em>wie</em> ein Auftrag läuft. MAXXPARK ist der Beweis — ein Betrieb, zwei AGs, Handel plus Projektberatung plus Partnerhandwerker fällt statistisch auf mehrere Codes und ist im Konfigurator genau eine Vorlage.</p>
+  <div class="tw"><table>
+    <caption>Die eigentliche Reduktionsachse</caption>
+    <thead><tr><th>Archetyp</th><th>Kennzeichen</th><th>Beispielbetriebe</th></tr></thead>
+    <tbody>
+      <tr><td><b>Theke / Lagerverkauf</b></td><td>Sofortgeschäft, Barverkauf, Abholung, Kasse</td><td>Handwerkershop, Baustoffdepot</td></tr>
+      <tr><td><b>Projekt mit Beratung und Auswahl</b></td><td>Ausstellung, Termin, Planung, Auswahlschein, lange Lieferzeit</td><td>Platten, Bad, Küche, Boden</td></tr>
+      <tr><td><b>Baustelle mit Rapport</b></td><td>Einsatz, Zeit, Material, Foto, Abnahme</td><td>Dachdecker, Installateur</td></tr>
+      <tr><td><b>Serie / Wartungsvertrag</b></td><td>wiederkehrend, Fälligkeiten, SLA</td><td>Service, Unterhalt</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>MAXXPARK ist Theke plus Projekt.</b> Jede weitere Branche ist eine Mischung dieser vier plus genau eine Besonderheit. Wer die vier sauber baut, hat 80 Prozent jeder neuen Branche schon — und DACHWERK deckt bereits den dritten Archetyp ab.</p>
+
+  <h3>Die Grenze zwischen Konfiguration und Programmierung verläuft bei der Haftung</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Der Kunde stellt selbst ein</th><th>Niemals konfigurierbar</th></tr></thead>
+    <tbody>
+      <tr><td>Formulare, Checklisten, Felder, Listenspalten, Textbausteine, Nummernkreis<em>formate</em>, Rollen und Freigabegrenzen, Druckvorlagen, Berichte, Navigation</td><td>Buchungslogik und Journal, MWST-Ermittlung, QR-Referenz und Prüfziffer, Rechteentscheid, Chargenzwang, Nummernkreis<em>vergabe</em>, Storno-statt-Löschen</td></tr>
+    </tbody>
+  </table></div>
+  <p>Und zwei Regeln, die alles zusammenhalten: Module dürfen sich <b>nie gegenseitig kennen</b> — sie deklarieren Fähigkeiten und Ereignisse, getestet wird jedes Modul gegen den Kernel, nicht Modul A mal Modul B. Und: <b>kein Feature-Flag darf ein anderes Feature-Flag lesen.</b> Sobald das passiert, sitzt die Kombinatorik im Code statt im Resolver.</p>
+  <p>Entitlement (was ist gekauft) und Feature-Flag (was ist technisch an) sind zwei getrennte Tabellen mit zwei getrennten Änderungswegen. Wer das vermischt, schaltet irgendwann mit einem technischen Schalter bezahlte Funktion ab.</p>
+
+  <div class="note">
+    <p class="note-t">Was ihr versprechen könnt, und was nicht</p>
+    <p>Haltbar: „Wir haben für Ihren Betriebstyp eine erprobte Startaufstellung, und Formulare, Felder, Textbausteine, Listen, Rollen und Nummernkreise stellen Sie selber ein." Nicht haltbar: „Sie klicken sich Ihr System zusammen." Der zweite Satz führt in die Kombinationshölle — und ihr könnt ihn morgen ohnehin nicht vorführen.</p>
+  </div>
+</section>
+
+<!-- ============ F ARCHITEKTUR ============ -->
+<section id="architektur">
+  <div class="sec-head"><span class="sec-num">F</span><h2>Architektur: eine Anwendung, eine Datenbank, harte Grenzen</h2></div>
+  <p class="sec-sub">Für zwei Personen gibt es genau eine vertretbare Grundform. Microservices sind hier kein Skalierungswerkzeug, sondern Betriebslast — und die härtesten Fälle bei MAXXPARK wollen ohnehin eine einzige Transaktion.</p>
+
+  <p>Ein Deployable, eine PostgreSQL, Module als Ordner mit Manifest. Reservation, Teillieferung und Änderung am laufenden Auftrag sind durchweg transaktional; eine verteilte Saga löst hier ein Problem, das ihr nicht habt, und schafft drei, die ihr nicht tragen könnt.</p>
+
+  <h3>Die Trennung, die wirklich trägt: harter Kern gegen weiche Ränder</h3>
+  <p><b>Hart und getippt</b> — Artikel, Charge, Preis, Beleg, Buchung, Lagerbewegung: fest im Code, echte Tabellen, echte Migrationen, echte Indizes. <b>Weich und konfiguriert</b> — Formulare, Checklisten, Auswahlschein, Preisregeln, Druckvorlagen, Berichte, Navigation. Wer den Kern generisch macht, kann weder indexieren noch revisionssicher auditieren.</p>
+
+  <h3>Die fünf Invarianten, die am ersten Tag im Schema stehen müssen</h3>
+  <p>Alles andere darf später modularisiert werden. Diese fünf kosten später eine Datenmigration auf Kundenlivedaten:</p>
+  <ol>
+    <li><span class="mono">mandant_id</span> <b>und</b> <span class="mono">gesellschaft_id</span> in jeder Tabelle</li>
+    <li>Gültigkeitszeitraum an Preisen und Konditionen — die Preishistorie ist wegen der Preisbekanntgabeverordnung Beweismittel, nicht Komfort</li>
+    <li>append-only Belegjournal mit Storno statt Löschung</li>
+    <li>Fähigkeiten statt Rollen als Rechtsmodell — bei MAXXPARK vereint <em>eine</em> Stelle Einkauf, Disposition, Auftrag, Vertriebsadministration und Stammdaten; ein Modell mit sich ausschliessenden Rollen scheitert am ersten Tag</li>
+    <li>ein Ereignisprotokoll (Outbox)</li>
+  </ol>
+
+  <h3>Der Modulvertrag gehört in die Datenbank, nicht ins Wiki</h3>
+  <p>Ein PostgreSQL-Schema je Modul, eine Datenbankrolle je Modul, <span class="mono">GRANT INSERT/UPDATE</span> nur auf das eigene Schema, Lesen fremder Module ausschliesslich über veröffentlichte Views (<span class="mono">lager.v_bestand</span>). Das ist die harte Variante dessen, was grosse Häuser mit freigegebenen APIs und Syntaxprüfung erreichen — nur dass es ohne eigenes Werkzeug funktioniert und auch dann greift, wenn nachts um zwei jemand schludert.</p>
+
+  <h3>Mandantentrennung: Row Level Security, aber nur in einer bestimmten Bauform</h3>
+  <p>Ohne diese vier Punkte ist RLS ein Placebo, weil der Tabelleneigentümer sie standardmässig umgeht: <b>Migrations-Rolle besitzt die Tabellen, App-Rolle besitzt nichts und hat kein <span class="mono">BYPASSRLS</span>, jede Tabelle trägt <span class="mono">FORCE ROW LEVEL SECURITY</span>, die Mandantengrenze ist eine <span class="mono">RESTRICTIVE</span> Policy.</b></p>
+  <ul>
+    <li>Die gefährliche Fehlerrichtung ist die stille: eine neue Tabelle <em>ohne</em> RLS ist völlig offen und wirft keinen Fehler, während RLS ohne Policy alles verweigert und sofort auffällt. Deshalb gehört die Prüfung in ein CI-Gate gegen <span class="mono">pg_class</span>, <span class="mono">pg_policy</span> und <span class="mono">pg_roles</span>, nicht in eine Review-Checkliste.</li>
+    <li>Unique-Constraints und Fremdschlüssel umgehen RLS immer. Eine globale Eindeutigkeit auf E-Mail oder SKU verrät über Fehlermeldungen die Kunden- und Artikelliste anderer Mandanten. Regel: <b>jeder Unique-Key beginnt mit <span class="mono">tenant_id</span></b>, jeder Fremdschlüssel ist zusammengesetzt.</li>
+    <li>Der Mandantenkontext gehört per <span class="mono">SET LOCAL</span> in die Transaktion. Achtung: <span class="mono">SET LOCAL</span> wird durch ein Rollback auf einen früheren Savepoint aufgehoben — und jedes ORM mit verschachtelten Transaktionen setzt Savepoints. Der Ausfall muss „nichts sichtbar" bedeuten, nicht „alles sichtbar". Das ist eine Testanforderung.</li>
+    <li>Euer eigener Support-Zugang ist das grösste Restrisiko des Systems und läuft niemals über <span class="mono">BYPASSRLS</span>, sondern über eine befristete Mitgliedschaft mit Begründung, Ablauf, Kundenbanner und Protokoll.</li>
+  </ul>
+
+  <h3>Das Modul-Manifest ist bei euch mehr als eine Ladeliste</h3>
+  <p>Es ist gleichzeitig der <b>Produktkatalog des Konfigurators</b> (welche Module schlägt die Vorlage vor, was kostet welches) und die Grundlage des <b>revDSG-Bearbeitungsverzeichnisses</b> (welches Modul bearbeitet welche Personendaten, mit welcher Aufbewahrungsfrist). Zwei Pflichten, die sonst von Hand doppelt geführt werden, fallen als Nebenprodukt an. Das rechtfertigt zwei Manifestfelder, die kein anderes System hat.</p>
+</section>
+
+<!-- ============ G ARTIKELSTAMM ============ -->
+<section id="artikel">
+  <div class="sec-head"><span class="sec-num">G</span><h2>Der Artikelstamm: halb geschenkt, halb der grösste Kostenblock</h2></div>
+  <p class="sec-sub">Das Dossier nennt ihn den grössten unbekannten Aufwandsblock. Die Recherche teilt ihn in zwei völlig verschiedene Probleme — und nur eines davon ist teuer.</p>
+
+  <div class="tw"><table>
+    <caption>Zwei Sortimente, zwei Welten</caption>
+    <thead><tr><th></th><th>Sanitär, Armaturen, Parkett</th><th>Platten, Keramik, Naturstein</th></tr></thead>
+    <tbody>
+      <tr><th>Umfang</th><td>3'450 Shop-Artikel, rund 10'600 SKU</td><td>digital nicht vorhanden — 0 im Shop</td></tr>
+      <tr><th>Datenquelle</th><td><b>IGH-Datenverbund</b>, über 240 Kataloge im Format DataExpert, Plattform <span class="mono">ch.building-masterdata.com</span></td><td>kein Schweizer Kanal. In Deutschland führen DATANORM 5 und die BauDatenbank des Baustoff-Fachhandels teilweise Fliesendaten — ob sie die italienischen Werke von MAXXPARK abdecken, ist offen <span class="ev ev-o">offen</span></td></tr>
+      <tr><th>Kosten</th><td>trägt der <b>Anbieter</b> (Hersteller); für Kunden von IGH-Mitgliedern kostenlos — <b>sofern</b> MAXXPARK Kunde eines Mitglieds ist und die Weitergabe zulässig ist <span class="ev ev-o">zu klären</span></td><td>Handarbeit oder Extraktionsstrasse</td></tr>
+      <tr><th>Klassifikation</th><td>ETIM, BMEcat, Datanorm gebräuchlich</td><td>ETIM-Klasse <span class="mono">EC011340</span> existiert, wird aber praktisch nicht befüllt</td></tr>
+      <tr><th>De-facto-Standard</th><td>Katalogimport per Klick</td><td>Excel- und PDF-Preisliste je Lieferant, je Jahr, je eigenes Layout</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <p class="note-t">Der Satz für morgen</p>
+    <p>Handgebaute Schlüssel wie <span class="mono">989.Vivenis_15</span> sind kein Grund, ein System zu bauen — sie sind das Symptom eines fehlenden Katalogimports. Für die Hälfte des Artikelstamms verschenkt MAXXPARK gerade kollektiv finanzierte Arbeit. Ob Duravit, Villeroy&nbsp;&amp;&nbsp;Boch, Hansgrohe, KWC und Co. IGH-Mitglieder sind, ist ein Anruf, keine Recherche.</p>
+  </div>
+
+  <h3>Die Rechnung für die Plattenseite</h3>
+  <div class="tw"><table>
+    <caption>Aufwand je 1'000 SKU, mit den zwei Hebeln <span class="ev ev-a">abgeleitet</span></caption>
+    <thead><tr><th>Vorgehen</th><th class="num">Minuten/SKU</th><th class="num">Stunden je 1'000</th><th class="num">bei 10'000 SKU</th></tr></thead>
+    <tbody>
+      <tr><td>Manuell, flach erfasst</td><td class="num">5–8</td><td class="num">83–133</td><td class="num">830–1'330 h</td></tr>
+      <tr><td>+ Serie-Varianten-Modell <span class="mono">(Serienkopf 25 Min., Variante 1–2 Min.)</span></td><td class="num">≈ 2</td><td class="num">≈ 35</td><td class="num">≈ 350 h</td></tr>
+      <tr><td>+ KI-Extraktion aus dem <span class="mono">listino</span> mit Vollreview</td><td class="num">≈ 1.2</td><td class="num">≈ 20</td><td class="num"><b>≈ 200 h</b></td></tr>
+    </tbody>
+  </table></div>
+  <p>Bei intern kalkulierten 70.00 pro Stunde sind das grob <b>14'000.00 statt 75'000.00</b>. Zwei Ehrlichkeiten dazu. Erstens wirken die zwei Hebel <em>nicht</em> multiplikativ — die 200 Stunden sind die kombinierte Rechnung, nicht ein Produkt aus zwei Faktoren. Zweitens: die Fehlerrate darf man nicht schönrechnen. Bei zehn Feldern je Artikel und angenommenen 97 Prozent Feldgenauigkeit auf Tabellenzeilen ist nur rund <b>drei Viertel der Artikel vollständig fehlerfrei</b>; bei 99 Prozent sind es 90. Es gibt keinen Weg ohne menschliches Vollreview — wer „KI macht den Artikelstamm" verkauft, verkauft eine Lüge mit einem Viertel Ausschuss. <span class="ev ev-n">Die Genauigkeitsannahme stammt aus keinem benannten Benchmark — vor jeder Offerte an einer eigenen Stichprobe messen</span></p>
+  <p>Es gibt eine deterministische Kontrolle, die fast gratis ist: Preislisten enthalten oft redundante Grössen. EUR pro m² mal m² pro Karton muss den Kartonpreis ergeben; m² pro Karton mal Karton pro Palette muss die Palettenfläche ergeben. Jede Zeile, die diese Rechnung nicht besteht, wird markiert. <b>Die Einschränkung gehört dazu:</b> viele italienische <span class="mono">listini</span> weisen nur den Quadratmeterpreis aus, dann fehlt die Redundanz und die Kontrolle greift nicht. Wo sie greift, verlagert sie die Prüfung von „Mensch liest alles" zu „Mensch prüft die Ausreisser". Bei Preisen ist sie nicht optional, weil die AGB den offerierten Preis 60 Tage binden.</p>
+
+  <h3>Zwei Dinge, die nicht vermischt werden dürfen</h3>
+  <p><b>Nuance, Charge und Kaliber kommen aus keiner Datenquelle der Welt.</b> Sie entstehen physisch im Wareneingang und stehen auf dem Karton, nicht im Katalog. Katalogaufbau und Chargenführung sind zwei Projekte mit zwei Budgets. Wer sie vermischt, plant den Termin falsch.</p>
+
+  <h3>Der Stufenplan, der eine Fixpreisofferte rettet</h3>
+  <ul>
+    <li><b>Stufe 0:</b> Artikelstamm-Export aus dem Alt-ERP, Umsatz je Serie über 24 Monate, zwei Original-Preislisten. Danach ist die grosse Unbekannte in einer Woche eine Zahl.</li>
+    <li><b>Stufe 1:</b> Die Serien, die 80 Prozent des Plattenumsatzes machen, voll strukturiert.</li>
+    <li><b>Stufe 2:</b> Alles andere als Freitextartikel, der offeriert und fakturiert werden darf, aber nicht in Kalkulation und Shop kommt — und der beim zweiten Verkauf automatisch zur Erfassung vorgeschlagen wird.</li>
+  </ul>
+  <p>Der Katalog wird vom Verkauf gebaut, nicht auf Vorrat. Die vorhandene SKU-Systematik <span class="mono">Lieferantennummer.Herstellerartikelnummer</span> ist dabei ein unterschätzter Vermögenswert — sie enthält den Join-Key zur Lieferantendatei, der Abgleich ist mechanisch statt heuristisch. <b>Aber nur belegt für Sanitär und Parkett:</b> sämtliche entschlüsselten Präfixe stammen von dort, und im Shop stehen null Platten. Ob dieselbe Systematik im Alt-ERP auch für Keramik gilt, ist eine der ersten Fragen an den Datenexport. <span class="ev ev-o">offen</span></p>
+</section>
+
+<!-- ============ H PARTNERNETZ ============ -->
+<section id="partner">
+  <div class="sec-head"><span class="sec-num">H</span><h2>Das Partnernetz — euer wertvollstes Produktstück, aber anders als gedacht</h2></div>
+  <p class="sec-sub">Die Idee, mit neuen Outreach-Methoden hunderte günstige, qualifizierte Handwerker zu gewinnen, hält der Prüfung in ihrer Zahl nicht stand — in ihrer Substanz aber schon. Nur liegt der Wert an einer anderen Stelle, als es zuerst aussieht.</p>
+
+  <div class="note stop">
+    <p class="note-t">Zuerst das Recht, weil es das Modell begrenzt</p>
+    <p>Weil die AGB den Einbau als eigene Leistung mit eigener Rügefrist und Nachbesserungspflicht regeln und den Werkvertrag als Vertragstyp nennen, ist MAXXPARK <b>Erstunternehmer nach Art. 5 Entsendegesetz</b>. Plattenleger- und Sanitärarbeiten sind Baunebengewerbe und damit voll erfasst. Die Folge: zivilrechtliche <b>Solidarhaftung für Netto-Mindestlöhne und Arbeitsbedingungen jedes Nachunternehmers über die ganze Vertragskette</b> — auch für den Sub des Subs. Befreiung nur, wer die erforderliche Sorgfalt bei jeder Vergabe nachweist. In Kraft seit 15.07.2013. <span class="ev ev-b">geprüft 30.08.</span></p>
+  </div>
+
+  <h3>„Günstig" ist nach unten hart begrenzt</h3>
+  <p>Der <b>LGAV Plattenlegergewerbe ist allgemeinverbindlich und erfasst den Kanton Aargau</b> — verlängert am 11.11.2025 mit Wirkung ab 01.01.2026, gültig bis 31.12.2026, ohne obligatorische Lohnerhöhung für 2026. <span class="ev ev-b">geprüft 30.08.</span> Daraus folgt eine Lohn-Selbstkostenschwelle von grob 50.00 bis 55.00 pro produktive Stunde vor Gemeinkosten und Marge <span class="ev ev-n">nachprüfen</span>. Wer gelernte Plattenlegerarbeit deutlich unter etwa 65.00 bis 70.00 anbietet, zahlt entweder unter GAV, arbeitet schwarz oder geht ein — und in allen drei Fällen wird die offene Lohnforderung über Art. 5 EntsG zur Rechnung von MAXXPARK. <b>„Günstig" ist kein Einkaufsziel, sondern ein Haftungsindikator.</b></p>
+
+  <h3>Der richtige Preishebel ist nicht der Stundensatz, sondern die unproduktive Zeit des Partners</h3>
+  <p>Ein Handwerksbetrieb verliert Geld an Akquise, Offertenschreiben, Aufmass-Rückfragen, Materialbeschaffung, Leerfahrten, Nachlieferungen und Zahlungsverzug. Genau das kann MAXXPARK ihm abnehmen: <b>fertiger Auftrag statt Lead, exaktes Aufmass aus ViSoft, kommissioniertes Material auf der Baustelle, Zahlung in zehn statt sechzig Tagen.</b> Das senkt seine Kosten legal um mehr, als man ihm je am Stundensatz abhandeln könnte. Diese Umdeutung ist die eigentliche Produktthese des Moduls.</p>
+
+  <h3>Die Zahl ist 20 bis 40, nicht hunderte</h3>
+  <p>Bei geschätzt 130 bis 200 Aufträgen mit Montage pro Jahr, und einem Zwei-Mann-Plattenlegerteam, das 15 bis 20 Bad-Umbauten schafft und einem einzelnen Händler 30 bis 50 Prozent seiner Kapazität gibt, ergeben sich rund 20 Plattenleger-Partner plus etwa gleich viele aus Sanitär, Elektro, Maler und Gipser. <span class="ev ev-a">abgeleitet — die echten Auftragszahlen holt ihr morgen</span></p>
+  <p><b>Mehr Partner macht das System schlechter, nicht besser.</b> Rechtlich, weil der Sorgfaltsnachweis pro Betrieb und pro Weitervergabe zu führen ist — 300 Betriebe zu überwachen ist nicht bezahlbar. Und wirtschaftlich, weil bei 300 Partnern jeder 0.5 Aufträge im Jahr bekommt und sich für eure Termine und Qualitätsvorgaben niemand interessiert. Leverage entsteht durch Konzentration, nicht durch Breite. <b>„Hunderte" ist eine Plattform-Zahl über viele Mandanten hinweg, keine Zahl für einen Betrieb.</b></p>
+
+  <div class="note stop">
+    <p class="note-t">Die gefährlichste Produktfalle</p>
+    <p>Wenn die Plattform einzelne <em>Mitarbeitende</em> des Partners auf Zeitfenster einplant, ihnen Weisungen erteilt und ihre Arbeitszeit steuert, ist das nicht mehr Nachunternehmerschaft nach OR 363 ff., sondern bewilligungs- und kautionspflichtiger <b>Personalverleih</b> nach Arbeitsvermittlungsgesetz — grenzüberschreitend in die Schweiz sogar verboten. Das Modul muss deshalb <b>Betriebe mit Leistungspaketen</b> disponieren, nie Personen mit Stunden. Diese Unterscheidung gehört ins Datenmodell, nicht in die AGB. Die genaue Grenze gehört vor dem ersten Verkaufsversprechen zu einem Anwalt. <span class="ev ev-n">nachprüfen</span></p>
+  </div>
+
+  <h3>Was ihr verkauft, ist nicht das Netz, sondern die Compliance</h3>
+  <p>Ein Händler mit Montage, der Art. 5 EntsG nicht bedient, trägt ein unversichertes, unbeziffertes Haftungsrisiko in der Bilanz. Ein Dossier-Modul mit Ablaufüberwachung und <b>Auftragssperre</b> löst das nachweisbar: HR-Auszug, MWST-Nummer, SUVA-Nachweis, Haftpflicht, GAV-Unterstellung — je mit Gültigkeit, Ablaufalarm und Sperrlogik.</p>
+  <p>Dieses Modul ist zu rund 80 Prozent <b>branchenneutral</b> — Dokument mit Gültigkeit, Ablaufalarm, Sperre, Fremdleistungsbestellung, Rückbehalt, Regress; der Bau-Teil ist reine Konfiguration des Prüfkatalogs. Damit ist es echter Baukasten und der beste Kandidat für euer zweites, drittes und zehntes Kundensegment: Küchen, Böden, Fenster, Storen, Garagentore, Photovoltaik, Wärmepumpen — alle mit derselben Struktur Handel plus Montagepartnernetz.</p>
+
+  <h3>Und der Akquisekanal, den ihr nicht seht</h3>
+  <p>MAXXPARK hat einen Handwerkershop, durch den täglich <b>ab 07:00 genau die Zielgruppe physisch hindurchläuft und dabei bezahlt</b>. Jeder Thekenbezug ist ein qualifizierter, warmer, kostenloser Kontakt mit belegtem Zahlungsverhalten und belegtem Materialbedarf. Das schlägt jede ausgedachte Outreach-Methode. Zweitbester Kanal: der Aussendienst der Kleber-, Keramik- und Sanitärhersteller — die kennen jeden Plattenleger der Region persönlich.</p>
+  <p>Google-Maps-Scraping als Primärkanal dagegen: lassen. Rechtlich mehrfach heikel und in einer Beziehungsbranche mit hoher Auslastung praktisch wirkungslos.</p>
+
+  <div class="note flag">
+    <p class="note-t">Warnung zum Vorbild</p>
+    <p>Falls im Gespräch „so etwas wie eine Handwerkerplattform" fällt: Buildigo, 2017 gegründet und ab 2020 im Vollbesitz der Mobiliar, wurde am 15.10.2025 aufgelöst und per 31.10.2025 liquidiert. Angi verlor 2025 rund 13 Prozent Umsatz. Der Grund ist immer derselbe — Lead-Marktplätze verkaufen Unsicherheit und haben die Kundenbeziehung nicht. <b>Der Unterschied gehört ausgesprochen: die verkaufen Leads, MAXXPARK hat den Auftrag schon.</b> Und Disintermediation ist hier strukturell blockiert, weil der Partner das Material nie zu diesen Konditionen einkaufen kann. Baut niemals einen Marktplatz. <span class="ev ev-b">belegt</span></p>
+  </div>
+</section>
+
+<!-- ============ I KI ============ -->
+<section id="ki">
+  <div class="sec-head"><span class="sec-num">I</span><h2>Die KI-Schicht: was trägt, was Zauber ist</h2></div>
+  <p class="sec-sub">Die Trennung ist wichtiger als die Technik. Zwei der drei stärksten Fälle brauchen überhaupt kein Modell — und der spektakulärste Fall gehört aktiv beerdigt, bevor ihn jemand fordert.</p>
+
+  <div class="tw"><table>
+    <caption>Bewertung der Fälle</caption>
+    <thead><tr><th>Fall</th><th>Urteil</th><th>Begründung</th></tr></thead>
+    <tbody>
+      <tr><td><b>Bad-Design-Dokument erzeugen</b></td><td><span class="ev ev-b">trägt — ohne KI</span></td><td>Zu rund 90 % ein Satz- und Datenprojekt: deterministische Komposition aus ViSoft-Daten, Artikelstamm und Kalkulation. Wer es als KI verkauft, wird an einem perfekten deterministischen Ergebnis gemessen und für zu wenig befunden.</td></tr>
+      <tr><td><b>Terminabweichung melden</b></td><td><span class="ev ev-b">trägt — ohne KI</span></td><td>Zusagedatum und Erwartetdatum je Position plus Nachtlauf mit Schwelle. Das ist der ganze Fall — und er trifft den belegten Schmerzpunkt direkt.</td></tr>
+      <tr><td><b>Preislisten extrahieren</b></td><td><span class="ev ev-a">trägt mit Vollreview</span></td><td>Nicht das Modell ist der Kostenblock, sondern die Kontrolle — Verhältnis grob 1:10 bis 1:50. Optimiert wird die Kontrolle, nicht das Modell.</td></tr>
+      <tr><td><b>Mail- und Anfragentriage</b></td><td><span class="ev ev-a">trägt, aber später</span></td><td>Setzt die Entscheidung voraus, ob Kundenkorrespondenz einen Cloud-Dienst erreichen darf. Das entscheidet der Inhaber, nicht ihr.</td></tr>
+      <tr><td><b>Voice Agent auf Schweizerdeutsch</b></td><td><span class="ev ev-n">Zauber im ersten Jahr</span></td><td>Telefonie im 8-kHz-Schmalband, Anrufer aus dem Fahrzeug, um 07:00, starker Dialekt ohne Schriftnorm — die schlechteste denkbare Kombination. Der ehrliche erste „Voice Agent" ist eine SMS: gleicher Nutzen, ein Zehntel des Risikos. Wenn Voice, dann ausgehend vor eingehend, und die Hauptnummer wird nie portiert.</td></tr>
+      <tr><td><b>Nuancekontrolle per Kamera</b></td><td><span class="ev ev-n">geht nicht</span></td><td>Nuance- und Kaliberunterschiede sind genau die, die man mit blossem Auge nicht sicher sieht — die Branche arbeitet mit gedruckten Etiketten und genormten Betrachtungsbedingungen. Was geht: Etikett scannen, Charge am Bestand führen, Chargenwechsel im selben Raum verweigern.</td></tr>
+      <tr><td><b>Generative Renderings</b></td><td><span class="ev ev-n">niemals</span></td><td>ViSoft liefert massgetreue Bilder. Ein generiertes Badbild ist eine Haftungsfalle, weil der Kunde bestellt, was er gesehen hat — und die AGB den unterzeichneten Werkvertrag als Schuldanerkennung führen.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Zwei Architekturregeln, die den Anbieter austauschbar halten</h3>
+  <p><b>Ein einziges KI-Gateway</b> als einzige Komponente, die mit irgendeinem Modell spricht. Alles andere ruft eigene, typisierte Endpunkte auf — je Aufgabe ein Eingabeschema, ein Ausgabeschema, ein eigener Prüfsatz. Modellwechsel ist dann eine Konfigurationszeile, und der Prüfsatz beweist, dass er gefahrlos war. Kein Anbieter-SDK ausserhalb des Gateways, keine Feinabstimmung im ersten Jahr — Feinabstimmung ist genau die Bindung, die man vermeiden will.</p>
+  <p><b>Geroutet wird nach Datenklasse</b>, nicht nach Vorliebe: Klasse A (Kundendaten, Mailinhalte, Transkripte) nur Schweizer Hosting; Klasse B (Lieferantenpreislisten, Produkttexte — kein Personenbezug, aber Geschäftsgeheimnis) Schweiz oder EU mit Vertrag und Trainingsverbot; Klasse C (generische Formulierungshilfe) frei mit Auftragsbearbeitungsvertrag. Diese Klassifizierung ist gleichzeitig die Vorlage für das revDSG-Bearbeitungsverzeichnis — eine Arbeit, zwei Ergebnisse.</p>
+  <div class="note flag">
+    <p class="note-t">Und die Regel, die man nachträglich nur doppelt baut</p>
+    <p>Jeder Modellaufruf, der einen <b>Preis, eine Menge oder ein Zusagedatum</b> erzeugt, braucht ein append-only Protokoll mit Aufgabe, Modell, Version, Eingabe-Hash, Ausgabe, Konfidenz — und dem Menschen, der freigegeben hat. Storno statt Löschung, zehn Jahre. KI, die Preise anfasst, fällt unter dieselbe Revisionssicherheit wie die Buchhaltung.</p>
+  </div>
+  <p class="ui" style="font-size:14px;color:var(--muted)">Ehrlich zum eigenen Stand: die gesamte KI-Erfahrung im Team ist heute eine browserseitige Modellanbindung in RAUMWERK. Das Muster dort ist gut — erzwungenes JSON-Schema, Temperatur 0, ein Herkunftsfeld je Wert, Ausreisser werden markiert statt stillschweigend übernommen. Genau dieses Muster ist die Blaupause für die Preislistenextraktion. Der Rest ist Prototyp: Schlüssel im Browserspeicher, Aufruf direkt zum Anbieter. Für einen Kunden unbrauchbar — der Schlüssel gehört auf den Server.</p>
+</section>
+
+<!-- ============ J RECHT ============ -->
+<section id="recht">
+  <div class="sec-head"><span class="sec-num">J</span><h2>Der Schweizer Pflichtteil</h2></div>
+  <p class="sec-sub">Der teuerste Eigenbau und der billigste Zukauf. Zwei Termine stehen fest im Kalender, einer davon betrifft euer eigenes bestes Einzelstück.</p>
+
+  <div class="tw"><table>
+    <caption>Was gilt, was zu tun ist</caption>
+    <thead><tr><th>Thema</th><th>Stand</th><th>Konsequenz</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Swiss QR-Rechnung</b></td>
+        <td>Seit <b>21.11.2025</b> nur noch strukturierte Adressen (Typ S) im Swiss QR Code, Gläubiger und Schuldner in Einzelelemente zerlegt. Version 2.4 vom 24.02.2026 gilt ab <b>14.11.2026</b>; für CHF-Rechnungen keine technische Anpassung. <span class="ev ev-b">geprüft 30.08.</span></td>
+        <td><b>Euer Encoder ist zu prüfen und mit hoher Wahrscheinlichkeit anzupassen</b>, bevor er irgendwo auftritt.</td>
+      </tr>
+      <tr>
+        <td><b>Zahlungsverkehr</b></td>
+        <td>Die Parallelphase für die ältere ISO-20022-Fassung endet Mitte <b>November 2026</b>; danach pain.001.001.09 und camt.05x.001.08, EBICS 3.0 als technische Voraussetzung. <span class="ev ev-n">nachprüfen</span></td>
+        <td>Nur die neuen Versionen bauen. Und: der Termin ist ein Türöffner beim Inhaber — läuft sein heutiges System darauf?</td>
+      </tr>
+      <tr>
+        <td><b>MWST</b></td>
+        <td>Normalsatz <b>8.1 %</b>, reduziert 2.6 %, Beherbergung 3.8 % — seit 01.01.2024 unverändert, auch 2026. <span class="ev ev-b">geprüft 30.08.</span></td>
+        <td>Der Satz in DACHWERK stimmt. Offen bleibt die MWST-Gruppe nach Art. 13 MWSTG zwischen den zwei AGs.</td>
+      </tr>
+      <tr>
+        <td><b>OR und GeBüV</b></td>
+        <td>Zehn Jahre Aufbewahrung ab Ende Geschäftsjahr; Änderungen dürfen nicht ohne Nachweisbarkeit möglich sein; Lösch- und Änderungsschutz, Zugriffsprotokollierung, Sicherung an getrenntem Ort. <span class="ev ev-n">nachprüfen</span></td>
+        <td>append-only ab Tag 1. <b>„Revisionssicher" ist kein Schweizer Rechtsbegriff</b> — verlangt sind Integrität, Verfügbarkeit, Dokumentation, Nachvollziehbarkeit.</td>
+      </tr>
+      <tr>
+        <td><b>Revision</b></td>
+        <td>MAXX Factory AG unterliegt bei 11–20 Mitarbeitenden der <b>eingeschränkten</b> Revision; dabei prüft die Revisionsstelle das interne Kontrollsystem ausdrücklich nicht. <span class="ev ev-n">nachprüfen</span></td>
+        <td>Erwartungen dämpfen: BDO zertifiziert euer System nicht. Aber bei einem Systemwechsel im Geschäftsjahr will sie den <b>Migrationsnachweis</b> sehen — Saldenüberleitung je Konto zum Stichtag, Anzahl migrierter Belege, Differenzenliste, unterzeichnet.</td>
+      </tr>
+      <tr>
+        <td><b>Arbeitszeit</b></td>
+        <td>Drei Regimes im selben Haus. Achtung: die 50-Mitarbeitenden-Grenze mit individueller Schriftlichkeit ist die <b>vereinfachte</b> Erfassung (ArGV 1 Art. 73b), nicht der Verzicht (Art. 73a, der zusätzlich eine Lohnschwelle und eine kollektive Vereinbarung verlangt). <span class="ev ev-n">nachprüfen</span></td>
+        <td>Wochenhöchstarbeitszeit ist <b>pro Person</b> zu konfigurieren, nicht als Firmenwert.</td>
+      </tr>
+      <tr>
+        <td><b>Datenschutz</b></td>
+        <td>Die Ausführungsverordnung zum revDSG heisst seit 01.09.2023 <b>DSV</b>, nicht mehr VDSG. <span class="ev ev-n">nachprüfen</span></td>
+        <td>Als Auftragsbearbeiter haftet ihr. Ohne Berufshaftpflicht keine Unterschrift unter einen Auftragsbearbeitungsvertrag.</td>
+      </tr>
+      <tr>
+        <td><b>Preisbekanntgabe</b></td>
+        <td>Gegenüber Konsumenten Bruttopreise inkl. MWST; die AGB sagen „exkl. MWST", der Shop ist für Konsumenten offen. <span class="ev ev-a">abgeleitet</span></td>
+        <td>Zwei Regelwerke B2B und B2C ab Anfang — sonst automatisiert das System angreifbare Entscheide. Ausserdem: Vergleichspreise verlangen eine <b>datierte Preishistorie</b> als Beweismittel.</td>
+      </tr>
+      <tr>
+        <td><b>Unterschrift</b></td>
+        <td>Kauf- und Werkvertrag sind formfrei; ein Fingerstrich auf dem Tablet genügt für Ablieferquittung und Abnahmeprotokoll. <span class="ev ev-n">nachprüfen</span></td>
+        <td>Der Beweiswert kommt nicht aus dem Bild, sondern aus dem nachweisbar unveränderten Kontext. Das Geld gehört in die Hash-Kette, nicht in Signaturlizenzen, die auf der Baustelle niemand bedient.</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="note stop">
+    <p class="note-t">Der eigentliche Architekturkonflikt ist juristisch, nicht technisch</p>
+    <p>GeBüV verlangt Unveränderbarkeit über zehn Jahre. Das DSG verlangt Löschung von Personendaten, sobald sie nicht mehr nötig sind, plus Auskunft und Herausgabe. Ein naiver append-only Ereignisspeicher kann kein Löschbegehren bedienen; naiv mutierbare Tabellen verletzen GeBüV. Die Auflösung ist ein <b>Drei-Zonen-Modell</b> — Buch, Stamm, Betrieb — und sie muss <em>jetzt</em> entschieden werden, nicht in Monat neun.</p>
+    <p>Dazu die entlastende Lesart: die zehn Jahre sind eine <b>Verfügbarkeits-</b>, keine Betriebspflicht. Man muss die Daten lesbar machen können, nicht zehn Jahre dieselbe Software betreiben. Daraus folgt das jährliche Exportarchiv — und das beantwortet gleichzeitig die eine Frage, an der jeder KMU-Abschluss mit einer Zweimannfirma stirbt: „Was, wenn ihr aufhört?"</p>
+  </div>
+</section>
+
+<!-- ============ K BESTAND ============ -->
+<section id="bestand">
+  <div class="sec-head"><span class="sec-num">K</span><h2>Was ihr schon habt — und was davon überlebt</h2></div>
+  <p class="sec-sub">DACHWERK ist 10'356 Zeilen in einer Datei. Als Fundament nicht tragfähig, als Musterbuch wertvoll. Die Zahlen unten sind am Code gemessen, nicht geschätzt.</p>
+
+  <div class="tw"><table>
+    <caption>Bausteine mit Schicksal <span class="ev ev-b">belegt</span></caption>
+    <thead><tr><th>Baustein</th><th class="num">Zeilen</th><th>Schicksal</th></tr></thead>
+    <tbody>
+      <tr><td><b>Swiss-QR-Encoder und Zahlteil</b> <span class="mono">(ISO/IEC 18004, Reed-Solomon, alle acht Masken)</span></td><td class="num">772</td><td><b>Kronjuwel</b> — bleibt, aber Adresstyp S nachziehen</td></tr>
+      <tr><td>Kartenkomponente auf OSM-Kacheln, ohne Fremdbibliothek</td><td class="num">1'065</td><td>bleibt, Kachelquelle wechseln</td></tr>
+      <tr><td>Fachlogikschicht <span class="mono">L</span> (Status, Zeit, Bewegungen, Summen, MWST, Rechnung)</td><td class="num">383</td><td>wandert auf den Server</td></tr>
+      <tr><td>A4-Druck- und PDF-Erzeugung, millimetergenau</td><td class="num">430</td><td>Motor für den Dokumentgenerator</td></tr>
+      <tr><td>Kamera mit Verkleinerung und EXIF-Drehung</td><td class="num">311</td><td>bleibt</td></tr>
+      <tr><td>Design-System (Sonnenmodus, Touchziele ab 56 px)</td><td class="num">825</td><td>bleibt fast ganz</td></tr>
+      <tr><td>Checklisten-Baukasten, 12 Feldtypen, Regeln</td><td class="num">≈ 200</td><td>Keimzelle des Konfigurators — siehe unten</td></tr>
+      <tr><td>Demodaten-Generator</td><td class="num">1'049</td><td>wird Testdaten-Generator</td></tr>
+      <tr><td><span class="mono">Store</span> (localStorage), <span class="mono">Sync</span> (ein Firebase-Dokument), <span class="mono">Login</span> (4-stelliger Code)</td><td class="num">320</td><td><b>ersetzen</b></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note stop">
+    <p class="note-t">Drei Befunde aus dem eigenen Code, die morgen offen gehören</p>
+    <p><b>Das Rechtemodell ist Dekoration.</b> Die Funktion <span class="mono">S.darf(recht)</span> ist auf Zeile 1301 definiert, Rechte werden gespeichert und angezeigt — aber in 10'356 Zeilen wird <span class="mono">darf()</span> kein einziges Mal aufgerufen.</p>
+    <p><b>Die Registry wird bereits von aussen gepatcht.</b> <span class="mono">ROUTEN</span> entsteht auf Zeile 5829 und wird auf Zeile 6628 von aussen ergänzt. Beim zweiten Modul mit gleichem Schlüssel gewinnt stillschweigend die zuletzt geladene Datei. Eine <span class="mono">register()</span>-Funktion, die bei Doppelbelegung wirft, kostet zehn Zeilen.</p>
+    <p><b>Revisionssicherheit ist bei null, nicht bei 30 Prozent.</b> Kein Storno, kein Journal, kein Audit-Trail. Der Sync schreibt den gesamten Datenstand per PATCH in <em>ein</em> Dokument (Zeile 1410–1428). Jede Buchung ist überschreibbar; bei drei parallelen Innendienstplätzen entstehen zwangsläufig Nummernlücken oder Doppelnummern.</p>
+  </div>
+
+  <h3>Der Checklisten-Baukasten ist schon ein halber Entitätenbaukasten</h3>
+  <p>Zwölf Feldtypen, Gruppen, Pflichtfelder, Fotopflicht, bedingte Sichtbarkeit — und mit <span class="mono">mangelWenn</span> sogar bereits ein Ereignisauslöser. Er bricht an vier präzise benennbaren Stellen, und alle vier sind für den Auswahlschein zwingend:</p>
+  <ul>
+    <li><b>Kein Feldtyp „Referenz auf ein Stammdatum"</b> (Artikel, Charge, Raum) — heute gibt es nur freie Optionslisten.</li>
+    <li><b>Keine gerechneten Felder</b> — die Mengenkaskade ist Arithmetik über Felder, keine Sichtbarkeitsbedingung. Es fehlen ausserdem Betrag mit Währung, Menge mit Einheit und Umrechnung, Zeitraum, Positionstabelle. Rund sechs Typen, und es sind die schwersten.</li>
+    <li><b>Keine Versionierung</b> — laut eigenem README wirken Vorlagenänderungen „sofort auf allen Geräten". Bei einem unterschriebenen Auswahlschein, der laut AGB Teil des Vertrags ist, zerstört das die Beweiskette. Ab erster Verwendung ist eine Vorlage unveränderlich; Ändern erzeugt Version n+1.</li>
+    <li><b>Keine Referenzintegrität</b> — das Löschen eines Punktes lässt erfasste Antworten verwaist stehen.</li>
+  </ul>
+  <p>Die bedingte Sichtbarkeit ist heute genau eine Gleichheitsprüfung. Für den Plattenfall reicht das nicht — aber flüchtet nicht in eine Ausdruckssprache. Ein festgeschriebener Operatorsatz (gleich, ungleich, in, grösser, kleiner, leer) mit und/oder deckt 95 Prozent und bleibt migrierbar, prüfbar und übersetzbar.</p>
+</section>
+
+<!-- ============ L GELD ============ -->
+<section id="geld">
+  <div class="sec-head"><span class="sec-num">L</span><h2>Nutzen und Preis</h2></div>
+  <p class="sec-sub">Den Nutzen beziffern, bevor der Aufwand beziffert wird. Und dann die härteste Zahl des ganzen Vorhabens aushalten: der angepeilte Abopreis liegt rund beim Doppelten des Marktes.</p>
+
+  <h3>Die stärkste Zahl ist nicht die Jahressumme, sondern der Stückpreis eines Fehlers</h3>
+  <p>Eine falsche Auftragsbestätigung kostet in der Grössenordnung <b>250.00 bis 400.00</b>, bevor sich jemand entschuldigt hat. Diese Zahl kann der Inhaber sofort an seinem eigenen letzten Fall prüfen — eine Jahressumme kann er nur bestreiten. Fragt ihn danach, statt sie ihm zu nennen.</p>
+
+  <div class="tw"><table>
+    <caption>Fehlerkostenmodell — alle Werte sind Platzhalter, bis er sie ersetzt <span class="ev ev-a">abgeleitet</span></caption>
+    <thead><tr><th>Block</th><th>konservativ</th><th>optimistisch</th><th>Bemerkung</th></tr></thead>
+    <tbody>
+      <tr><td><b>Innendienstzeit</b> für manuelle Dokumentation und Nachfassen</td><td class="num">17'940.00</td><td class="num">62'790.00</td><td>grösster und zugleich am besten belegbarer Block — der Stundensatz kommt aus seiner Lohnbuchhaltung</td></tr>
+      <tr><td><b>Gebrochene Chargen- und Nuancenreinheit</b></td><td colspan="2">MAXXPARK-spezifisch, in keiner Branchenstatistik</td><td>seine AGB schliessen die Retoure aus, wenn Nuance ausverkauft ist — ein Chargenfehler ist eine endgültige Abschreibung plus neuer Produktionsslot</td></tr>
+      <tr><td><b>Landed Cost falsch umgelegt</b></td><td class="num">9'000.00</td><td class="num">27'000.00</td><td>0.5 bis 1.5 Prozentpunkte auf ein EUR-Einkaufsvolumen — kein Abwicklungs-, sondern ein Preisbildungsfehler, und deshalb unsichtbar</td></tr>
+      <tr><td><b>Harter, zahlungswirksamer Sockel</b></td><td class="num"><b>≈ 68'700.00</b></td><td class="num"><b>≈ 227'200.00</b></td><td>1.1 bis 3.8 Prozent vom angenommenen Umsatz</td></tr>
+      <tr><td>Weiche Positionen (zurückgewonnene Beraterzeit, verlorene Aufträge)</td><td class="num">22'100.00</td><td class="num">92'000.00</td><td>gehören <em>unter</em> den Strich, nie in die Summe</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note stop">
+    <p class="note-t">Die Falle, die den Termin kosten würde</p>
+    <p>Der Umsatzanker hinter diesen Zahlen stammt aus einer Aussenrechnung über Umsatz je Mitarbeitendem, nicht vom Kunden. <b>Wer diese Zahlen morgen als seine Zahlen präsentiert, hat den Termin verloren, sobald er sie korrigiert.</b> Das Modell wird an die Wand gezeichnet und von ihm gefüllt — jede Annahme einzeln sichtbar, damit er sie überschreiben kann. Es gibt ausserdem <em>keine</em> belastbare öffentliche Bruttomarge für den Schweizer Sanitär- und Plattenhandel und keinen Lagerumschlag-Benchmark. Beide Zahlen müssen von ihm kommen.</p>
+  </div>
+
+  <p>Trotzdem trägt das Modell die Preisverteidigung: der konservative Sockel von 68'700.00 deckt ein Abo von 15'000.00 um Faktor 4.6 — und selbst wenn das System nur die Hälfte der Fehlerkosten holt, immer noch um Faktor 2.3. Das ist das Argument für die nächsten 200 bis 350 Betriebe, nicht nur für diesen einen.</p>
+
+  <h3>Aber: 15'000.00 ist rund der doppelte Marktpreis</h3>
+  <div class="tw"><table>
+    <caption>Belegte Vergleichspreise für diese Betriebsgrösse <span class="ev ev-b">belegt</span></caption>
+    <thead><tr><th>Anbieter</th><th>Preis</th><th>Hochgerechnet</th></tr></thead>
+    <tbody>
+      <tr><td>Proffix Px5, Auftragsbearbeitung Basic</td><td class="num">57.00 / Nutzer / Monat</td><td class="num">12 Nutzer = 8'208.00 / Jahr</td></tr>
+      <tr><td>Dynamics 365 Business Central Essentials</td><td class="num">≈ 62.70 / Nutzer / Monat</td><td class="num">—</td></tr>
+      <tr><td>Odoo Online Schweiz, alle Apps</td><td class="num">35.00 / Nutzer / Monat</td><td class="num">—</td></tr>
+      <tr><td>bexio</td><td class="num">35.00–119.00 / Monat</td><td class="num">Zusatznutzer ab 13.80</td></tr>
+    </tbody>
+  </table></div>
+  <p>Bei realistischen 9'600.00 im Jahr braucht es statt 26 rund <b>41 Betriebe</b> für denselben Umsatz, bei 7'200.00 rund 54. Rechnet man den Supportaufwand dazu — bei zwei Stunden je Mandant und Monat sind 26 Mandanten schon 78 Personentage im Jahr, gut ein Drittel eurer Kapazität — liegt der ehrliche Break-even bei <b>35 bis 40 Betrieben</b>, weil ab etwa 25 bis 30 Mandanten eine angestellte Support- und Einführungsperson nötig wird.</p>
+
+  <h3>Die Antwort darauf ist nicht ein tieferer Preis, sondern ein anderes Preismodell</h3>
+  <p>Grundgebühr pro Betrieb plus Module plus <b>differenzierte Nutzer</b> — nicht reiner Nutzerpreis. Der Wert steckt in den Fachmodulen, nicht in der Kopfzahl. Ein reiner Nutzerpreis bestraft genau die Digitalisierung, die ihr verkauft: die drei Lernenden und die Lagertheke sollen ins System, nicht draussen bleiben.</p>
+  <div class="tw"><table>
+    <caption>Konkreter Vorschlag <span class="ev ev-a">abgeleitet</span></caption>
+    <thead><tr><th>Position</th><th class="num">pro Monat</th></tr></thead>
+    <tbody>
+      <tr><td>Grundgebühr je Betrieb</td><td class="num">250.00</td></tr>
+      <tr><td>Vollnutzer</td><td class="num">55.00</td></tr>
+      <tr><td>Leichtnutzer (Theke, Lernende, Nur-Lesen)</td><td class="num">15.00</td></tr>
+      <tr><td>Modul Platten-Projektgeschäft</td><td class="num">200.00</td></tr>
+      <tr><td>Modul Import und Landed Cost</td><td class="num">120.00</td></tr>
+      <tr><td>Modul Shop- und Katalogabgleich</td><td class="num">100.00</td></tr>
+      <tr><td>Partnerportal, je aktivem Partnerbetrieb (mind. 80.00)</td><td class="num">8.00</td></tr>
+      <tr><td><b>Ein Betrieb wie MAXXPARK</b></td><td class="num"><b>≈ 1'250.00</b></td></tr>
+    </tbody>
+  </table></div>
+  <p>Das ergibt die 15'000.00 im Jahr — aber nur <em>mit</em> Fachmodulen und Partnerportal. Genau darin liegt die Preisverteidigung: ihr verkauft nicht Nutzerplätze zum Vergleichspreis, sondern Fachlogik, die im Vergleichsangebot fehlt.</p>
+
+  <div class="note flag">
+    <p class="note-t">Die Skalierungsfalle in einem Satz</p>
+    <p>Bei 12'000.00 bis 25'000.00 Einführungspauschale und zehn Neukunden im Jahr sind das 120'000.00 bis 250'000.00 Umsatz — und zwei vollständig gebundene Gründer. <b>Ab Kunde fünf gehört die Einführung an Implementierungspartner</b> (Treuhänder, lokale IT-Dienstleister) mit 20 bis 30 Prozent Marge. Und das Produkt muss den Einrichtungsaufwand bis dahin von 15 bis 25 Personentagen auf unter fünf drücken — Importer, Konfigurator, Selbstbedienung. Sonst ist es kein Produkt, sondern eine Serie von Projekten.</p>
+  </div>
+</section>
+
+<!-- ============ M VERTRAG ============ -->
+<section id="vertrag">
+  <div class="sec-head"><span class="sec-num">M</span><h2>Vertrag und Eigentum</h2></div>
+  <p class="sec-sub">Das Einzelstück entsteht fast nie im Code. Es entsteht im Vertrag, im Vokabular und in der Belegausgestaltung. Dieser Abschnitt ist der wichtigste des Papiers, wenn ihr die Plattform ernst meint.</p>
+
+  <h3>Die Rechtslage ist zu euren Gunsten vorentschieden — aber nur „im Zweifel"</h3>
+  <p>Art. 17 URG lässt die ausschliessliche Verwendungsbefugnis an Computerprogrammen automatisch <b>nur im Arbeitsverhältnis</b> auf den Arbeitgeber übergehen. Beim Werkvertrag mit einem externen Entwickler gibt es keinen solchen Automatismus. Art. 16 Abs. 2 URG hält fest, dass die Übertragung eines Teilrechts andere Teilrechte nur einschliesst, wenn das vereinbart ist; Art. 16 Abs. 3 URG, dass selbst die Übergabe des Datenträgers mit dem Quellcode keine Urheberrechte überträgt. <span class="ev ev-n">nachprüfen</span></p>
+  <p>Übersetzt: schweigt der Vertrag, bleiben die Rechte bei euch — aber ihr streitet dann über die Zweckübertragungstheorie, statt zu verkaufen. Und die ist kein Geschäftsmodell: der Kunde wird argumentieren, der Vertragszweck sei „wir haben ein ERP bestellt und bezahlt, also gehört es uns". Ein Prozess darüber kostet mehr als der ganze Erstauftrag.</p>
+
+  <h3>Warum ihr die Rechte behalten dürft, ohne unfair zu sein</h3>
+  <div class="tw"><table>
+    <caption>Die Lücke ist eure Investition <span class="ev ev-a">abgeleitet</span></caption>
+    <thead><tr><th>Grösse</th><th class="num">Betrag</th></tr></thead>
+    <tbody>
+      <tr><td>Aufwand für Kern, zehn harte Stellen, Migration und drei Schnittstellen</td><td class="num">2'200–3'400 Stunden</td></tr>
+      <tr><td>zum Schweizer Marktsatz von 150.00 bis 220.00</td><td class="num">330'000.00–750'000.00</td></tr>
+      <tr><td>zu euren eigenen Vollkosten von rund 97.00</td><td class="num">213'000.00–330'000.00</td></tr>
+      <tr><td>Was ein Standardsystem für 15 bis 20 Nutzer im ersten Jahr kostet</td><td class="num">70'000.00–135'000.00</td></tr>
+      <tr><td><b>Lücke = eure Produktinvestition</b></td><td class="num"><b>80'000.00–200'000.00</b></td></tr>
+    </tbody>
+  </table></div>
+  <div class="say">„Was du bekommst, kannst du zu diesem Preis gar nicht kaufen — die Differenz investieren wir, weil wir es danach anderen Betrieben verkaufen. Deshalb bekommst du den Pilotpreis, und deshalb bleiben die Rechte bei uns. Wenn du das Produkt kaufen willst, kostet es ein Mehrfaches."</div>
+
+  <h3>Die Vertragsstruktur, die ihr zweihundertmal braucht</h3>
+  <p>Eine <b>Entwicklungspartnerschaft mit Pilotrabatt</b>, aufgesetzt in der Struktur des späteren Lizenzvertrags — mit vier Anhängen. Beim zweiten Kunden variiert nur noch Anhang 2:</p>
+  <ol>
+    <li><b>Anhang 1 — Lizenz</b> am Produkt, unbefristetes Nutzungsrecht, kein Eigentum</li>
+    <li><b>Anhang 2 — Werkvertrag</b> für die kundenspezifische Anpassung</li>
+    <li><b>Anhang 3 — SLA und Betrieb</b>, mit Reaktionszeiten statt Verfügbarkeitsprozenten</li>
+    <li><b>Anhang 4 — Auftragsbearbeitungsvertrag</b> nach Art. 9 DSG</li>
+  </ol>
+  <p>Ein Werkvertrag mit Vollrechtsübertragung ist auszuschliessen — er müsste 250'000.00 aufwärts kosten, sonst verschenkt ihr die Firma. Ein blosser Werkvertrag mit Nutzungsrecht ist rechtlich sauber, fühlt sich für den Kunden aber unfair an, wenn die Gegenleistung nicht benannt ist. Deshalb wird sie benannt: Pilotpreis als sichtbare Rabattzeile, Priorisierungskontingent, dauerhafte Vorzugskondition, Referenzstatus, Vermittlungsprämie.</p>
+
+  <div class="note stop">
+    <p class="note-t">Drei Fallen, die nur dieser Kunde hat</p>
+    <p><b>Zwei AGs, eine Lizenz.</b> MAXXPARK AG und MAXX Factory AG sind separate Rechtsträger. Wird die Lizenz nur einer erteilt und nutzt die andere sie mit, ist das entweder unerlaubte Weitergabe oder ihr verzichtet stillschweigend auf eine zweite Gebühr. Lösung: <b>namentliche Konzernlizenz</b> mit abschliessender Liste im Anhang und beiden AGs als Solidarschuldnerinnen nach Art. 143 OR.</p>
+    <p><b>Das Partnerportal.</b> Er wird Zugänge an seine Handwerker verteilen wollen — genau dort. Wenn die Lizenz das nicht ausdrücklich ausnimmt, verschenkt ihr das Modul, das euer Preismodell trägt.</p>
+    <p><b>Haftung ist nach oben gedeckelt, aber nicht nach unten.</b> Nach Art. 100 OR ist die Wegbedingung der Haftung für Vorsatz und grobe Fahrlässigkeit nichtig; begrenzbar ist nur leichte Fahrlässigkeit. In einem Händler-ERP sind falsche Preise, falsche Mengen und Datenverlust echte Vermögensschäden — genau das Risiko, das in den Bewertungen heute schon sichtbar ist. Also: Cap auf die Werkvergütung beziehungsweise die Jahresvergütung, Ausschluss von Folgeschäden, und dahinter eine Berufs- und IT-Haftpflicht über rund 2 Mio. mit ausdrücklicher Deckung <em>echter Vermögensschäden</em>. <span class="ev ev-n">nachprüfen</span></p>
+  </div>
+
+  <h3>Und die Sache, die ihr in eurer eigenen Firma reparieren müsst</h3>
+  <div class="note stop">
+    <p class="note-t">DACHWERK gehört heute nicht der Firma</p>
+    <p>10'356 Zeilen, darunter der geprüfte Swiss-QR-Encoder, das Design-System und die Fachlogikschicht, sind privat entstanden. Ohne schriftliche Übertragung gehört das Fundament einem der beiden Gründern privat. Das fällt spätestens auf, wenn jemand aussteigt, eine Due Diligence stattfindet oder der Kunde nach den Rechten fragt. Bei der Gründung als benannte Vorbestandteile inventarisieren und übertragen — ein Verkauf gegen Darlehen ist meist einfacher als eine Sacheinlage mit Gründungsbericht, und die steuerliche Seite gehört vorher abgeklärt.</p>
+  </div>
+
+  <h3>Rechtsform</h3>
+  <p><b>AG, wenn die Liberierung darstellbar ist — sonst GmbH mit Umwandlungsplan.</b> Die GmbH braucht 20'000.00 Stammkapital, bei Gründung vollständig einbezahlt (Art. 777c OR); die AG 100'000.00 Aktienkapital (Art. 621 OR) mit mindestens 50'000.00 Liberierung. Entscheidend ist aber nicht der Gründungspreis, sondern die Anteilsbewegung: bei der GmbH braucht jede Abtretung eine öffentliche Beurkundung, bei der AG nicht. Wer Vesting, einen Aussteiger oder einen dritten Partner erwartet, spart mit der AG mehrere tausend Franken künftige Transaktionskosten. In beiden Fällen das Opting-out der eingeschränkten Revision nach Art. 727a Abs. 2 OR beantragen — seit 1.1.2025 wirkt es nur noch für künftige Geschäftsjahre und muss vor deren Beginn angemeldet sein. <span class="ev ev-n">nachprüfen</span></p>
+</section>
+
+<!-- ============ N MARKT ============ -->
+<section id="markt">
+  <div class="sec-head"><span class="sec-num">N</span><h2>Der Markt danach</h2></div>
+  <p class="sec-sub">Das eigentliche Geschäft. Und die Zahlen dazu gehören in eure eigene Planung, bevor morgen irgendein Termin zugesagt wird.</p>
+
+  <h3>Die Segmentdefinition, die trägt — fünf Mechaniken, alle gleichzeitig</h3>
+  <ol>
+    <li>Verkauft wird eine <b>raumbezogene Auswahl</b>, kein Warenkorb.</li>
+    <li>Die Menge entsteht aus einer <b>Kaskade</b> Mass → Verschnitt → Gebinde → Palette, nicht aus einer Eingabe.</li>
+    <li>Die Ware ist innerhalb der Bestellung <b>nicht substituierbar</b> (Charge, Nuance, Kaliber, Furnierbild, Natursteinblock).</li>
+    <li>Beschaffung ist <b>zweigleisig</b>: Lagerware sofort gegen Werksware mit Produktionsslot.</li>
+    <li>Die Montage macht ein Dritter, aber der Betrieb <b>haftet im Werkvertrag</b> mit eigener Rügefrist.</li>
+  </ol>
+  <p><b>Wer alle fünf hat, ist Kunde. Wer drei hat, ist eine teure Ablenkung.</b> Nach diesem Raster fallen Möbelhaus (keine Mengenkaskade, keine Chargenbindung, Montage häufig eigen) und Gartencenter aus dem Kern. Es bleiben: Plattenhandel, Sanitär- und Badausstellung, Parkett- und Bodenbelagsfachhandel, Küchenstudio in Teilen, Storen und Fenster, Cheminée- und Ofenbau.</p>
+
+  <div class="note flag">
+    <p class="note-t">Wo das gemeinsame Produkt bricht</p>
+    <p>An der Konfigurationsschicht. Küche braucht Korpusplanung mit Herstellerkatalogen, Bad braucht ViSoft, Storen braucht Aufmass mit Antriebslogik. Diese Engines sind je Branche ein Jahrzehnt Arbeit und bereits besetzt. Auch der Artikelstamm ist nicht teilbar: Möbel und Küche arbeiten mit OFML/IDM, der Haustechnik-Grosshandel mit Datanorm und IGH, im Plattenhandel gibt es gar keinen Standard. <b>Ein gemeinsamer Artikelstamm über alle Branchen ist eine Illusion und würde das Projekt versenken.</b> Positioniert euch als die fehlende Schicht mit Konnektoren zu den bestehenden Planungswerkzeugen — nicht als deren Ersatz.</p>
+  </div>
+
+  <h3>Grösse, Kanäle, Break-even</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Grösse</th><th>Wert</th><th>Herkunft</th></tr></thead>
+    <tbody>
+      <tr><td>Adressierbarer Kern Deutschschweiz</td><td class="num">200–350 Betriebe</td><td>Schätzung aus Verbandszahlen <span class="ev ev-a">abgeleitet</span></td></tr>
+      <tr><td>Schweizerischer Plattenverband</td><td class="num">≈ 400</td><td>Plattenleger- <em>und</em> Plattenhandelsbetriebe <span class="ev ev-b">belegt</span></td></tr>
+      <tr><td>Küche Schweiz</td><td class="num">266</td><td>Mitgliedbetriebe, Einkaufsverband bündelt 280 <span class="ev ev-b">belegt</span></td></tr>
+      <tr><td>VSSM, mittlere Betriebsgrösse</td><td class="num">12.3</td><td>1'892 Betriebe, 23'250 Mitarbeitende — liegt fast exakt bei MAXXPARK <span class="ev ev-b">belegt</span></td></tr>
+      <tr><td>Kostenbasis zwei Gründer</td><td class="num">≈ 310'000.00</td><td>Lohn, Sozialleistungen, Infrastruktur, Akquise <span class="ev ev-a">abgeleitet</span></td></tr>
+      <tr><td>Break-even bei 15'000.00 Jahresabo, ohne Support gerechnet</td><td class="num">26 Betriebe</td><td>die ursprüngliche, zu optimistische Zahl <span class="ev ev-a">abgeleitet</span></td></tr>
+      <tr><td>bei marktnahen 9'600.00</td><td class="num">41 Betriebe</td><td>siehe Abschnitt L <span class="ev ev-b">belegt</span></td></tr>
+      <tr><td><b>Break-even inkl. Supportaufwand</b></td><td class="num"><b>35–40 Betriebe</b></td><td>15–20 % Marktanteil; ab 25–30 Mandanten braucht es eine Anstellung <span class="ev ev-a">abgeleitet</span></td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Das ist ein Aussendienstmarkt, kein SaaS-Funnel.</b> 350 Betriebe kann man in zwölf Monaten physisch besuchen. Und der naheliegendste Kanal ist zu: die Swissbau ist zweijährlich, die letzte Ausgabe lief vom 20. bis 24.01.2026, die nächste ist Januar 2028. Wer die Vermarktung auf die Messe plant, verliert eineinhalb Jahre. <span class="ev ev-b">belegt</span></p>
+  <p>Der beste Kanal ist der <b>Werkslieferant und der Einkaufsverband</b>. Die Keramikwerke in Italien und Spanien und ihre Schweizer Agenturen kennen jeden Händler namentlich; ein Rahmenvertrag mit einem Einkaufsverband macht aus einem Verkauf fünfzig. Beide Ziellisten liegen morgen auf dem Tisch, wenn ihr danach fragt.</p>
+
+  <div class="note stop">
+    <p class="note-t">Die unbequeme Konsequenz, die in eure Planung gehört</p>
+    <p>In den ersten 24 Monaten lebt ihr von Einführungsprojekten, nicht von Abos. Vier Einführungen plus sechs Abos liegen rund 60'000.00 <em>unter</em> der Kostenbasis. Entweder bleibt einer von euch 12 bis 18 Monate teilzeit im Brotjob, oder es braucht rund 250'000.00 Startkapital. Dazu kommt die stille Position: 220 Personentage nicht fakturierter Zeit sind rund 211'200.00 entgangenes Honorar im ersten Jahr. <b>Diese Entscheidung gehört gefällt, bevor morgen irgendein Termin zugesagt wird.</b> <span class="ev ev-a">abgeleitet</span></p>
+  </div>
+
+  <h3>Der Beweis für Kunde zwei ist niemals ein Gespräch</h3>
+  <p>„Ja spannend, meldet euch wenn es fertig ist" ist Nullinformation. Der Beweis ist Geld oder Kalender: eine bezahlte Vorstudie zu 3'500.00 bis 6'000.00 oder eine Anzahlung auf einen Design-Partner-Vertrag. Der ganze Beweis kostet unter 5'000.00 eigene Mittel, dauert sechs Wochen und bringt idealerweise mehr herein, als er kostet — und er steht <b>vor</b> der ersten Zeile Code.</p>
+</section>
+
+<!-- ============ O FAHRPLAN ============ -->
+<section id="fahrplan">
+  <div class="sec-head"><span class="sec-num">O</span><h2>Kapazität und Fahrplan</h2></div>
+  <p class="sec-sub">Zuerst die Arithmetik, dann der Plan. Wer die Kapazitätsrechnung überspringt, plant ein Jahr, das dreieinhalb dauert.</p>
+
+  <div class="tw"><table>
+    <caption>Die Rechnung, die alles begrenzt <span class="ev ev-a">abgeleitet</span></caption>
+    <thead><tr><th>Grösse</th><th class="num">Wert</th><th>Herleitung</th></tr></thead>
+    <tbody>
+      <tr><td>Jahreskapazität zu zweit</td><td class="num">≈ 220 PT</td><td>je 2.5 Tage pro Woche über 44 Wochen, neben dem Geldverdienen</td></tr>
+      <tr><td>Aufwand der zwanzig Bausteine</td><td class="num">≈ 617 PT</td><td>netto, ohne Reserve</td></tr>
+      <tr><td>mit 25 % Reserve</td><td class="num">≈ 771 PT</td><td><b>das sind dreieinhalb Jahre</b></td></tr>
+      <tr><td>davon branchenneutral</td><td class="num">497 PT · 81 %</td><td>weiterverkaufbar — <em>aber nur</em>, wenn Mandantenfähigkeit am Tag 1 steht</td></tr>
+      <tr><td>Mandantenfähigkeit am Tag 1</td><td class="num">≈ 25 PT</td><td>nachträglich eingezogen eher 80 PT — und sie entwertet, was vorher gebaut wurde</td></tr>
+      <tr><td>Einführung je weiterem Mandanten</td><td class="num">15–25 PT</td><td>muss bis Kunde fünf unter 5 PT sinken, sonst ist es kein Produkt</td></tr>
+      <tr><td>Support bei 26 Mandanten</td><td class="num">≈ 78 PT/Jahr</td><td>bei 2 Stunden je Mandant und Monat — gut ein Drittel der Kapazität</td></tr>
+      <tr><td>Betriebskosten 1 / 10 / 50 Mandanten</td><td class="num">150–200 · 700–800 · 2'500–3'100</td><td>pro Monat. Bei 50 Mandanten unter 5 % des Aboumsatzes — Infrastruktur ist nie das Problem</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note stop">
+    <p class="note-t">Und die Zahl, auf die ihr euch nicht verlassen dürft</p>
+    <p>Es gibt keinen Anlass, KI-Beschleunigung einzuplanen. Die einzige saubere randomisierte Studie an erfahrenen Entwicklern in eigenen, reifen Codebasen (METR, Juli 2025, 16 Entwickler, 246 Aufgaben) misst <b>19 Prozent langsamer</b> — während dieselben Entwickler sich 20 Prozent schneller <em>fühlten</em>. Planung darf nur auf gemessenem, nie auf gefühltem Durchsatz beruhen. Und ausgerechnet die Codeform, in der ihr heute arbeitet — eine einzige 10'000-Zeilen-Datei — ist die, in der Werkzeugunterstützung am schlechtesten wirkt. <span class="ev ev-n">Studie vor Zitat gegenüber Dritten selbst nachschlagen</span></p>
+  </div>
+
+  <h3>Der Fahrplan</h3>
+  <p class="sec-sub" style="margin-top:0">Meilensteine mit Abnahmekriterien, nicht mit Featurelisten. Alles vor Woche 6 ist bezahlte Analyse, nicht Entwicklung.</p>
+
+  <div class="phase"><div class="phase-k">Heute Abend</div><div>
+    <h4>Fünf Dinge vorbereiten</h4>
+    <p>Die Liste steht in Abschnitt Q. Kurz: Fragenkatalog auf Papier, Rollenverteilung, drei wörtlich abgemachte Standardantworten, die eigene Finanzierungsentscheidung — und nichts an der Demo bauen.</p>
+    <p class="crit"><b>Fertig, wenn:</b> ihr beide denselben Satz auf die Frage „Was kostet das?" sagt.</p>
+  </div></div>
+
+  <div class="phase"><div class="phase-k">Woche 1</div><div>
+    <h4>Bezahltes Analysemandat, Fixpreis</h4>
+    <p>Ein bis zwei Seiten: Ist-Aufnahme, Belegkettenanalyse, Mengengerüst, Datenexport, Bewertung Standard gegen Eigenbau. Mit dem Wiederverwendungsrecht darin. Eine seriöse Ist-Aufnahme bei 13 Personen und vier bis fünf Systemen sind rund <b>10 bis 15 Personentage</b> über drei bis fünf Wochen — das lässt sich nicht nebenbei erledigen und gehört deshalb bezahlt.</p>
+    <p class="crit"><b>Abnahme:</b> unterschrieben, angezahlt, Zugriff auf Daten zugesagt.</p>
+  </div></div>
+
+  <div class="phase"><div class="phase-k">Woche 2–5</div><div>
+    <h4>Feldarbeit und Fundamententscheid</h4>
+    <p>Ein Morgen ab 06:45 an Rampe und Theke. Eine Anlieferung aus Italien begleiten. Drei abgeschlossene Montageaufträge Blatt für Blatt durchgehen. Fünf echte Offerten nachrechnen. Zwanzig Fotos echter Palettenetiketten. Parallel die fünftägige Prüfung gegen zwei Fundamentkandidaten mit den fünf Testfällen.</p>
+    <p class="crit"><b>Abnahme:</b> Mengengerüst steht als Zahl. Fundamententscheid ist begründet und schriftlich. Baseline gemessen: Offerten und Aufträge pro Monat, Reklamationsquote, Anteil falscher Auftragsbestätigungen, Stunden pro Bad-Dokument, Durchlaufzeit Offerte bis Auftragsbestätigung.</p>
+  </div></div>
+
+  <div class="phase"><div class="phase-k">Woche 6–14</div><div>
+    <h4>Der Keil: Auswahlschein, Mengenermittlung, Dokument</h4>
+    <p>Kein Systemwechsel. Ein eigenständiges Stück neben dem Alt-ERP, das genau die Kette abbildet, an der der Betrieb öffentlich blutet. Mit Mandant über Gesellschaft, Fähigkeiten-Rechten und append-only Journal von Anfang an — die fünf Invarianten kosten jetzt fast nichts.</p>
+    <p><b>Warum genau dieser Schnitt zuerst:</b> er trifft den belegten Schmerz, berührt weder Bestand noch Geld noch Kasse — und ein Ausfall hält um 07:00 an der Rampe niemanden auf.</p>
+    <p class="crit"><b>Abnahme:</b> Eine echte Kundenauswahl wird im System erfasst, das Dokument entsteht auf Knopfdruck, und der Innendienst bevorzugt es gegenüber InDesign — gemessen, nicht gefragt.</p>
+  </div></div>
+
+  <div class="phase"><div class="phase-k">Monat 4–6</div><div>
+    <h4>Artikelstamm, Preisfindung, Chargen</h4>
+    <p>IGH-Katalogimport für Sanitär. Preislisten-Mapper für die Top-Keramikserien. Losgeführter Bestand. Wareneingang mit Etikettenerfassung — hier beginnt der Prozessteil, der Lagerdisziplin verlangt und nicht Software.</p>
+    <p class="crit"><b>Abnahme:</b> Eine Palette wird mit Los, Ton und Kaliber eingebucht, reserviert, teilgeliefert und retourniert — und die AGB-Retourenregel greift automatisch.</p>
+  </div></div>
+
+  <div class="phase"><div class="phase-k">Monat 7–9</div><div>
+    <h4>Belegkette und Faktura, und der zweite Betrieb</h4>
+    <p>Offerte, Auftrag, Teillieferung, Teilfaktura mit Swiss QR über zwei Gesellschaften. Parallel und gleich wichtig: die bezahlte Vorstudie bei Betrieb zwei. Ohne echtes zweites Profil ist alle Abstraktionsarbeit spekulativ — die zwei AGs von MAXXPARK sind Profil A und A', nicht A und B.</p>
+    <p class="crit"><b>Abnahme:</b> Eine echte Rechnung geht raus und wird bezahlt. Und: Betrieb zwei hat eine Vorstudie bezahlt.</p>
+  </div></div>
+
+  <div class="phase"><div class="phase-k">Monat 10–12</div><div>
+    <h4>Partnermodul und Vorlagenbildung</h4>
+    <p>Nachunternehmer-Dossier mit Ablaufüberwachung und Auftragssperre. Und die erste echte Extraktion: was aus MAXXPARK wird Branchenvorlage, was bleibt Mandantenkonfiguration.</p>
+    <p class="crit"><b>Abnahme:</b> Betrieb zwei läuft auf demselben Release-Artefakt, mit anderer Vorlage und ohne eine Zeile Sondercode.</p>
+  </div></div>
+
+  <div class="note stop">
+    <p class="note-t">Die Regel, die das Produkt am zuverlässigsten rettet</p>
+    <p><b>Der Erstkunde bekommt nie einen Fork.</b> Er läuft ab Tag 1 auf demselben Release-Artefakt wie alle späteren Kunden. Ein eingefrorener Kundenstand ist der zuverlässigste Produkttod, den es gibt.</p>
+  </div>
+</section>
+
+<!-- ============ P EINFUEHRUNG ============ -->
+<section id="einfuehrung">
+  <div class="sec-head"><span class="sec-num">P</span><h2>Einführung, Betrieb und Notbetrieb</h2></div>
+  <p class="sec-sub">Der Teil, an dem ERP-Projekte tatsächlich scheitern — und der bei diesem Kunden zwei Besonderheiten hat: eine Rampe, die um 07:00 aufgeht, und ein Sortiment, das digital gar nicht existiert.</p>
+
+  <h3>Es ist keine Migration, es ist eine Ersterfassung</h3>
+  <p>Der Shop führt 3'450 Sanitärartikel, 52 Parkettartikel und null Platten. Das Projektgeschäft — das mit Ausstellung, Aussendienst, Offerte, Nuance und Charge — hat heute keinen digitalen Artikelstamm, der migrierbar wäre. <b>Wer morgen von „Datenübernahme" spricht, hat den teuersten Posten des Projekts noch nicht gesehen.</b></p>
+  <p>Dazu ein Hebel, den kaum jemand kennt: <b>Es gibt in der Schweiz kein gesetzliches Recht des Kunden auf Export seiner Unternehmensdaten aus dem eigenen Altsystem.</b> Art. 28 DSG zur Datenportabilität gilt nur für Personendaten natürlicher Personen, nicht für Artikelstamm, Bestände oder Debitorenkonditionen. Der Hebel ist ausschliesslich vertraglich — Wartungs- und Lizenzvertrag, allenfalls Auftragsrecht — plus die eigene Pflicht des Kunden nach OR und GeBüV, zehn Jahre lang lesbar machen zu können. <b>Der Wartungsvertrag mit dem Altanbieter muss vor dem Gespräch mit ihm auf dem Tisch liegen, nicht danach.</b> <span class="ev ev-n">nachprüfen</span></p>
+
+  <h3>Chargen-Ersterfassung: eigene Zeile, eigenes Datum, eigenes Team</h3>
+  <p>Rund <b>180 bis 260 Personenstunden</b> physische Lagerarbeit parallel zum Tagesgeschäft — vier bis sechs Personenwochen. Verschwindet dieser Posten im Wort „Einführung", wird er zum ersten Konfliktpunkt.</p>
+  <p>Empfohlen wird <b>keine Vollerfassung des Altbestands</b>, sondern ein Stichtagsmodell: Chargenpflicht nur für Neuzugänge ab Stichtag; der Altbestand erhält eine technische Sammelcharge je Artikel und Lagerplatz mit dem Merkmal „Nuance nicht garantiert" und läuft aus. Das halbiert den Aufwand und entspricht genau der AGB-Realität — Retouren sind ohnehin ausgeschlossen, wenn Nuance oder Charge ausverkauft sind. <span class="ev ev-a">Empfehlung, kein Branchenstandard</span></p>
+
+  <h3>Das Cutover-Fenster steht schon in seinen Öffnungszeiten</h3>
+  <div class="note">
+    <p class="note-t">62 Stunden, jede Woche</p>
+    <p>Freitag 17:00 schliesst das Lager. Samstag ist die Ausstellung offen und das Lager zu. Montag 07:00 geht die Rampe wieder auf. Das sind <b>62 Stunden ohne Abholgeschäft</b> — das einzige natürliche Umstellungsfenster, und es ist gross genug. Ein Stichtag am Freitagabend ist richtig; echter Parallelbetrieb ist bei 13 Personen mit kumulierten Rollen physisch unmöglich.</p>
+  </div>
+  <p>Modulweise Ablösung und harter Stichtag schliessen sich nicht aus. Richtig ist die Reihenfolge: eine <b>risikofreie Vorwelle</b> (Checklisten, Rapporte, Fotodokumentation für die Partnerhandwerker — genau das, was DACHWERK heute schon kann), dann <b>ein harter Stichtag für den Kern</b> (Artikel, Kunden, Bestand mit Charge, Auftrag, Abholschein, QR-Rechnung), dann zwei <b>ruhige Nachwellen</b> (Einkauf, Werksware, Landed Cost — danach Shop, Segmentpreise, Partnernetz).</p>
+  <div class="say">„Wir migrieren keine schlechten Daten in ein gutes System — dann hast du dieselben Bewertungen, nur teurer."</div>
+  <p>Damit wird die Datenbereinigung als eigenes, bezahltes Arbeitspaket verkauft: nicht mit Datenqualitätsargumenten, sondern mit seinen eigenen Bewertungen. Jede dieser Beschwerden ist ein Stammdatenfehler in Handarbeit. Und zwei AGB-Klauseln sind heute mangels Stammdaten schlicht nicht durchsetzbar — „Preis gilt nur für die offerierte Menge" braucht die Mengenkaskade, „keine Retoure bei ausverkaufter Nuance" braucht die Charge am Verkaufszeitpunkt. <b>Datenbereinigung ist hier kein Hygieneprojekt, sondern ein Ertragsprojekt.</b></p>
+
+  <h3>Rechte: Fähigkeiten, nicht Rollen — und Vier-Augen als Zustandsübergang</h3>
+  <p>Für kumulierte Rollen ist klassisches RBAC das falsche Werkzeug und ein vollwertiges Beziehungsmodell überdimensioniert. Richtig sind <b>atomare Fähigkeiten</b> (<span class="mono">auftrag.freigeben</span>, <span class="mono">kondition.setzen</span>, <span class="mono">lager.ausbuchen</span>), gebündelt zu benannten Paketen; eine Person erhält beliebig viele Pakete. Genau das bildet das Stelleninserat ab, ohne eine neue Rolle zu erfinden.</p>
+  <p><b>Vier-Augen ist kein Recht, sondern ein Zustandsübergang.</b> Lernende bekommen <span class="mono">auftrag.erfassen</span>, nicht <span class="mono">auftrag.freigeben</span>. Die Freigabe ist ein eigener, unveränderlicher Datensatz mit Person, Zeit und geprüftem Inhalt, und der Server erzwingt <span class="mono">freigeber_id &lt;&gt; erfasser_id</span>. Das löst nebenbei das Geschäftsproblem aus den Bewertungen: falsche Auftragsbestätigungen entstehen dort, wo niemand gegenzeichnet.</p>
+  <p>Die Buchhalterin arbeitet über beide Gesellschaften: eine Identität, mehrere Mitgliedschaften — aber der Mandant wird bei <em>jeder</em> Anfrage explizit mitgegeben und serverseitig gegen die Mitgliedschaft geprüft, nie aus einer Sitzungsvariablen abgeleitet. Der Umschalter ist Oberfläche, die Isolation liegt in der Anfrage. Und sie bekommt eine enge, eigene Fähigkeit für mandantenübergreifende Auswertungen, die Buchungsdaten umfasst, aber nicht Konditionen und Kundenpreise.</p>
+
+  <h3>Das Journal: eine Hash-Kette in der eigenen Datenbank beweist gar nichts</h3>
+  <div class="note stop">
+    <p class="note-t">Der Konstruktionsfehler, den fast alle selbstgebauten Journale haben</p>
+    <p>Eine Hash-Kette, die in derselben Datenbank liegt, in der ihr Administratoren seid, beweist gegenüber niemandem etwas. Beweiswert entsteht erst durch <b>Verankerung ausserhalb der eigenen Reichweite</b>: täglicher Siegel-Hash bei einem anerkannten Zeitstempeldienst plus eine unveränderliche Kopie bei einem zweiten Anbieter. Ohne diesen Schritt ist der ganze Aufwand Dekoration. Art. 9 GeBüV erlaubt veränderbare Datenträger nur, wenn Verfahren Integrität, Speicherzeitpunkt und Nachvollziehbarkeit sichern; eine qualifizierte Signatur ist nicht zwingend, verbessert aber die Beweislage. <span class="ev ev-n">nachprüfen</span></p>
+  </div>
+
+  <h3>Notbetrieb ist nicht der Sonderfall, sondern die Grundarchitektur</h3>
+  <p><b>Offline-fähig heisst ein Modus, den niemand geübt hat. Offline-first heisst, der Normalbetrieb schreibt lokal und gleicht ab</b> — dann ist ein Ausfall nur ein längeres Warten auf die Synchronisation. Bei einem Lager, das ab 07:00 öffnet und dessen Kundschaft vor Arbeitsbeginn abholt, ist das der Unterschied zwischen Produkt und Prototyp.</p>
+  <p>Ein Geschenk der Schweizer Rechtslage macht das erheblich einfacher: <b>es gibt keine Registrierkassenpflicht</b>, keine technische Sicherheitseinrichtung wie in Deutschland, keine Signatureinheit wie in Österreich. Die Anforderung kommt allein aus OR und GeBüV — zeitnah, vollständig, nachvollziehbar, unveränderlich. <span class="ev ev-n">nachprüfen</span></p>
+  <p>Und ein ehrliches SLA für zwei Personen enthält <em>keine</em> Verfügbarkeitsprozente, sondern Servicezeiten, Reaktionszeiten je Dringlichkeit, eine benannte Eskalation und eine Umgehungslösung, die ohne euch funktioniert. Pikett rund um die Uhr zuzusagen wäre eine Lüge, die am ersten Samstagvormittag auffliegt.</p>
+
+  <h3>Zertifizierung: heute die falsche Ausgabe</h3>
+  <p>ISO 27001 kostet für ein Schweizer KMU realistisch 15'000.00 bis 80'000.00 über den ersten Dreijahreszyklus, dazu 20 bis 30 interne Personentage und 12 bis 24 Monate Dauer. Bei einer Kostenbasis von 310'000.00 ist das nicht finanzierbar — und der reale Treiber ist ohnehin nicht die Norm, sondern <b>der Risikofragebogen der Cyberversicherung eures Kunden</b>. Den beantwortet ein dokumentiertes Massnahmenkonzept ebenso gut und kostet einen Bruchteil. <span class="ev ev-a">abgeleitet</span></p>
+
+  <h3>Schulung: fünf Gruppen, nicht dreizehn gleiche Adressaten</h3>
+  <ul>
+    <li><b>Das Lager gibt die harte Vorgabe.</b> Bedienung mit Handschuhen ist eine Design-Anforderung, keine Schulungsfrage: Touchziele mindestens 12 mm, kein Doppeltipp, kein Wischen, kein Freitextfeld im Lagerprozess, scannen statt tippen. Ein Gerät, das man nur mit ausgezogenen Handschuhen bedient, wird umgangen — und dann ist die Charge wieder nicht erfasst.</li>
+    <li><b>Die drei Lernenden sind der grösste unterschätzte Hebel.</b> Sie haben Zeit, keine eingeschliffenen Gewohnheiten und sitzen im Lauf der Ausbildung bei allen. Sie werden Erstlinien-Support und schreiben die Ein-Seiten-Karten selbst — Lernkontrolle und Dokumentation in einem. Aber nie Schlüsselnutzer für Preis- oder Freigabethemen.</li>
+    <li><b>Akzeptanz wird gemessen, nicht gefühlt.</b> Die ehrlichste Zahl ist die Umgehungsquote: Anteil Abholvorgänge ohne Scan. Ziel Woche 1 unter 30 Prozent, Woche 4 unter 5 Prozent. Steigt die Zahl der Korrekturbuchungen statt zu fallen, ist ein Prozess falsch geschnitten — nicht der Mensch faul.</li>
+  </ul>
+</section>
+
+<!-- ============ Q MORGEN ============ -->
+<section id="morgen">
+  <div class="sec-head"><span class="sec-num">Q</span><h2>Morgen</h2></div>
+  <p class="sec-sub">Es ist ein Discovery-Termin, kein Pitch. Die grösste Gefahr ist nicht ein schlechter Auftritt, sondern dass gar nicht mehr zugehört wird, weil der Auftrag als sicher gilt.</p>
+
+  <div class="note">
+    <p class="note-t">Das eine Ziel, in einem Satz</p>
+    <p>Am Ende liegt der <b>vollständige Durchlauf je eines echten Plattenauftrags und eines echten Sanitärauftrags</b> vor — Beleg für Beleg, System für System, Person für Person, inklusive der Stelle, an der die falschen Auftragsbestätigungen entstehen. Der Auftrag gilt als sicher; jede Minute Verkauf ist damit verschwendete Discovery-Zeit.</p>
+  </div>
+
+  <div class="say">„Wir verkaufen euch heute nichts. Wir wollen verstehen, wie ein Auftrag bei euch wirklich durchläuft — und zwar an einem, der schiefgegangen ist."</div>
+
+  <p><b>Discovery heisst rückwärts arbeiten.</b> Wer vorwärts fragt („wie läuft das bei euch?"), bekommt das Sollbild des Chefs. Wer rückwärts fragt („woher kommt diese Menge auf dieser Rechnung?"), bekommt den Ist-Prozess samt Workarounds. Vom fertigen Beleg zur Entstehung jeder einzelnen Zahl darauf.</p>
+
+  <h3>Ablauf, 90 Minuten</h3>
+  <div class="ag"><div class="ag-t">0:00</div><div><b>Rahmen setzen</b><p>Heute wird nichts verkauft und nichts zugesagt. Jeder Wunsch geht auf eine sichtbare Liste, keiner wird im Raum versprochen. Beim Kumpel ist die Versuchung zur spontanen Zusage am grössten und am teuersten.</p></div></div>
+  <div class="ag"><div class="ag-t">0:05</div><div><b>Die acht Fragen</b><p>Der Reihe nach, ohne Ausschmückung. Sie stehen unten.</p></div></div>
+  <div class="ag"><div class="ag-t">0:35</div><div><b>Belegkettenanalyse an einem realen Fall</b><p>Drei abgeschlossene Montageaufträge auf den Tisch: Auswahlschein, Auftragsbestätigung, Werksbestellung, Lieferschein, Handwerkerauftrag, Abnahme, Schlussrechnung, Reklamationen. Blatt für Blatt. <b>Belege lügen nicht, Erinnerungen schon.</b> Das ist die ergiebigste Methode für einen einzelnen Termin.</p></div></div>
+  <div class="ag"><div class="ag-t">1:05</div><div><b>Eine Rechnung an der Wand</b><p>Die Mengenkaskade an <em>einer</em> seiner echten Offerten vorrechnen. Das beweist Fachkompetenz schneller als jedes Konzeptpapier — und es ist das Einzige, was ihr heute „zeigt".</p></div></div>
+  <div class="ag"><div class="ag-t">1:15</div><div><b>Das Modell offen ansprechen</b><p>Design-Partner, Wiederverwendungsrecht, Pilotpreis. Und die Bitte um das bezahlte Analysemandat als ersten Schritt.</p></div></div>
+  <div class="ag"><div class="ag-t">1:25</div><div><b>Mitnahmeliste durchgehen</b><p>Was kommt bis wann, und von wem.</p></div></div>
+
+  <h3>Die acht Fragen, in dieser Reihenfolge</h3>
+  <div class="qs">
+    <div class="q"><div class="q-n">1</div><div><b>Welches ERP läuft heute — Hersteller, Produkt, Version, Wartungsvertrag, betreuender Partner? Und kann es Chargen führen?</b><em>Ob dies ein Projekt von Wochen oder von einem Jahr ist. Ohne diese Antwort ist alles andere Spekulation.</em></div></div>
+    <div class="q"><div class="q-n">2</div><div><b>Werden Chargen, Ton und Kaliber heute überhaupt geführt — im ERP, auf Papier, oder im Kopf des Lagerleiters?</b><em>Ob ihr eine Ablösung baut oder eine Einführung. Wenn nirgends, liegt der Aufwand nicht in der Software, sondern in der Lagerdisziplin — mit ganz anderem Widerstand.</em></div></div>
+    <div class="q"><div class="q-n">3</div><div><b>Wird der Einbau im Namen von MAXXPARK fakturiert, oder rechnet der Handwerker direkt mit dem Endkunden ab?</b><em>Drei Rechtsfolgen mit einem Feld: MWST-Bemessung, Vertragstyp mit Rügefristen, Gewährleistung — plus das ganze Partnermodul. Rückwirkend nicht ermittelbar.</em></div></div>
+    <div class="q"><div class="q-n">4</div><div><b>Wie entsteht heute eine Lieferterminzusage — aus einer Systemzahl, aus einem Telefonat mit dem Werk, oder aus Erfahrung? Und wer merkt, wenn sie kippt?</b><em>Die Stelle, an der das System real Geld verdient — und an der der Betrieb öffentlich blutet.</em></div></div>
+    <div class="q"><div class="q-n">5</div><div><b>Soll der Artikelstamm zwischen den zwei AGs geteilt werden? Und besteht eine MWST-Gruppe nach Art. 13 MWSTG?</b><em>Die Grundstruktur jeder einzelnen Tabelle. Später nur mit Migration auf Livebelegen änderbar.</em></div></div>
+    <div class="q"><div class="q-n">6</div><div><b>Was exportiert ViSoft heute konkret — und warum wird das 44-Seiten-Dokument trotzdem von Hand gesetzt?</b><em>Ob der Dokumentgenerator Tage oder Monate kostet. Am Bildschirm zeigen lassen, eine Beispieldatei mitnehmen. Es kann ein Lizenz-, Schulungs- oder Layoutproblem sein.</em></div></div>
+    <div class="q"><div class="q-n">7</div><div><b>Zeig mir die Partnerliste. Wer prüft heute vor einem Nachunternehmerauftrag SUVA-Nachweis, Haftpflicht und GAV-Unterstellung — und wo liegen diese Papiere?</b><em>Ob „hunderte Handwerker" ein Prozess ist oder ein Wunsch. Die wahrscheinliche Antwort — niemand, nirgends — ist eure Lücke und euer erstes Feature.</em></div></div>
+    <div class="q"><div class="q-n">8</div><div><b>Welche zwei bis drei Betriebe kennst du mit genau demselben Problem — und stellst du uns vor?</b><em>Ob die Plattformidee ein Fundament hat. Beim Kumpel kostet diese Frage nichts und wird trotzdem fast immer vergessen.</em></div></div>
+  </div>
+
+  <h3>Vier Fragen, die nur ein Freund beantwortet</h3>
+  <ul>
+    <li><b>„Wenn dein direkter Mitbewerber morgen dieselbe Software kaufen würde — was müsste er anders einstellen können?"</b> Das macht den Kunden zum Generalisierungs-Sensor.</li>
+    <li><b>„Wie heisst euer Alt-ERP, was kostet es im Jahr, und was hält euch daran fest?"</b> Drei Antworten in einer Frage: Preisanker, Wechselhürde beim nächsten Kunden, Umfang der Datenübernahme.</li>
+    <li><b>„Wer sind eure Werkslieferanten in Italien und Spanien, und wer ist deren Agent in der Schweiz? Seid ihr in einem Einkaufsverband?"</b> Die wertvollste Information des Termins, und sie kostet nur die Frage.</li>
+    <li><b>„Wie viele Auftragsbestätigungen im Monat sind falsch, und was kostet eine im Schnitt?"</b> Die Zahl, mit der ihr die nächsten acht Gespräche führt. Ohne sie verkauft man Software, mit ihr eine Einsparung.</li>
+  </ul>
+
+  <h3>Die heikle Stelle: seine eigenen Bewertungen</h3>
+  <p>Sie sind das stärkste Argument und der schnellste Weg, ihn zu verletzen. Nicht vorlesen, nicht ausdrucken. Ein Satz genügt:</p>
+  <div class="say">„Eure Ausstellung und eure Beratung werden öffentlich gelobt, mit Namen. Was kritisiert wird, ist ausnahmslos das, was danach passiert — Bestätigungen, Mengen, Termine. Das deckt sich mit dem, was uns in den Systemen fehlt. Deshalb würden wir dort anfangen und nicht beim Shop."</div>
+
+  <h3>Die harten Fragen, und was ihr antwortet</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Er fragt</th><th>Ihr antwortet</th></tr></thead>
+    <tbody>
+      <tr><td>„Was kostet das?"</td><td>„Den Teil, den wir heute kennen, können wir fix nennen. Den Artikelstamm nennen wir bewusst nicht fix, bevor wir dein Mengengerüst gesehen haben — das ist der Posten, an dem solche Projekte platzen. Nach dem Analysemandat bekommst du einen Festpreis."</td></tr>
+      <tr><td>„Wann ist es fertig?"</td><td>„Der erste Teil, der dir etwas bringt, in etwa drei Monaten. Fertig im Sinn von ‚alles abgelöst' dauert länger als ein Jahr, und jeder, der dir das schneller verspricht, hat den Artikelstamm nicht angeschaut."</td></tr>
+      <tr><td>„Was, wenn ihr aufhört?"</td><td>„Deine Daten gehören dir und liegen jährlich als vollständiges Exportarchiv bei dir — lesbar ohne uns. Das brauchst du wegen der zehnjährigen Aufbewahrungspflicht ohnehin. Zusätzlich regeln wir Quellcode-Hinterlegung im Vertrag."</td></tr>
+      <tr><td>„Gehört das dann mir?"</td><td>„Deine Daten, deine Konfiguration, deine Belegbilder: ja, und ein unbefristetes Nutzungsrecht an der Software. Das Produkt selbst bleibt bei uns — dafür bekommst du Pilotpreis, Mitsprache und eine Prämie für jeden Betrieb, den du uns bringst. Anders könnten wir es dir gar nicht zu diesem Preis bauen."</td></tr>
+      <tr><td>„Wer haftet, wenn Daten weg sind?"</td><td>„Wir, im Rahmen einer Berufshaftpflicht, und mit einer getesteten Wiederherstellung statt eines Versprechens. Was wir <em>nicht</em> machen: deine Buchhaltung selbst bauen."</td></tr>
+      <tr><td>„Ihr seid zu zweit — wie schafft ihr das?"</td><td>„Indem wir das meiste nicht bauen. Buchhaltung, Lohn, Zahlungsverkehr, CRM und 3D-Planung binden wir an. Wir bauen genau das Stück, das es nicht zu kaufen gibt."</td></tr>
+      <tr><td>„Warum nicht ein Standardsystem?"</td><td>„Gute Frage, und wir haben sie geprüft: vieles kann der Standard. Deshalb schlagen wir vor, dass du dir zwei Branchenanbieter zeigen lässt — mit sieben Testfällen aus deinem Betrieb, mit krummen Zahlen. Wenn die das besser lösen, sagen wir es dir."</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note stop">
+    <p class="note-t">Was ihr morgen nicht tut</p>
+    <p>Keine Folien. Keine Modulliste. Keine Preisdiskussion ohne Mengengerüst. Keine Zusage zu „hunderten Handwerkern". Keine Aussage darüber, was ihr ersetzt, bevor ihr wisst, was da ist. Und vor allem nicht sagen, dass die Lösung branchenübergreifend für Küchen, Möbel und Gartencenter gedacht ist — das klingt nach Zerstreuung und weckt die Frage, ob er das Versuchskaninchen ist. Ehrlich und präzise ist besser als gross: <b>„Wir lösen euer Problem richtig, und wir wollen es danach an ähnliche Betriebe verkaufen dürfen."</b></p>
+  </div>
+
+  <h3>Mitnahmeliste</h3>
+  <ul>
+    <li>Artikelstamm-Export aus dem Alt-ERP, vollständig</li>
+    <li>Umsatz je Artikel und Serie über 24 Monate — die Pareto-Kurve entscheidet den Stufenplan</li>
+    <li>Zwei bis drei Original-Preislisten der wichtigsten Keramiklieferanten</li>
+    <li>Drei vollständige Belegketten abgeschlossener Montageaufträge, anonymisiert</li>
+    <li>Das 44-seitige Bad-Dokument und ein Auswahlschein, anonymisiert — das ist euer Verkaufsmaterial für die nächsten acht Gespräche</li>
+    <li>Zwanzig Fotos echter Palettenetiketten von Atlas Concorde, Marazzi, Ragno, Castelvetro, Inalco</li>
+    <li>Kontenplan, Lieferantenliste, Verbandszugehörigkeit</li>
+    <li>Termin für den Lager-Morgen ab 06:45 und die Erlaubnis, mit Lager, Theke und Innendienst einzeln zu sprechen</li>
+    <li>Ein Glossar, live mitgeschrieben: jedes Hauswort links, die neutrale Übersetzung rechts. <b>„Auswahlschein" ist der erste Eintrag</b> — dieses Blatt verhindert später, dass MAXXPARK-Sprache ins Datenmodell einwandert.</li>
+    <li>Der <b>Wartungsvertrag mit dem Alt-ERP-Anbieter</b> — er entscheidet, ob ihr überhaupt an einen Export kommt.</li>
+  </ul>
+
+  <h3>Die sechs Zusagen, ohne die der Termin nett und wertlos war</h3>
+  <p>Die Ausbeute sind nicht Notizen, sondern Zusagen mit Namen und Datum:</p>
+  <ol>
+    <li>Benannte Personen aus Lager, Theke und Innendienst mit Zeitfenster</li>
+    <li>Ein Verantwortlicher für die Datenexporte, mit Frist</li>
+    <li>Erlaubnis für die Lagerbeobachtung ab 06:45</li>
+    <li>Kontaktfreigabe zu DOOR'42 und zum Alt-ERP-Lieferanten</li>
+    <li>Referenz- und Wiederverwendungsrecht, mündlich zugesagt und im Protokoll festgehalten</li>
+    <li>Termin für die Rückspiegelung in zehn bis vierzehn Tagen</li>
+  </ol>
+  <div class="note stop">
+    <p class="note-t">Der einzige Schutz gegen die Freundschaftsfalle</p>
+    <p>Ein <b>Protokoll innert 48 Stunden</b> mit Korrekturfrist und einer sichtbaren <b>Parkplatzliste</b> für alle Wünsche. Bei einem Kumpelauftrag entsteht Scope nicht durch Verhandlung, sondern durch Nettigkeit — und im Termin darf weder ein Preis noch ein Termin fallen. Beides wird mit der vorbereiteten Standardantwort und einem Datum für die Rückspiegelung beantwortet. Eine Zahl aus dem Bauch ist hier doppelt gefährlich, weil sie nie wieder korrigierbar ist.</p>
+  </div>
+
+  <h3>Heute Abend</h3>
+  <ul>
+    <li><b>Den Fragenkatalog ausdrucken</b> — auf Papier, nicht auf dem Laptop. Ein Bildschirm zwischen euch und ihm macht aus dem Gespräch eine Präsentation.</li>
+    <li><b>Unter euch beiden festlegen</b>, wer fragt und wer mitschreibt. Zwei Fragende bekommen halb so viel.</li>
+    <li><b>Die drei Standardantworten wörtlich abmachen</b>: „Was kostet das?", „Wann ist es fertig?", „Gehört das dann mir?". Wenn ihr dort zu zweit verschiedene Sätze sagt, merkt er es sofort.</li>
+    <li><b>Die eine Entscheidung treffen</b>, die euch selbst betrifft: Brotjob oder Startkapital. Sie steht hinter jeder Zusage, die ihr morgen macht.</li>
+    <li><b>Nichts an der Demo bauen.</b> Ihr zeigt morgen nichts ausser einer Rechnung auf Papier.</li>
+  </ul>
+</section>
+
+<!-- ============ R RISIKEN ============ -->
+<section id="risiken">
+  <div class="sec-head"><span class="sec-num">R</span><h2>Risiken und Abbruchkriterien</h2></div>
+  <p class="sec-sub">Nicht die Schönheitsfehler, sondern die, die das Vorhaben töten. Zu jedem gehört eine Entschärfung, die etwas kostet.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Risiko</th><th>Warum akut</th><th>Entschärfung</th></tr></thead>
+    <tbody>
+      <tr><td><b>Der Standard kann es doch</b></td><td>Charge, Nuance, Palettenrundung und Objektpreise sind in Baustoff-Branchen-ERP beworbene Funktionen. Wenn der Inhaber das selbst herausfindet, nachdem er euch bezahlt hat, ist die Beziehung beschädigt.</td><td>Ihr sprecht es zuerst an und organisiert den Vergleich selbst: sieben Testfälle, zwei bis vier Anbieter, er und sein Innendienst bewerten. Kostet einen Tag.</td></tr>
+      <tr><td><b>Artikelstamm dreimal so gross</b></td><td>Der einzige Posten, dessen Grösse niemand kennt. Gross genug, um eine Fixpreisofferte zu ruinieren.</td><td>Nicht zum Fixpreis anbieten, bevor Stufe 0 gerechnet ist. Stufenplan mit Freitextartikeln als Ventil.</td></tr>
+      <tr><td><b>Freundschaftsprojekt</b></td><td>Unklarer Umfang, keine Schriftlichkeit, Gratisleistungen, endlose Änderungswünsche — und am Ende ist die Freundschaft teurer als das Projekt.</td><td>Früh-Schriftlichkeit mit freundlicher Begründung: „Wir schreiben es auf, damit wir beim Bier nie über Geld reden müssen." Kleines bezahltes Analysemandat als erster Vertrag, nicht das ganze ERP.</td></tr>
+      <tr><td><b>Kein Kunde zwei</b></td><td>Die zwei AGs sind Profil A und A', kein Gegentest. Ohne echtes zweites Profil ist alle Abstraktion spekulativ.</td><td>Bezahlte Vorstudie bei Betrieb zwei bis Monat neun. Wenn sie bis dahin niemand bezahlt, ist die Plattformthese widerlegt.</td></tr>
+      <tr><td><b>Der zweite Inhaber</b></td><td>Bei gespiegelter Führung kann Martin Bärtschiger anders denken als Carlos Ardila — und die Buchhaltung arbeitet über beide Gesellschaften.</td><td>Früh beide im Raum haben. Mindestens: den Modellentscheid schriftlich von beiden bestätigen lassen.</td></tr>
+      <tr><td><b>Alt-ERP gibt nichts her</b></td><td>Kein sauberer Export, kein Datenbankzugriff, ein Anbieter, der Exporte verrechnet.</td><td>Export als erste Aufgabe im Analysemandat, nicht als Migrationsschritt. Notfalls Bildschirmabzug und Druckdateien einplanen — das ist Aufwand, kein Hindernis.</td></tr>
+      <tr><td><b>Laufender Betrieb</b></td><td>Theke und Rampe laufen ab 07:00. Ein Handelsbetrieb kann nicht zwei Wochen stillstehen.</td><td>Keil-Strategie statt Stichtagsumstellung. Für jedes Modul ein Notbetrieb auf Papier, bevor es produktiv geht.</td></tr>
+      <tr><td><b>Eigene Liquidität</b></td><td>310'000.00 Kostenbasis, erste Abos ab Monat neun.</td><td>Vor der Auftragszusage entscheiden: Brotjob oder Startkapital. Nicht danach.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Abbruchkriterien, die ihr euch selbst setzt</h3>
+  <ul>
+    <li><b>Nach 30 Tagen:</b> Wenn das Mengengerüst nicht steht — Artikelzahl, Aufträge und Positionen pro Monat, Anteil Werksware — habt ihr keinen Zugang zum Betrieb, sondern nur ein Gespräch.</li>
+    <li><b>Nach 90 Tagen:</b> Wenn ein Branchen-Standardsystem die sieben Testfälle besser löst als euer Entwurf, empfehlt ihr das Standardsystem und verrechnet die Evaluation. Das ist kein Scheitern, sondern die Leistung, für die er euch bezahlt hat.</li>
+    <li><b>Nach 180 Tagen:</b> Wenn kein zweiter Betrieb eine Vorstudie bezahlt hat, gibt es kein Produkt — dann ist es eine Softwareagentur mit einem guten Kunden, und das ist eine andere, legitime Firma. Aber es ist eine Entscheidung, keine Entwicklung.</li>
+  </ul>
+
+  <h3>Die drei Kennzahlen ab Tag 1</h3>
+  <ol>
+    <li><b>Anteil falscher Auftragsbestätigungen</b> — die Baseline für den ganzen Business Case, später nicht rekonstruierbar.</li>
+    <li><b>Stunden pro Bad-Dokument</b> — der Nutzen des grössten Hebels, in einer Zahl.</li>
+    <li><b>Anteil Umsatz auf Vorlagen-Funktionalität gegenüber Mandanten-Sonderlogik</b> — die einzige Zahl, die euch früh sagt, ob ihr ein Produkt baut oder ein Unikat.</li>
+  </ol>
+</section>
+
+<footer>
+  <p><b>Grundlage.</b> Zwanzig Rechercheläufe vom 30.08.2026 zu Standardmarkt, Fundamentwahl, Fachkern, Artikelstamm, Integration, Architektur, Mandantenfähigkeit, Schweizer Recht, KI, Konfigurator, Zielsegment, Partnernetz, Wiederverwertbarkeit, Erhebungsmethodik, Geschäftsmodell und Vertrag, Business Case, Fahrplan, Migration und Sicherheit — jeweils mit anschliessender adversarischer Gegenprüfung, deren Korrekturen in dieser Fassung eingearbeitet sind. Dazu die eigene Vermessung des Bestands <span class="mono">dach/index.html</span> mit Zeilennummern und das ERP-Dossier vom 28.08.2026.</p>
+  <p><b>Was sich gegenüber der ersten Fassung geändert hat.</b> Die Gegenprüfung hat mehrere Aussagen dieses Papiers selbst korrigiert: der Break-even steht statt bei 26 nun bei 35 bis 40 Betrieben, weil das Abo zu hoch und der Supportaufwand nicht eingerechnet war; die Kapazitätsrechnung (220 Personentage im Jahr gegen 771 Personentage Aufwand) ersetzt die implizite Zwölfmonatsannahme; Kaliber und Werkmass sind entflochten; der Datenkanal für Platten ist als „kein Schweizer Kanal" präzisiert statt als „weltweit keiner"; die SKU-Systematik ist nur für Sanitär und Parkett belegt; und die IGH-Kostenfreiheit gilt nur unter zwei Bedingungen.</p>
+  <p><b>Einschränkung.</b> Ein Teil der Läufe hatte kein Suchbudget und keinen Zugriff auf <span class="mono">fedlex.admin.ch</span>, <span class="mono">seco.admin.ch</span> und <span class="mono">bfs.admin.ch</span>. Alle davon betroffenen Aussagen tragen <span class="ev ev-n">nachprüfen</span> und gehören vor jeder Verwendung gegenüber dem Kunden oder in einem Vertrag an die Primärquelle. Am 30.08. selbst geprüft: QR-Implementation-Guidelines, MWST-Sätze, Art. 5 Entsendegesetz, Allgemeinverbindlichkeit LGAV Plattenlegergewerbe. Dieses Papier enthält keine geschätzten Umsatz- oder Personalzahlen zu MAXXPARK.</p>
+</footer>
+
+</main>
+</div>
+</div>
