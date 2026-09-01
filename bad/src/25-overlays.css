@@ -1,0 +1,94 @@
+<style>
+/* ==================================================================
+   8 · Ueberlagerungen — Dialog, Blatt von unten, Hinweise
+   ================================================================== */
+.ovl{position:fixed; inset:0; z-index:600; display:flex; align-items:center; justify-content:center; padding:20px}
+.ovl::before{content:""; position:absolute; inset:0; background:rgba(8,12,19,.42); backdrop-filter:blur(3px); animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0; transform:translateY(10px) scale(.975)}to{opacity:1; transform:none}}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.dlg{
+  position:relative; background:var(--card); border:1px solid var(--sep); border-radius:var(--r-xl);
+  box-shadow:var(--shadow-3); width:100%; max-width:520px; max-height:min(88dvh, 860px);
+  display:flex; flex-direction:column; animation:pop .22s var(--ease);
+}
+.dlg.wide{max-width:940px}
+.dlg.slim{max-width:400px}
+.dlg-h{display:flex; align-items:center; gap:11px; padding:15px 18px; border-bottom:1px solid var(--sep); flex:none}
+.dlg-h h3{font-size:16.5px; font-weight:700; letter-spacing:-.02em; flex:1; min-width:0}
+.dlg-h .sub{font-size:12.5px; color:var(--txt-3); font-weight:500}
+.dlg-b{padding:18px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:1; min-height:0}
+.dlg-f{padding:13px 18px calc(13px + var(--sab)); border-top:1px solid var(--sep); display:flex; gap:9px; justify-content:flex-end; flex:none; flex-wrap:wrap}
+.dlg-f .grow{flex:1}
+@media (max-width:640px){
+  .ovl{padding:0; align-items:flex-end}
+  .dlg{max-width:none; border-radius:var(--r-xl) var(--r-xl) 0 0; max-height:92dvh; animation:up .26s var(--ease); border-bottom:0}
+  .dlg-f{flex-direction:column-reverse}
+  .dlg-f .btn{width:100%; height:46px}
+}
+.sheet-grab{width:38px; height:4px; border-radius:2px; background:var(--sep-2); margin:8px auto 0; flex:none}
+@media (min-width:641px){ .sheet-grab{display:none} }
+
+body[data-shell="lager"] #toasts{top:calc(var(--sat) + 64px)}
+#toasts{position:fixed; top:calc(var(--sat) + 12px); left:50%; transform:translateX(-50%); z-index:800; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:max-content; max-width:calc(100vw - 24px)}
+.toast{
+  display:flex; align-items:center; gap:9px; padding:10px 15px; border-radius:var(--r-full);
+  background:var(--card); border:1px solid var(--sep); box-shadow:var(--shadow-3); font-size:13.5px; font-weight:570;
+  animation:pop .2s var(--ease); pointer-events:auto; max-width:100%;
+}
+.toast .ic{width:19px; height:19px; flex:none; display:grid; place-items:center}
+.toast.ok .ic{color:var(--ok)} .toast.err .ic{color:var(--err)} .toast.warn .ic{color:var(--warn)}
+.toast .un{margin-left:5px; color:var(--tint); font-weight:660; white-space:nowrap}
+.toast.out{animation:fadeout .22s ease forwards}
+@keyframes fadeout{to{opacity:0; transform:translateY(-8px)}}
+
+/* Statusfarben — eine Quelle fuer beide Oberflaechen */
+.st-neu{--c:var(--txt-3); --cs:var(--card-3)}
+.st-geplant{--c:var(--info); --cs:var(--info-soft)}
+.st-unterwegs{--c:var(--lila); --cs:var(--lila-soft)}
+.st-vorort{--c:var(--tint); --cs:var(--tint-soft)}
+.st-pausiert{--c:var(--warn); --cs:var(--warn-soft)}
+.st-erledigt{--c:var(--ok); --cs:var(--ok-soft)}
+.st-kontrolle{--c:var(--cyan); --cs:var(--cyan-soft)}
+.st-verrechnet{--c:var(--ok); --cs:var(--ok-soft)}
+.st-abgeschlossen{--c:var(--txt-3); --cs:var(--card-3)}
+.st-storniert{--c:var(--err); --cs:var(--err-soft)}
+.st-bg{background:var(--c) !important}
+.chip.st{background:var(--cs); color:var(--c)}
+.prio-notfall{--c:var(--err); --cs:var(--err-soft)}
+.prio-hoch{--c:var(--warn); --cs:var(--warn-soft)}
+.prio-normal{--c:var(--txt-3); --cs:var(--card-3)}
+.prio-tief{--c:var(--txt-3); --cs:var(--card-3)}
+
+.banner{display:flex; gap:11px; align-items:flex-start; padding:12px 14px; border-radius:var(--r-m); background:var(--info-soft); color:var(--info-txt); font-size:13.5px; line-height:1.45}
+.banner.warn{background:var(--warn-soft); color:var(--warn-txt)}
+.banner.err{background:var(--err-soft); color:var(--err-txt)}
+.banner.ok{background:var(--ok-soft); color:var(--ok-txt)}
+.banner .ic{flex:none; margin-top:1px}
+.banner b{font-weight:680}
+.banner .btn{margin-left:auto; flex:none}
+
+/* Synchronisationsanzeige */
+.sync{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; color:var(--txt-3); padding:4px 9px; border-radius:var(--r-full); background:var(--card-3)}
+.sync .d{width:7px; height:7px; border-radius:50%; background:var(--txt-3)}
+.sync.on{color:var(--ok-txt); background:var(--ok-soft)} .sync.on .d{background:var(--ok); animation:pulse 2.4s ease infinite}
+.sync.off{color:var(--warn-txt); background:var(--warn-soft)} .sync.off .d{background:var(--warn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Wetter */
+.wx{display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none}
+.wx::-webkit-scrollbar{display:none}
+.wx-d{flex:none; width:74px; padding:9px 6px; border-radius:var(--r-s); background:var(--card-2); border:1px solid var(--sep); text-align:center}
+.wx-d.sperr{background:var(--err-soft); border-color:color-mix(in srgb, var(--err) 35%, transparent)}
+.wx-d.warn{background:var(--warn-soft); border-color:color-mix(in srgb, var(--warn) 35%, transparent)}
+.wx-d b{display:block; font-size:11.5px; font-weight:680}
+.wx-d .em{font-size:19px; line-height:1.35}
+.wx-d small{display:block; font-size:10.5px; color:var(--txt-2); font-variant-numeric:tabular-nums}
+
+/* Druck */
+@media print{
+  body{background:#fff}
+  #login,#side,#topbar,.fld-tabs,.fld-head,.fld-act,#toasts,.ovl,.map-ctl,.no-print{display:none !important}
+  #deskview{overflow:visible; padding:0}
+  .card{box-shadow:none; border-color:#ccc}
+}

@@ -1,0 +1,211 @@
+/* ==================================================================
+   24 · Lager-App — Handy zuerst
+   Grosse Ziele, hoher Kontrast, Daumenzone unten. Auf einem grossen
+   Bildschirm laeuft dieselbe Ansicht in einem Telefonrahmen, damit
+   sie sich am Kundentermin am Laptop zeigen laesst.
+   ================================================================== */
+#field{display:none}
+body[data-shell="lager"] #field{display:block}
+body[data-shell="lager"]{background:var(--bg-2)}
+.fld-frame{height:100dvh; display:flex; flex-direction:column; background:var(--bg); position:relative; overflow:hidden}
+@media (min-width:900px){
+  body[data-shell="lager"]{
+    background:
+      radial-gradient(900px 560px at 12% -8%, color-mix(in srgb, var(--tint) 12%, transparent), transparent 60%),
+      var(--bg-2);
+  }
+  body[data-shell="lager"] #field{display:flex; height:100dvh; align-items:center; justify-content:center; gap:34px; padding:26px}
+  .fld-frame{
+    width:392px; height:min(830px, calc(100dvh - 52px)); border-radius:46px; border:11px solid #171E2A;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.55), 0 0 0 2px rgba(255,255,255,.05) inset; flex:none;
+  }
+  .fld-frame::before{content:""; position:absolute; top:9px; left:50%; transform:translateX(-50%); width:106px; height:26px; border-radius:14px; background:#171E2A; z-index:60}
+  .fld-side{max-width:352px; display:flex; flex-direction:column; gap:15px}
+}
+@media (max-width:899px){ .fld-side{display:none} }
+.fld-side h2{font-size:25px; font-weight:740; letter-spacing:-.03em}
+.fld-side p{font-size:14px; color:var(--txt-2); line-height:1.5}
+.fld-steps{display:flex; flex-direction:column; gap:9px}
+.fld-step{display:flex; gap:11px; align-items:flex-start; padding:11px 13px; background:var(--card); border:1px solid var(--sep); border-radius:var(--r-m); box-shadow:var(--shadow-1)}
+.fld-step .n{width:23px; height:23px; border-radius:50%; background:var(--tint-soft); color:var(--tint-txt); display:grid; place-items:center; font-size:12px; font-weight:730; flex:none}
+.fld-step b{display:block; font-size:13.5px; font-weight:630}
+.fld-step small{display:block; font-size:12.5px; color:var(--txt-2); line-height:1.4}
+
+.fld-head{
+  flex:none; padding:calc(var(--sat) + 9px) 14px 9px; display:flex; align-items:center; gap:10px; min-height:52px;
+  background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--sep); position:relative; z-index:30;
+}
+@media (min-width:900px){ .fld-head{padding-top:38px} }
+.fld-head h1{font-size:17.5px; font-weight:700; letter-spacing:-.024em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.fld-head .sub{font-size:12px; color:var(--txt-3); font-weight:500}
+.fld-head .btn{height:36px}
+.fld-head .btn.icon{width:36px}
+.fld-body{flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:13px 14px 22px; display:block}
+/* Der innere Behaelter traegt die Spalte. Ohne flex:none auf den Kindern
+   staucht die Flexbox lange Listen zusammen, statt sie scrollen zu lassen. */
+.fld-inner{display:flex; flex-direction:column; gap:13px; min-height:100%}
+.fld-inner > *{flex:none}
+.fld-tabs{
+  flex:none; display:grid; grid-template-columns:repeat(5,1fr); gap:2px; padding:6px 6px calc(6px + var(--sab));
+  border-top:1px solid var(--sep); background:color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter:saturate(180%) blur(20px); position:relative; z-index:30;
+}
+.fld-tab{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 2px 4px; border-radius:11px; color:var(--txt-3); font-size:10.5px; font-weight:600; transition:color .13s, background .13s}
+.fld-tab svg{width:23px; height:23px}
+.fld-tab[aria-current="page"]{color:var(--tint)}
+.fld-tab:active{background:var(--card-3)}
+.fld-tab .bdg{position:absolute; transform:translate(13px,-3px); min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--err); color:#fff; font-size:9.5px; font-weight:730; display:grid; place-items:center}
+
+/* Grosse Listenkarten */
+.fcard{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l); box-shadow:var(--shadow-1); overflow:hidden}
+.fcard.pad{padding:15px}
+.fcard-h{padding:13px 15px 10px; display:flex; align-items:center; justify-content:space-between; gap:10px}
+.fcard-h h3{font-size:15px; font-weight:680; letter-spacing:-.015em}
+.ftask{
+  display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--sep);
+  border-radius:var(--r-l); box-shadow:var(--shadow-1); padding:0; overflow:hidden;
+  transition:transform .12s var(--ease), box-shadow .14s;
+}
+.ftask:active{transform:scale(.985)}
+.ftask.now{border-color:var(--tint); box-shadow:0 0 0 2px color-mix(in srgb, var(--tint) 26%, transparent), var(--shadow-2)}
+.ftask .top{display:flex; align-items:center; gap:9px; padding:11px 14px 0}
+.ftask .tm{font-family:var(--ff-num); font-size:15px; font-weight:730; letter-spacing:-.02em}
+.ftask .bd{padding:6px 14px 12px; display:flex; flex-direction:column; gap:5px}
+.ftask .bd b{font-size:16.5px; font-weight:660; letter-spacing:-.02em; line-height:1.25}
+.ftask .adr{font-size:13.5px; color:var(--txt-2); display:flex; align-items:center; gap:6px}
+.ftask .adr svg{width:14px; height:14px; color:var(--txt-3); flex:none}
+.ftask .foot{display:flex; align-items:center; gap:8px; padding:9px 14px; border-top:1px solid var(--sep); background:var(--card-2); flex-wrap:wrap}
+
+/* Ablauf-Schrittleiste */
+.stepper{display:flex; align-items:center; gap:0; padding:2px 0; overflow-x:auto; scrollbar-width:none}
+.stepper::-webkit-scrollbar{display:none}
+.stepper .st{display:flex; flex-direction:column; align-items:center; gap:4px; flex:none; width:60px; position:relative}
+.stepper .st .dot{width:27px; height:27px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:730; background:var(--card-3); color:var(--txt-3); border:2px solid transparent; z-index:2; transition:background .2s, color .2s}
+.stepper .st.done .dot{background:var(--ok); color:#fff}
+.stepper .st.now .dot{background:var(--tint); color:#fff; box-shadow:0 0 0 4px color-mix(in srgb, var(--tint) 22%, transparent)}
+.stepper .st small{font-size:9.5px; color:var(--txt-3); text-align:center; line-height:1.15; font-weight:600}
+.stepper .st.now small{color:var(--tint-txt)}
+.stepper .st::after{content:""; position:absolute; top:13px; left:calc(50% + 16px); width:calc(100% - 32px); height:2px; background:var(--sep-2)}
+.stepper .st:last-child::after{display:none}
+.stepper .st.done::after{background:var(--ok)}
+
+/* Checklistenpunkt */
+.pt{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-m); overflow:hidden; transition:border-color .16s, box-shadow .16s}
+.pt.done{border-color:color-mix(in srgb, var(--ok) 42%, var(--sep))}
+.pt.pflicht-offen{border-color:color-mix(in srgb, var(--warn) 55%, var(--sep))}
+.pt.mangel{border-color:var(--err); box-shadow:0 0 0 1px var(--err)}
+.pt-h{display:flex; gap:10px; align-items:flex-start; padding:12px 14px}
+.pt-h .n{width:22px; height:22px; border-radius:50%; background:var(--card-3); color:var(--txt-3); display:grid; place-items:center; font-size:11px; font-weight:730; flex:none; margin-top:1px}
+.pt.done .pt-h .n{background:var(--ok); color:#fff}
+.pt-h .q{flex:1; min-width:0}
+.pt-h .q b{display:block; font-size:15px; font-weight:600; line-height:1.32; letter-spacing:-.012em}
+.pt-h .q small{display:block; font-size:12.5px; color:var(--txt-3); margin-top:3px; line-height:1.35}
+.pt-b{padding:0 14px 13px; display:flex; flex-direction:column; gap:9px}
+.req{color:var(--err); font-weight:700}
+
+.opts{display:grid; gap:8px}
+.opts.two{grid-template-columns:1fr 1fr}
+.opts.three{grid-template-columns:repeat(3,1fr)}
+.opt{
+  min-height:50px; padding:10px 12px; border-radius:var(--r-m); background:var(--card-2); border:1.5px solid var(--sep-2);
+  font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; text-align:center;
+  transition:background .13s, border-color .13s, transform .1s var(--ease); color:var(--txt-2);
+}
+.opt:active{transform:scale(.97)}
+.opt[aria-pressed="true"]{background:var(--tint-soft); border-color:var(--tint); color:var(--tint-txt)}
+.opt.ja[aria-pressed="true"]{background:var(--ok-soft); border-color:var(--ok); color:var(--ok-txt)}
+.opt.nein[aria-pressed="true"]{background:var(--err-soft); border-color:var(--err); color:var(--err-txt)}
+.opt.na[aria-pressed="true"]{background:var(--card-3); border-color:var(--sep-2); color:var(--txt-2)}
+.ampel{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.ampel .opt[data-v="gruen"][aria-pressed="true"]{background:var(--ok-soft); border-color:var(--ok); color:var(--ok-txt)}
+.ampel .opt[data-v="gelb"][aria-pressed="true"]{background:var(--warn-soft); border-color:var(--warn); color:var(--warn-txt)}
+.ampel .opt[data-v="rot"][aria-pressed="true"]{background:var(--err-soft); border-color:var(--err); color:var(--err-txt)}
+.stepnum{display:flex; align-items:center; gap:9px}
+.stepnum .btn{width:48px; height:48px; border-radius:var(--r-m); font-size:22px; font-weight:600}
+.stepnum .val{flex:1; text-align:center; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums}
+.stepnum .val small{font-size:13px; color:var(--txt-3); font-weight:600; margin-left:3px}
+.bigcheck{
+  display:flex; align-items:center; gap:12px; min-height:54px; padding:11px 14px; border-radius:var(--r-m);
+  background:var(--card-2); border:1.5px solid var(--sep-2); width:100%; text-align:left; font-size:15px; font-weight:570;
+  transition:background .13s, border-color .13s;
+}
+.bigcheck .bx{width:27px; height:27px; border-radius:8px; border:2px solid var(--sep-2); display:grid; place-items:center; flex:none; transition:background .15s, border-color .15s}
+.bigcheck[aria-pressed="true"]{background:var(--ok-soft); border-color:var(--ok)}
+.bigcheck[aria-pressed="true"] .bx{background:var(--ok); border-color:var(--ok)}
+.bigcheck[aria-pressed="true"] .bx svg{color:#fff}
+.bigcheck .bx svg{width:17px; height:17px; color:transparent}
+
+/* Fotos */
+.photos{display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:8px}
+.photo{position:relative; aspect-ratio:1; border-radius:var(--r-s); overflow:hidden; background:var(--card-3); border:1px solid var(--sep)}
+.photo img{width:100%; height:100%; object-fit:cover}
+.photo .x{position:absolute; top:3px; right:3px; width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,.62); color:#fff; display:grid; place-items:center; backdrop-filter:blur(4px)}
+.photo .ph{position:absolute; left:0; right:0; bottom:0; padding:3px 5px; font-size:9.5px; font-weight:650; color:#fff; background:linear-gradient(transparent,rgba(0,0,0,.75)); text-align:center}
+.photo-add{
+  aspect-ratio:1; border-radius:var(--r-s); border:1.5px dashed var(--sep-2); background:var(--card-2);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:var(--txt-3); font-size:11px; font-weight:600;
+}
+.photo-add:active{background:var(--tint-soft); border-color:var(--tint); color:var(--tint-txt)}
+.photo-add svg{width:22px; height:22px}
+
+/* Feste Aktionsleiste unten */
+.fld-act{
+  position:sticky; bottom:0; margin:auto -14px -22px; padding:11px 14px calc(11px + var(--sab));
+  background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:saturate(180%) blur(18px);
+  border-top:1px solid var(--sep); display:flex; gap:9px; z-index:20;
+}
+.fld-act .btn{height:52px; font-size:16.5px; border-radius:var(--r-m); flex:1}
+.big-timer{
+  display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:var(--r-l);
+  background:var(--tint-soft); border:1px solid color-mix(in srgb, var(--tint) 35%, transparent);
+}
+.big-timer .t{font-family:var(--ff-num); font-size:27px; font-weight:730; letter-spacing:-.03em; color:var(--tint-txt); font-variant-numeric:tabular-nums}
+.big-timer .l{flex:1; min-width:0}
+.big-timer .l b{display:block; font-size:13px; font-weight:650; color:var(--tint-txt)}
+.big-timer .l small{display:block; font-size:11.5px; color:var(--txt-2)}
+.sig-pad{width:100%; height:180px; border-radius:var(--r-m); border:1.5px dashed var(--sep-2); background:var(--card-2); touch-action:none; display:block}
+
+/* Stempeluhr — der grösste Knopf der ganzen App */
+.stempel{
+  background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l); box-shadow:var(--shadow-1);
+  padding:16px 15px; display:flex; flex-direction:column; gap:13px; align-items:center;
+}
+.stempel.aktiv{background:var(--tint-soft); border-color:color-mix(in srgb, var(--tint) 38%, transparent)}
+.stempel.pause{background:var(--warn-soft); border-color:color-mix(in srgb, var(--warn) 38%, transparent)}
+.stempel .uhr{
+  font-family:var(--ff-num); font-size:52px; font-weight:730; letter-spacing:-.045em;
+  font-variant-numeric:tabular-nums; line-height:1; color:var(--txt);
+}
+.stempel.aktiv .uhr{color:var(--tint-txt)}
+.stempel.pause .uhr{color:var(--warn-txt)}
+.stempel .was{display:flex; flex-direction:column; gap:2px; text-align:center; min-width:0; width:100%}
+.stempel .was b{font-size:14.5px; font-weight:660}
+.stempel .was small{font-size:12.5px; color:var(--txt-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.stempel .row{width:100%}
+.stempel.bereit{gap:11px}
+
+/* Zeile eines Zeiteintrags */
+.zeile{
+  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  padding:10px 11px; border-radius:var(--r-s); background:var(--card-2); border:1px solid transparent;
+  transition:background .13s, border-color .13s;
+}
+.zeile:active{background:var(--card-3)}
+.zeile.laeuft{background:var(--tint-soft); border-color:color-mix(in srgb, var(--tint) 32%, transparent)}
+.zeile .e{font-size:17px; flex:none}
+.zeile .bd{flex:1; min-width:0}
+.zeile .bd b{display:block; font-size:14px; font-weight:620; font-variant-numeric:tabular-nums}
+.zeile .bd small{display:block; font-size:12px; color:var(--txt-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.zeile .rt{display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none}
+.zeile .rt b{font-size:15px; font-weight:700}
+
+/* Beispielbild-Feld ist zurückhaltender als der Kamera-Knopf */
+.photo-add.demo{border-style:dotted; color:var(--txt-3); font-size:10.5px}
+.photo-add.demo svg.i{width:18px; height:18px}
+
+/* Sicherheitskarte */
+.fcard.sicher{border-color:color-mix(in srgb, var(--warn) 45%, var(--sep))}
+.fcard.sicher.ok{border-color:var(--sep)}
+.sig-pad.filled{border-style:solid; border-color:var(--ok); background:var(--card)}
+</style>

@@ -1,0 +1,62 @@
+/* ==================================================================
+   4 · Anmeldung — Code-Tastenfeld
+   Vier Ziffern entscheiden, welche der beiden Oberflaechen startet.
+   ================================================================== */
+#login{
+  position:fixed; inset:0; z-index:900; display:grid; place-items:center;
+  padding:calc(20px + var(--sat)) 20px calc(20px + var(--sab));
+  background:
+    radial-gradient(1000px 620px at 15% -10%, color-mix(in srgb, var(--tint) 16%, transparent), transparent 62%),
+    radial-gradient(760px 520px at 100% 108%, color-mix(in srgb, var(--info) 13%, transparent), transparent 60%),
+    var(--bg);
+  overflow-y:auto;
+}
+.lg-wrap{width:100%; max-width:392px; display:flex; flex-direction:column; align-items:center; gap:20px}
+.lg-brand{display:flex; flex-direction:column; align-items:center; gap:11px; text-align:center}
+.lg-logo{
+  width:60px; height:60px; border-radius:17px; background:var(--tint); display:grid; place-items:center;
+  box-shadow:0 8px 26px -10px color-mix(in srgb, var(--tint) 85%, transparent);
+}
+.lg-logo svg{width:34px; height:34px}
+.lg-brand h1{font-size:26px; font-weight:760; letter-spacing:-.03em}
+.lg-brand p{font-size:13.5px; color:var(--txt-2); max-width:290px; line-height:1.4}
+.lg-card{
+  width:100%; background:var(--card); border:1px solid var(--sep); border-radius:var(--r-xl);
+  box-shadow:var(--shadow-3); padding:22px 20px 18px; display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.lg-dots{display:flex; gap:13px; height:17px; align-items:center}
+.lg-dots span{
+  width:14px; height:14px; border-radius:50%; border:1.8px solid var(--sep-2);
+  transition:background .18s, border-color .18s, transform .18s var(--ease);
+}
+.lg-dots span.on{background:var(--tint); border-color:var(--tint); transform:scale(1.14)}
+.lg-msg{font-size:13px; min-height:17px; color:var(--txt-2); text-align:center}
+.lg-msg.err{color:var(--err-txt); font-weight:600}
+.keypad{display:grid; grid-template-columns:repeat(3,1fr); gap:11px; width:100%; max-width:282px}
+.keypad button{
+  height:62px; border-radius:var(--r-m); background:var(--card-2); border:1px solid var(--sep);
+  font-size:25px; font-weight:520; font-variant-numeric:tabular-nums; color:var(--txt);
+  transition:transform .1s var(--ease), background .12s;
+}
+.keypad button:hover{background:var(--card-3)}
+.keypad button:active{transform:scale(.94); background:var(--tint-soft)}
+.keypad button.fn{font-size:14px; font-weight:620; color:var(--txt-2); background:transparent; border-color:transparent}
+.keypad button.fn:hover{background:var(--card-3)}
+.lg-users{width:100%; display:flex; flex-direction:column; gap:7px}
+.lg-users > .lbl{text-align:center; color:var(--txt-3); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.07em}
+.lg-user{
+  display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:var(--r-m);
+  background:var(--card); border:1px solid var(--sep); text-align:left; width:100%;
+  transition:background .14s, border-color .14s, transform .12s var(--ease); box-shadow:var(--shadow-1);
+}
+.lg-user:hover{background:var(--card-2); border-color:var(--sep-2)}
+.lg-user:active{transform:scale(.985)}
+.lg-user .nm{flex:1; min-width:0}
+.lg-user .nm b{display:block; font-size:14px; font-weight:620}
+.lg-user .nm small{display:block; font-size:12px; color:var(--txt-3)}
+.lg-user .cd{font-family:var(--ff-num); font-size:14px; font-weight:700; color:var(--tint-txt); background:var(--tint-soft); padding:3px 9px; border-radius:var(--r-xs); letter-spacing:.08em}
+.lg-foot{font-size:11.5px; color:var(--txt-3); text-align:center; line-height:1.5; max-width:330px}
+.lg-foot b{color:var(--txt-2)}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+.shake{animation:shake .45s cubic-bezier(.36,.07,.19,.97)}
+

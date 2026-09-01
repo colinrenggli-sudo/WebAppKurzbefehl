@@ -26,6 +26,18 @@
   Monteur-App am Handy (Sicherheitscheck, Checkliste, Fotos, Material,
   Zeit, Unterschrift). `dach/index.html` im Browser öffnen, Code `1234`
   für das Büro, `3456` für den Monteur.
+- **`bad/`** – [BADWERK](bad/README.md): Showroom-System für den
+  Sanitärhandel. Offerte am Tablet mit automatischem
+  Installationsmaterial und Zusatzleistungen, Unterschrift und Anzahlung
+  per TWINT oder Karte, Bestellungen an alle Lieferanten,
+  Lieferfrist-Überwachung mit automatischen Nachfragen, Wareneingang per
+  QR-Code am Handy, Terminwahl durch den Kunden, Montage durch
+  Partnerbetriebe, Schlussrechnung mit QR-Zahlteil, Archiv; Portale für
+  Kunde, Lieferant, Monteur und Partnerbetrieb. `bad/index.html` im
+  Browser öffnen, Code `1234` für den Inhaber, `2468` für die Beratung,
+  `98765` für das Lager.
+  [Live ansehen](https://colinrenggli-sudo.github.io/WebAppKurzbefehl/bad/)
+  · Konzept in [`bad/KONZEPT.md`](bad/KONZEPT.md)
 
 ## Selbst hosten
 

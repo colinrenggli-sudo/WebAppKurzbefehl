@@ -1,0 +1,53 @@
+/* ==================================================================
+   26 · Portale — Kunde, Lieferant, Monteur, Partnerbetrieb
+   Eine ruhige, oeffentliche Seite ohne Navigation: Kopf mit Firma,
+   ein Inhaltsbereich, Fusszeile. Laeuft auf Handy und PC gleich gut.
+   ================================================================== */
+#portal{display:none; min-height:100dvh; background:var(--bg)}
+body[data-shell="portal"] #portal{display:block}
+body[data-shell="portal"] #login{display:none}
+.po-wrap{max-width:760px; margin:0 auto; padding:calc(18px + var(--sat)) 18px calc(28px + var(--sab)); display:flex; flex-direction:column; gap:18px}
+.po-head{display:flex; align-items:center; gap:12px; padding:6px 0}
+.po-head .logo{width:40px; height:40px; border-radius:12px; background:var(--tint); display:grid; place-items:center; flex:none}
+.po-head .logo svg{width:24px; height:24px}
+.po-head .nm b{display:block; font-size:15px; font-weight:700}
+.po-head .nm small{display:block; font-size:12.5px; color:var(--txt-3)}
+.po-head .sp{flex:1}
+.po-body{display:flex; flex-direction:column; gap:14px}
+.po-hero{padding:22px 22px 20px; border-radius:var(--r-xl); background:var(--card); border:1px solid var(--sep); box-shadow:var(--shadow-2)}
+.po-hero h1{font-size:24px; font-weight:760; letter-spacing:-.025em; line-height:1.15; margin-bottom:6px}
+.po-hero p{color:var(--txt-2); font-size:15px; line-height:1.5}
+.po-hero .eyebrow{font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--tint-txt); margin-bottom:8px}
+.po-foot{font-size:12px; color:var(--txt-3); text-align:center; line-height:1.6; padding-top:8px}
+.po-foot a{color:var(--txt-3); text-decoration:underline}
+.po-steps{display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:12.5px; color:var(--txt-3)}
+.po-steps .st{display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:var(--r-full); background:var(--card-2); border:1px solid var(--sep)}
+.po-steps .st.done{color:var(--ok-txt); background:var(--ok-soft); border-color:transparent}
+.po-steps .st.now{color:var(--tint-txt); background:var(--tint-soft); border-color:transparent; font-weight:650}
+.po-cta{display:flex; flex-direction:column; gap:10px}
+.po-cta .btn{height:52px; font-size:16px; border-radius:var(--r-m)}
+.po-lines{display:flex; flex-direction:column}
+.po-line{display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--sep); font-size:14.5px}
+.po-line:last-child{border-bottom:0}
+.po-line b{font-weight:600}
+.po-line small{display:block; color:var(--txt-3); font-size:12.5px}
+.po-line .amt{font-family:var(--ff-num); font-variant-numeric:tabular-nums; white-space:nowrap}
+.po-line.total{font-weight:700; font-size:16px; border-top:2px solid var(--txt); padding-top:12px}
+.po-sig{border:1.5px dashed var(--sep-2); border-radius:var(--r-m); background:var(--card-2); height:170px; position:relative}
+.po-sig canvas{width:100%; height:100%; display:block; border-radius:var(--r-m)}
+.po-sig .hint{position:absolute; left:14px; bottom:10px; font-size:12px; color:var(--txt-3); pointer-events:none}
+.po-sig.filled .hint{display:none}
+.po-slots{display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:8px}
+.po-slot{padding:12px 8px; border-radius:var(--r-m); border:1px solid var(--sep); background:var(--card); text-align:center; font-size:14px; transition:transform .1s var(--ease)}
+.po-slot b{display:block; font-size:15px}
+.po-slot small{display:block; color:var(--txt-3); font-size:12px}
+.po-slot:hover{border-color:var(--sep-2); background:var(--card-2)}
+.po-slot[aria-pressed="true"]{background:var(--tint); color:#fff; border-color:var(--tint)}
+.po-slot[aria-pressed="true"] small{color:rgba(255,255,255,.8)}
+.po-slot:active{transform:scale(.97)}
+.po-ok{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:26px 18px}
+.po-ok .ic{width:64px; height:64px; border-radius:50%; background:var(--ok-soft); color:var(--ok); display:grid; place-items:center}
+.po-ok .ic svg{width:32px; height:32px}
+.po-ok h2{font-size:20px; font-weight:740}
+.po-ok p{color:var(--txt-2); font-size:14.5px; max-width:420px; line-height:1.5}
+@media (max-width:640px){ .po-hero{padding:18px 16px} .po-hero h1{font-size:21px} }

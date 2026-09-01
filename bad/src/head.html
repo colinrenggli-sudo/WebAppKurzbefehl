@@ -1,0 +1,47 @@
+<!-- ==================================================================
+     BADWERK — Showroom-System fuer den Sanitaerhandel
+     ------------------------------------------------------------------
+     Eine einzige, self-contained Datei. Kein Build noetig, kein Server,
+     kein Konto. Doppelklick genuegt.
+
+     Erzeugt aus bad/src/ mit  python3 build.py  — Aenderungen bitte
+     dort machen, diese Datei wird ueberschrieben.
+
+     Drei Oberflaechen aus einer Datei, getrennt durch den Anmeldecode:
+       Konsole   (1234 Carlos, Inhaber; weitere Codes im Anmeldeschirm)
+                 -> PC: Dashboard, Auftraege, Lieferanten, Postausgang
+                 -> Tablet: Offerte im Showroom, Unterschrift, Zahlung
+       Lager     (98765) -> Handy: QR scannen, Wareneingang buchen
+       Portale   ohne Code, ueber Links mit Token:
+                 ?k=  Kunde (Offerte, Zahlung, Termin)
+                 ?l=  Lieferant (Bestellung bestaetigen)
+                 ?m=  Monteur (Termin, Fertigmeldung)
+                 ?p=  Partnerbetrieb (Showroom-Termin buchen)
+                 ?scan=  Lagerposition buchen (aus dem QR-Code)
+
+     Daten liegen im Browser (localStorage). Optionaler Firestore-Sync
+     verbindet PC, Tablet und Handy live.
+     Konzept: bad/KONZEPT.md · Recherche: bad/RECHERCHE.md
+     ================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<title>BADWERK – Showroom-System für den Sanitärhandel</title>
+
+<meta name="description" content="Offerte am Tablet, Unterschrift und Zahlung im Showroom, Bestellungen an alle Lieferanten, Lieferfrist-Überwachung, Wareneingang per QR-Code, Terminwahl online, Montage durch Partnerbetriebe, Rechnung mit Schweizer QR-Zahlteil.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://colinrenggli-sudo.github.io/WebAppKurzbefehl/bad/">
+<meta name="theme-color" content="#EEF1F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#080C13" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BADWERK">
+<meta name="format-detection" content="telephone=no">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BADWERK">
+<meta property="og:title" content="BADWERK – Showroom-System für den Sanitärhandel">
+<meta property="og:description" content="Vom Showroom-Gespräch bis zur bezahlten Rechnung: Offerte, Zahlung, Bestellung, Lager, Termin, Montage – in einer Anwendung.">
+<meta property="og:locale" content="de_CH">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F7C8C'/%3E%3Cpath d='M12 34h40v6a12 12 0 0 1-12 12H24a12 12 0 0 1-12-12v-6z' fill='%23fff'/%3E%3Cpath d='M18 34V16a5 5 0 0 1 10 0' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linecap='round'/%3E%3Cpath d='M24 52v5M40 52v5' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230F7C8C'/%3E%3Cpath d='M12 34h40v6a12 12 0 0 1-12 12H24a12 12 0 0 1-12-12v-6z' fill='%23fff'/%3E%3Cpath d='M18 34V16a5 5 0 0 1 10 0' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E">

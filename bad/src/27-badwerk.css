@@ -1,0 +1,298 @@
+/* ==================================================================
+   27 · BADWERK-Bausteine
+   Produktkarten fuer das Tablet, Schrittleiste der Offerte, Verlauf
+   je Auftrag, Postausgang, QR-Bogen, Zahlung, Pipeline-Board,
+   Status-Farben, A4-Dokumente.
+   ================================================================== */
+
+/* — Statusfarben der Auftraege und Offerten — */
+.st-entwurf{--st:var(--txt-3); --st-soft:var(--card-3)}
+.st-offen{--st:var(--info); --st-soft:var(--info-soft)}
+.st-unterschrieben{--st:var(--lila); --st-soft:var(--lila-soft)}
+.st-bezahlt{--st:var(--ok); --st-soft:var(--ok-soft)}
+.st-bestellt{--st:var(--info); --st-soft:var(--info-soft)}
+.st-teilgeliefert{--st:var(--warn); --st-soft:var(--warn-soft)}
+.st-bereit{--st:var(--cyan); --st-soft:var(--cyan-soft)}
+.st-terminiert{--st:var(--lila); --st-soft:var(--lila-soft)}
+.st-montage{--st:var(--tint); --st-soft:var(--tint-soft)}
+.st-abgeschlossen{--st:var(--ok); --st-soft:var(--ok-soft)}
+.st-verrechnet{--st:var(--ok-txt); --st-soft:var(--ok-soft)}
+.st-archiviert{--st:var(--txt-3); --st-soft:var(--card-3)}
+.st-storniert{--st:var(--err); --st-soft:var(--err-soft)}
+.st-abgelaufen{--st:var(--err); --st-soft:var(--err-soft)}
+.st-gesendet{--st:var(--info); --st-soft:var(--info-soft)}
+.st-bestaetigt{--st:var(--ok); --st-soft:var(--ok-soft)}
+.st-gemahnt{--st:var(--warn); --st-soft:var(--warn-soft)}
+.st-eskaliert{--st:var(--err); --st-soft:var(--err-soft)}
+.st-geliefert{--st:var(--ok); --st-soft:var(--ok-soft)}
+.st-erwartet{--st:var(--info); --st-soft:var(--info-soft)}
+.st-eingetroffen{--st:var(--ok); --st-soft:var(--ok-soft)}
+.st-kommissioniert{--st:var(--lila); --st-soft:var(--lila-soft)}
+.st-ausgeliefert{--st:var(--txt-3); --st-soft:var(--card-3)}
+.st-gestellt{--st:var(--info); --st-soft:var(--info-soft)}
+.st-mahnung1,.st-mahnung2{--st:var(--warn); --st-soft:var(--warn-soft)}
+.st-angefragt{--st:var(--warn); --st-soft:var(--warn-soft)}
+.st-fertig{--st:var(--ok); --st-soft:var(--ok-soft)}
+.chip.st{background:var(--st-soft); color:var(--st)}
+.chip.st.dot::before{background:var(--st)}
+.st-bg{background:var(--st)}
+
+/* — Schrittleiste (Tablet-Offerte, Portale) — */
+.steps{display:flex; gap:0; align-items:center; overflow-x:auto; scrollbar-width:none; padding:2px 0}
+.steps::-webkit-scrollbar{display:none}
+.step{display:flex; align-items:center; gap:8px; padding:7px 12px; border-radius:var(--r-full); font-size:13px; font-weight:600; color:var(--txt-3); white-space:nowrap; flex:none}
+.step .n{width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; background:var(--card-3); color:var(--txt-3)}
+.step.done{color:var(--ok-txt)} .step.done .n{background:var(--ok-soft); color:var(--ok-txt)}
+.step.now{color:var(--tint-txt); background:var(--tint-soft)} .step.now .n{background:var(--tint); color:#fff}
+.step + .step::before{content:""; width:14px; height:1.5px; background:var(--sep-2); margin:0 2px 0 -6px; flex:none}
+button.step{cursor:pointer}
+
+/* — Tablet-Offerte: Rahmen mit Warenkorb rechts — */
+.tab-wrap{display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:0; height:100dvh; min-height:0}
+.tab-main{display:flex; flex-direction:column; min-width:0; min-height:0}
+.tab-head{display:flex; align-items:center; gap:12px; padding:calc(12px + var(--sat)) 18px 10px; border-bottom:1px solid var(--sep); background:var(--card); flex:none}
+.tab-head > div:not(.steps){flex:none; max-width:300px}
+.tab-head h1{font-size:17px; font-weight:720; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tab-head .steps{flex:1; min-width:0; justify-content:flex-end}
+@media (max-width:1100px){ .tab-head .step{padding:6px 8px; font-size:12px} .tab-head .step .n{width:20px;height:20px} }
+@media (max-width:900px){ .tab-head .step:not(.now):not(.done){display:none} .tab-head .step.done{padding:6px} .tab-head .step.done > :not(.n){display:none} }
+.tab-head .sub{font-size:12.5px; color:var(--txt-3)}
+.tab-body{flex:1; min-height:0; overflow-y:auto; padding:18px}
+.tab-foot{display:flex; gap:10px; align-items:center; padding:12px 18px calc(12px + var(--sab)); border-top:1px solid var(--sep); background:var(--card); flex:none}
+.tab-foot .btn{height:50px; font-size:16px; padding:0 22px}
+.tab-cart{background:var(--bg-2); border-left:1px solid var(--sep); display:flex; flex-direction:column; min-height:0}
+.tab-cart .cart-h{padding:calc(14px + var(--sat)) 16px 10px; border-bottom:1px solid var(--sep)}
+.tab-cart .cart-h h3{font-size:14px; font-weight:700}
+.tab-cart .cart-h small{color:var(--txt-3); font-size:12px}
+.tab-cart .cart-b{flex:1; overflow-y:auto; min-height:0; padding:8px 12px}
+.tab-cart .cart-f{padding:12px 16px calc(14px + var(--sab)); border-top:1px solid var(--sep); background:var(--card)}
+.cart-i{display:flex; gap:10px; padding:9px 6px; border-bottom:1px solid var(--sep); font-size:13.5px; align-items:flex-start}
+.cart-i:last-child{border-bottom:0}
+.cart-i .ic{width:30px; height:30px; border-radius:9px; background:var(--card); border:1px solid var(--sep); display:grid; place-items:center; color:var(--tint); flex:none}
+.cart-i .bd{flex:1; min-width:0}
+.cart-i .bd b{display:block; font-weight:620; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.cart-i .bd small{display:block; color:var(--txt-3); font-size:12px}
+.cart-i .amt{font-family:var(--ff-num); font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:600}
+.cart-i.sub{padding-left:34px; font-size:12.5px; color:var(--txt-2)}
+.cart-i.sub .amt{font-weight:500; color:var(--txt-2)}
+.cart-i.sub .bd b{font-weight:520}
+.cart-tot{display:flex; justify-content:space-between; font-size:13px; color:var(--txt-2); padding:3px 0}
+.cart-tot.big{font-size:18px; font-weight:760; color:var(--txt); padding-top:8px; margin-top:6px; border-top:2px solid var(--txt)}
+.cart-tot .amt{font-family:var(--ff-num); font-variant-numeric:tabular-nums}
+@media (max-width:900px){
+  .tab-wrap{grid-template-columns:1fr}
+  .tab-cart{display:none}
+  .tab-cart.offen{display:flex; position:fixed; inset:0; z-index:800; border:0}
+}
+
+/* — Produktkarten (Tablet, gross und tippbar) — */
+.pgrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:12px}
+.pgrid.two{grid-template-columns:repeat(auto-fill, minmax(260px, 1fr))}
+.pcard{
+  position:relative; text-align:left; border-radius:var(--r-l); background:var(--card); border:1.5px solid var(--sep);
+  padding:14px; display:flex; flex-direction:column; gap:8px; min-height:150px; box-shadow:var(--shadow-1);
+  transition:transform .12s var(--ease), border-color .14s, box-shadow .14s; cursor:pointer;
+}
+.pcard:hover{border-color:var(--sep-2); box-shadow:var(--shadow-2)}
+.pcard:active{transform:scale(.98)}
+.pcard[aria-pressed="true"]{border-color:var(--tint); box-shadow:0 0 0 3px color-mix(in srgb, var(--tint) 22%, transparent), var(--shadow-2)}
+.pcard .ic{width:44px; height:44px; border-radius:13px; background:var(--tint-soft); color:var(--tint-txt); display:grid; place-items:center}
+.pcard .ic svg{width:26px; height:26px}
+.pcard .ttl{font-size:15px; font-weight:680; line-height:1.25}
+.pcard .sub{font-size:12.5px; color:var(--txt-3); line-height:1.35}
+.pcard .prc{margin-top:auto; font-family:var(--ff-num); font-variant-numeric:tabular-nums; font-weight:700; font-size:15px}
+.pcard .prc small{font-family:var(--ff); color:var(--txt-3); font-weight:500; font-size:12px; margin-left:4px}
+.pcard .chk{position:absolute; top:10px; right:10px; width:24px; height:24px; border-radius:50%; border:1.5px solid var(--sep-2); background:var(--card); display:grid; place-items:center; color:#fff}
+.pcard .chk svg{width:14px; height:14px; opacity:0}
+.pcard[aria-pressed="true"] .chk{background:var(--tint); border-color:var(--tint)}
+.pcard[aria-pressed="true"] .chk svg{opacity:1}
+.pcard .tag{position:absolute; top:10px; left:10px; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 7px; border-radius:var(--r-full); background:var(--warn-soft); color:var(--warn-txt)}
+.pcard .tag.top{background:var(--tint); color:#fff}
+.pcard.empf{border-color:color-mix(in srgb, var(--tint) 45%, var(--sep))}
+.pcard .qty{display:flex; align-items:center; gap:6px; margin-top:4px}
+.pcard .qty .btn{width:34px; height:34px; padding:0; border-radius:10px}
+.pcard .qty b{min-width:26px; text-align:center; font-family:var(--ff-num)}
+.pcard.small{min-height:auto; padding:12px}
+.pcard.small .ic{width:36px; height:36px; border-radius:10px} .pcard.small .ic svg{width:20px; height:20px}
+
+/* — Objektkontext: grosse Wahlkarten mit Bild-Symbol — */
+.ogrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:10px}
+.ocard{border-radius:var(--r-l); border:1.5px solid var(--sep); background:var(--card); padding:16px 14px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; transition:transform .12s var(--ease), border-color .14s}
+.ocard:active{transform:scale(.97)}
+.ocard .ic{width:48px; height:48px; border-radius:14px; background:var(--card-3); color:var(--txt-2); display:grid; place-items:center}
+.ocard .ic svg{width:28px; height:28px}
+.ocard b{font-size:14px; font-weight:650}
+.ocard small{font-size:12px; color:var(--txt-3); line-height:1.35}
+.ocard[aria-pressed="true"]{border-color:var(--tint); background:var(--tint-soft)}
+.ocard[aria-pressed="true"] .ic{background:var(--tint); color:#fff}
+
+/* — Optionen und Zusatzleistungen: Zeilen mit Schalter — */
+.opt-row{display:flex; align-items:center; gap:12px; padding:12px 14px; border:1.5px solid var(--sep); border-radius:var(--r-m); background:var(--card); cursor:pointer}
+.opt-row + .opt-row{margin-top:8px}
+.opt-row .bd{flex:1; min-width:0}
+.opt-row .bd b{display:block; font-size:14.5px; font-weight:640}
+.opt-row .bd small{display:block; font-size:12.5px; color:var(--txt-3); line-height:1.35}
+.opt-row .amt{font-family:var(--ff-num); font-variant-numeric:tabular-nums; font-weight:650; white-space:nowrap}
+.opt-row[aria-pressed="true"]{border-color:var(--tint); background:color-mix(in srgb, var(--tint) 6%, var(--card))}
+.opt-row .bx{width:26px; height:26px; border-radius:8px; border:1.5px solid var(--sep-2); display:grid; place-items:center; color:#fff; flex:none}
+.opt-row .bx svg{width:15px; height:15px; opacity:0}
+.opt-row[aria-pressed="true"] .bx{background:var(--tint); border-color:var(--tint)} .opt-row[aria-pressed="true"] .bx svg{opacity:1}
+.opt-row .marge{font-size:11px; color:var(--ok-txt); background:var(--ok-soft); padding:2px 7px; border-radius:var(--r-full); font-weight:650}
+.pakete{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px}
+.paket{border:1.5px solid var(--sep); border-radius:var(--r-l); padding:14px; background:var(--card); cursor:pointer}
+.paket b{display:block; font-size:15px; font-weight:700}
+.paket .p{font-family:var(--ff-num); font-weight:700; font-size:18px; margin:4px 0}
+.paket ul{font-size:12.5px; color:var(--txt-2); line-height:1.5; list-style:disc; padding-left:16px}
+.paket[aria-pressed="true"]{border-color:var(--tint); box-shadow:0 0 0 3px color-mix(in srgb, var(--tint) 22%, transparent)}
+.paket.empf{position:relative}
+.paket.empf::after{content:"Beliebt"; position:absolute; top:-9px; right:12px; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:var(--r-full); background:var(--tint); color:#fff}
+
+/* — Verlauf je Auftrag — */
+.tl{display:flex; flex-direction:column; position:relative; padding-left:4px}
+.tl-i{display:grid; grid-template-columns:22px 1fr; gap:10px; padding:6px 0; position:relative}
+.tl-i::before{content:""; position:absolute; left:10px; top:24px; bottom:-6px; width:1.5px; background:var(--sep)}
+.tl-i:last-child::before{display:none}
+.tl-i .dot{width:22px; height:22px; border-radius:50%; background:var(--card-3); display:grid; place-items:center; font-size:12px; z-index:1}
+.tl-i .dot.ok{background:var(--ok-soft)} .tl-i .dot.warn{background:var(--warn-soft)} .tl-i .dot.err{background:var(--err-soft)} .tl-i .dot.tint{background:var(--tint-soft)}
+.tl-i .bd{font-size:13.5px; line-height:1.4; padding-top:2px}
+.tl-i .bd small{display:block; color:var(--txt-3); font-size:12px}
+
+/* — Fortschritt eines Auftrags (waagrecht) — */
+.flow{display:flex; gap:4px; align-items:stretch; overflow-x:auto; scrollbar-width:none}
+.flow::-webkit-scrollbar{display:none}
+.flow .f{flex:1; min-width:86px; padding:8px 6px; border-radius:var(--r-s); background:var(--card-2); border:1px solid var(--sep); text-align:center; font-size:11.5px; font-weight:600; color:var(--txt-3); line-height:1.25}
+.flow .f small{display:block; font-weight:500; font-size:10.5px; margin-top:2px}
+.flow .f.done{background:var(--ok-soft); border-color:transparent; color:var(--ok-txt)}
+.flow .f.now{background:var(--tint); border-color:var(--tint); color:#fff}
+.flow .f.now small{color:rgba(255,255,255,.8)}
+.flow .f.warn{background:var(--warn-soft); border-color:transparent; color:var(--warn-txt)}
+
+/* — Postausgang — */
+.mail-split{display:grid; grid-template-columns:380px 1fr; gap:14px; min-height:0}
+@media (max-width:1000px){ .mail-split{grid-template-columns:1fr} }
+.mail-l{display:flex; flex-direction:column; gap:4px}
+.mail-i{display:grid; grid-template-columns:34px 1fr auto; gap:10px; padding:10px 12px; border-radius:var(--r-m); border:1px solid var(--sep); background:var(--card); cursor:pointer; align-items:start; text-align:left; width:100%}
+.mail-i:hover{background:var(--card-2)}
+.mail-i[aria-current="true"]{border-color:var(--tint); background:var(--tint-soft)}
+.mail-i .ic{width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:var(--card-3); color:var(--txt-2)}
+.mail-i .ic.auto{background:var(--lila-soft); color:var(--lila)}
+.mail-i .ic.ki{background:var(--warn-soft); color:var(--warn-txt)}
+.mail-i .bd{min-width:0}
+.mail-i .bd b{display:block; font-size:13.5px; font-weight:640; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mail-i .bd small{display:block; font-size:12px; color:var(--txt-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mail-i .rt{font-size:11.5px; color:var(--txt-3); text-align:right; white-space:nowrap}
+.mail-v{border-radius:var(--r-l); border:1px solid var(--sep); background:var(--card); padding:18px 20px; display:flex; flex-direction:column; gap:12px}
+.mail-v .hd{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13px; color:var(--txt-2)}
+.mail-v .hd b{color:var(--txt-3); font-weight:600}
+.mail-v h3{font-size:17px; font-weight:720}
+.mail-v pre{white-space:pre-wrap; font-family:var(--ff); font-size:14px; line-height:1.55; color:var(--txt); border-top:1px solid var(--sep); padding-top:12px; margin:0}
+.mail-v textarea.inp{min-height:260px; font-size:14px; line-height:1.5}
+.mail-v .ki-hinweis{font-size:12px; color:var(--warn-txt); background:var(--warn-soft); padding:6px 10px; border-radius:var(--r-s); display:inline-flex; gap:6px; align-items:center}
+
+/* — QR-Bogen fuer das Lager — */
+.qr-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px}
+.qr-card{border:1px solid var(--sep); border-radius:var(--r-m); background:#fff; color:#111; padding:12px; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; break-inside:avoid}
+.qr-card svg{width:150px; height:150px}
+.qr-card b{font-size:13px; line-height:1.25}
+.qr-card small{font-size:11px; color:#555; font-family:var(--ff-num)}
+.qr-card .st{align-self:stretch; margin-top:2px}
+.qr-big{display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px}
+.qr-big svg{width:min(70vw, 360px); height:auto}
+
+/* — Zahlung — */
+.pay-tabs{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.pay-tab{padding:12px; border-radius:var(--r-m); border:1.5px solid var(--sep); background:var(--card); font-weight:650; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer}
+.pay-tab[aria-selected="true"]{border-color:var(--tint); background:var(--tint-soft); color:var(--tint-txt)}
+.pay-card{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.pay-card .wide{grid-column:1/-1}
+.twint-box{display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px; border-radius:var(--r-l); background:#000; color:#fff}
+.twint-box svg{width:180px; height:180px; background:#fff; border-radius:12px; padding:8px}
+.twint-box b{font-size:15px}
+.twint-box small{opacity:.8; font-size:12.5px; text-align:center}
+.pay-ok{display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:var(--r-m); background:var(--ok-soft); color:var(--ok-txt); font-weight:650}
+.pay-ok svg{width:22px; height:22px}
+.sig-box{border:1.5px dashed var(--sep-2); border-radius:var(--r-m); background:var(--card-2); height:180px; position:relative}
+.sig-box canvas{width:100%; height:100%; display:block; border-radius:var(--r-m); touch-action:none}
+.sig-box .hint{position:absolute; left:14px; bottom:10px; font-size:12px; color:var(--txt-3); pointer-events:none}
+.sig-box.filled .hint{display:none}
+.sig-box .x{position:absolute; right:8px; top:8px}
+
+/* — Pipeline-Board auf der Uebersicht — */
+.pipe{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(210px, 1fr); gap:10px; overflow-x:auto; padding-bottom:6px}
+.pipe-col{background:var(--bg-2); border:1px solid var(--sep); border-radius:var(--r-l); padding:10px; display:flex; flex-direction:column; gap:8px; min-height:140px}
+.pipe-col .h{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--txt-2); padding:2px 4px}
+.pipe-col .h .cnt{margin-left:auto; font-family:var(--ff-num); background:var(--card); border:1px solid var(--sep); border-radius:var(--r-full); padding:1px 8px; font-size:11.5px}
+.pipe-col .h .dot{width:8px; height:8px; border-radius:50%; background:var(--st)}
+.pipe-card{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-m); padding:10px 12px; text-align:left; width:100%; box-shadow:var(--shadow-1); cursor:pointer}
+.pipe-card:hover{border-color:var(--sep-2)}
+.pipe-card b{display:block; font-size:13.5px; font-weight:650}
+.pipe-card small{display:block; font-size:12px; color:var(--txt-3); margin-top:2px}
+.pipe-card .amt{font-family:var(--ff-num); font-size:12.5px; margin-top:4px; color:var(--txt-2)}
+.pipe-card .warn{color:var(--warn-txt); font-weight:600}
+.pipe-card .err{color:var(--err-txt); font-weight:600}
+
+/* — Aufgabenliste (Was heute zaehlt) — */
+.todo{display:flex; flex-direction:column; gap:6px}
+.todo-i{display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:var(--r-m); border:1px solid var(--sep); background:var(--card)}
+.todo-i .ic{width:34px; height:34px; border-radius:10px; display:grid; place-items:center; flex:none; background:var(--card-3); color:var(--txt-2)}
+.todo-i.warn .ic{background:var(--warn-soft); color:var(--warn-txt)}
+.todo-i.err .ic{background:var(--err-soft); color:var(--err-txt)}
+.todo-i.ok .ic{background:var(--ok-soft); color:var(--ok-txt)}
+.todo-i.info .ic{background:var(--info-soft); color:var(--info-txt)}
+.todo-i .bd{flex:1; min-width:0}
+.todo-i .bd b{display:block; font-size:13.5px; font-weight:640}
+.todo-i .bd small{display:block; font-size:12px; color:var(--txt-3)}
+
+/* — Demo-Uhr in der Kopfzeile — */
+.uhr{display:inline-flex; align-items:center; gap:4px; padding:4px 6px 4px 10px; border-radius:var(--r-full); background:var(--card-2); border:1px solid var(--sep); font-size:12.5px; font-weight:600; color:var(--txt-2)}
+.uhr.aktiv{background:var(--warn-soft); border-color:transparent; color:var(--warn-txt)}
+.uhr .btn.sm{height:26px; padding:0 8px; font-size:12px}
+
+/* — A4-Dokumente (Offerte, Auftragsbestaetigung, Rechnung, Auftragsblatt) — */
+.a4{background:#fff; color:#111; width:210mm; min-height:297mm; margin:0 auto; padding:18mm 18mm 16mm; box-shadow:var(--shadow-3); font-size:10.5pt; line-height:1.45; font-family:var(--ff); position:relative}
+.a4 *{color:#111}
+.a4 h1{font-size:20pt; font-weight:760; letter-spacing:-.02em; margin:0 0 2mm}
+.a4 .kopf{display:flex; justify-content:space-between; gap:10mm; margin-bottom:10mm}
+.a4 .kopf .firma b{font-size:12pt; display:block}
+.a4 .kopf .firma small{display:block; color:#555; font-size:9pt; line-height:1.4}
+.a4 .adr{margin:14mm 0 8mm; line-height:1.4}
+.a4 .meta{display:grid; grid-template-columns:auto auto; gap:1mm 6mm; font-size:9pt; color:#444; justify-content:end; text-align:right}
+.a4 .meta b{color:#111}
+.a4 table{width:100%; border-collapse:collapse; margin:4mm 0}
+.a4 th{text-align:left; font-size:8.5pt; text-transform:uppercase; letter-spacing:.04em; color:#555; border-bottom:1.5px solid #111; padding:2mm 1.5mm}
+.a4 td{padding:2mm 1.5mm; border-bottom:1px solid #ddd; vertical-align:top}
+.a4 td.r,.a4 th.r{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.a4 tr.sub td{color:#555; font-size:9.5pt; padding-left:6mm}
+.a4 tr.grp td{font-weight:700; border-bottom:0; padding-top:4mm}
+.a4 .tot td{border-bottom:0; padding:1mm 1.5mm}
+.a4 .tot.end td{font-weight:760; font-size:12pt; border-top:2px solid #111; padding-top:2.5mm}
+.a4 .fuss{position:absolute; left:18mm; right:18mm; bottom:10mm; font-size:8.5pt; color:#666; border-top:1px solid #ddd; padding-top:2mm; display:flex; justify-content:space-between}
+.a4 .sig{display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:12mm}
+.a4 .sig .l{border-top:1px solid #111; padding-top:2mm; font-size:9pt; color:#555}
+.a4 .sig img{height:16mm; display:block; margin-bottom:-2mm}
+.a4 .bem{font-size:9.5pt; color:#333; margin-top:6mm; white-space:pre-line}
+.a4-wrap{padding:16px 0 30px; background:var(--bg-2); border-radius:var(--r-l)}
+@media (max-width:900px){ .a4{width:100%; min-height:auto; padding:8mm 6mm} .a4 .fuss{position:static; margin-top:8mm} }
+/* Zahlteil (Swiss QR-Rechnung): 210x105 mm am unteren Rand */
+.zahlteil{width:210mm; height:105mm; margin:10mm 0 0 -18mm; border-top:1px dashed #111; display:grid; grid-template-columns:62mm 148mm; font-size:8pt; line-height:1.35; background:#fff; color:#111; page-break-inside:avoid}
+.zahlteil .emp{padding:5mm; border-right:1px dashed #111; display:flex; flex-direction:column}
+.zahlteil .zt{padding:5mm; display:grid; grid-template-columns:51mm 1fr; gap:5mm}
+.zahlteil h4{font-size:11pt; font-weight:700; margin:0 0 3mm}
+.zahlteil .l{font-size:6pt; font-weight:700; margin-top:2.2mm; letter-spacing:.02em}
+.zahlteil .emp .l{font-size:6pt}
+.zahlteil .v{font-size:8pt}
+.zahlteil .emp .v{font-size:8pt}
+.zahlteil .betrag{display:flex; gap:6mm; margin-top:2.5mm}
+.zahlteil .betrag .l{margin-top:0}
+.zahlteil .qr{width:46mm; height:46mm; margin:2mm 0}
+.zahlteil .qr svg{width:46mm; height:46mm; display:block}
+.zahlteil .pf{font-size:7pt; margin-top:auto; padding-top:2mm; text-align:right}
+@media print{
+  body.druck{background:#fff}
+  .a4{box-shadow:none; margin:0; width:auto; min-height:auto; padding:14mm 16mm}
+  .a4-wrap{padding:0; background:none}
+  .zahlteil{margin-left:-16mm}
+  .qr-grid{grid-template-columns:repeat(3, 1fr)}
+  .qr-card{border-color:#999}
+  @page{size:A4; margin:0}
+}

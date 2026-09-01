@@ -1,0 +1,15 @@
+{
+  "name": "BADWERK – Showroom-System",
+  "short_name": "BADWERK",
+  "description": "Offerte, Zahlung, Bestellung, Lager, Termin, Montage und Rechnung für den Sanitär-Showroom.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EEF1F6",
+  "theme_color": "#0F7C8C",
+  "lang": "de-CH",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
