@@ -48,7 +48,8 @@ Sie kommen über Links mit Token herein, die in den Mails stehen
 Demo-Links auf den Demodaten (gleich auf jedem Gerät):
 `?k=K0139` (Kunde Rossi, montagebereit – Termin wählen),
 `?k=K0138` (Kunde Lüthi, Schlussrechnung), `?l=L014201` (Kaldewei,
-Bestellung bestätigen), `?p=PKELLER` (Keller Haustechnik, Partner Plus),
+Bestellung bestätigen), `?m=M0140` (Monteur Aquatec: Termin bestätigen,
+Fertigmeldung mit Abnahme), `?p=PKELLER` (Keller Haustechnik, Partner Plus),
 `?p=PBRUNNER` (Sanitär Brunner, Partner Basis).
 
 ## Die Vorführung in zehn Minuten

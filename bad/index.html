@@ -5971,6 +5971,8 @@ const BWSeed = {
     K({ id: 'K-MEIER', anrede: 'Familie', vorname: 'Thomas und Petra', name: 'Meier', strasse: 'Rütistrasse 8', plz: '8304', ort: 'Wallisellen', email: 'meier.wallisellen@example.ch', telefon: '044 830 22 19', partnerId: 'P-01', herkunft: 'partner' }, { bezeichnung: 'Bad 1. OG', gebaeudetyp: 'efh', stockwerk: 1, lift: false, art: 'sanierung', baujahrVor1990: true, zugang: 'Parkplatz in der Einfahrt, Hund im Haus' });
     Uhr._seed = -3;
     K({ id: 'K-IMMO', anrede: '', vorname: 'Beat', name: 'Wettstein', firma: 'Immo-Treuhand AG', typ: 'geschaeft', strasse: 'Hardturmstrasse 120', plz: '8005', ort: 'Zürich', email: 'b.wettstein@immo-treuhand.example', telefon: '044 271 60 60', herkunft: 'empfehlung', notiz: 'Verwaltung, Rechnung an Firma, 30 Tage netto' }, { bezeichnung: 'Liegenschaft Grubenstrasse 14, drei Wohnungen', strasse: 'Grubenstrasse 14', plz: '8045', ort: 'Zürich', gebaeudetyp: 'mfh', stockwerk: 2, lift: true, art: 'sanierung', baujahrVor1990: true, eigentum: 'miete', verwaltung: 'Immo-Treuhand AG', zugang: 'Schlüssel bei Hauswart' });
+    Uhr._seed = -20;
+    K({ id: 'K-GERBER', anrede: 'Herr und Frau', vorname: 'Reto und Nina', name: 'Gerber', strasse: 'Zürcherstrasse 45', plz: '8953', ort: 'Dietikon', email: 'gerber.dietikon@example.ch', telefon: '076 402 18 55', partnerId: 'P-03', herkunft: 'partner' }, { bezeichnung: 'Gäste-WC EG', gebaeudetyp: 'efh', art: 'sanierung', baujahrVor1990: false, zugang: 'Parkplatz vor dem Haus, Klingel Gerber' });
     Uhr._seed = -1;
     K({ id: 'K-BOSSHARD', anrede: 'Herr', vorname: 'Daniel', name: 'Bosshard', strasse: 'Rütistrasse 7', plz: '5400', ort: 'Baden', email: 'd.bosshard@example.ch', telefon: '079 300 41 77', partnerId: 'P-01', herkunft: 'partner' }, { bezeichnung: 'Komplettbad, Neubau EFH', gebaeudetyp: 'efh', art: 'neubau', zugang: 'Baustelle, Einzug 15.11.2026' });
     Uhr._seed = -2;
@@ -6043,6 +6045,15 @@ const BWSeed = {
     tag(-6); avis(a139, 'L-TAL', 'Camion talsee Tour 3');
     tag(-4); scan(a139, 'L-DUS');
     tag(-3); scan(a139, 'L-TAL');
+
+    /* --- A-2026-0140 Gerber: Gaeste-WC, alles eingetroffen, Termin gesetzt, Partner bestaetigt noch nicht --- */
+    tag(-20); db.zaehler.auftrag = 139;
+    o = offerte('K-GERBER', 'b-nadine', 'P-03', [{ id: 'A-3001', optionen: ['lcc'] }, { id: 'A-4001' }, { id: 'A-5001' }, { id: 'A-6002' }], [{ id: 'Z-02', grund: 'Sanierung: Altmaterial fällt an' }, { id: 'Z-05', grund: 'Beliebt bei Sanierungen' }]);
+    let a140 = bezahlt(o, 'twint');
+    tag(-19); ab(a140, 'L-ST'); ab(a140, 'L-GEB'); ab(a140, 'L-LAU'); ab(a140, 'L-KWC');
+    tag(-18); scan(a140, 'L-ST'); scan(a140, 'L-GEB');
+    tag(-13); scan(a140, 'L-LAU'); scan(a140, 'L-KWC');
+    tag(-2); Dom.terminSetzen(db, a140, { datum: D.plus(heute0, wt(3)), von: '07:30', bis: '12:00', partnerId: 'P-03', quelle: 'kunde-online' });
 
     /* --- A-2026-0142 Meier: Sanierung, laeuft; Kaldewei als Problemlieferant, Zehnder ohne AB --- */
     tag(wt(-6)); db.zaehler.auftrag = 141;
