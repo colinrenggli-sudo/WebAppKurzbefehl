@@ -160,6 +160,23 @@ Sammlung `badwerk` im Firebase-Projekt die Regel ergänzen:
 match /badwerk/{raum} { allow read, write: if request.auth != null; }
 ```
 
+## Testen
+
+Drei Prüfskripte fahren die App in einem unsichtbaren Chromium durch und
+melden jeden Konsolenfehler (Screenshots landen in `tools/shots/`):
+
+```bash
+cd bad/tools
+npm install && npx playwright install chromium
+npm test            # alle drei, oder einzeln:
+node test-routen.mjs    # jede Seite der Konsole, Lager-App, vier Portale, QR-Link, Demo-Uhr
+node test-offerte.mjs   # Tablet-Offerte von der Kundin bis zum Auftrag mit Bestellungen
+node test-montage.mjs   # Terminwahl, Monteur bestätigt, Fertigmeldung, Rechnung, Zahlung, Archiv
+```
+
+Braucht Node 20 oder neuer. Am Schluss jedes Skripts steht «keine
+Konsolenfehler» oder die Liste der Fehler.
+
 ## Weiterentwickeln
 
 Die App wird aus `src/` gebaut:
@@ -199,6 +216,7 @@ Was ein Betrieb darüber hinaus bräuchte, steht in
 | `index.html` | Die komplette App, gebaut aus `src/` |
 | `src/` | Quelltext in Teilen, `src/LEITFADEN.md` |
 | `build.py` | Baut `index.html` |
+| `tools/` | Prüfskripte (Playwright), siehe «Testen» |
 | `manifest.json`, `sw.js`, `icon.svg` | Installation als App, Offline-Betrieb, Symbol |
 | `KONZEPT.md` | Vision, Stakeholder, Prozesse, Regeln, Demo-Storyboard, Roadmap |
 | `RECHERCHE.md` | Recherche mit Quellen |

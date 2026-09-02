@@ -1,0 +1,53 @@
+// Prüfskript für BADWERK. Ausführen aus bad/tools:  npm install && npx playwright install chromium && node test-offerte.mjs
+// Öffnet bad/index.html ab Datei, meldet jeden Konsolenfehler, legt Screenshots unter bad/tools/shots ab.
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const OUT = path.join(HERE, 'shots') + path.sep; fs.mkdirSync(OUT, { recursive: true });
+const URL = 'file://' + path.join(HERE, '..', 'index.html');
+const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1180, height: 820 }, locale: 'de-CH', hasTouch: true });
+const p = await ctx.newPage(); const errs = [];
+p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); }); p.on('pageerror', e => errs.push('PAGEERROR ' + e.message + ' ' + (e.stack || '').split('\n')[1]));
+const shot = n => p.screenshot({ path: OUT + n });
+await p.goto(URL); await p.waitForTimeout(300);
+for (const k of '2468') await p.click(`#keypad [data-k="${k}"]`); await p.waitForTimeout(400);
+await p.evaluate(() => { location.hash = '#/offerte'; }); await p.waitForTimeout(400);
+await shot('20-offerte-start.png');
+await p.click('[data-act="offerte.start"][data-kunde="K-BRUNNER"]'); await p.waitForTimeout(500);
+await shot('21-offerte-s1.png');
+console.log('s1 kunde:', await p.$eval('.tab-head h1', e => e.textContent));
+await p.click('[data-act="offerte.weiter"]'); await p.waitForTimeout(400);
+await shot('22-offerte-s2.png');
+await p.click('[data-act="offerte.produkt"][data-id="A-1001"]'); await p.waitForTimeout(300);
+await p.click('[data-act="offerte.kat"][data-k="armatur"]'); await p.waitForTimeout(300);
+await p.click('[data-act="offerte.produkt"][data-id="A-5005"]'); await p.waitForTimeout(300);
+await shot('23-offerte-s2b.png');
+console.log('positionen:', await p.evaluate(() => Tablet.aktuelle().positionen.length), 'cart lines:', await p.$$eval('.cart-i', a => a.length));
+await p.click('[data-act="offerte.weiter"]'); await p.waitForTimeout(400);
+await shot('24-offerte-s3.png');
+await p.click('[data-act="offerte.option"][data-opt="whirl"]'); await p.waitForTimeout(300);
+const nV = await p.locator('[data-act="offerte.vorschlag"]').count(); console.log('vorschlaege:', nV);
+for (let i = 0; i < nV; i++) { await p.locator('[data-act="offerte.vorschlag"]').nth(i).click(); await p.waitForTimeout(250); }
+await p.click('[data-act="offerte.leistung"][data-id="PK-01"]'); await p.waitForTimeout(300);
+await shot('25-offerte-s3b.png');
+await p.click('[data-act="offerte.weiter"]'); await p.waitForTimeout(400);
+await shot('26-offerte-s4.png');
+console.log('summe:', JSON.stringify(await p.evaluate(() => Dom.summe(Tablet.aktuelle()))));
+await p.click('[data-act="offerte.schritt"][data-n="5"]'); await p.waitForTimeout(400);
+await p.check('#sigAgb');
+const c = await p.$('#sigCanvas'); const bb = await c.boundingBox();
+await p.mouse.move(bb.x + 40, bb.y + 90); await p.mouse.down(); await p.mouse.move(bb.x + 120, bb.y + 60, { steps: 8 }); await p.mouse.move(bb.x + 200, bb.y + 110, { steps: 8 }); await p.mouse.move(bb.x + 300, bb.y + 70, { steps: 8 }); await p.mouse.up();
+await shot('27-offerte-s5.png');
+await p.click('[data-act="offerte.unterschreiben"]'); await p.waitForTimeout(500);
+await shot('28-offerte-s6.png');
+await p.click('[data-act="offerte.zahlen"][data-m="twint"]'); await p.waitForTimeout(1400);
+await shot('29-offerte-fertig.png');
+const st = await p.evaluate(() => { const o = Tablet.aktuelle(); const a = DB.auftraege.find(x => x.id === o.auftragId); return { offerte: o.status, auftrag: a && a.nr + ' ' + a.status, bestellungen: DB.bestellungen.filter(x => x.auftragId === (a || {}).id).map(x => x.nr + ' ' + x.lieferantId + ' plan ' + x.planTermin), lps: DB.lagerpositionen.filter(x => x.auftragId === (a || {}).id).length, mails: DB.post.filter(m => m.auftragId === (a || {}).id).map(m => m.art + ': ' + m.betreff) }; });
+console.log(JSON.stringify(st, null, 1));
+await p.click('[data-act="nav.gehe"][data-r^="auftrag/"]'); await p.waitForTimeout(500);
+await shot('30-auftrag.png');
+for (const t of ['lieferung', 'lager', 'termin', 'dokumente', 'post', 'verlauf']) { await p.evaluate(t => { location.hash = location.hash.replace(/(auftrag\/[^/]+).*/, '$1/' + t); }, t); await p.waitForTimeout(350); await shot('31-auftrag-' + t + '.png'); }
+console.log(errs.length ? 'FEHLER:\n' + errs.join('\n') : 'keine Konsolenfehler');
+await b.close();
