@@ -5,3 +5,6 @@ daten/
 # Zugangsdaten der Selbsthosting-Umgebung
 deploy/.env
 deploy/fitbit-sync/token.json
+
+# Screenshots der Browser-Tests
+stundenplan/tests/screenshots/
