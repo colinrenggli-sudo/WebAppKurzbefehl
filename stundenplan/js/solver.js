@@ -358,7 +358,7 @@
       if (!days.includes(l.day)) out.push({ lessonId: l.id, type: 'day', text: 'Ungültiger Tag' });
       if (l.slot < 1 || l.slot + len - 1 > S) out.push({ lessonId: l.id, type: 'slot', text: 'Ausserhalb des Rasters' });
       if (len > 1 && l.slot <= lunch && l.slot + len - 1 > lunch) out.push({ lessonId: l.id, type: 'lunch', text: 'Doppellektion über den Mittag' });
-      if (cls?.schoolDays?.length && !cls.schoolDays.includes(l.day)) out.push({ lessonId: l.id, type: 'schoolday', text: `${cls.name}: kein Schultag am ${M.dayName(l.day)}` });
+      if (cls?.schoolDays?.length) { const kd = D.normDays(state, cls.schoolDays); if (kd.length && !kd.includes(l.day)) out.push({ lessonId: l.id, type: 'schoolday', text: `${cls.name}: kein Schultag am ${M.dayName(l.day)}` }); }
       if (room && subj && cls && !D.roomFits(room, subj, cls)) out.push({ lessonId: l.id, type: 'roomfit', text: `${room.name} passt nicht zu ${subj.name}/${cls.size} Lernenden` });
       for (let s = l.slot; s < l.slot + len; s++) {
         if (t && !D.teacherAvailable(t, l.day, s)) out.push({ lessonId: l.id, type: 'avail', text: `${D.teacherLabel(t)} nicht verfügbar ${M.dayName(l.day, true)} ${s}` });

@@ -218,7 +218,7 @@
     const moved = { ...lesson, day, slot, roomId: roomId === undefined ? lesson.roomId : roomId };
     if (slot < 1 || slot + len - 1 > D.slotCount(state)) conflicts.push({ type: 'slot', text: 'Ausserhalb des Stundenrasters' });
     if (D.crossesLunch(state, slot, len)) conflicts.push({ type: 'lunch', text: 'Doppellektion über den Mittag' });
-    if (cls?.schoolDays?.length && !cls.schoolDays.includes(day)) conflicts.push({ type: 'day', text: `${cls.name} hat am ${M.dayName(day)} keinen Schultag` });
+    if (cls?.schoolDays?.length) { const kd = D.normDays(state, cls.schoolDays); if (kd.length && !kd.includes(day)) conflicts.push({ type: 'day', text: `${cls.name} hat am ${M.dayName(day)} keinen Schultag` }); }
     if (t) for (let s = slot; s < slot + len; s++) if (!D.teacherAvailable(t, day, s)) { conflicts.push({ type: 'avail', text: `${D.teacherLabel(t)} ist um ${D.slotLabel(state, s)} nicht verfügbar` }); break; }
     const room = D.roomOf(state, moved.roomId);
     if (moved.roomId && room && subject && !D.roomFits(room, subject, cls)) conflicts.push({ type: 'room', text: `${room.name} passt nicht (Typ/Kapazität)` });

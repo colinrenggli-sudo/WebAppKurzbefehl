@@ -75,6 +75,19 @@ async function test(name, fn) { try { await fn(); results.push('✓ ' + name); }
     assert.strictEqual(SW.solver.validate(st, p.lessons).length, 0);
     assert.ok(placed >= need * 0.97, `nur ${placed}/${need}`);
   });
+  await test('Kaputte Daten: weder generate noch feasibility noch validate werfen', async () => {
+    const st = SW.seed.build();
+    st.classes[0].curriculumId = 'gibt-es-nicht'; st.classes[1].subjectTeachers = { s_de: 'geloescht' }; st.classes[2].homeRoomId = 'kein-raum';
+    st.classes[3].schoolDays = ['1', 9, null]; st.classes[4].size = 0; st.classes[5].extraLessons = [{ subjectId: 's_en', lessons: 'x', block: 2 }, { subjectId: 'nix', lessons: 2 }];
+    st.teachers[0].availability = null; st.teachers[1].availability = { 1: [true] }; st.teachers[2].availability = { 1: Array(30).fill(true) }; st.teachers[3].subjectIds = null;
+    st.curricula[0].subjects[0].lessons = { 1: '3', 2: -1, 3: NaN }; st.subjects[0].roomReq = 'unbekannt'; st.rooms[0].capacity = ''; st.rooms[1].capacity = null; st.rooms[2].blocked = { 1: 'kaputt' };
+    st.timetable = { id: 'alt', lessons: [{ id: 'x', classId: 'weg', subjectId: 's_de', teacherId: 't_lwe', roomId: 'r_zimmer101', day: 1, slot: 1, len: 1, locked: true }, { id: 'y', classId: st.classes[6].id, subjectId: 's_wg', teacherId: null, roomId: null, day: 9, slot: 0, len: 3, locked: true }] };
+    const f = D.feasibility(st); assert.ok(Array.isArray(f.issues));
+    const p = await SW.solver.generate(st, { seed: 1, maxIterations: 500, timeMs: 5000 });
+    assert.ok(Array.isArray(p.lessons)); assert.strictEqual(SW.solver.validate(st, p.lessons).filter((v) => v.type !== 'avail').length, 0, 'Regelverletzungen bei kaputten Daten');
+    SW.solver.validate(st, st.timetable.lessons); SW.solver.cost(st, p.lessons); D.ttStats(st, p); D.ttConflicts(st, p);
+    for (const st2 of [{ ...SW.model.emptyState(), settings: { ...SW.model.emptyState().settings, days: [], slots: [] } }, { ...SW.seed.build(), settings: { ...SW.seed.build().settings, slots: SW.model.DEFAULT_SLOTS.slice(0, 6), lunchAfter: 3 } }]) { D.feasibility(st2); const p2 = await SW.solver.generate(st2, { seed: 1, maxIterations: 200, timeMs: 5000 }); assert.strictEqual(SW.solver.validate(st2, p2.lessons).length, 0); }
+  });
   console.log(results.join('\n'));
   console.log(failed ? `\n${failed} Test(s) fehlgeschlagen` : '\nAlle Tests bestanden');
   process.exit(failed ? 1 : 0);

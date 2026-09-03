@@ -190,7 +190,7 @@
       if (view === 'klasse') { const need = D.classLessonCount(state, obj); const kl = D.teacherOf(state, obj.mainTeacherId); info.append(h('span', `${n} von ${need} Lektionen`), h('span', `Schultage: ${(obj.schoolDays || []).map((d) => M.dayName(d, true)).join(', ') || '–'}`), kl ? h('span.flex.ai-c.g4', 'Klassenlehrperson ', U.avatar(kl, 'xs'), kl.code || '') : null, h('span', `Stammzimmer: ${D.roomOf(state, obj.homeRoomId)?.name || '–'}`)); }
       if (view === 'lehrperson') info.append(h('span', `${n} Lektionen im Plan · Pensum max. ${D.teacherMaxLessons(state, obj)}`), h('span', `Fächer: ${(obj.subjectIds || []).map((s) => D.subjectOf(state, s)?.short).filter(Boolean).join(', ')}`));
       if (view === 'raum') info.append(h('span', `${n} Lektionen · Auslastung ${Math.round((n / (D.days(state).length * D.slotCount(state))) * 100)} %`), h('span', `${M.roomType(obj.type).name} · ${obj.capacity} Plätze`));
-      if (isAdmin()) info.append(h('span.faint', view === 'klasse' ? 'Lektionen ziehen zum Verschieben · Klick auf eine Lektion für Details · Klick auf freie Zelle zum Hinzufügen' : 'Lektionen ziehen zum Verschieben · Klick für Details'));
+      if (isAdmin()) info.append(h('span.faint.no-print', view === 'klasse' ? 'Lektionen ziehen zum Verschieben · Klick auf eine Lektion für Details · Klick auf freie Zelle zum Hinzufügen' : 'Lektionen ziehen zum Verschieben · Klick für Details'));
       el.append(info, h('div.card.pad-s', h('div.scroll-x', grid)));
       // Legende
       const subs = SW.uniq(lessons.map((l) => l.subjectId)).map((s) => D.subjectOf(state, s)).filter(Boolean);

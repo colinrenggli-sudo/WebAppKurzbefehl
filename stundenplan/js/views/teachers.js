@@ -41,7 +41,10 @@
 .lp-tbl .meter .num{min-width:58px}
 .lp-tbl .lp-days{width:96px}
 .lp-tbl tr.lp-off td{opacity:.55}
-.lp-tbl .lp-subjs{max-width:280px}
+.lp-tbl .lp-subjs{flex-wrap:nowrap}
+.lp-tbl .none{color:var(--txt-3);font-weight:500}
+.lp-warn-pills{display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;vertical-align:middle}
+.lp-warn-pills a{text-decoration:none}
 .lp-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .lp-head .grow{min-width:0}
 .lp-head h1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -128,6 +131,8 @@
   const sameDays = (a, b) => JSON.stringify([...(a || [])].map(Number).sort()) === JSON.stringify([...(b || [])].map(Number).sort());
   const countAvail = (state, a) => { let n = 0; for (const d of D.days(state)) for (const x of a?.[d] || []) if (x) n++; return n; };
   const dayCount = (state, t, d) => (t.availability?.[d] || []).filter(Boolean).length;
+  // Ungespeicherter Entwurf vorhanden und vom gespeicherten Stand verschieden?
+  const draftDirty = (state) => { if (!draft) return false; const t = D.teacherOf(state, draft.id); if (!t) return false; return !sameAvail(state, draft.availability, t.availability) || !sameDays(draft.preferredDays, t.preferredDays); };
 
   // Belegung aus dem Plan als Overlay fürs Verfügbarkeitsraster: {day:[label|null]}
   const busyOf = (state, id) => { const busy = {}; for (const l of D.lessonsFor(state.timetable, { teacherId: id })) { const k = D.classOf(state, l.classId), s = D.subjectOf(state, l.subjectId); busy[l.day] = busy[l.day] || []; for (let q = 0; q < (l.len || 1); q++) busy[l.day][l.slot - 1 + q] = `${k?.name || '?'} · ${s?.short || s?.name || '?'}`; } return busy; };
@@ -346,15 +351,16 @@
     const noSubj = active.filter((t) => !(t.subjectIds || []).length);
     const noAvail = active.filter((t) => !availOf(state, t));
     el.append(h('div.grid.c4',
-      U.kpi({ label: 'Lehrpersonen', icon: '👩‍🏫', value: SW.fmtNum(active.length), sub: inactive ? `${plural(inactive, 'inaktive', 'inaktive')} ausgeblendet` : 'alle aktiv' }),
+      U.kpi({ label: 'Lehrpersonen', icon: '👩‍🏫', value: SW.fmtNum(teachers.length), sub: inactive ? `${SW.fmtNum(active.length)} aktiv · ${SW.fmtNum(inactive)} inaktiv` : 'alle aktiv' }),
       U.kpi({ label: 'Vollzeitstellen', icon: '💼', value: SW.fmtNum(fte, 1), sub: `Ø Pensum ${active.length ? Math.round(SW.sum(active, (t) => employmentOf(t)) / active.length) : 0} %` }),
       U.kpi({ label: 'Zugeteilte Lektionen', icon: '📘', value: h('span', SW.fmtNum(totalLoad), h('small', `/ ${SW.fmtNum(totalMax)}`)), sub: totalMax ? `${Math.round((totalLoad / totalMax) * 100)} % der Pensen aus Klassenzuweisungen` : 'keine Pensen' }),
       U.kpi({ label: 'Verfügbare Lektionen', icon: '⏱️', value: SW.fmtNum(totalAvail), sub: active.length ? `Ø ${SW.fmtNum(totalAvail / active.length, 1)} pro Lehrperson und Woche` : '–' }),
     ));
     if (edit && (noSubj.length || noAvail.length)) {
       const parts = [];
-      if (noSubj.length) parts.push(h('span', h('b', `${plural(noSubj.length, 'Lehrperson', 'Lehrpersonen')} ohne Fächer: `), h('span.flex.ai-c.g4.wrap', { style: { display: 'inline-flex' } }, noSubj.slice(0, 5).map((t) => h('a', { href: '#/lehrpersonen/' + t.id, style: { textDecoration: 'none' } }, U.teacherPill(t))), noSubj.length > 5 ? h('span.small', ` +${noSubj.length - 5}`) : null)));
-      if (noAvail.length) parts.push(h('span', h('b', `${plural(noAvail.length, 'Lehrperson', 'Lehrpersonen')} ohne Verfügbarkeit: `), h('span', { style: { display: 'inline-flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' } }, noAvail.slice(0, 5).map((t) => h('a', { href: '#/lehrpersonen/' + t.id, style: { textDecoration: 'none' } }, U.teacherPill(t))), noAvail.length > 5 ? h('span.small', ` +${noAvail.length - 5}`) : null)));
+      const pills = (list) => h('span.lp-warn-pills', list.slice(0, 5).map((t) => h('a', { href: '#/lehrpersonen/' + t.id }, U.teacherPill(t))), list.length > 5 ? h('span.small', ` +${list.length - 5}`) : null);
+      if (noSubj.length) parts.push(h('span', h('b', `${plural(noSubj.length, 'Lehrperson', 'Lehrpersonen')} ohne Fächer: `), pills(noSubj)));
+      if (noAvail.length) parts.push(h('span', h('b', `${plural(noAvail.length, 'Lehrperson', 'Lehrpersonen')} ohne Verfügbarkeit: `), pills(noAvail)));
       el.append(U.banner(h('div.col.g6', parts), 'warn'));
     }
 
@@ -404,10 +410,11 @@
     const lessons = D.lessonsFor(tt, { teacherId: id });
     const afterDelete = () => SW.router.go('#/lehrpersonen');
 
-    // Entwurf der Verfügbarkeit (nur für diese Person, sonst verwerfen)
-    if (draft && draft.id !== id) draft = null;
+    // Entwurf der Verfügbarkeit: nur für diese Person; ein ungespeicherter Entwurf einer anderen Person wird verworfen
+    if (draft && draft.id !== id) { const o = D.teacherOf(state, draft.id); if (o && draftDirty(state)) U.toast(`Ungespeicherte Verfügbarkeit von ${label(o)} verworfen`, { type: 'warn' }); draft = null; }
+    if (draft && !draftDirty(state)) draft = null; // unverändert → frisch aus dem gespeicherten Stand
     if (!draft) draft = { id, availability: normAvail(state, t.availability), preferredDays: [...(t.preferredDays || [])].map(Number).sort() };
-    const isDirty = () => !sameAvail(state, draft.availability, t.availability) || !sameDays(draft.preferredDays, t.preferredDays);
+    const isDirty = () => draftDirty(state);
 
     // Kopf
     el.append(h('div.lp-head',
@@ -524,11 +531,7 @@
     const cur = SW.router.current; if (!cur || cur.route !== 'lehrpersonen') return;
     if (meta.op === 'notify' || (meta.op === 'setting' && meta.key === 'theme')) return;
     // Ungespeicherte Verfügbarkeit nicht überschreiben – ausser die Person selbst wurde bearbeitet (Entwurf bleibt erhalten)
-    if (draft && cur.id === draft.id && SW.domain.teacherOf(state, draft.id)) {
-      const t = SW.domain.teacherOf(state, draft.id);
-      const dirty = !sameAvail(state, draft.availability, t.availability) || !sameDays(draft.preferredDays, t.preferredDays);
-      if (dirty && !(meta.coll === 'teachers' && meta.id === draft.id)) return;
-    }
+    if (draft && cur.id === draft.id && draftDirty(state) && !(meta.coll === 'teachers' && meta.id === draft.id)) return;
     SW.router.refresh();
   }
 
