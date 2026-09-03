@@ -52,8 +52,19 @@
         U.field('Lehrperson', isAdmin() ? U.select(teacherOpts.map((x) => ({ value: x.id, label: `${x.emoji} ${x.code || ''}` })), lesson.teacherId, (v) => patch({ teacherId: v }, 'Lehrperson geändert'), { placeholder: 'keine' }) : U.teacherPill(t), { hint: isAdmin() ? 'Nur qualifizierte, verfügbare und freie Lehrpersonen' : '' }),
         U.field('Raum', isAdmin() ? U.select(roomOpts.map((r) => ({ value: r.id, label: `${M.roomType(r.type).icon} ${r.name} (${r.capacity})` })), lesson.roomId, (v) => patch({ roomId: v }, 'Raum geändert'), { placeholder: 'kein Raum' }) : U.roomTag(room), { hint: isAdmin() ? 'Nur passende, zu dieser Zeit freie Räume' : '' }),
       ),
+      isAdmin() ? moveRow() : null,
       isAdmin() ? U.banner(h('span', lesson.locked ? 'Diese Lektion ist fixiert und bleibt bei einer Neugenerierung an ihrem Platz.' : 'Fixierte Lektionen behält der Generator beim nächsten Lauf bei.'), '', { icon: 'pin' }) : null,
     );
+    // Verschieben ohne Drag & Drop (Touch, Tastatur): Tag und Lektion wählen
+    function moveRow() {
+      let nd = lesson.day, ns = lesson.slot;
+      const hint = h('div.hint');
+      const upd = () => { const c = D.checkMove(state, tt, lesson, nd, ns, undefined).filter((x) => x.type !== 'roomBusy'); hint.textContent = (nd === lesson.day && ns === lesson.slot) ? 'Aktuelle Position' : c.length ? '✗ ' + c[0].text : '✓ Position frei' + (bestRoom(state, tt, lesson, nd, ns) ? '' : ' – aber kein passender Raum'); hint.className = 'hint ' + (c.length ? 'err-c' : 'ok-c'); };
+      const daySel = U.select(D.days(state).map((d) => ({ value: d, label: M.dayName(d) })), nd, (v) => { nd = Number(v); upd(); }, { cls: 'sm' });
+      const slotSel = U.select(D.slots(state).filter((sl) => sl.n + len - 1 <= D.slotCount(state)).map((sl) => ({ value: sl.n, label: `${sl.n} · ${sl.start}` })), ns, (v) => { ns = Number(v); upd(); }, { cls: 'sm' });
+      upd();
+      return U.field('Verschieben nach', h('div.col.g6', h('div.flex.g6.wrap', daySel, slotSel, h('button.btn.sm', { onclick: () => { if (moveLesson(lesson, nd, ns)) m.close(); } }, SW.icon('move'), 'Verschieben')), hint), { cls: 'span2' });
+    }
     const footer = isAdmin() ? [
       h('button.btn.danger.soft', { onclick: async () => { if (await U.confirm({ title: 'Lektion löschen?', text: 'Die Lektion fehlt dann im Plan der Klasse. Der Generator ergänzt sie beim nächsten Lauf wieder.', ok: 'Löschen', danger: true })) { pushUndo(); SW.store.update((st) => { st.timetable.lessons = st.timetable.lessons.filter((x) => x.id !== lesson.id); st.timetable.status = 'draft'; }); m.close(); U.toast('Lektion gelöscht', { action: { label: 'Rückgängig', fn: undo } }); } } }, SW.icon('trash'), 'Löschen'),
       h('span.left'),

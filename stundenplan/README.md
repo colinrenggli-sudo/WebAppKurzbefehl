@@ -50,6 +50,25 @@ Alle Pro-Funktionen sind echt umgesetzt und rechnen mit den Daten des Generators
 - **Team-Chat** – Kanäle für Schule, Fachschaften und Klassenteams, Direktnachrichten, ohne Personendaten.
 - **Auswertungen** – Raumauslastung, Pensen, Freistunden, Kriterien, Vergleich der Planvarianten.
 
+## Demo-Ablauf für die Präsentation (10 Minuten)
+
+1. **Start:** `index.html` öffnen, «Demo-Daten laden». Dashboard zeigt 19 Klassen, 36 Lehrpersonen
+   (nur Emojis), 26 Unterrichtsräume, 262 Lektionen pro Woche und die Startklar-Checkliste.
+2. **Stammdaten zeigen:** Lehrpersonen → 🦁 Löwe öffnen (Verfügbarkeitsraster malen), Klassen → K1a
+   (Lektionentafel, Schultage Mo/Do, Fach-Zuteilung), Räume → Aula (Sperrzeiten freitags).
+3. **Generator:** Machbarkeitsanalyse (0 Fehler), «Stundenplan generieren» – nach wenigen Sekunden
+   262/262 Lektionen, 0 Freistunden bei Klassen. Ergebnis mit Aufschlüsselung, «Plan übernehmen».
+4. **Stundenplan:** Klasse K1a, Lehrperson 🦁, Raum Turnhalle 1, Tagesübersicht aller Klassen.
+   Eine Lektion ziehen (Konfliktprüfung), fixieren, Lehrperson wechseln, drucken, ICS exportieren.
+5. **Was, wenn es nicht aufgeht?** Bei einer Lehrperson die Verfügbarkeit leeren → Machbarkeitsanalyse
+   meldet den Fehler mit Link; der Generator nennt für die betroffenen Lektionen den Grund.
+6. **Rolle Lehrperson:** oben rechts umschalten → «Mein Bereich» mit Heute, Woche, eigener Verfügbarkeit.
+7. **Pro:** Kalender & Arbeitszeit anklicken → unscharfer Teaser, «14 Tage kostenlos testen» → simulierter
+   Kauf (CHF 500/Monat, QR-Rechnung) → Stellvertretungen (Absenz 🦁 heute: «Alle automatisch lösen»),
+   Hauswart & Events (Aula-Buchung mit Konfliktprüfung, Reinigungsplan), Auswertungen, Team-Chat.
+8. **Grosse Schule:** Einstellungen → Demo «Sehr gross (76 Klassen)» laden → Generator: 1048 Lektionen
+   in unter einer Sekunde, ohne Freistunden.
+
 ## Der Generator
 
 Harte Regeln werden nie verletzt: Lehrperson, Klasse und Raum je höchstens einmal pro Lektion;

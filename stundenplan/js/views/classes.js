@@ -14,12 +14,14 @@
 .kl-toolbar select.inp{width:auto;min-width:160px;max-width:260px}
 .kl-toolbar .kl-count{font-size:13px;color:var(--txt-3);white-space:nowrap;font-variant-numeric:tabular-nums}
 @media (max-width:600px){.kl-toolbar .search{max-width:none;flex-basis:100%}.kl-toolbar select.inp{flex:1;min-width:0;max-width:none}.kl-toolbar .kl-count{display:none}}
-.kl-tbl td{white-space:nowrap}
-.kl-tbl .kl-name{font-weight:680;font-size:14.5px}
-.kl-tbl .kl-sub{font-size:12px;color:var(--txt-3);margin-top:1px}
+.kl-tbl th{padding:9px 10px}
+.kl-tbl td{padding:9px 10px;white-space:nowrap}
+.kl-tbl .kl-name{font-weight:680;font-size:14.5px;line-height:1.2}
+.kl-tbl .kl-sub{font-size:12px;color:var(--txt-3);margin-top:2px;font-weight:500}
 .kl-tbl .kl-days{gap:3px;flex-wrap:nowrap}
+.kl-tbl .teacher-pill{font-size:12.5px}
 .kl-tbl tr.kl-err td .kl-name{color:var(--err-txt)}
-@media (max-width:980px){.kl-tbl .hm{display:none}}
+@media (max-width:1180px){.kl-tbl .hm{display:none}}
 .kl-ic{width:76px;height:76px;border-radius:22px;background:var(--tint-soft);display:grid;place-items:center;font-size:40px;flex:none;line-height:1}
 .kl-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .kl-head .grow{min-width:0}
@@ -72,13 +74,13 @@
 
   // Status einer Klasse: bereit / n Fächer automatisch / unvollständig
   const statusOf = (state, k) => {
-    if (!k.curriculumId) return { level: 'err', label: 'unvollständig', text: 'Kein Lehrgang zugeordnet' };
-    if (!schoolDaysOf(state, k).length) return { level: 'err', label: 'unvollständig', text: (k.schoolDays || []).length ? 'Die Schultage liegen ausserhalb der Unterrichtstage der Schule' : 'Keine Schultage festgelegt' };
+    if (!k.curriculumId) return { level: 'err', label: 'unvollständig', text: 'Kein Lehrgang zugeordnet', short: 'Lehrgang fehlt' };
+    if (!schoolDaysOf(state, k).length) return { level: 'err', label: 'unvollständig', text: (k.schoolDays || []).length ? 'Die Schultage liegen ausserhalb der Unterrichtstage der Schule' : 'Keine Schultage festgelegt', short: 'Schultage fehlen' };
     const reqs = D.classRequirements(state, k);
-    if (!reqs.length) return { level: 'warn', label: 'keine Lektionen', text: `Der Lehrgang hat im ${k.year}. Lehrjahr keine Lektionen hinterlegt` };
+    if (!reqs.length) return { level: 'warn', label: 'keine Lektionen', text: `Der Lehrgang hat im ${k.year}. Lehrjahr keine Lektionen hinterlegt`, short: 'Lektionentafel leer' };
     const open = reqs.filter((r) => !r.teacherId).length;
-    if (open) return { level: 'info', label: `${open} ${open === 1 ? 'Fach' : 'Fächer'} automatisch`, text: 'Der Generator wählt für diese Fächer eine qualifizierte Lehrperson mit der geringsten Auslastung' };
-    return { level: 'ok', label: 'bereit', text: 'Lehrgang, Schultage und alle Lehrpersonen sind festgelegt' };
+    if (open) return { level: 'info', label: `${open} ${open === 1 ? 'Fach' : 'Fächer'} automatisch`, text: 'Der Generator wählt für diese Fächer eine qualifizierte Lehrperson mit der geringsten Auslastung', short: 'Generator ergänzt Lehrpersonen' };
+    return { level: 'ok', label: 'bereit', text: 'Lehrgang, Schultage und alle Lehrpersonen sind festgelegt', short: 'bereit für den Generator' };
   };
   const statusChip = (s, sm = true) => h('span.chip' + (sm ? '.sm' : '') + '.' + s.level, { title: s.text }, s.label);
 
@@ -382,14 +384,13 @@
       });
     };
     const cols = [
-      { label: 'Klasse', render: (k) => h('div.kl-name', k.name) },
-      { label: 'Lehrgang', render: (k) => { const c = D.curriculumOf(state, k.curriculumId); return c ? h('div', h('div', c.short || c.name), h('div.kl-sub', `${k.year}. Lehrjahr`)) : h('span.chip.sm.err', 'kein Lehrgang'); } },
+      { label: 'Klasse', render: (k) => { const c = D.curriculumOf(state, k.curriculumId); return h('div', h('div.kl-name', k.name), c ? h('div.kl-sub', { title: c.name }, `${c.short || c.name} · ${k.year}. Lehrjahr`) : h('div.kl-sub.err-c', 'kein Lehrgang')); } },
       { label: 'Lernende', cls: 'r', render: (k) => h('span.num', SW.fmtNum(k.size || 0)) },
       { label: 'KLP', render: (k) => pillLink(D.teacherOf(state, k.mainTeacherId)) },
       { label: 'StV', cls: 'hm', render: (k) => pillLink(D.teacherOf(state, k.deputyTeacherId)) },
       { label: 'ABU', cls: 'hm', render: (k) => pillLink(D.teacherOf(state, k.abuTeacherId)) },
       { label: 'Schultage', render: (k) => { const d = schoolDaysOf(state, k); return d.length ? h('div.chips.kl-days', d.map((x) => h('span.chip.sm.tint', M.dayName(x, true)))) : h('span.chip.sm.err', (k.schoolDays || []).length ? 'ausserhalb' : 'keine'); } },
-      { label: 'Lekt./Woche', cls: 'r', render: (k) => h('span.num', SW.fmtNum(lessonsOf.get(k.id))) },
+      { label: 'Lekt.', cls: 'r', render: (k) => h('span.num', { title: 'Lektionen pro Woche' }, SW.fmtNum(lessonsOf.get(k.id))) },
       { label: 'Stammzimmer', cls: 'hm', render: (k) => { const r = D.roomOf(state, k.homeRoomId); return r ? h('span', r.name, roomCap(r) < (Number(k.size) || 0) ? h('span.chip.sm.warn', { style: { marginLeft: '6px' }, title: 'Zimmer hat weniger Plätze als Lernende' }, 'zu klein') : null) : h('span.faint', '–'); } },
       { label: 'Status', render: (k) => statusChip(status.get(k.id)) },
       edit ? { label: '', cls: 'act', render: (k) => h('div.flex.g4.jc-e', h('button.btn.icon.ghost.sm', { title: 'Bearbeiten', 'aria-label': 'Bearbeiten', onclick: () => openEdit(k) }, SW.icon('edit')), h('button.btn.icon.ghost.sm', { title: 'Löschen', 'aria-label': 'Löschen', onclick: () => deleteClass(k) }, SW.icon('trash'))) } : null,
@@ -555,7 +556,7 @@
       U.kpi({ label: 'Lektionen / Woche', icon: '📘', value: SW.fmtNum(total), sub: cap ? `${SW.fmtNum(cap)} Plätze an ${plural(schoolDaysOf(state, k).length, 'Schultag', 'Schultagen')}` : 'keine Schultage festgelegt', cls: cap && total > cap ? 'kl-kpi-err' : '' }),
       U.kpi({ label: 'Lehrpersonen', icon: '🎓', value: h('span', String(assigned), h('small', `/ ${reqs.length}`)), sub: open ? `${open} ${open === 1 ? 'Fach' : 'Fächer'} automatisch` : reqs.length ? 'alle Fächer fest zugewiesen' : 'keine Fächer' }),
       U.kpi({ label: 'Im Stundenplan', icon: '🗓️', value: tt ? h('span', String(placed), h('small', `/ ${total}`)) : '–', sub: tt ? (tt.status === 'published' ? 'Lektionen im veröffentlichten Plan' : 'Lektionen im Planentwurf') : 'noch kein Stundenplan', onclick: !tt && edit ? () => SW.router.go('#/generator') : null }),
-      U.kpi({ label: 'Status', icon: '✅', value: statusChip(status, false), sub: status.text }),
+      U.kpi({ label: 'Status', icon: '✅', value: statusChip(status, false), sub: status.short }),
     ));
 
     el.append(requirementsCard(state, k, edit));
