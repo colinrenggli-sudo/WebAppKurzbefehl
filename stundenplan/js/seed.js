@@ -224,7 +224,8 @@
         const from = 7 + rng.int(9); const dur = 1 + rng.int(3);
         st.timeEntries.push({ ...M.newTimeEntry(), id: SW.uid('z'), teacherId: t.id, date: SW.addDays(monday, d), from: `${String(from).padStart(2, '0')}:00`, to: `${String(from + dur).padStart(2, '0')}:00`, kind: kinds[rng.int(kinds.length)], note: '' });
       }
-      st.absences = [{ ...M.newAbsence(), id: 'a_1', teacherId: 't_fuchs', from: SW.addDays(monday, 1), to: SW.addDays(monday, 1), reason: 'krank', note: 'Grippe', substitutes: {} }];
+      const todayIso = SW.isoDate(); const absFrom = SW.weekday(todayIso) > 5 ? SW.addDays(monday, 7) : todayIso;
+      st.absences = [{ ...M.newAbsence(), id: 'a_1', teacherId: 't_lwe', from: absFrom, to: SW.addDays(absFrom, SW.weekday(absFrom) >= 5 ? 0 : 1), reason: 'krank', note: 'Grippe – Rückkehr voraussichtlich Ende Woche', substitutes: {} }];
       st.notifications = [{ id: 'n_1', ts: now - 2 * H, read: false, icon: '🗓️', text: 'Willkommen! Demo-Daten geladen – Generator starten, um den ersten Plan zu erstellen.', link: '#/generator' }];
       return st;
     },

@@ -14,19 +14,23 @@
 @media (max-width:600px){.sj-toolbar .search{max-width:none;flex-basis:100%}.sj-toolbar select.inp{flex:1;min-width:0;max-width:none}.sj-toolbar .sj-count{display:none}}
 .sj-kpi-warn .val{color:var(--warn)}
 .sj-kpi-ok .val{color:var(--ok)}
-.sj-tbl td.sj-name{min-width:230px;max-width:440px}
+.sj-tbl th,.sj-tbl td{padding-left:10px;padding-right:10px}
+.sj-tbl td.sj-name{min-width:210px;max-width:420px}
 .sj-tbl td.sj-name .subj{align-items:flex-start;line-height:1.3}
 .sj-tbl td.sj-name .subj i{margin-top:5px}
+.sj-tbl td.sj-room{min-width:130px}
 .sj-tbl td.sj-nowrap{white-space:nowrap}
+@media (min-width:981px) and (max-width:1330px){.sj-tbl .sj-cat{display:none}}
 .sj-short{display:inline-block;font-family:var(--ff-num);font-size:12.5px;font-weight:650;background:var(--card-3);color:var(--txt-2);padding:2px 7px;border-radius:6px;white-space:nowrap;letter-spacing:.01em}
 .sj-avs{display:inline-flex;align-items:center;padding-left:4px}
 .sj-avs .av{margin-left:-7px;border:2px solid var(--card);box-sizing:content-box}
 .sj-avs .av:first-child{margin-left:-4px}
-.sj-preview{display:flex;gap:14px;align-items:center;padding:12px 14px;border-radius:var(--r-s);background:var(--card-2);min-width:0}
+.sj-preview{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:12px 14px;border-radius:var(--r-s);background:var(--card-2);min-width:0}
 .sj-preview .ls{flex:none;width:156px;min-height:56px;cursor:default}
-.sj-preview .sj-prev-meta{display:flex;flex-direction:column;gap:6px;min-width:0}
-.sj-preview .sj-prev-meta .subj{max-width:100%}
-.sj-preview .sj-prev-meta .subj span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sj-preview .sj-prev-meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 150px}
+.sj-preview .sj-prev-tag{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.sj-preview .sj-prev-tag .subj{min-width:0;align-items:flex-start;line-height:1.3}
+.sj-preview .sj-prev-tag .subj i{margin-top:5px}
 .sj-usage{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;font-size:13px;padding:12px 14px;border-radius:var(--r-s);background:var(--card-2)}
 .sj-usage .k{color:var(--txt-3);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 .sj-usage .v{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
@@ -48,7 +52,7 @@
     { id: 'beruf', name: 'Berufskunde', icon: '💼' },
     { id: 'sport', name: 'Sport', icon: '🏀' },
     { id: 'bm', name: 'Berufsmaturität', icon: '🎓' },
-    { id: 'kv2023', name: 'Kaufleute 2023 · HKB', icon: '🧭' },
+    { id: 'kv2023', name: 'Kaufleute 2023', icon: '🧭' },
     { id: 'wahl', name: 'Wahlbereich', icon: '⭐' },
   ];
   const catOf = (id) => CATEGORIES.find((c) => c.id === id) || { id: id || '', name: id ? SW.cap(String(id)) : 'Ohne Kategorie', icon: '📘' };
@@ -130,11 +134,11 @@
   // ---------- Bausteine ----------
   const shortBadge = (s) => h('span.sj-short', s.short || '–');
   const catChip = (id) => { const c = catOf(id); return h('span.chip.sm', { title: 'Kategorie' }, h('span', c.icon), c.name); };
-  const avatarStack = (teachers, max = 4) => {
+  const avatarStack = (teachers, max = 3) => {
     const shown = teachers.slice(0, max);
     return h('span.sj-avs', { title: teachers.map((t) => D.teacherLabel(t)).join(', ') }, shown.map((t) => U.avatar(t, 'xs')));
   };
-  const previewCard = (s) => h('div.ls', { style: { '--c': s.color || '#888' } }, h('b', s.name || 'Fachname'), h('div.m', h('span', s.short || 'Kurz'), h('span', '·'), h('span', M.roomReq(s.roomReq || 'any').name)));
+  const previewCard = (s) => h('div.ls', { style: { '--c': s.color || '#888' } }, h('b', s.name || 'Fachname'), h('div.m', h('span', `${s.short || 'Kurz'} · ${M.roomReq(s.roomReq || 'any').name}`)));
 
   // ---------- Formular: Fach anlegen / bearbeiten ----------
   function subjectForm({ subject, title, sub, isNew, onSave, onDelete }) {
@@ -145,7 +149,7 @@
 
     // Vorschau
     const prevHost = h('div.sj-prev-card');
-    const prevTag = h('div.flex.ai-c.g8');
+    const prevTag = h('div.sj-prev-tag');
     const rePreview = () => { SW.mount(prevHost, previewCard(s)); SW.mount(prevTag, U.subjectTag({ name: s.name || 'Fachname', color: s.color }), shortBadge(s)); };
     const preview = h('div.sj-preview', prevHost, h('div.sj-prev-meta', prevTag, h('div.tiny.faint', 'So erscheint das Fach im Stundenplan.')));
 
@@ -264,11 +268,11 @@
     const cols = [
       { label: 'Fach', cls: 'sj-name', render: (s) => { const i = per[s.id]; return h('div', U.subjectTag(s), i && !i.curricula.length ? h('div.tiny.faint.mt4', 'In keinem Lehrgang') : null); } },
       { label: 'Kurz', cls: 'sj-nowrap', render: (s) => shortBadge(s) },
-      { label: 'Raumbedarf', render: (s) => { const req = M.roomReq(s.roomReq || 'any'); const i = per[s.id]; return h('div.flex.ai-c.g6.wrap', h('span.nowrap', req.name), i?.roomMissing ? h('span.chip.sm.err', { title: `Kein aktiver Raum vom Typ ${req.types.map((t) => M.roomType(t).name).join(' / ')} erfasst` }, 'kein Raum') : null); } },
-      { label: 'Lektionsform', cls: 'sj-nowrap', render: (s) => (Number(s.block) === 2 ? h('span', 'Doppellektion') : h('span.muted', 'Einzellektion')) },
-      { label: 'Kategorie', cls: 'sj-nowrap', render: (s) => catChip(s.category) },
+      { label: 'Raumbedarf', cls: 'sj-room', render: (s) => { const req = M.roomReq(s.roomReq || 'any'); const i = per[s.id]; return h('div.flex.ai-c.g6.wrap', h('span', req.name), i?.roomMissing ? h('span.chip.sm.err', { title: `Kein aktiver Raum vom Typ ${req.types.map((t) => M.roomType(t).name).join(' / ')} erfasst` }, 'kein Raum') : null); } },
+      { label: 'Lektionsform', cls: 'sj-nowrap', render: (s) => (Number(s.block) === 2 ? h('span', { title: 'Doppellektion – wird als zusammenhängender Block von zwei Lektionen geplant' }, 'Doppel') : h('span.muted', { title: 'Einzellektion' }, 'Einzel')) },
+      { label: 'Kategorie', cls: 'sj-nowrap.sj-cat', render: (s) => catChip(s.category) },
       { label: 'Lehrpersonen', cls: 'sj-nowrap', render: (s) => { const t = per[s.id]?.teachers || []; return t.length ? h('div.flex.ai-c.g8', avatarStack(t), h('span.num.strong', String(t.length))) : h('span.chip.sm.warn', { title: 'Keine aktive Lehrperson unterrichtet dieses Fach' }, 'keine Lehrperson'); } },
-      { label: 'Lektionen / Woche', cls: 'r sj-nowrap', render: (s) => { const i = per[s.id]; const n = i?.lessons || 0; return h('div', h('div.num.strong', n ? SW.fmtNum(n) : h('span.faint', '0')), h('div.tiny.faint', n ? plural(i.classes.size, 'Klasse', 'Klassen') : 'keine Klasse')); } },
+      { label: h('span', { title: 'Lektionen pro Woche über alle Klassen' }, 'Lekt./Woche'), cls: 'r.sj-nowrap', render: (s) => { const i = per[s.id]; const n = i?.lessons || 0; return h('div', h('div.num.strong', n ? SW.fmtNum(n) : h('span.faint', '0')), h('div.tiny.faint', n ? plural(i.classes.size, 'Klasse', 'Klassen') : 'keine Klasse')); } },
     ];
     if (edit) cols.push({ label: 'Aktionen', cls: 'act', render: (s) => h('div.flex.jc-e.g4',
       h('button.btn.icon.ghost.sm', { 'aria-label': 'Bearbeiten', title: 'Bearbeiten', onclick: stop(() => openEdit(s)) }, SW.icon('edit')),

@@ -49,14 +49,14 @@
     // Einheiten (Lektionen bzw. Doppellektionen)
     const units = []; const unplaced = [];
     const classHome = classes.map((k) => (k.homeRoomId && rI.has(k.homeRoomId) ? rI.get(k.homeRoomId) : -1));
-    const classDays = classes.map((k) => (k.schoolDays?.length ? k.schoolDays.filter((d) => days.includes(d)) : days.slice()));
+    const classDays = classes.map((k) => (k.schoolDays?.length ? D.normDays(state, k.schoolDays) : days.slice()));
     const teacherAvail = teachers.map((t) => { const a = new Uint8Array(N); for (const d of days) for (let s = 1; s <= S; s++) a[idx(d, s)] = D.teacherAvailable(t, d, s) ? 1 : 0; return a; });
     const teacherPref = teachers.map((t) => (t.preferredDays?.length ? new Set(t.preferredDays.map(Number)) : null));
 
     for (const k of classes) {
       const ci = cI.get(k.id);
       for (const r of D.classRequirements(state, k)) {
-        const tid = r.teacherId || (assignments[k.id] || {})[r.subjectId] || null;
+        const tid = (r.teacherId && tI.has(r.teacherId) ? r.teacherId : null) || (assignments[k.id] || {})[r.subjectId] || null;
         const ti = tid != null && tI.has(tid) ? tI.get(tid) : -1;
         const cands = D.roomsFor(state, r.subject, k).filter((rm) => rI.has(rm.id)).map((rm) => rI.get(rm.id));
         const block = r.block === 2 ? 2 : 1;
@@ -75,7 +75,7 @@
         if (ci == null) continue;
         // passende Einheit finden und fixieren – nur wenn die Lektion alle harten Regeln erfüllt
         const u = units.find((x) => x.d < 0 && !x.locked && x.ci === ci && x.subjectId === l.subjectId && x.len === (l.len || 1));
-        if (!u) continue;
+        if (!u) { droppedLocks.push(`${classes[ci].name} ${D.subjectOf(state, l.subjectId)?.short || ''} ${M.dayName(l.day, true)} ${l.slot}: passt nicht mehr zum Bedarf (Fach, Lektionenzahl oder Lektionsform geändert)`); continue; }
         const len = u.len; const tIdx = ti != null ? ti : u.ti;
         const problems = [];
         if (!days.includes(l.day) || l.slot < 1 || l.slot + len - 1 > S) problems.push('ausserhalb des Rasters');
@@ -105,7 +105,7 @@
         let ok = true; for (let q = 0; q < u.len; q++) if (!teacherAvail[u.ti][idx(d, s + q)]) { ok = false; break; }
         if (ok) u.positions.push({ d, s });
       }
-      if (!u.positions.length) u.reason = `${D.teacherLabel(teachers[u.ti])} ist an den Schultagen der Klasse (${classDays[u.ci].map((d) => M.dayName(d, true)).join(', ')}) ${u.len > 1 ? 'für keine Doppellektion' : 'nie'} verfügbar.`;
+      if (!u.positions.length) u.reason = !classDays[u.ci].length ? 'Die Schultage der Klasse liegen ausserhalb der Unterrichtstage der Schule.' : `${D.teacherLabel(teachers[u.ti])} ist an den Schultagen der Klasse (${classDays[u.ci].map((d) => M.dayName(d, true)).join(', ')}) ${u.len > 1 ? 'für keine Doppellektion' : 'nie'} verfügbar.`;
     }
 
     // ---------- Belegung & Kosten ----------
@@ -177,6 +177,13 @@
     const order = SW.sortBy(rng.shuffle(movable), (u) => u.positions.length, (u) => -u.len, (u) => -u.rooms.length * -1);
     const queue = order.slice();
     const maxEject = 40; let steps = 0; const stepLimit = Math.max(2000, movable.length * 60);
+    // Verständlicher Grund, wenn eine Einheit aufgegeben wird: welche Ressource blockiert wie viele Positionen?
+    const blockReason = (u) => {
+      let bt = 0, bc = 0, br = 0; const n = u.positions.length;
+      for (const p of u.positions) { let t = false, c = false, r = true; for (let q = 0; q < u.len; q++) { const i = idx(p.d, p.s + q); if (u.ti >= 0 && tOcc[u.ti][i] >= 0) t = true; if (cOcc[u.ci][i] >= 0) c = true; } for (const rr of u.rooms) if (roomFree(rr, p.d, p.s, u.len)) { r = false; break; } if (t) bt++; if (c) bc++; if (r) br++; }
+      const parts = []; if (bt) parts.push(`Lehrperson ${D.teacherLabel(teachers[u.ti])} an ${bt} von ${n} möglichen Positionen bereits belegt`); if (bc) parts.push(`Klasse an ${bc} von ${n} Positionen belegt`); if (br) parts.push(`kein passender Raum frei an ${br} von ${n} Positionen`);
+      return 'Keine konfliktfreie Position: ' + (parts.join('; ') || 'alle Positionen blockiert') + '.';
+    };
     let lastYield = Date.now();
     const report = (phase, pct, extra) => onProgress({ phase, pct, placed: movable.filter((u) => u.d >= 0).length, total: movable.length, ...extra });
     while (queue.length && steps < stepLimit) {
@@ -186,7 +193,7 @@
       const b = bestFree(u, { noTabu: true }) || bestFree(u);
       if (b) { place(u, b.d, b.s, b.r); continue; }
       // Verdrängung: Position mit den wenigsten (verschiebbaren) Konflikten
-      if (u.ejections >= maxEject) { u.reason = u.reason || 'Nach vielen Versuchen keine konfliktfreie Position gefunden.'; continue; }
+      if (u.ejections >= maxEject) { u.reason = u.reason || blockReason(u); continue; }
       let bestP = null, bestConf = null, bestScore = Infinity; let blockedT = 0, blockedC = 0, blockedR = 0;
       for (const p of rng.shuffle(u.positions)) {
         if (isTabu(u, p.d, p.s)) continue;
@@ -196,18 +203,18 @@
         let r = -1; for (const rr of u.rooms) if (roomFree(rr, p.d, p.s, u.len)) { r = rr; break; }
         if (r < 0) { // Raumbelegung: Belegende Einheit des bevorzugten Raums verdrängen (wenn verschiebbar)
           blockedR++;
-          let cand = -1; for (const rr of u.rooms) { let ok = true; const occ = new Set(); for (let q = 0; q < u.len; q++) { const o = rOcc[rr][idx(p.d, p.s + q)]; if (o >= 0) { if (units[o].locked) { ok = false; break; } occ.add(o); } } if (ok && occ.size <= 1) { cand = rr; occ.forEach((o) => conf.add(o)); break; } }
+          let cand = -1; for (const rr of u.rooms) { let ok = true; const occ = new Set(); for (let q = 0; q < u.len; q++) { const i2 = idx(p.d, p.s + q); if (roomBlocked[rr][i2]) { ok = false; break; } const o = rOcc[rr][i2]; if (o >= 0) { if (units[o].locked) { ok = false; break; } occ.add(o); } } if (ok && occ.size <= 1) { cand = rr; occ.forEach((o) => conf.add(o)); break; } }
           if (cand < 0) continue; r = cand;
         }
         const score = conf.size * 10 + [...conf].reduce((a, c) => a + units[c].ejections * 0.5, 0) + rng();
         if (score < bestScore) { bestScore = score; bestP = { ...p, r }; bestConf = conf; }
       }
-      if (!bestP || bestConf.size > 3) { u.ejections++; queue.push(u); if (u.ejections >= maxEject) u.reason = `Blockiert: Lehrperson ${blockedT}×, Klasse ${blockedC}×, Raum ${blockedR}× – keine Position mit wenigen Konflikten.`; continue; }
+      if (!bestP || bestConf.size > 3) { u.ejections++; queue.push(u); if (u.ejections >= maxEject) u.reason = blockReason(u); continue; }
       for (const c of bestConf) { const v = units[c]; unplace(v); v.ejections++; v.tabu.set(v.d * 100 + v.s, steps + 15); v.tabu.set(bestP.d * 100 + bestP.s, steps + 15); queue.unshift(v); }
       u.ejections++; place(u, bestP.d, bestP.s, bestP.r);
       if (Date.now() - lastYield > 40) { report('Platzieren', Math.min(0.45, 0.05 + (0.4 * (movable.length - queue.length)) / Math.max(1, movable.length))); await SW.yieldToUI(); lastYield = Date.now(); }
     }
-    for (const u of movable) if (u.d < 0 && !u.reason) u.reason = 'Keine konfliktfreie Position gefunden (Ressourcen an den Schultagen ausgelastet).';
+    for (const u of movable) if (u.d < 0 && !u.reason) u.reason = blockReason(u);
     log.push(`Konstruktion: ${movable.filter((u) => u.d >= 0).length}/${movable.length} platziert in ${steps} Schritten`);
 
     // ---------- 3 · Lokale Suche ----------
@@ -292,7 +299,22 @@
         }
       } else {
         // Unplatzierte nachträglich versuchen / Raum wechseln
-        const un = movable.filter((x) => x.d < 0 && x.positions.length); if (un.length) { const x = un[rng.int(un.length)]; const b = bestFree(x); if (b) { place(x, b.d, b.s, b.r); x.reason = null; cost += b.delta; pool = placed(); } }
+        const un = movable.filter((x) => x.d < 0 && x.positions.length);
+        if (un.length) {
+          const x = un[rng.int(un.length)]; const b = bestFree(x);
+          if (b) { place(x, b.d, b.s, b.r); x.reason = null; cost += b.delta; pool = placed(); }
+          else {
+            // Einschritt-Verdrängung: eine blockierende Einheit ausbauen, x setzen, Blockierer neu platzieren – sonst zurück
+            const p = x.positions[rng.int(x.positions.length)]; const conf = new Set(); let locked = false;
+            for (let q = 0; q < x.len; q++) { const i = idx(p.d, p.s + q); const a = cOcc[x.ci][i], b2 = x.ti >= 0 ? tOcc[x.ti][i] : -1; if (a >= 0) { if (units[a].locked) locked = true; conf.add(a); } if (b2 >= 0) { if (units[b2].locked) locked = true; conf.add(b2); } }
+            if (!locked && conf.size === 1) {
+              const v = units[[...conf][0]]; const vd = v.d, vs = v.s, vr = v.r; unplace(v);
+              const r = pickRoom(x, p.d, p.s);
+              if (r >= 0) { place(x, p.d, p.s, r); const bv = bestFree(v); if (bv) { place(v, bv.d, bv.s, bv.r); x.reason = null; cost = totalCost(); pool = placed(); } else { unplace(x); place(v, vd, vs, vr); } }
+              else place(v, vd, vs, vr);
+            }
+          }
+        }
         else { const u = pool[rng.int(pool.length)]; const r = pickRoom(u, u.d, u.s); if (r >= 0 && r !== u.r) { const before = classDayCost(u.ci, u.d); const or = u.r; const d = u.d, s = u.s; unplace(u); place(u, d, s, r); const delta = classDayCost(u.ci, d) - before; if (delta <= 0) cost += delta; else { unplace(u); place(u, d, s, or); } } }
       }
       if (cost < best - 1e-9) { best = cost; bestSnap = snapshot(); }

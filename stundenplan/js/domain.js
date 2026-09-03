@@ -50,15 +50,17 @@
       const subject = D.subjectOf(state, e.subjectId); if (!subject || !(e.lessons > 0)) continue;
       const ex = out.find((o) => o.subjectId === e.subjectId);
       if (ex) ex.lessons += Number(e.lessons);
-      else out.push({ subjectId: e.subjectId, subject, lessons: Number(e.lessons), block: Number(e.block || subject.block || 1), teacherId: e.teacherId || D.effectiveTeacher(state, cls, e.subjectId), source: 'zusatz' });
+      else { const et = e.teacherId && D.teacherOf(state, e.teacherId)?.active !== false && D.teacherOf(state, e.teacherId) ? e.teacherId : null; out.push({ subjectId: e.subjectId, subject, lessons: Number(e.lessons), block: Number(e.block || subject.block || 1), teacherId: et || D.effectiveTeacher(state, cls, e.subjectId), source: 'zusatz' }); }
     }
     return out;
   };
   D.classLessonCount = (state, cls) => SW.sum(D.classRequirements(state, cls), (r) => r.lessons);
   D.effectiveTeacher = (state, cls, sid) => {
-    const t = (cls.subjectTeachers || {})[sid];
-    return t && D.teacherOf(state, t) ? t : null;
+    const t = (cls.subjectTeachers || {})[sid]; const obj = t ? D.teacherOf(state, t) : null;
+    return obj && obj.active !== false ? t : null;
   };
+  D.roomCap = (r) => (Number(r?.capacity) > 0 ? Number(r.capacity) : Infinity);
+  D.normDays = (state, days) => SW.uniq((days || []).map(Number).filter((d) => D.days(state).includes(d))).sort();
   D.qualifiedTeachers = (state, sid) => state.teachers.filter((t) => t.active !== false && (t.subjectIds || []).includes(sid));
   D.teacherAvailable = (t, day, slot) => { const a = t.availability && t.availability[day]; return !!(a && a[slot - 1]); };
   D.roomBlocked = (r, day, slot) => { const a = r && r.blocked && r.blocked[day]; return !!(a && a[slot - 1]); };
@@ -71,7 +73,7 @@
     if (!room || room.active === false) return false;
     const req = M.roomReq(subject.roomReq || 'any');
     if (!req.types.includes(room.type)) return false;
-    if (cls && room.capacity && room.capacity < (cls.size || 0)) return false;
+    if (cls && D.roomCap(room) < (cls.size || 0)) return false;
     return true;
   };
   D.roomsFor = (state, subject, cls) => {
@@ -108,48 +110,60 @@
   };
   D.applyAssignments = (state, assignments) => { for (const [cid, m] of Object.entries(assignments)) { const k = D.classOf(state, cid); if (!k) continue; k.subjectTeachers = { ...(k.subjectTeachers || {}), ...m }; } };
 
-  // Machbarkeitsanalyse vor dem Generieren
+  // Anzahl nicht überlappender Doppellektions-Plätze einer Lehrperson an einem Tag (zusammenhängend, nicht über den Mittag)
+  D.doublePairs = (state, t, day) => { const S = D.slotCount(state); const L = state.settings.lunchAfter; let pairs = 0, run = 0; for (let s = 1; s <= S + 1; s++) { const av = s <= S && D.teacherAvailable(t, day, s) && !(s === L + 1 && run > 0 && false); if (s <= S && D.teacherAvailable(t, day, s) && !(s === L + 1)) run++; else { pairs += Math.floor(run / 2); run = s <= S && D.teacherAvailable(t, day, s) ? 1 : 0; } } return pairs; };
+  const subsets = (arr) => { const out = []; const n = arr.length; for (let m = 1; m < 1 << n; m++) out.push(arr.filter((_, i) => m & (1 << i))); return out; };
+
+  // Machbarkeitsanalyse vor dem Generieren. Berücksichtigt automatische Zuweisungen (wie der Generator).
   D.feasibility = (state, opts = {}) => {
     const issues = [];
     const add = (level, code, title, text, link) => issues.push({ level, code, title, text, link });
     const slotsPerDay = D.slotCount(state);
     const days = D.days(state);
     const teachRooms = state.rooms.filter((r) => r.active !== false && M.roomType(r.type).teachable);
-    const assignments = opts.assignments || {};
-    const effTeacher = (k, sid) => (assignments[k.id] || {})[sid] || D.effectiveTeacher(state, k, sid);
+    const auto = opts.assignments ? { assignments: opts.assignments, unassigned: [] } : D.autoAssign(state, state.settings.seed || 1);
+    const assignments = auto.assignments || {};
+    const effTeacher = (k, sid, r) => r?.teacherId || (assignments[k.id] || {})[sid] || null;
+    const norm = (k) => D.normDays(state, k.schoolDays);
 
     if (!state.classes.length) add('error', 'no-classes', 'Keine Klassen', 'Erfasse mindestens eine Klasse mit Lehrgang und Schultagen.', '#/klassen');
     if (!teachRooms.length) add('error', 'no-rooms', 'Keine Unterrichtsräume', 'Erfasse Räume, in denen unterrichtet werden kann.', '#/raeume');
     if (!state.teachers.filter((t) => t.active !== false).length) add('error', 'no-teachers', 'Keine Lehrpersonen', 'Erfasse Lehrpersonen mit Fächern und Verfügbarkeit.', '#/lehrpersonen');
+    if (!days.length || !slotsPerDay) add('error', 'no-grid', 'Kein Stundenraster', 'In den Einstellungen Unterrichtstage und Lektionen festlegen.', '#/einstellungen');
 
-    let totalLessons = 0; const teacherNeed = {}; const teacherNeedByClass = {}; const roomNeed = {}; const autoByClass = {};
+    let totalLessons = 0; const teacherNeed = {}; const teacherJobs = {}; const roomNeed = {}; const roomJobs = {}; const autoByClass = {};
     for (const k of state.classes) {
       const reqs = D.classRequirements(state, k);
       const n = SW.sum(reqs, (r) => r.lessons); totalLessons += n;
-      const link = '#/klassen/' + k.id;
+      const link = '#/klassen/' + k.id; const kd = norm(k);
       if (!k.curriculumId) add('error', 'class-no-cur', `${k.name}: kein Lehrgang`, 'Ohne Lehrgang hat die Klasse keine Lektionentafel.', link);
+      else if (!D.curriculumOf(state, k.curriculumId)) add('error', 'class-cur-missing', `${k.name}: Lehrgang existiert nicht mehr`, 'Der zugewiesene Lehrgang wurde gelöscht. Einen Lehrgang wählen.', link);
       else if (!n) add('warn', 'class-no-lessons', `${k.name}: keine Lektionen`, `Der Lehrgang hat im ${k.year}. Lehrjahr keine Lektionen hinterlegt.`, link);
-      if (!k.schoolDays?.length) add('error', 'class-no-days', `${k.name}: keine Schultage`, 'Lege fest, an welchen Wochentagen die Klasse Schule hat.', link);
+      if (!kd.length) add('error', 'class-no-days', `${k.name}: keine Schultage`, (k.schoolDays || []).length ? 'Die Schultage liegen ausserhalb der Unterrichtstage der Schule.' : 'Lege fest, an welchen Wochentagen die Klasse Schule hat.', link);
       else {
-        const cap = k.schoolDays.length * slotsPerDay;
-        if (n > cap) add('error', 'class-over', `${k.name}: zu viele Lektionen`, `${n} Lektionen pro Woche, aber nur ${cap} Plätze an ${k.schoolDays.length} Schultagen. Weiteren Schultag ergänzen.`, link);
+        const cap = kd.length * slotsPerDay;
+        if (n > cap) add('error', 'class-over', `${k.name}: zu viele Lektionen`, `${n} Lektionen pro Woche, aber nur ${cap} Plätze an ${kd.length} Schultagen. Weiteren Schultag ergänzen.`, link);
         else if (n === cap) add('info', 'class-full', `${k.name}: Schultage voll belegt`, `${n} von ${cap} Lektionen – ganze Schultage ohne Spielraum. Lehrpersonen müssen an diesen Tagen durchgehend verfügbar sein.`, link);
         else if (n > cap * 0.9) add('info', 'class-tight', `${k.name}: Schultage fast voll`, `${n} von ${cap} möglichen Lektionen. Wenig Spielraum, um Freistunden zu vermeiden.`, link);
       }
-      const roomsOk = teachRooms.filter((r) => r.capacity >= (k.size || 0) && M.roomReq('any').types.includes(r.type));
-      if (!roomsOk.length && teachRooms.length) add('error', 'class-no-room', `${k.name}: kein Raum gross genug`, `${k.size} Lernende, aber kein Schulzimmer mit genügend Plätzen.`, link);
+      // Tageskapazität der Klasse: Fächer, deren Lehrperson nur an einer Teilmenge der Schultage kann
+      if (kd.length > 1 && n <= kd.length * slotsPerDay) {
+        const subjDays = reqs.map((r) => { const tid = effTeacher(k, r.subjectId, r); const t = tid ? D.teacherOf(state, tid) : null; return { r, days: t ? kd.filter((d) => D.teacherAvailableSlots(state, t, [d]) > 0) : kd }; });
+        for (const S of subsets(kd)) { if (S.length === kd.length) continue; const need = SW.sum(subjDays.filter((x) => x.days.every((d) => S.includes(d))), (x) => x.r.lessons); if (need > S.length * slotsPerDay) { add('error', 'class-day-cap', `${k.name}: zu viele Lektionen für ${S.map((d) => M.dayName(d, true)).join('/')}`, `${need} Lektionen haben Lehrpersonen, die nur an ${S.map((d) => M.dayName(d)).join(' und ')} können – Platz für ${S.length * slotsPerDay}.`, link); break; } }
+      }
+      const roomsAny = state.rooms.filter((r) => r.active !== false && D.roomCap(r) >= (k.size || 0) && M.roomType(r.type).teachable);
+      if (!roomsAny.length && teachRooms.length) add('error', 'class-no-room', `${k.name}: kein Raum gross genug`, `${k.size} Lernende, aber kein Unterrichtsraum mit genügend Plätzen.`, link);
       for (const r of reqs) {
-        const tid = effTeacher(k, r.subjectId);
-        if (!tid) {
+        const tid = effTeacher(k, r.subjectId, r);
+        if (!r.teacherId) {
           const q = D.qualifiedTeachers(state, r.subjectId);
-          if (!q.length) add('error', 'no-qualified', `${k.name} · ${r.subject.name}: keine Lehrperson`, `Keine Lehrperson unterrichtet «${r.subject.name}». Fach bei einer Lehrperson hinterlegen.`, '#/lehrpersonen');
+          if (!q.length) add('error', 'no-qualified', `${k.name} · ${r.subject.name}: keine Lehrperson`, `Keine aktive Lehrperson unterrichtet «${r.subject.name}». Fach bei einer Lehrperson hinterlegen.`, '#/lehrpersonen');
+          else if (!tid) add('error', 'no-assignable', `${k.name} · ${r.subject.name}: keine Lehrperson verfügbar`, `${q.length} qualifizierte Lehrpersonen, aber keine ist an den Schultagen der Klasse (${kd.map((d) => M.dayName(d, true)).join(', ') || '–'}) verfügbar.`, link);
           else (autoByClass[k.id] = autoByClass[k.id] || []).push(r.subject.short || r.subject.name);
-        } else {
-          teacherNeed[tid] = (teacherNeed[tid] || 0) + r.lessons;
-          (teacherNeedByClass[tid] = teacherNeedByClass[tid] || []).push({ cls: k, r });
         }
+        if (tid) { teacherNeed[tid] = (teacherNeed[tid] || 0) + r.lessons; (teacherJobs[tid] = teacherJobs[tid] || []).push({ cls: k, r, days: kd }); }
         const req = M.roomReq(r.subject.roomReq || 'any');
-        roomNeed[req.id] = (roomNeed[req.id] || 0) + r.lessons;
+        roomNeed[req.id] = (roomNeed[req.id] || 0) + r.lessons; (roomJobs[req.id] = roomJobs[req.id] || []).push({ cls: k, r, days: kd });
         const fitting = state.rooms.filter((rm) => D.roomFits(rm, r.subject, k));
         if (!fitting.length) add('error', 'subj-no-room', `${k.name} · ${r.subject.name}: kein passender Raum`, `Braucht «${req.name}» für ${k.size} Lernende, aber kein solcher Raum ist erfasst.`, '#/raeume');
         if (r.block === 2 && r.lessons % 2 === 1) add('info', 'odd-block', `${k.name} · ${r.subject.name}: ungerade Doppellektionen`, `${r.lessons} Lektionen als Doppellektionen, eine bleibt einzeln.`, '#/lehrgaenge');
@@ -158,37 +172,38 @@
     for (const [cid, subs] of Object.entries(autoByClass)) { const k = D.classOf(state, cid); add('info', 'auto-assign', `${k.name}: ${subs.length} ${subs.length === 1 ? 'Fach wird' : 'Fächer werden'} automatisch zugewiesen`, `${subs.join(', ')} – der Generator wählt jeweils die qualifizierte Lehrperson mit der geringsten Auslastung.`, '#/klassen/' + cid); }
     for (const [tid, need] of Object.entries(teacherNeed)) {
       const t = D.teacherOf(state, tid); if (!t) continue;
-      const link = '#/lehrpersonen/' + tid;
+      const link = '#/lehrpersonen/' + tid; const label = D.teacherLabel(t);
       const avail = D.teacherAvailableSlots(state, t);
       const max = D.teacherMaxLessons(state, t);
-      if (need > avail) add('error', 'teacher-avail', `${D.teacherLabel(t)}: zu wenig Verfügbarkeit`, `${need} Lektionen zugeteilt, aber nur ${avail} Lektionen verfügbar. Verfügbarkeit erweitern oder Lektionen umverteilen.`, link);
-      else if (need > max) add('warn', 'teacher-max', `${D.teacherLabel(t)}: über dem Pensum`, `${need} Lektionen zugeteilt, Pensum erlaubt ${max}.`, link);
-      else if (need > avail * 0.85) add('warn', 'teacher-tight', `${D.teacherLabel(t)}: Verfügbarkeit knapp`, `${need} von ${avail} verfügbaren Lektionen belegt.`, link);
-      for (const { cls, r } of teacherNeedByClass[tid]) {
-        if (!cls.schoolDays?.length) continue;
-        const av = D.teacherAvailableSlots(state, t, cls.schoolDays);
-        if (av < r.lessons) add('error', 'teacher-class-days', `${D.teacherLabel(t)} · ${cls.name} · ${r.subject.name}`, `An den Schultagen der Klasse (${cls.schoolDays.map((d) => M.dayName(d, true)).join(', ')}) nur ${av} Lektionen verfügbar, benötigt ${r.lessons}.`, link);
+      if (t.active === false) { add('error', 'teacher-inactive', `${label}: inaktiv, aber zugeteilt`, 'Die Lehrperson ist deaktiviert, hat aber Klassen zugewiesen.', link); continue; }
+      if (need > avail) add('error', 'teacher-avail', `${label}: zu wenig Verfügbarkeit`, `${need} Lektionen zugeteilt, aber nur ${avail} Lektionen verfügbar. Verfügbarkeit erweitern oder Lektionen umverteilen.`, link);
+      else if (need > max) add('warn', 'teacher-max', `${label}: über dem Pensum`, `${need} Lektionen zugeteilt, Pensum erlaubt ${max}.`, link);
+      else if (need > avail * 0.85) add('warn', 'teacher-tight', `${label}: Verfügbarkeit knapp`, `${need} von ${avail} verfügbaren Lektionen belegt.`, link);
+      let dayIssue = false;
+      for (const { cls, r, days: kd } of teacherJobs[tid]) {
+        if (!kd.length) continue;
+        const av = D.teacherAvailableSlots(state, t, kd);
+        if (av < r.lessons) { add('error', 'teacher-class-days', `${label} · ${cls.name} · ${r.subject.name}`, `An den Schultagen der Klasse (${kd.map((d) => M.dayName(d, true)).join(', ')}) nur ${av} Lektionen verfügbar, benötigt ${r.lessons}.`, link); dayIssue = true; }
+        else if (r.block === 2 && r.lessons >= 2) { const pairs = SW.sum(kd, (d) => D.doublePairs(state, t, d)); if (pairs < Math.floor(r.lessons / 2)) add('error', 'teacher-double', `${label} · ${cls.name} · ${r.subject.name}: Doppellektionen`, `Nur ${pairs} zusammenhängende Doppellektions-Plätze an den Schultagen verfügbar, benötigt ${Math.floor(r.lessons / 2)}.`, link); }
       }
-      // Summe über alle Klassen desselben Tages könnte Verfügbarkeit übersteigen – grob prüfen
-      const perDayNeed = {}; for (const { cls, r } of teacherNeedByClass[tid]) { const ds = cls.schoolDays?.length ? cls.schoolDays : days; for (const d of ds) perDayNeed[d] = (perDayNeed[d] || 0) + r.lessons / ds.length; }
-      const dayAvail = {}; for (const d of days) dayAvail[d] = D.teacherAvailableSlots(state, t, [d]);
-      if (t.active === false) add('error', 'teacher-inactive', `${D.teacherLabel(t)}: inaktiv, aber zugeteilt`, 'Die Lehrperson ist deaktiviert, hat aber Klassen zugewiesen.', link);
+      // Tageskapazität: für jede Teilmenge der Unterrichtstage müssen die Lektionen der Klassen, die nur innerhalb liegen, Platz haben
+      if (!dayIssue) for (const S of subsets(days)) { const need2 = SW.sum(teacherJobs[tid].filter((j) => j.days.length && j.days.every((d) => S.includes(d))), (j) => j.r.lessons); if (!need2) continue; const cap = D.teacherAvailableSlots(state, t, S); if (need2 > cap) { add('error', 'teacher-day-cap', `${label}: zu viele Lektionen für ${S.map((d) => M.dayName(d, true)).join('/')}`, `${need2} Lektionen von Klassen, die nur an ${S.map((d) => M.dayName(d)).join(', ')} Schule haben – aber nur ${cap} verfügbare Lektionen an diesen Tagen.`, link); break; } }
     }
     for (const [reqId, need] of Object.entries(roomNeed)) {
       const req = M.roomReq(reqId);
       const rooms = state.rooms.filter((r) => r.active !== false && req.types.includes(r.type));
-      const cap = SW.sum(rooms, (r) => SW.sum(days, (d) => SW.sum(SW.range(slotsPerDay, 1), (s) => (D.roomBlocked(r, d, s) ? 0 : 1))));
-      if (need > cap) add('error', 'room-cap', `Raumtyp «${req.name}» überbucht`, `${need} Lektionen brauchen diesen Raumtyp, ${rooms.length} Räume bieten ${cap} Plätze pro Woche.`, '#/raeume');
-      else if (need > cap * 0.85 && rooms.length) add('warn', 'room-tight', `Raumtyp «${req.name}» knapp`, `${need} von ${cap} Plätzen pro Woche belegt (${Math.round((need / cap) * 100)} %).`, '#/raeume');
+      const capOn = (S) => SW.sum(rooms, (r) => SW.sum(S, (d) => SW.sum(SW.range(slotsPerDay, 1), (s) => (D.roomBlocked(r, d, s) ? 0 : 1))));
+      const cap = capOn(days);
+      if (need > cap) add('error', 'room-cap', `Raumtyp «${req.name}» überbucht`, `${need} Lektionen brauchen diesen Raumtyp, ${rooms.length} Räume bieten ${cap} freie Plätze pro Woche.`, '#/raeume');
+      else {
+        let hit = false;
+        for (const S of subsets(days)) { if (S.length === days.length) continue; const n2 = SW.sum(roomJobs[reqId].filter((j) => j.days.length && j.days.every((d) => S.includes(d))), (j) => j.r.lessons); if (n2 > capOn(S)) { add('error', 'room-day-cap', `Raumtyp «${req.name}» am ${S.map((d) => M.dayName(d, true)).join('/')} überbucht`, `${n2} Lektionen von Klassen mit Schultagen nur an ${S.map((d) => M.dayName(d)).join(', ')}, aber nur ${capOn(S)} freie Plätze in ${rooms.length} Räumen.`, '#/klassen'); hit = true; break; } }
+        if (!hit && rooms.length && need > cap * 0.85) add('warn', 'room-tight', `Raumtyp «${req.name}» knapp`, `${need} von ${cap} Plätzen pro Woche belegt (${Math.round((need / cap) * 100)} %).`, '#/raeume');
+      }
     }
-    // Schultag-Ballung: Lektionen pro Tag vs. Räume
-    const perDay = {}; for (const k of state.classes) { const n = D.classLessonCount(state, k); const ds = k.schoolDays?.length ? k.schoolDays : days; for (const d of ds) perDay[d] = (perDay[d] || 0) + n / ds.length; }
-    const stdRooms = state.rooms.filter((r) => r.active !== false && M.roomReq('any').types.includes(r.type));
-    for (const d of days) { const need = perDay[d] || 0; const cap = stdRooms.length * slotsPerDay; if (cap && need > cap) add('error', 'day-rooms', `${M.dayName(d)}: mehr Klassen als Räume`, `Ungefähr ${Math.round(need)} Lektionen an diesem Tag, aber nur ${cap} Raumplätze. Schultage der Klassen anders verteilen.`, '#/klassen'); }
-
     const order = { error: 0, warn: 1, info: 2 };
     issues.sort((a, b) => order[a.level] - order[b.level]);
-    return { issues, ok: !issues.some((i) => i.level === 'error'), errors: issues.filter((i) => i.level === 'error').length, warnings: issues.filter((i) => i.level === 'warn').length, stats: { totalLessons, teacherNeed, roomNeed } };
+    return { issues, ok: !issues.some((i) => i.level === 'error'), errors: issues.filter((i) => i.level === 'error').length, warnings: issues.filter((i) => i.level === 'warn').length, stats: { totalLessons, teacherNeed, roomNeed }, assignments };
   };
 
   D.lessonsFor = (tt, f = {}) => (tt?.lessons || []).filter((l) => (!f.classId || l.classId === f.classId) && (!f.teacherId || l.teacherId === f.teacherId) && (!f.roomId || l.roomId === f.roomId) && (!f.day || l.day === f.day));

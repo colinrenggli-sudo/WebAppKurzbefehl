@@ -65,7 +65,7 @@
     if (attrs) for (const [k, v] of Object.entries(attrs)) {
       if (v === null || v === undefined || v === false) continue;
       if (k === 'class' || k === 'className') el.className = (el.className ? el.className + ' ' : '') + v;
-      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k === 'style' && typeof v === 'object') { for (const [sk, sv] of Object.entries(v)) { if (sv === null || sv === undefined || sv === false) continue; if (sk.startsWith('--')) el.style.setProperty(sk, String(sv)); else el.style[sk] = sv; } }
       else if (k === 'dataset') Object.assign(el.dataset, v);
       else if (k === 'html') el.innerHTML = v;
       else if (k === 'text') el.textContent = v;
