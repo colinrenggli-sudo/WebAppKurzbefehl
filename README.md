@@ -19,6 +19,16 @@
   einphasig bis «zweimal pennen». Höchstens ein Hinweis pro Tag.
   [Live ansehen](https://colinrenggli-sudo.github.io/WebAppKurzbefehl/schlaf/)
   oder `schlaf/index.html` im Browser öffnen.
+- **`stundenplan/`** – [STUNDENWERK](stundenplan/README.md): Stundenplan-Generator
+  für grosse Berufsfachschulen nach dem Muster der KV Luzern. Räume, Fächer,
+  Lehrgänge mit Lektionentafeln, Lehrpersonen (nur als Emoji, keine
+  Personendaten) mit Verfügbarkeit und Klassen erfassen – der Generator
+  platziert alle Lektionen ohne Konflikte und ohne Freistunden, mit
+  Machbarkeitsanalyse, Drag & Drop, Druck und Export. Bezahlfunktionen
+  (Kalender & Arbeitszeit, Team-Chat, Hauswart & Events, Stellvertretungen,
+  Auswertungen) laufen in der Demo hinter einer simulierten Paywall.
+  [Live ansehen](https://colinrenggli-sudo.github.io/WebAppKurzbefehl/stundenplan/)
+  oder `stundenplan/index.html` im Browser öffnen.
 - **`dach/`** – [DACHWERK](dach/README.md): Auftragsverwaltung für
   Dachdecker und Spengler. Zwei Oberflächen aus einer Datei – der
   vierstellige Code entscheidet: Büro-Konsole am PC (Disposition,
