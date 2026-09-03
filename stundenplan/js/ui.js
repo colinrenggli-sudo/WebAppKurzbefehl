@@ -276,26 +276,47 @@
 
   // ---------- Paywall (Demo) ----------
   U.isPro = () => !!SW.store.state.settings.proUnlocked;
+  // Simulierter Kauf in drei Schritten: Paket → Angaben → Bestätigung. Es wird nichts verrechnet.
   U.paywall = (featureId, onContinue) => {
     const f = M.proFeature(featureId) || { name: 'Pro-Funktion', icon: '⭐', desc: '' };
-    const m = U.modal({
-      title: 'STUNDENWERK Pro', sub: 'Diese Funktion gehört zum Bezahlpaket.', size: 'wide',
-      body: [
-        h('div.paywall-hero', h('div', { style: { fontSize: '40px' } }, f.icon), h('h2', f.name), h('p.muted', f.desc), h('div.price', 'CHF 500', h('small', ' / Monat pro Schule')), h('div.small.muted', 'Alle Lehrpersonen inklusive · jederzeit kündbar · Hosting in der Schweiz')),
-        h('ul.feat-list', M.PRO_FEATURES.map((p) => h('li', h('span.ic', p.icon), h('div', h('div.strong', p.name), h('div.small.muted', p.desc))))),
-        U.banner(h('span', h('b', 'Demo: '), 'Es wird nichts verrechnet. Mit «Demo ansehen» schaltest du alle Pro-Funktionen in dieser Installation frei, um sie auszuprobieren.'), 'pro', { icon: '🧪' }),
-      ],
-      footer: [
-        h('button.btn', { onclick: () => m.close() }, 'Später'),
-        h('button.btn.pro', { onclick: () => { SW.store.setSetting('proUnlocked', true); U.toast('Pro-Demo freigeschaltet – viel Spass beim Ausprobieren', { type: 'ok' }); m.close(); onContinue && onContinue(); } }, SW.icon('unlock'), 'Demo ansehen (simulierter Kauf)'),
-      ],
-    });
+    const st = SW.store.state; let step = 1; let plan = 'monat'; let pay = 'rechnung'; let role = 'Schulleitung'; let agb = false;
+    const body = h('div.col.g16'); const foot = h('div.flex.g8.jc-e.wrap.w100');
+    const steps = () => h('div.flex.g6.ai-c.small.muted', [1, 2, 3].map((n) => h('span.chip' + (n === step ? '.tint' : n < step ? '.ok' : ''), `${n < step ? '✓ ' : ''}${['Paket', 'Angaben', 'Bestätigung'][n - 1]}`)));
+    const draw = () => {
+      SW.clear(body); SW.clear(foot);
+      if (step === 1) {
+        body.append(steps(),
+          h('div.paywall-hero', h('div', { style: { fontSize: '40px' } }, f.icon), h('h2', f.name), h('p.muted', f.desc), h('div.price', plan === 'jahr' ? 'CHF 5’400' : 'CHF 500', h('small', plan === 'jahr' ? ' / Jahr pro Schule' : ' / Monat pro Schule')), U.seg([{ value: 'monat', label: 'Monatlich CHF 500' }, { value: 'jahr', label: 'Jährlich CHF 5’400 · zwei Monate geschenkt' }], plan, (v) => { plan = v; draw(); }), h('div.small.muted', 'Alle Lehrpersonen inklusive · alle Module · Hosting in der Schweiz · jederzeit kündbar · Der Generator bleibt kostenlos.')),
+          h('ul.feat-list', M.PRO_FEATURES.map((p) => h('li', h('span.ic', p.icon), h('div', h('div.strong', p.name), h('div.small.muted', p.desc))))),
+          U.banner(h('span', h('b', 'Demo: '), 'Der Kauf wird nur simuliert. Es werden keine Zahlungsdaten erfasst und nichts verrechnet.'), 'pro', { icon: '🧪' }));
+        foot.append(h('button.btn', { onclick: () => m.close() }, 'Später'), h('button.btn.pro', { onclick: () => { step = 2; draw(); } }, SW.icon('arrowRight'), '14 Tage kostenlos testen'));
+      } else if (step === 2) {
+        body.append(steps(), h('div.form-grid',
+          U.field('Schule', U.input({ value: st.settings.schoolName || '', placeholder: 'Name der Schule' })),
+          U.field('Rolle', U.select(['Schulleitung', 'Sekretariat', 'Stundenplanung', 'IT'].map((r) => ({ value: r, label: r })), role, (v) => (role = v))),
+          U.field('Zahlungsart', U.seg([{ value: 'rechnung', label: 'Rechnung mit QR-Code' }, { value: 'karte', label: 'Kreditkarte (Demo)' }], pay, (v) => { pay = v; draw(); }), { hint: pay === 'rechnung' ? 'Schweizer QR-Rechnung, zahlbar innert 30 Tagen.' : 'In der Demo werden keine Kartendaten abgefragt.' }),
+          U.field('Kostenstelle / Referenz', U.input({ placeholder: 'optional' })),
+        ), U.check('Ich akzeptiere die Nutzungsbedingungen (Demo).', agb, (v) => (agb = v)));
+        foot.append(h('button.btn', { onclick: () => { step = 1; draw(); } }, 'Zurück'), h('button.btn.pro', { onclick: () => { if (!agb) return U.toast('Bitte Nutzungsbedingungen akzeptieren', { type: 'warn' }); step = 3; draw(); } }, SW.icon('check'), 'Testphase starten'));
+      } else {
+        const ends = SW.addDays(SW.isoDate(), 14);
+        body.append(steps(), h('div.paywall-hero', h('div', { style: { fontSize: '48px' } }, '🎉'), h('h2', 'Testphase gestartet'), h('p.muted', `Alle Pro-Funktionen sind bis ${SW.fmtDate(ends)} freigeschaltet. Danach ${plan === 'jahr' ? 'CHF 5’400 pro Jahr' : 'CHF 500 pro Monat'} ${pay === 'rechnung' ? 'auf Rechnung' : 'per Kreditkarte'}.`), h('div.chip.pro', '🧪 Simulation – es wird nichts verrechnet')));
+        foot.append(h('button.btn.pro.lg', { onclick: () => { SW.store.update((s) => Object.assign(s.settings, { proUnlocked: true, proPlan: plan, proPay: pay, proSince: SW.isoDate(), proTrialEnds: ends })); U.toast('Pro-Demo freigeschaltet', { type: 'ok' }); m.close(); onContinue && onContinue(); } }, SW.icon('unlock'), 'Los geht’s'));
+      }
+    };
+    const m = U.modal({ title: 'STUNDENWERK Pro', sub: 'Betrieb der Schule: Kalender, Stellvertretungen, Hauswart, Chat, Auswertungen', size: 'wide', body, footer: foot });
+    draw();
     return m;
   };
+  // Pro-Sperre als Teaser: der echte Inhalt wird unscharf gezeigt, darüber die Kaufkarte.
   U.proGate = (featureId, render) => {
     if (U.isPro()) return render();
     const f = M.proFeature(featureId);
-    return h('div.page', h('div.card.pad', { style: { textAlign: 'center' } }, h('div', { style: { fontSize: '52px' } }, f?.icon || '🔒'), h('h2.mt8', f?.name || 'Pro-Funktion'), h('p.muted.mt8', { style: { maxWidth: '52ch', margin: '8px auto 0' } }, f?.desc || ''), h('div.mt16', h('span.lock-badge', SW.icon('lock'), 'PRO · CHF 500 / Monat')), h('div.mt16.flex.jc-c.g8.wrap', h('button.btn.pro.lg', { onclick: () => U.paywall(featureId, () => SW.router.refresh()) }, SW.icon('unlock'), 'Freischalten'), h('a.btn.lg', { href: '#/dashboard' }, 'Zurück'))));
+    let inner; try { inner = render(); } catch (e) { console.error(e); inner = h('div'); }
+    const teaser = h('div.pro-teaser', { inert: '' }, inner);
+    const isTeacher = SW.store.state.settings.role === 'teacher';
+    const card = h('div.pro-card.card.pad', h('div', { style: { fontSize: '44px' } }, f?.icon || '🔒'), h('h2.mt8', f?.name || 'Pro-Funktion'), h('p.muted.mt8', f?.desc || ''), h('div.mt12', h('span.lock-badge', SW.icon('lock'), 'PRO · CHF 500 / Monat pro Schule')), h('p.small.muted.mt12', isTeacher ? 'Die Schule hat STUNDENWERK Pro noch nicht aktiviert.' : 'Der Generator bleibt kostenlos – Pro ist der Betrieb der Schule.'), h('div.mt16.flex.jc-c.g8.wrap', isTeacher ? h('button.btn', { onclick: () => { SW.store.notify({ icon: '⭐', text: 'Eine Lehrperson wünscht die Freischaltung von STUNDENWERK Pro.', link: '#/einstellungen' }); U.toast('Schulleitung informiert', { type: 'ok' }); } }, 'Schulleitung informieren') : null, h('button.btn.pro.lg', { onclick: () => U.paywall(featureId, () => SW.router.refresh()) }, SW.icon('unlock'), isTeacher ? 'Demo trotzdem ansehen' : '14 Tage kostenlos testen'), h('a.btn.lg', { href: '#/dashboard' }, 'Zurück')));
+    return h('div.pro-wrap', teaser, card);
   };
   U.demoStrip = (featureId) => U.isPro() ? h('div.demo-strip', h('span', '🧪'), h('span.grow', 'Pro-Demo aktiv – simulierter Kauf, keine Verrechnung.'), h('button.btn.xs.ghost', { onclick: () => { SW.store.setSetting('proUnlocked', false); SW.router.refresh(); } }, 'Demo beenden')) : null;
 })();

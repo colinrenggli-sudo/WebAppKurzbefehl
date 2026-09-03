@@ -29,12 +29,22 @@
     return wrap;
   }
 
+  // Plan-Status als globales Signal in der Topbar
+  function planChip() {
+    const st = SW.store.state; const tt = st.timetable;
+    if (!tt) return h('a.chip.hide-m', { href: '#/generator', title: 'Noch kein Stundenplan' }, '○ Kein Plan');
+    const n = SW.domain.ttConflicts(st, tt).length; const open = (tt.unplaced || []).length;
+    const cls = n ? 'err' : tt.status === 'published' ? 'ok' : 'tint';
+    const txt = n ? `Entwurf · ${n} Konflikte` : tt.status === 'published' ? '● Veröffentlicht' : `○ Entwurf${open ? ' · ' + open + ' offen' : ''}`;
+    return h('a.chip.hide-m.' + cls, { href: '#/stundenplan', title: 'Zum Stundenplan' }, txt);
+  }
   function renderTop() {
     const top = document.querySelector('.top'); const st = SW.store.state;
     SW.mount(top,
       h('button.btn.icon.ghost.menu-btn', { onclick: () => { document.querySelector('.side').classList.add('open'); document.querySelector('.side-bd').classList.add('open'); }, 'aria-label': 'Menü' }, SW.icon('menu')),
       h('div.title', SW.router.current?.view?.title || ''),
       h('div.spacer'),
+      planChip(),
       h('div.hide-m', roleSwitch()),
       st.settings.proUnlocked ? h('span.chip.pro.hide-m', '🧪 Pro-Demo') : h('button.btn.sm.pro.hide-m', { onclick: () => U.paywall('calendar', () => { renderTop(); SW.router.refresh(); }) }, SW.icon('star'), 'Pro'),
       h('button.btn.icon.ghost', { onclick: () => SW.quickSearch(), 'aria-label': 'Suche', title: 'Suche (Cmd/Ctrl + K)' }, SW.icon('search')),
@@ -93,7 +103,7 @@
     applyTheme();
     document.querySelector('.side-bd').addEventListener('click', () => { document.querySelector('.side').classList.remove('open'); document.querySelector('.side-bd').classList.remove('open'); });
     const refresh = SW.debounce(() => { renderSide(); updateBell(); const v = SW.router.current?.view; if (v && !v.manualRefresh) SW.router.refresh(); else SW.router.renderNav(); }, 60);
-    SW.store.on((st, meta) => { if (meta.op === 'setting' && ['theme', 'proUnlocked', 'role', 'currentTeacherId'].includes(meta.key)) { renderTop(); } if (meta.op === 'setting' && meta.key === 'theme') return; if (meta.op === 'notify') { updateBell(); return; } refresh(); });
+    SW.store.on((st, meta) => { if (meta.op === 'setting' && ['theme', 'proUnlocked', 'role', 'currentTeacherId'].includes(meta.key)) { renderTop(); } if (meta.op === 'setting' && meta.key === 'theme') return; if (meta.op === 'notify') { updateBell(); return; } if (['timetable', 'update', 'import', 'demo', 'reset'].includes(meta.op)) renderTop(); refresh(); });
     boot();
     if (!SW.store.state.settings.onboarded && !SW.store.state.classes.length) welcome();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});

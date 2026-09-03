@@ -139,20 +139,32 @@
       st.subjects = SW.clone(SUBJECTS);
       st.curricula = CURRICULA.map((c) => ({ id: c.id, name: c.name, short: c.short, years: c.years, description: c.description, daysPerYear: c.days, subjects: c.subjects.map(([subjectId, lessons, block]) => ({ subjectId, lessons, block })) }));
       st.rooms = SW.clone(ROOMS);
+      if (scale > 1) for (let k = 1; k < scale; k++) {
+        const bld = 'Erweiterung ' + k; const base = 100 * (k + 5);
+        for (let i = 1; i <= 12; i++) st.rooms.push({ id: `r_zimmer${base + i}`, name: `Zimmer ${base + i}`, type: 'klassenzimmer', capacity: 26, building: bld, floor: '1. OG', features: ['beamer', 'whiteboard'], active: true, notes: '' });
+        for (let i = 1; i <= 3; i++) st.rooms.push({ id: `r_display${base + 20 + i}`, name: `Zimmer ${base + 20 + i}`, type: 'display', capacity: 26, building: bld, floor: '2. OG', features: ['display'], active: true, notes: '' });
+        for (let i = 1; i <= 5; i++) st.rooms.push({ id: `r_info${base + 30 + i}`, name: `Informatik ${base + 30 + i}`, type: 'informatik', capacity: 24, building: bld, floor: '3. OG', features: ['pc', 'beamer'], active: true, notes: '' });
+        for (let i = 1; i <= 2; i++) st.rooms.push({ id: `r_halle${k}_${i}`, name: `Turnhalle ${k * 2 + i}`, type: 'turnhalle', capacity: 30, building: bld, floor: 'EG', features: ['lautsprecher'], active: true, notes: '' });
+      }
       // Wöchentliche Sperrzeiten: Aula freitags ab Mittag (Konferenzen/Anlässe), Turnhalle 2 montags 1.–2. Lektion (Unterhalt)
       st.rooms.find((r) => r.id === 'r_aula').blocked = { 5: SW.range(S).map((i) => i >= lunch) };
       st.rooms.find((r) => r.id === 'r_turnhalle2').blocked = { 1: SW.range(S).map((i) => i < 2) };
       // Lehrpersonen
-      let teachers = TEACHERS.map(([emoji, code, subjectIds, employment, pattern], i) => ({ ...M.newTeacher(), id: 't_' + code.toLowerCase().replace(/[^a-z]/g, ''), emoji, code, subjectIds, employment, maxLessons: Math.round((25 * employment) / 100), availability: availability(pattern, S, lunch), preferredDays: [], notes: '' }));
-      if (scale > 1) { const pool = M.EMOJIS.filter((e) => !TEACHERS.some((t) => t[0] === e)); let pi = 0; for (let k = 1; k < scale; k++) teachers = teachers.concat(TEACHERS.map(([emoji, code, subjectIds, employment, pattern]) => ({ ...M.newTeacher(), id: `t_${code.toLowerCase().replace(/[^a-z]/g, '')}${k}`, emoji: pool[pi++ % pool.length], code: code + ' ' + (k + 1), subjectIds, employment, maxLessons: Math.round((25 * employment) / 100), availability: availability(pattern, S, lunch), preferredDays: [] }))); }
+      let teachers = TEACHERS.map(([emoji, code, subjectIds, employment, pattern], i) => ({ ...M.newTeacher(), id: 't_' + code.toLowerCase().replace(/[^a-z]/g, ''), emoji, code, subjectIds, employment, maxLessons: Math.round((25 * employment) / 100), availability: availability(pattern, S, lunch), preferredDays: [], notes: '', _g: 0 }));
+      if (scale > 1) {
+        // Kopien der Schule: Schultage und Verfügbarkeiten um k Tage verschoben, damit jede Kopie für sich machbar bleibt
+        const pool = M.EMOJIS.filter((e) => !TEACHERS.some((t) => t[0] === e)); let pi = 0;
+        const shift = (pattern, k) => { const out = {}; for (const [d, v] of Object.entries(pattern)) out[((Number(d) - 1 + k) % 5) + 1] = v; return out; };
+        for (let k = 1; k < scale; k++) teachers = teachers.concat(TEACHERS.map(([emoji, code, subjectIds, employment, pattern]) => ({ ...M.newTeacher(), id: `t_${code.toLowerCase().replace(/[^a-z]/g, '')}${k}`, emoji: pool[pi++ % pool.length], code: code + ' ' + (k + 1), subjectIds, employment, maxLessons: Math.round((25 * employment) / 100), availability: availability(shift(pattern, k), S, lunch), preferredDays: [], _g: k })));
+      }
       st.teachers = teachers;
       // Klassen
       const stdRooms = st.rooms.filter((r) => r.type === 'klassenzimmer' || r.type === 'display');
       let classes = [];
       for (let k = 0; k < scale; k++) for (const [name, curriculumId, year, size, schoolDays] of CLASSES) {
         const suffix = k ? String.fromCharCode(97 + k + 2) : '';
-        const days = k ? schoolDays.map((d) => ((d + k) % 5) + 1) : schoolDays;
-        classes.push({ ...M.newClass(), id: 'k_' + (name + suffix).toLowerCase(), name: name + suffix, size, curriculumId, year, schoolDays: days, homeRoomId: null, subjectTeachers: {}, notes: '' });
+        const days = k ? schoolDays.map((d) => ((d - 1 + k) % 5) + 1) : schoolDays;
+        classes.push({ ...M.newClass(), id: 'k_' + (name + suffix).toLowerCase(), name: name + suffix, size, curriculumId, year, schoolDays: days, homeRoomId: null, subjectTeachers: {}, notes: '', _g: k });
       }
       // Stammzimmer verteilen: Klassen mit gleichen Schultagen dürfen nicht dasselbe Zimmer haben
       const used = {}; // roomId → Set(days)
@@ -162,8 +174,8 @@
       }
       // Klassenlehrpersonen, Stellvertretung, ABU: qualifizierte Lehrpersonen zuweisen und deren Fach fix zuteilen
       const load = {}; teachers.forEach((t) => (load[t.id] = 0));
-      const pick = (subjectId, days, exclude = []) => {
-        const cands = teachers.filter((t) => t.subjectIds.includes(subjectId) && !exclude.includes(t.id) && days.every((d) => (t.availability[d] || []).some(Boolean)));
+      const pick = (subjectId, days, exclude = [], g = 0) => {
+        const cands = teachers.filter((t) => t._g === g && t.subjectIds.includes(subjectId) && !exclude.includes(t.id) && days.every((d) => (t.availability[d] || []).some(Boolean)));
         if (!cands.length) return null;
         cands.sort((a, b) => load[a.id] / a.maxLessons - load[b.id] / b.maxLessons + (rng() - 0.5) * 0.05);
         return cands[0];
@@ -171,19 +183,20 @@
       for (const k of classes) {
         const cur = st.curricula.find((c) => c.id === k.curriculumId);
         const mainSubject = cur.subjects.find((s) => ['s_wg', 's_hkb_c', 's_bk', 's_bkv', 's_frw', 's_abu'].includes(s.subjectId) && s.lessons[k.year] > 0) || cur.subjects[0];
-        const klp = pick(mainSubject.subjectId, k.schoolDays);
+        const klp = pick(mainSubject.subjectId, k.schoolDays, [], k._g);
         if (klp) { k.mainTeacherId = klp.id; k.subjectTeachers[mainSubject.subjectId] = klp.id; load[klp.id] += mainSubject.lessons[k.year]; }
         const abu = cur.subjects.find((s) => s.subjectId === 's_abu' && s.lessons[k.year] > 0);
-        if (abu) { const t = pick('s_abu', k.schoolDays, [klp?.id]); if (t) { k.abuTeacherId = t.id; k.subjectTeachers['s_abu'] = t.id; load[t.id] += abu.lessons[k.year]; } }
-        const dep = pick(cur.subjects[1]?.subjectId || mainSubject.subjectId, k.schoolDays, [klp?.id]);
+        if (abu) { const t = pick('s_abu', k.schoolDays, [klp?.id], k._g); if (t) { k.abuTeacherId = t.id; k.subjectTeachers['s_abu'] = t.id; load[t.id] += abu.lessons[k.year]; } }
+        const dep = pick(cur.subjects[1]?.subjectId || mainSubject.subjectId, k.schoolDays, [klp?.id], k._g);
         if (dep) k.deputyTeacherId = dep.id;
         // Weitere Fächer: etwa zwei Drittel fix zuweisen, der Rest bleibt für die automatische Zuweisung
         for (const s of cur.subjects) {
           if (k.subjectTeachers[s.subjectId] || !(s.lessons[k.year] > 0)) continue;
-          if (rng() < 0.65) { const t = pick(s.subjectId, k.schoolDays); if (t) { k.subjectTeachers[s.subjectId] = t.id; load[t.id] += s.lessons[k.year]; } }
+          if (rng() < 0.65) { const t = pick(s.subjectId, k.schoolDays, [], k._g); if (t) { k.subjectTeachers[s.subjectId] = t.id; load[t.id] += s.lessons[k.year]; } }
         }
       }
       st.classes = classes;
+      for (const t of teachers) delete t._g; for (const k of classes) delete k._g;
       // Buchungen / Events (Hauswart)
       const monday = SW.startOfWeek(SW.isoDate());
       st.bookings = [
