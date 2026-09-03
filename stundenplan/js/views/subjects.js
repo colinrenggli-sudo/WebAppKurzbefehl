@@ -11,7 +11,7 @@
   const CSS = `
 .sj-toolbar select.inp{width:auto;min-width:168px;max-width:250px}
 .sj-toolbar .sj-count{font-size:13px;color:var(--txt-3);white-space:nowrap;font-variant-numeric:tabular-nums}
-@media (max-width:600px){.sj-toolbar .search{max-width:none;flex-basis:100%}.sj-toolbar select.inp{flex:1;min-width:0;max-width:none}.sj-toolbar .sj-count{display:none}}
+@media (max-width:600px){.sj-toolbar .search{max-width:none;flex-basis:100%}.sj-toolbar select.inp{flex:1;min-width:0;max-width:none}.sj-toolbar .sj-count,.sj-toolbar .spacer{display:none}}
 .sj-kpi-warn .val{color:var(--warn)}
 .sj-kpi-ok .val{color:var(--ok)}
 .sj-tbl th,.sj-tbl td{padding-left:10px;padding-right:10px}
@@ -161,8 +161,11 @@
     const reRoomHint = () => { const req = M.roomReq(s.roomReq || 'any'); const n = roomsFor(state, req).length; SW.mount(roomHint, n ? `${plural(n, 'passender Raum', 'passende Räume')} vorhanden` : h('span.warn-c', state.rooms.length ? 'Kein passender Raum erfasst – der Generator kann dieses Fach nicht platzieren.' : 'Noch keine Räume erfasst.')); };
     const roomSel = U.select(M.ROOM_REQ.map((r) => ({ value: r.id, label: r.name })), s.roomReq || 'any', (v) => { s.roomReq = v || 'any'; reRoomHint(); rePreview(); });
     const blockSeg = U.seg([{ value: 1, label: 'Einzellektion' }, { value: 2, label: 'Doppellektion' }], s.block, (v) => (s.block = Number(v)));
-    const catSel = U.select(CATEGORIES.map((c) => ({ value: c.id, label: `${c.icon}  ${c.name}` })), CATEGORIES.some((c) => c.id === s.category) ? s.category : 'allgemein', (v) => (s.category = v || 'allgemein'));
-    if (!CATEGORIES.some((c) => c.id === s.category)) s.category = 'allgemein';
+    // Unbekannte Kategorie (z.B. aus importierten Daten) bleibt als eigene Option erhalten
+    const known = CATEGORIES.some((c) => c.id === s.category);
+    if (!known && !s.category) s.category = 'allgemein';
+    const catOpts = [...CATEGORIES, ...(known || !s.category ? [] : [catOf(s.category)])].map((c) => ({ value: c.id, label: `${c.icon}  ${c.name}` }));
+    const catSel = U.select(catOpts, s.category, (v) => (s.category = v || 'allgemein'));
     reRoomHint(); rePreview();
 
     const save = () => {
@@ -180,7 +183,7 @@
     // Verwendung (nur bestehende Fächer)
     let usage = null;
     if (!isNew) {
-      const i = analyse(state)[s.id];
+      const i = analyse(state)[s.id] || { curricula: [], teachers: [], classes: new Set(), lessons: 0 };
       const curChips = i.curricula.length ? i.curricula.map((c) => h('a.chip.sm', { href: '#/lehrgaenge/' + c.id, title: c.name, onclick: () => m.close() }, c.short || c.name)) : [h('span.faint', 'In keinem Lehrgang – erscheint in keiner Lektionentafel.')];
       const tChips = i.teachers.length ? i.teachers.map((t) => U.teacherPill(t)) : [h('span.chip.sm.warn', 'keine Lehrperson'), h('span.faint.small', 'Fach bei einer Lehrperson hinterlegen.')];
       usage = h('div.sj-usage',
@@ -309,7 +312,11 @@
     const body = h('div');
     const count = h('span.sj-count');
     const search = U.input({ value: L.q, placeholder: 'Suchen: Name, Kurzname, Kategorie', oninput: SW.debounce((v) => { L.q = v; refresh(); }, 120) });
-    const catSel = U.select(CATEGORIES.filter((c) => subjects.some((s) => s.category === c.id) || c.id === L.cat).map((c) => ({ value: c.id, label: `${c.icon}  ${c.name}` })), L.cat, (v) => { L.cat = v || ''; refresh(); }, { placeholder: 'Alle Kategorien' });
+    // Kategorien im Filter: die verwendeten Standardkategorien plus unbekannte Kategorien aus den Daten
+    const usedCats = SW.uniq(subjects.map((s) => s.category || ''));
+    const catOpts = [...CATEGORIES.filter((c) => usedCats.includes(c.id) || c.id === L.cat), ...usedCats.filter((id) => id && !CATEGORIES.some((c) => c.id === id)).sort(byName).map(catOf)];
+    if (usedCats.includes('')) catOpts.push({ id: '__none', name: 'Ohne Kategorie', icon: '📘' });
+    const catSel = U.select(catOpts.map((c) => ({ value: c.id, label: `${c.icon}  ${c.name}` })), L.cat, (v) => { L.cat = v || ''; refresh(); }, { placeholder: 'Alle Kategorien' });
     const onlySel = U.select(ONLY, L.only, (v) => { L.only = v || ''; refresh(); }, { placeholder: 'Alle Fächer' });
     const resetBtn = h('button.btn.ghost.sm', { onclick: () => { L.q = ''; L.cat = ''; L.only = ''; search.value = ''; catSel.value = ''; onlySel.value = ''; refresh(); } }, SW.icon('x'), 'Filter zurücksetzen');
     el.append(h('div.toolbar.sj-toolbar', h('div.search', SW.icon('search'), search), catSel, onlySel, resetBtn, h('div.spacer'), count), body);
@@ -317,7 +324,8 @@
     const matchOnly = (s) => { const i = per[s.id]; switch (L.only) { case 'hint': return !!i?.hint; case 'noTeacher': return !(i?.teachers || []).length; case 'noRoom': return !!i?.roomMissing; case 'unused': return !(i?.curricula || []).length; default: return true; } };
     const filtered = () => {
       const q = norm(L.q);
-      return subjects.filter((s) => (!L.cat || (s.category || '') === L.cat) && matchOnly(s) && (!q || [s.name, s.short, catOf(s.category).name, M.roomReq(s.roomReq || 'any').name].some((x) => norm(x).includes(q))));
+      const matchCat = (s) => !L.cat || (L.cat === '__none' ? !s.category : s.category === L.cat);
+      return subjects.filter((s) => matchCat(s) && matchOnly(s) && (!q || [s.name, s.short, catOf(s.category).name, M.roomReq(s.roomReq || 'any').name].some((x) => norm(x).includes(q))));
     };
     function refresh() {
       const list = filtered();

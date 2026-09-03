@@ -14,14 +14,17 @@
 .kl-toolbar select.inp{width:auto;min-width:160px;max-width:260px}
 .kl-toolbar .kl-count{font-size:13px;color:var(--txt-3);white-space:nowrap;font-variant-numeric:tabular-nums}
 @media (max-width:600px){.kl-toolbar .search{max-width:none;flex-basis:100%}.kl-toolbar select.inp{flex:1;min-width:0;max-width:none}.kl-toolbar .kl-count{display:none}}
-.kl-tbl th{padding:9px 10px}
-.kl-tbl td{padding:9px 10px;white-space:nowrap}
+.kl-tbl th{padding:9px 8px}
+.kl-tbl td{padding:8px 8px;white-space:nowrap}
+.kl-tbl th:first-child,.kl-tbl td:first-child{padding-left:14px}
+.kl-tbl th:last-child,.kl-tbl td:last-child{padding-right:12px}
+.kl-tbl .teacher-pill{padding:2px 7px 2px 3px}
 .kl-tbl .kl-name{font-weight:680;font-size:14.5px;line-height:1.2}
 .kl-tbl .kl-sub{font-size:12px;color:var(--txt-3);margin-top:2px;font-weight:500}
 .kl-tbl .kl-days{gap:3px;flex-wrap:nowrap}
 .kl-tbl .teacher-pill{font-size:12.5px}
 .kl-tbl tr.kl-err td .kl-name{color:var(--err-txt)}
-@media (max-width:1180px){.kl-tbl .hm{display:none}}
+@media (max-width:1357px){.kl-tbl .hm{display:none}}
 .kl-ic{width:76px;height:76px;border-radius:22px;background:var(--tint-soft);display:grid;place-items:center;font-size:40px;flex:none;line-height:1}
 .kl-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .kl-head .grow{min-width:0}
@@ -34,7 +37,7 @@
 .kl-team .kl-role{width:150px;flex:none}
 .kl-team .kl-role .sub{font-size:12px;color:var(--txt-3)}
 .kl-team a:hover{text-decoration:none}
-@media (max-width:600px){.kl-team .kl-role{width:104px}}
+@media (max-width:600px){.kl-team .kl-role{width:112px;font-size:13.5px;overflow-wrap:anywhere}}
 .kl-req td{vertical-align:middle}
 .kl-tsel{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .kl-tsel select.inp{flex:1;min-width:230px;max-width:340px}

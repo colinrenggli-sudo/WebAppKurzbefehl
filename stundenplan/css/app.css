@@ -476,7 +476,7 @@ kbd{font-family:var(--ff-num);font-size:11.5px;padding:1px 6px;border-radius:5px
 .ai-c{align-items:center}.ai-s{align-items:flex-start}.ai-e{align-items:flex-end}
 .jc-b{justify-content:space-between}.jc-c{justify-content:center}.jc-e{justify-content:flex-end}
 .wrap{flex-wrap:wrap}.grow{flex:1;min-width:0}
-.g4{gap:4px}.g6{gap:6px}.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}.g16{gap:16px}.g20{gap:20px}
+.g4{gap:4px}.g6{gap:6px}.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}.g14{gap:14px}.g16{gap:16px}.g20{gap:20px}
 .mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt24{margin-top:24px}
 .mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
 .p0{padding:0}.w100{width:100%}

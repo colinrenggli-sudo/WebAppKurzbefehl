@@ -67,9 +67,10 @@
     SW.download(`kalender-${t.code || t.id}.ics`, lines.join('\r\n'), 'text/calendar');
   }
 
-  function content(el) {
+  function content(el, params) {
     const state = SW.store.state; const tt = state.timetable;
     U.injectCSS('calendar', CSS);
+    if (params?.query?.id && state.teachers.some((t) => t.id === params.query.id)) teacherId = params.query.id;
     const teachers = state.teachers.filter((t) => t.active !== false);
     if (!teachers.length) { el.append(U.pageHeader({ title: 'Kalender & Arbeitszeit' }), U.empty({ icon: '🗓️', title: 'Keine Lehrpersonen', text: 'Erfasse zuerst Lehrpersonen.', action: h('a.btn.primary', { href: '#/lehrpersonen' }, 'Lehrpersonen') })); return; }
     const isTeacher = state.settings.role === 'teacher';
@@ -124,5 +125,5 @@
     if (window.innerWidth < 900) el.lastChild.style.gridTemplateColumns = '1fr';
   }
 
-  SW.views.kalender = { title: 'Kalender & Arbeitszeit', render(el) { el.append(U.proGate('calendar', () => { const w = h('div.col.g16'); content(w); return w; })); } };
+  SW.views.kalender = { title: 'Kalender & Arbeitszeit', render(el, params) { el.append(U.proGate('calendar', () => { const w = h('div.col.g16'); content(w, params); return w; })); } };
 })();

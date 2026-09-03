@@ -272,7 +272,7 @@
     return h('div.tbl-wrap', t);
   };
   U.stat = (label, value) => h('div.st', h('b', String(value)), h('span', label));
-  U.meter = (ratio, { cls, label } = {}) => { const p = SW.clamp(ratio || 0, 0, 1); const c = cls || (p > 1 ? 'err' : p > 0.85 ? 'warn' : 'ok'); return h('div.meter', h('div.progress.' + c, h('i', { style: { width: Math.round(p * 100) + '%' } })), h('span.num', label ?? Math.round(p * 100) + ' %')); };
+  U.meter = (ratio, { cls, label } = {}) => { const raw = Number(ratio) || 0; const p = SW.clamp(raw, 0, 1); const c = cls || (raw > 1 ? 'err' : raw > 0.85 ? 'warn' : 'ok'); return h('div.meter', h('div.progress.' + c, h('i', { style: { width: Math.round(p * 100) + '%' } })), h('span.num', label ?? Math.round(raw * 100) + ' %')); };
 
   // ---------- Paywall (Demo) ----------
   U.isPro = () => !!SW.store.state.settings.proUnlocked;
