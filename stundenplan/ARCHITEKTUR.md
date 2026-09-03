@@ -52,10 +52,20 @@ Lehrpersonen haben **keinen Namen** – nur `emoji` und optional ein Kürzel `co
 3. Formulare in Modals (`SW.ui.modal`), Felder mit `SW.ui.field(label, SW.ui.input({...}))`. Pflichtfelder prüfen, Fehler als Toast.
 4. Löschen immer mit `await SW.ui.confirm({danger:true})`.
 5. Seitenkopf: `SW.ui.pageHeader({title, lead, actions:[…]})`. Leere Zustände: `SW.ui.empty({...})` mit Aktion.
-6. Pro-Ansichten: `el.append(SW.ui.proGate('calendar', () => inhalt()))` – der Inhalt wird nur gebaut, wenn `proUnlocked`.
-   Oben in Pro-Ansichten `SW.ui.demoStrip()` einfügen.
+6. Pro-Ansichten: `el.append(SW.ui.proGate('calendar', () => inhalt()))` – ohne Freischaltung wird der Inhalt unscharf als
+   Teaser gezeigt (inert), darüber die Kaufkarte; mit `proUnlocked` normal. Oben in Pro-Ansichten `SW.ui.demoStrip()` einfügen.
 7. Keine Inline-Styles ausser für dynamische Werte (Farben, Breiten). CSS-Klassen aus `app.css` nutzen; zusätzliches CSS der Ansicht
    mit `SW.ui.injectCSS('ansicht', '…')` am Anfang von `render` einfügen, Klassen mit Präfix der Ansicht (z.B. `.gen-…`).
 8. Links auf Objekte: `#/klassen/<id>`, `#/lehrpersonen/<id>`, `#/raeume/<id>`, `#/lehrgaenge/<id>`, `#/stundenplan?view=klasse&id=<id>` (view: klasse|lehrperson|raum).
 9. Zahlen mit `SW.fmtNum`, Datum mit `SW.fmtDate`. Schweizer Schreibweise.
 10. Alles muss auch mit **leerem Zustand** (keine Daten) funktionieren, ohne Fehler.
+
+## Tests
+
+```
+node tests/solver.test.js   # Generator und Fachlogik in Node (Vollständigkeit, harte Regeln, Determinismus, Fixierung, Stresstest, kaputte Daten)
+node tests/e2e.js           # Browser-Durchlauf mit Playwright/Chromium (alle Bildschirme, Paywall, Drag & Drop, Mobile, Dark Mode, leerer Zustand)
+node tests/smoke.js '' '' '#/route,#/andere'   # Konsolenfehler und Screenshots einzelner Routen
+node tests/mobile.js        # Routen bei 390 px ohne horizontales Scrollen
+```
+Screenshots landen unter `tests/screenshots/` (nicht im Repository).

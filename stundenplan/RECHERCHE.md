@@ -124,6 +124,17 @@ nicht platzierbare Lektion begründen kann:
 4. **Raum-Nachoptimierung:** Stammzimmer und Raumkontinuität pro Tag.
 5. **Ergebnis:** Lektionen, unplatzierte Einheiten mit Grund, Score und Aufschlüsselung, Statistik.
 
+Die Machbarkeitsanalyse prüft vor dem Lauf nicht nur Summen, sondern Kapazitäten pro Tag: für jede
+Teilmenge der Unterrichtstage müssen die Lektionen der Klassen, die nur innerhalb dieser Tage Schule
+haben, in die Verfügbarkeit der Lehrperson bzw. die Plätze des Raumtyps passen (Hall-Bedingung);
+Doppellektionen zählen nur zusammenhängende, nicht über den Mittag reichende Paare. Automatische
+Zuweisungen werden dabei wie im Generator berücksichtigt.
+
+Der Generator wurde in einer Gegentest-Runde mit fünf unabhängigen Blickwinkeln (harte Regeln,
+fixierte Lektionen, Zuweisung und Machbarkeit, Qualität und Determinismus, kaputte Daten) angegriffen;
+alle bestätigten Befunde – etwa ungeprüft übernommene fixierte Lektionen, ignorierte Raumsperren bei
+der Verdrängung oder zu lasche Kapazitätsprüfungen – sind behoben und durch Tests abgedeckt.
+
 Determinismus: gleicher Seed und gleiche Iterationszahl ergeben denselben Plan. Belegungen liegen in
 typisierten Arrays; ein Lauf mit 19 Klassen dauert im Test rund 0.2 Sekunden für 60 000 Iterationen,
 38 Klassen ebenso schnell. Ein unabhängiger Prüfer (`SW.solver.validate`) kontrolliert jeden Plan
