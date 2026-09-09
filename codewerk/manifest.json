@@ -1,0 +1,25 @@
+{
+  "name": "CODEWERK – Kommandostand für Claude",
+  "short_name": "CODEWERK",
+  "description": "Deine Claude-Code-Sessions und Claude-Chats auf einen Blick: was noch offen ist, was erledigt ist – und ein Boostknopf, der eine neue Remote-Session startet.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0D1A",
+  "theme_color": "#0B0D1A",
+  "lang": "de-CH",
+  "categories": ["productivity", "developer"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  },
+  "shortcuts": [
+    { "name": "Boost – neue Session", "short_name": "Boost", "url": "./index.html?boost=1" }
+  ]
+}

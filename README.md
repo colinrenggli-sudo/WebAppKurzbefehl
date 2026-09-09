@@ -3,6 +3,14 @@
 ## Projekte
 
 - **`index.html`** – Kurzbefehl-App (Tasks, To-Dos, Fortschritt, Firebase-Sync)
+- **`codewerk/`** – [CODEWERK](codewerk/README.md): Kommandostand für
+  Claude. Dashboard über die letzten Claude-Code-Sessions und
+  Claude-Chats – gruppiert nach *läuft*, *weiterverfolgen*, *wartet*
+  und *fertig*, mit Checkbox zum Abhaken und Archiv. Dazu ein
+  Boostknopf, der über die Routinen-Schnittstelle eine neue
+  Remote-Session startet und sofort im Browser öffnet.
+  [Live ansehen](https://colinrenggli-sudo.github.io/WebAppKurzbefehl/codewerk/)
+  oder `codewerk/index.html` im Browser öffnen.
 - **`shop/`** – [ELF11 Trikot Shop](shop/README.md): testbarer Onlineshop-Demo
   für Retro-Fussballtrikots mit SEO-Vollausbau, simulierter Stripe-Kasse und
   Apple-HIG-Design. Einfach `shop/index.html` im Browser öffnen.
@@ -35,6 +43,9 @@ optional per Cloudflare Tunnel unter eigener Domain oder per Tailscale
 nur im eigenen Netz.
 
 - [`deploy/README.md`](deploy/README.md) – Schritt für Schritt auf Unraid
+- [`deploy/claude-hub/`](deploy/claude-hub/README.md) – Serverteil von
+  CODEWERK: löst den Boost aus, ohne dass der Token aufs Handy muss,
+  und nimmt die stündliche Session-Übersicht entgegen
 - [`deploy/HOMESERVER.md`](deploy/HOMESERVER.md) – was so ein Server sonst
   noch kann und was sich zuerst zu verbessern lohnt
 - [`deploy/serverinfo.sh`](deploy/serverinfo.sh) – Bestandsaufnahme der

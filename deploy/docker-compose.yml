@@ -80,3 +80,52 @@ services:
       - DAYS=${DAYS:-90}
       - INTERVAL=${INTERVAL:-21600}
       - PYTHONUNBUFFERED=1
+
+  # ----------------------------------------------------------------
+  # claude-hub – der Serverteil von CODEWERK.
+  #   · POST /api/boost  löst die Boost-Routine aus; der Routinen-Token
+  #                      bleibt hier und muss nicht aufs Handy
+  #   · POST /api/feed   nimmt die stündliche Übersicht entgegen
+  #   · GET  /api/feed   liefert sie der App aus
+  #
+  # Läuft nur mit --profile hub, damit ein Setup ohne CODEWERK nichts
+  # Unnötiges startet:
+  #     docker compose --profile hub up -d
+  #
+  # Alle Token gehören in deploy/.env (per .gitignore ausgenommen):
+  #     ROUTINE_FIRE_URL=https://api.anthropic.com/v1/claude_code/routines/trig_…/fire
+  #     ROUTINE_TOKEN=sk-ant-oat01-…
+  #     HUB_TOKEN=<selbst ausgedacht, lang>
+  #     INGEST_TOKEN=<selbst ausgedacht, lang>
+  #     ALLOW_ORIGIN=https://colinrenggli-sudo.github.io
+  # ----------------------------------------------------------------
+  claude-hub:
+    image: python:3.12-alpine
+    container_name: claude-hub
+    profiles: ["hub"]
+    restart: unless-stopped
+    working_dir: /app
+    command: ["python", "hub.py"]
+    ports:
+      # Aussen 8090; hinter dem Cloudflare-Tunnel auf eine eigene
+      # Hostname-Regel legen, z. B. hub.deine-domain.ch → claude-hub:8090
+      - "8090:8090"
+    volumes:
+      - ./claude-hub:/app:ro
+      - ${DATEN:-../../daten}:/daten
+    environment:
+      - TZ=Europe/Zurich
+      - ROUTINE_FIRE_URL=${ROUTINE_FIRE_URL:-}
+      - ROUTINE_TOKEN=${ROUTINE_TOKEN:-}
+      - HUB_TOKEN=${HUB_TOKEN:-}
+      - INGEST_TOKEN=${INGEST_TOKEN:-}
+      - ALLOW_ORIGIN=${ALLOW_ORIGIN:-*}
+      - FEED_FILE=/daten/claude-feed.json
+      - PORT=8090
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/api/health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

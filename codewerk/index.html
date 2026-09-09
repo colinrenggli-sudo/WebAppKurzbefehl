@@ -1,0 +1,1575 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<!-- ==================================================================
+     CODEWERK — Kommandostand für Claude
+     ------------------------------------------------------------------
+     Eine einzige, self-contained Datei: kein Build, kein Framework,
+     keine externen Requests. Doppelklick genügt.
+
+     Was die App macht
+       · Dashboard über die letzten Claude-Code-Sessions und
+         Claude-Chats — sortiert nach dem, was JETZT dran ist
+       · Jede Karte trägt einen Status: läuft · weiter · wartet ·
+         fertig. Was nicht mehr relevant ist, hakst du ab und es
+         wandert ins Archiv.
+       · BOOST — ein Druck startet über die Routinen-API eine neue
+         Claude-Code-Remote-Session und öffnet sie direkt im Browser.
+
+     Woher die Daten kommen
+       Für das Auflisten eigener Sessions und Chats gibt es keine
+       öffentliche Schnittstelle. Darum liest die App einen "Feed":
+       eine JSON-Datei, die eine Claude-Code-Routine stündlich in der
+       Cloud zusammenstellt (dort hat die Session Zugriff auf die
+       eigene Sitzungsliste) und irgendwo ablegt, wo das Handy sie
+       lesen darf. Fertiger Routinen-Prompt: codewerk/ROUTINE.md
+       Ohne Feed funktioniert alles andere trotzdem — Einträge lassen
+       sich von Hand oder über das Teilen-Menü hinzufügen.
+
+     Der Boostknopf spricht diese dokumentierte Schnittstelle an:
+       POST https://api.anthropic.com/v1/claude_code/routines/<id>/fire
+     Antwort: { claude_code_session_id, claude_code_session_url }
+     Quellen und Details: codewerk/RECHERCHE.md
+
+     Alle Daten bleiben im Browser (localStorage), der Routinen-Token
+     ebenso. Er ist auf genau eine Routine begrenzt und hat keinen
+     Lesezugriff auf das Konto.
+     ================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CODEWERK – Claude-Sessions im Blick, Boost auf Knopfdruck</title>
+
+<meta name="description" content="Dashboard für die letzten Claude-Code-Sessions und Claude-Chats: was noch offen ist, was erledigt ist – und ein Boostknopf, der eine neue Remote-Session startet und direkt öffnet.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://colinrenggli-sudo.github.io/WebAppKurzbefehl/codewerk/">
+<meta name="theme-color" content="#F4F5FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0D1A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CODEWERK">
+<meta name="format-detection" content="telephone=no">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CODEWERK">
+<meta property="og:title" content="CODEWERK – Kommandostand für Claude">
+<meta property="og:description" content="Sessions und Chats auf einen Blick. Ein Knopf startet die nächste Remote-Session.">
+<meta property="og:locale" content="de_CH">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+
+<style>
+/* ==================================================================
+   1 · Design-Tokens
+   Werkstatt bei Nacht: tiefes Marineblau, ein kühles Blau für die
+   Oberfläche, ein heisser Verlauf allein für den Boostknopf — damit
+   im ganzen Bild genau ein Ding schreit.
+   ================================================================== */
+:root{
+  --bg:#F4F5FA; --bg-2:#E9EBF3; --card:#FFFFFF; --card-2:#F7F8FC;
+  --txt:#111325; --txt-2:#4E5168; --txt-3:#868AA3;
+  --sep:#E2E4EF; --sep-2:#CFD2E1;
+  --tint:#3D5AFE; --tint-soft:#E6E9FF; --tint-txt:#2B41C4;
+  --ok:#1F7A4D; --ok-soft:#DFF2E8;
+  --warn:#8A5D0B; --warn-soft:#FAEED4;
+  --bad:#A8323F; --bad-soft:#FAE2E5;
+  --run:#0E6E8C; --run-soft:#DAF0F7;
+  --hot-1:#FFC24B; --hot-2:#FF6B2C; --hot-3:#FF2D78;
+  --shadow:0 1px 2px rgba(17,19,37,.05), 0 8px 24px -14px rgba(17,19,37,.22);
+  --shadow-lg:0 2px 6px rgba(17,19,37,.07), 0 26px 60px -26px rgba(17,19,37,.34);
+  --glow:0 10px 34px -8px rgba(255,77,60,.55);
+  --r-s:10px; --r-m:14px; --r-l:20px; --r-xl:26px;
+  --ff:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --fn:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",Inter,Roboto,sans-serif;
+  --fm:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+  --dock:calc(180px + var(--safe-b));
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B0D1A; --bg-2:#12152633; --card:#161A2E; --card-2:#1D2138;
+    --txt:#EFF0F7; --txt-2:#A9ADC4; --txt-3:#787D96;
+    --sep:#252A44; --sep-2:#333959;
+    --tint:#7E92FF; --tint-soft:#1E2450; --tint-txt:#9DACFF;
+    --ok:#63C596; --ok-soft:#12261C;
+    --warn:#E0B45E; --warn-soft:#2C2415;
+    --bad:#F08A93; --bad-soft:#2D181B;
+    --run:#61C4E0; --run-soft:#10262E;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -14px rgba(0,0,0,.8);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.55), 0 26px 60px -26px rgba(0,0,0,.9);
+    --glow:0 12px 40px -6px rgba(255,77,60,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B0D1A; --bg-2:#121526; --card:#161A2E; --card-2:#1D2138;
+  --txt:#EFF0F7; --txt-2:#A9ADC4; --txt-3:#787D96;
+  --sep:#252A44; --sep-2:#333959;
+  --tint:#7E92FF; --tint-soft:#1E2450; --tint-txt:#9DACFF;
+  --ok:#63C596; --ok-soft:#12261C;
+  --warn:#E0B45E; --warn-soft:#2C2415;
+  --bad:#F08A93; --bad-soft:#2D181B;
+  --run:#61C4E0; --run-soft:#10262E;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -14px rgba(0,0,0,.8);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.55), 0 26px 60px -26px rgba(0,0,0,.9);
+  --glow:0 12px 40px -6px rgba(255,77,60,.5);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --bg-2:#121526; } }
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--txt); font-family:var(--ff);
+  font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden; padding-bottom:var(--dock);
+}
+button,input,select,textarea{font:inherit; color:inherit}
+button{cursor:pointer; background:none; border:0; padding:0; color:inherit}
+h1,h2,h3,h4{margin:0; line-height:1.22; letter-spacing:-.015em}
+p{margin:0}
+a{color:var(--tint-txt)}
+:focus-visible{outline:2.5px solid var(--tint); outline-offset:2px; border-radius:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none !important}
+@media (prefers-reduced-motion:reduce){ *{animation-duration:.01ms !important; transition-duration:.01ms !important} }
+
+/* ==================================================================
+   2 · Gerüst
+   ================================================================== */
+.wrap{max-width:760px; margin:0 auto; padding:0 16px}
+header.top{
+  position:sticky; top:0; z-index:60; padding-top:var(--safe-t);
+  background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--sep);
+}
+.top-in{display:flex; align-items:center; gap:10px; height:54px}
+.brand{display:flex; align-items:center; gap:9px; font-weight:750; letter-spacing:.16em; font-size:13px}
+.brand svg{width:24px;height:24px;flex:none}
+.top-sp{flex:1}
+.icon-btn{
+  width:36px;height:36px;border:1px solid var(--sep);background:var(--card);border-radius:11px;
+  display:grid;place-items:center;transition:.15s;flex:none;
+}
+.icon-btn:hover{background:var(--bg-2)}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.card{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l); padding:18px; box-shadow:var(--shadow); margin-bottom:14px}
+.card.tight{padding:14px}
+.card.flat{box-shadow:none; background:var(--card-2)}
+.card-h{display:flex; align-items:center; gap:9px; margin-bottom:12px}
+.card-h h2{font-size:17px; font-weight:700}
+.card-h .sp{flex:1}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 16px;border-radius:13px;border:1px solid var(--sep-2);
+  background:var(--card);font-size:15px;font-weight:640;transition:.15s;
+  text-decoration:none;
+}
+.btn:hover{background:var(--bg-2)}
+.btn.pri{background:var(--tint); border-color:var(--tint); color:#fff}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.ghost{background:none}
+.btn.danger{color:var(--bad); border-color:var(--bad-soft)}
+.btn.wide{width:100%}
+.btn.sm{padding:8px 13px; font-size:13.5px; border-radius:11px}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.row{display:flex; gap:9px; flex-wrap:wrap}
+.row.tight{gap:7px}
+
+.chip{
+  padding:7px 13px;border-radius:99px;border:1px solid var(--sep-2);
+  background:var(--card);font-size:13.5px;font-weight:600;color:var(--txt-2);transition:.15s;
+}
+.chip:hover{border-color:var(--tint); color:var(--txt)}
+.chip[aria-pressed="true"], .chip.on{background:var(--tint-soft); border-color:var(--tint); color:var(--tint-txt)}
+
+.seg{display:flex;background:var(--bg-2);border-radius:13px;padding:3px;gap:3px;margin:14px 0}
+.seg button{flex:1;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:640;color:var(--txt-2);transition:.15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--txt);box-shadow:var(--shadow)}
+.seg .cnt{font-size:11.5px;font-weight:750;padding:1px 6px;border-radius:99px;background:var(--sep);color:var(--txt-2);min-width:19px}
+.seg button[aria-pressed="true"] .cnt{background:var(--tint-soft);color:var(--tint-txt)}
+
+.lbl{font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-3);margin:22px 2px 10px;display:flex;align-items:center;gap:8px}
+.lbl .n{font-size:11px;background:var(--sep);color:var(--txt-2);border-radius:99px;padding:1px 7px;letter-spacing:0}
+.muted{color:var(--txt-2);font-size:14px}
+.tiny{font-size:12.5px;color:var(--txt-3)}
+
+/* ==================================================================
+   3 · Session-Karten
+   Links die Checkbox zum Abhaken, rechts der Status. Ein Farbstreifen
+   am linken Rand macht den Status auch beim Überfliegen lesbar.
+   ================================================================== */
+.item{
+  position:relative; display:flex; gap:12px; align-items:flex-start;
+  background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l);
+  padding:14px 14px 12px 16px; box-shadow:var(--shadow); margin-bottom:10px;
+  overflow:hidden; transition:opacity .2s, transform .2s;
+}
+.item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sep-2)}
+.item[data-st="laeuft"]::before{background:var(--run)}
+.item[data-st="offen"]::before{background:var(--hot-2)}
+.item[data-st="wartet"]::before{background:var(--warn)}
+.item[data-st="fertig"]::before{background:var(--ok)}
+.item.gone{opacity:.45}
+.item.gone .it-title{text-decoration:line-through; text-decoration-color:var(--txt-3)}
+
+/* Abhak-Checkbox: grosszügiges Ziel, damit der Daumen sie trifft */
+.tick{
+  flex:none; width:28px; height:28px; margin-top:1px; border-radius:9px;
+  border:2px solid var(--sep-2); background:var(--card);
+  display:grid; place-items:center; transition:.15s;
+}
+.tick svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0;transform:scale(.6);transition:.15s}
+.tick[aria-checked="true"]{background:var(--ok);border-color:var(--ok)}
+.tick[aria-checked="true"] svg{opacity:1;transform:scale(1)}
+.tick:hover{border-color:var(--tint)}
+
+.it-body{flex:1; min-width:0}
+.it-head{display:flex; align-items:flex-start; gap:8px}
+.it-title{font-size:15.5px; font-weight:660; letter-spacing:-.01em; word-break:break-word; flex:1}
+.it-meta{display:flex; flex-wrap:wrap; align-items:center; gap:5px 8px; margin-top:5px; font-size:12.5px; color:var(--txt-3)}
+.it-meta .dot{width:3px;height:3px;border-radius:99px;background:var(--sep-2);flex:none}
+.it-meta code{font-family:var(--fm); font-size:11.5px; background:var(--bg-2); padding:1px 5px; border-radius:5px; color:var(--txt-2)}
+.it-note{
+  margin-top:9px; font-size:13.5px; color:var(--txt-2); line-height:1.45;
+  padding-left:10px; border-left:2px solid var(--sep);
+}
+.it-note b{color:var(--txt); font-weight:640}
+.it-acts{display:flex; gap:7px; margin-top:11px; flex-wrap:wrap}
+
+.badge{
+  font-size:11px; font-weight:750; letter-spacing:.05em; text-transform:uppercase;
+  padding:3px 8px; border-radius:7px; flex:none; white-space:nowrap;
+}
+.badge.laeuft{background:var(--run-soft); color:var(--run)}
+.badge.offen{background:var(--bad-soft); color:var(--bad)}
+.badge.wartet{background:var(--warn-soft); color:var(--warn)}
+.badge.fertig{background:var(--ok-soft); color:var(--ok)}
+.kind{
+  font-size:11px;font-weight:700;padding:3px 7px;border-radius:7px;flex:none;
+  background:var(--bg-2); color:var(--txt-2); display:inline-flex; align-items:center; gap:4px;
+}
+.kind svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.kind.code{background:var(--tint-soft); color:var(--tint-txt)}
+.age-warn{color:var(--warn); font-weight:640}
+
+.empty{text-align:center; padding:42px 20px; color:var(--txt-3)}
+.empty svg{width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.45;margin-bottom:12px}
+.empty h3{font-size:16px;font-weight:700;color:var(--txt-2);margin-bottom:6px}
+
+/* Hinweisbalken, wenn noch nichts eingerichtet ist */
+.note-bar{
+  display:flex; gap:11px; align-items:flex-start; padding:13px 14px; border-radius:var(--r-m);
+  background:var(--tint-soft); border:1px solid color-mix(in srgb,var(--tint) 30%,transparent);
+  margin-bottom:14px; font-size:13.5px; color:var(--tint-txt); line-height:1.45;
+}
+.note-bar svg{width:18px;height:18px;flex:none;margin-top:1px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.note-bar.warn{background:var(--warn-soft); color:var(--warn); border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.note-bar.bad{background:var(--bad-soft); color:var(--bad); border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.note-bar b{font-weight:700}
+.note-bar .sp{flex:1}
+
+.sync{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--txt-3);margin:2px 2px 12px}
+.sync .led{width:7px;height:7px;border-radius:99px;background:var(--sep-2);flex:none}
+.sync .led.ok{background:var(--ok)}
+.sync .led.bad{background:var(--bad)}
+.sync .led.busy{background:var(--run);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ==================================================================
+   4 · BOOST — der Knopf
+   Fest am unteren Rand, in Daumenreichweite. Heisser Verlauf, weicher
+   Schein, ein Wischlicht, das langsam darüberzieht: das eine Element
+   im Bild, das nach Schub aussieht.
+   ================================================================== */
+.dock{
+  position:fixed; left:0; right:0; bottom:0; z-index:70;
+  padding:10px 16px calc(10px + var(--safe-b));
+  background:linear-gradient(to top, var(--bg) 62%, color-mix(in srgb,var(--bg) 0%,transparent));
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  pointer-events:none;
+}
+.dock-in{max-width:760px;margin:0 auto;pointer-events:auto}
+.task-row{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+.task-in{
+  flex:1; min-width:0; padding:11px 14px; border-radius:13px; border:1px solid var(--sep-2);
+  background:var(--card); font-size:14.5px; box-shadow:var(--shadow);
+}
+.task-in::placeholder{color:var(--txt-3)}
+
+.boost{
+  position:relative; width:100%; height:72px; border-radius:22px; overflow:hidden;
+  background:linear-gradient(135deg,var(--hot-1) 0%,var(--hot-2) 46%,var(--hot-3) 100%);
+  box-shadow:var(--glow), 0 2px 0 rgba(255,255,255,.28) inset;
+  color:#fff; display:flex; align-items:center; justify-content:center; gap:12px;
+  font-family:var(--fn); font-size:21px; font-weight:820; letter-spacing:.14em;
+  transition:transform .12s cubic-bezier(.3,1.4,.5,1), filter .15s;
+  -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+}
+.boost:active{transform:scale(.965); filter:brightness(1.1)}
+.boost:disabled{cursor:progress}
+.boost .rocket{width:26px;height:26px;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
+.boost .lbl-b{text-shadow:0 1px 2px rgba(120,20,0,.28)}
+/* Wischlicht */
+.boost::after{
+  content:""; position:absolute; top:-60%; left:-40%; width:36%; height:220%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+  transform:rotate(14deg); animation:sweep 3.6s ease-in-out infinite;
+}
+@keyframes sweep{0%{left:-45%}55%{left:118%}100%{left:118%}}
+/* Ladebalken beim Zünden */
+.boost .fill{
+  position:absolute; inset:0; background:rgba(255,255,255,.22);
+  transform:scaleX(0); transform-origin:left; transition:transform .5s linear;
+}
+.boost.firing .fill{transform:scaleX(.92); transition:transform 9s cubic-bezier(.1,.7,.3,1)}
+.boost.firing::after{animation-duration:.9s}
+.boost.done .fill{transform:scaleX(1); transition:transform .2s}
+.boost-hint{text-align:center; font-size:11.5px; color:var(--txt-3); margin-top:7px; letter-spacing:.01em}
+
+/* ==================================================================
+   5 · Start-Overlay
+   ================================================================== */
+.launch{
+  position:fixed; inset:0; z-index:200; display:grid; place-items:center;
+  background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); animation:fade .2s;
+  padding:24px; text-align:center;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.launch-in{max-width:420px;width:100%}
+.thrust{width:110px;height:110px;margin:0 auto 22px;position:relative}
+.thrust .ring{
+  position:absolute;inset:0;border-radius:99px;
+  border:3px solid color-mix(in srgb,var(--hot-2) 40%,transparent);
+  border-top-color:var(--hot-2); animation:spin .9s linear infinite;
+}
+.thrust .core{
+  position:absolute;inset:16px;border-radius:99px;
+  background:linear-gradient(135deg,var(--hot-1),var(--hot-3));
+  display:grid;place-items:center; box-shadow:var(--glow);
+  animation:hover 1.6s ease-in-out infinite;
+}
+@keyframes hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.thrust svg{width:38px;height:38px}
+.launch h2{font-size:22px;font-weight:780;margin-bottom:9px}
+.launch p{color:var(--txt-2);font-size:14.5px;line-height:1.5}
+.launch .steps{margin:18px 0 4px;text-align:left;display:inline-block}
+.launch .steps li{font-size:13.5px;color:var(--txt-3);margin:6px 0;list-style:none;display:flex;gap:9px;align-items:center}
+.launch .steps li.on{color:var(--txt)}
+.launch .steps li.ok{color:var(--ok)}
+.launch .steps .bullet{width:16px;height:16px;border-radius:99px;border:2px solid currentColor;flex:none;display:grid;place-items:center}
+.launch .steps li.ok .bullet{background:var(--ok);border-color:var(--ok)}
+.launch .steps svg{width:9px;height:9px;fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.launch-acts{margin-top:24px;display:flex;flex-direction:column;gap:9px}
+.launch code{font-family:var(--fm);font-size:12px;background:var(--bg-2);padding:2px 6px;border-radius:6px;word-break:break-all}
+.ok-mark{width:110px;height:110px;margin:0 auto 22px;border-radius:99px;background:var(--ok-soft);display:grid;place-items:center;animation:pop .35s cubic-bezier(.3,1.5,.5,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.ok-mark svg{width:46px;height:46px;fill:none;stroke:var(--ok);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.bad-mark{width:110px;height:110px;margin:0 auto 22px;border-radius:99px;background:var(--bad-soft);display:grid;place-items:center}
+.bad-mark svg{width:46px;height:46px;fill:none;stroke:var(--bad);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* ==================================================================
+   6 · Blätter (Einstellungen, Hinzufügen, Details)
+   ================================================================== */
+.sheet-bg{position:fixed;inset:0;z-index:100;background:rgba(6,7,16,.55);backdrop-filter:blur(3px);animation:fade .18s}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:101;max-height:92vh;overflow-y:auto;
+  background:var(--bg);border-radius:22px 22px 0 0;box-shadow:var(--shadow-lg);
+  padding:8px 0 calc(26px + var(--safe-b));animation:up .26s cubic-bezier(.2,.9,.3,1);
+  -webkit-overflow-scrolling:touch;
+}
+@media(min-width:700px){ .sheet{left:50%;right:auto;transform:translateX(-50%);width:660px;border-radius:22px;bottom:24px;max-height:88vh} }
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media(min-width:700px){@keyframes up{from{transform:translate(-50%,40px);opacity:0}to{transform:translate(-50%,0);opacity:1}}}
+.sheet .grab{width:38px;height:5px;border-radius:99px;background:var(--sep-2);margin:6px auto 12px}
+.sheet-h{display:flex;align-items:center;gap:10px;padding:0 16px 12px;border-bottom:1px solid var(--sep);margin-bottom:14px}
+.sheet-h h2{font-size:18px;font-weight:750}
+.sheet-h .sp{flex:1}
+.sheet-b{padding:0 16px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:660;color:var(--txt-2);margin-bottom:6px}
+.field .hint{font-size:12.5px;color:var(--txt-3);margin-top:5px;line-height:1.45}
+.inp{
+  width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--sep-2);
+  background:var(--card);font-size:15px;
+}
+.inp:focus{border-color:var(--tint);outline:none;box-shadow:0 0 0 3px var(--tint-soft)}
+textarea.inp{min-height:84px;resize:vertical;font-family:var(--ff);line-height:1.5}
+textarea.mono{font-family:var(--fm);font-size:12.5px;min-height:150px}
+select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--txt-3) 50%),linear-gradient(135deg,var(--txt-3) 50%,transparent 50%);background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:38px}
+
+.step{display:flex;gap:12px;margin-bottom:16px}
+.step .no{
+  flex:none;width:26px;height:26px;border-radius:99px;background:var(--tint);color:#fff;
+  display:grid;place-items:center;font-size:13px;font-weight:750;margin-top:1px;
+}
+.step .txt{flex:1;font-size:14px;color:var(--txt-2);line-height:1.55}
+.step .txt b{color:var(--txt);font-weight:660}
+.step .txt a{font-weight:600}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--sep);font-size:14px}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--txt-2)}
+.kv .v{font-weight:640;text-align:right;word-break:break-word}
+.acc{border:1px solid var(--sep);border-radius:var(--r-m);overflow:hidden;margin-bottom:12px;background:var(--card)}
+.acc>summary{padding:13px 15px;font-size:14.5px;font-weight:660;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.acc>summary::after{content:"";margin-left:auto;width:7px;height:7px;border-right:2px solid var(--txt-3);border-bottom:2px solid var(--txt-3);transform:rotate(45deg);transition:.2s}
+.acc[open]>summary::after{transform:rotate(-135deg)}
+.acc .acc-b{padding:0 15px 15px;font-size:13.5px;color:var(--txt-2);line-height:1.55}
+.acc .acc-b p+p{margin-top:9px}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(var(--dock) + 12px);transform:translateX(-50%);z-index:300;
+  background:var(--txt);color:var(--bg);padding:11px 18px;border-radius:99px;font-size:14px;font-weight:600;
+  box-shadow:var(--shadow-lg);animation:toast .25s cubic-bezier(.2,.9,.3,1);max-width:calc(100vw - 32px);text-align:center;
+}
+@keyframes toast{from{transform:translate(-50%,14px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- ============================ Kopf ============================ -->
+<header class="top">
+  <div class="wrap top-in">
+    <span class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="bg1" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#FF2D78"/><stop offset=".55" stop-color="#FF6B2C"/><stop offset="1" stop-color="#FFC24B"/>
+        </linearGradient></defs>
+        <path d="M32 8c8 6.5 12.5 15 12.5 24.5 0 4-.8 7.7-2.2 11h-20.6c-1.4-3.3-2.2-7-2.2-11C19.5 23 24 14.5 32 8z" fill="url(#bg1)"/>
+        <circle cx="32" cy="28" r="4.8" fill="var(--bg)"/>
+        <path d="M21 40l-7 6.5V53l8-4.4zM43 40l7 6.5V53l-8-4.4z" fill="currentColor" opacity=".55"/>
+      </svg>
+      CODEWERK
+    </span>
+    <span class="top-sp"></span>
+    <button class="icon-btn" id="btn-refresh" title="Feed neu laden" aria-label="Feed neu laden">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-add" title="Session oder Chat hinzufügen" aria-label="Hinzufügen">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-settings" title="Einstellungen" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ========================== Dashboard ========================== -->
+<main class="wrap" id="main">
+
+  <div class="sync" id="sync">
+    <span class="led" id="sync-led"></span>
+    <span id="sync-txt">…</span>
+  </div>
+
+  <div id="hints"></div>
+
+  <div class="seg" role="tablist" aria-label="Ansicht">
+    <button role="tab" id="tab-jetzt"  aria-pressed="true"  data-view="jetzt">Jetzt dran <span class="cnt" id="c-jetzt">0</span></button>
+    <button role="tab" id="tab-alle"   aria-pressed="false" data-view="alle">Alle <span class="cnt" id="c-alle">0</span></button>
+    <button role="tab" id="tab-archiv" aria-pressed="false" data-view="archiv">Archiv <span class="cnt" id="c-archiv">0</span></button>
+  </div>
+
+  <div id="list"></div>
+
+</main>
+
+<!-- ============================ Dock ============================ -->
+<div class="dock">
+  <div class="dock-in">
+    <div class="task-row">
+      <input class="task-in" id="task" type="text" autocomplete="off" enterkeyhint="go"
+             placeholder="Auftrag für die neue Session (optional)">
+      <button class="icon-btn" id="btn-task-clear" title="Feld leeren" aria-label="Feld leeren" hidden>
+        <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <button class="boost" id="boost" aria-label="Boost – neue Claude-Code-Session starten">
+      <span class="fill"></span>
+      <svg class="rocket" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+        <path d="M12 15 9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+        <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+      </svg>
+      <span class="lbl-b" id="boost-lbl">BOOST</span>
+    </button>
+    <div class="boost-hint" id="boost-hint">startet eine neue Claude-Code-Session</div>
+  </div>
+</div>
+
+<div id="sheets"></div>
+<div id="toasts"></div>
+
+<script>
+"use strict";
+/* ==================================================================
+   1 · Zustand
+   Alles liegt in localStorage. Zwei getrennte Töpfe, mit Absicht:
+     items  – was der Feed liefert oder von Hand angelegt wurde
+     local  – deine Entscheidungen dazu (abgehakt, angepinnt, Status,
+              eigene Notiz). Ein neuer Feed überschreibt items, deine
+              Entscheidungen bleiben stehen.
+   ================================================================== */
+const LS = 'codewerk.v1';
+const STATI = ['laeuft','offen','wartet','fertig'];
+const ST_TXT = { laeuft:'läuft', offen:'weiter', wartet:'wartet', fertig:'fertig' };
+const ST_ORD = { laeuft:0, offen:1, wartet:2, fertig:3 };
+const BETA = 'experimental-cc-routine-2026-04-01';
+
+const DEF = {
+  settings:{
+    theme:'auto',
+    boostMode:'direkt',       // 'direkt' = App ruft die Routine selbst · 'server' = über den eigenen Hub
+    fireUrl:'', fireToken:'',
+    hubUrl:'', hubToken:'',
+    feedFrom:'aus',           // 'aus' | 'hub' | 'url'
+    feedUrl:'', feedToken:'',
+    defaultTask:'',
+    autoOpen:true,
+    staleDays:3
+  },
+  items:[], local:{}, meta:{ feedAt:0, feedErr:'', feedCount:0 }
+};
+
+let state = load();
+let view  = 'jetzt';
+
+function load(){
+  let raw = null;
+  try{ raw = JSON.parse(localStorage.getItem(LS) || 'null'); }catch(_){}
+  const s = { ...DEF, ...(raw||{}) };
+  s.settings = { ...DEF.settings, ...(s.settings||{}) };
+  s.meta     = { ...DEF.meta,     ...(s.meta||{}) };
+  s.items    = Array.isArray(s.items) ? s.items : [];
+  s.local    = (s.local && typeof s.local === 'object') ? s.local : {};
+  return s;
+}
+function save(){
+  try{ localStorage.setItem(LS, JSON.stringify(state)); }
+  catch(e){ toast('Speicher voll – Archiv leeren hilft'); }
+}
+
+/* ==================================================================
+   2 · Kleinkram
+   ================================================================== */
+const $  = (sel, el) => (el||document).querySelector(sel);
+const $$ = (sel, el) => Array.from((el||document).querySelectorAll(sel));
+const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, (c) =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, ms){
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg; el.setAttribute('role','status');
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .25s';
+    setTimeout(() => el.remove(), 260); }, ms || 2400);
+}
+function buzz(pattern){
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(_){}
+}
+function toIso(v){
+  if(!v) return '';
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? '' : d.toISOString();
+}
+function ageDays(iso){
+  if(!iso) return null;
+  return (Date.now() - new Date(iso).getTime()) / 86400000;
+}
+function rel(iso){
+  if(!iso) return '';
+  const ms = Date.now() - new Date(iso).getTime();
+  if(isNaN(ms)) return '';
+  if(ms < 0) return 'gleich';
+  const min = ms/60000, std = min/60, tag = std/24;
+  if(min < 1)  return 'gerade eben';
+  if(min < 60) return 'vor ' + Math.round(min) + ' Min';
+  if(std < 24) return 'vor ' + Math.round(std) + ' Std';
+  if(tag < 2)  return 'gestern';
+  if(tag < 14) return 'vor ' + Math.round(tag) + ' Tagen';
+  return new Date(iso).toLocaleDateString('de-CH', { day:'2-digit', month:'2-digit', year:'2-digit' });
+}
+/* Aus einem Link die Kennung ziehen – Session, Cowork-Session oder Chat. */
+function idFromUrl(url){
+  const m = String(url||'').match(/\b((?:session|cse|chat|conv)_[A-Za-z0-9]+)\b/);
+  if(m) return m[1];
+  const u = String(url||'').match(/\/(?:chat|code)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  return u ? u[1] : '';
+}
+function kindFromUrl(url){
+  const s = String(url||'');
+  if(/claude\.ai\/code\//.test(s) || /\b(session|cse)_/.test(s)) return 'code';
+  if(/claude\.ai\/chat\//.test(s)) return 'chat';
+  return '';
+}
+function hash(s){
+  let h = 5381;
+  for(let i=0;i<s.length;i++) h = ((h<<5)+h+s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+function joinUrl(base, path){
+  return String(base||'').replace(/\/+$/,'') + '/' + String(path||'').replace(/^\/+/,'');
+}
+function firstUrl(text){
+  const m = String(text||'').match(/https?:\/\/[^\s"'<>]+/);
+  return m ? m[0] : '';
+}
+
+/* ==================================================================
+   3 · Modell
+   ================================================================== */
+function normItem(raw, source){
+  const url   = String(raw.url || '').trim();
+  const title = String(raw.title || '').trim();
+  const id    = String(raw.id || '').trim() || idFromUrl(url) || ('m' + hash(url + '|' + title));
+  const kind  = (raw.kind === 'chat' || raw.kind === 'code') ? raw.kind : (kindFromUrl(url) || 'code');
+  return {
+    id, kind,
+    title  : title || (kind === 'chat' ? 'Chat ohne Titel' : 'Session ohne Titel'),
+    url,
+    updated: toIso(raw.updated) || toIso(raw.updated_at) || '',
+    status : STATI.includes(raw.status) ? raw.status : 'offen',
+    note   : String(raw.note || raw.next || '').trim(),
+    repo   : String(raw.repo || '').trim(),
+    branch : String(raw.branch || '').trim(),
+    pr     : String(raw.pr || '').trim(),
+    source : source || 'manuell',
+    added  : raw.added || new Date().toISOString()
+  };
+}
+/* items + deine Entscheidungen zusammengelegt */
+function shown(it){
+  const l = state.local[it.id] || {};
+  return {
+    ...it,
+    status : l.status !== undefined ? l.status : it.status,
+    note   : l.note   !== undefined ? l.note   : it.note,
+    done   : !!l.done,
+    pinned : !!l.pinned
+  };
+}
+function setLocal(id, patch){
+  state.local[id] = { ...(state.local[id] || {}), ...patch };
+  save();
+}
+function allShown(){
+  return state.items.map(shown).sort((a,b) => {
+    if(a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    const d = ST_ORD[a.status] - ST_ORD[b.status];
+    if(d) return d;
+    return String(b.updated || '').localeCompare(String(a.updated || ''));
+  });
+}
+function bucket(list){
+  return {
+    jetzt : list.filter(i => !i.done && i.status !== 'fertig'),
+    alle  : list.filter(i => !i.done),
+    archiv: list.filter(i =>  i.done)
+  };
+}
+
+/* ==================================================================
+   4 · Darstellung
+   ================================================================== */
+const IC = {
+  code : '<svg viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>',
+  chat : '<svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.9L3 20.5l1.5-4.7A8.4 8.4 0 0 1 3.6 12a8.4 8.4 0 0 1 8.4-8.4h.5A8.4 8.4 0 0 1 21 11.5z"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></svg>',
+  open : '<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>',
+  pin  : '<svg viewBox="0 0 24 24"><path d="M12 17v5M9 10.8V4h6v6.8l2 3.2H7z"/></svg>',
+  more : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/><circle cx="5" cy="12" r="1.4"/></svg>',
+  info : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  bolt : '<svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
+  box  : '<svg viewBox="0 0 24 24"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8M2 3h20v5H2zM10 12h4"/></svg>'
+};
+
+function render(){
+  const list = allShown();
+  const b = bucket(list);
+  $('#c-jetzt').textContent  = b.jetzt.length;
+  $('#c-alle').textContent   = b.alle.length;
+  $('#c-archiv').textContent = b.archiv.length;
+
+  renderSync();
+  renderHints(b);
+  boostHint();
+
+  const host = $('#list');
+  const cur  = b[view] || [];
+
+  if(!cur.length){ host.innerHTML = emptyHtml(); return; }
+
+  if(view === 'jetzt'){
+    const groups = [
+      ['laeuft', 'Läuft gerade'],
+      ['offen',  'Weiterverfolgen'],
+      ['wartet', 'Wartet']
+    ];
+    host.innerHTML = groups.map(([st, label]) => {
+      const g = cur.filter(i => i.status === st);
+      if(!g.length) return '';
+      return '<div class="lbl">' + esc(label) + ' <span class="n">' + g.length + '</span></div>'
+           + g.map(itemHtml).join('');
+    }).join('');
+  } else {
+    host.innerHTML = cur.map(itemHtml).join('');
+  }
+}
+
+function emptyHtml(){
+  if(view === 'archiv'){
+    return '<div class="empty">' + IC.box.replace('<svg','<svg aria-hidden="true"')
+      + '<h3>Archiv ist leer</h3><p class="muted">Was du abhakst, landet hier – und lässt sich zurückholen.</p></div>';
+  }
+  if(view === 'alle' || !state.items.length){
+    return '<div class="empty">' + IC.bolt.replace('<svg','<svg aria-hidden="true"')
+      + '<h3>Noch nichts da</h3><p class="muted">Richte den Feed ein, damit sich die Liste von selbst füllt – '
+      + 'oder leg mit <b>+</b> von Hand eine Session oder einen Chat an.</p></div>';
+  }
+  return '<div class="empty">' + IC.check.replace('<svg','<svg aria-hidden="true"')
+    + '<h3>Alles abgearbeitet</h3><p class="muted">Nichts liegt mehr an. Der Boostknopf wartet.</p></div>';
+}
+
+function itemHtml(i){
+  const stale = (i.status === 'offen' || i.status === 'wartet') ? ageDays(i.updated) : null;
+  const isStale = stale !== null && stale > (state.settings.staleDays || 3);
+  const meta = [];
+  if(i.updated) meta.push('<span' + (isStale ? ' class="age-warn"' : '') + '>' + esc(rel(i.updated)) + '</span>');
+  if(i.repo)    meta.push('<code>' + esc(i.repo) + '</code>');
+  if(i.branch)  meta.push('<code>' + esc(i.branch) + '</code>');
+  if(isStale)   meta.push('<span class="age-warn">liegt seit ' + Math.round(stale) + ' Tagen</span>');
+
+  return ''
+  + '<article class="item' + (i.done ? ' gone' : '') + '" data-st="' + i.status + '" data-id="' + esc(i.id) + '">'
+  +   '<button class="tick" data-act="tick" aria-checked="' + (i.done ? 'true' : 'false') + '" role="checkbox"'
+  +           ' aria-label="' + (i.done ? 'Wieder aufnehmen' : 'Als nicht mehr relevant abhaken') + '">' + IC.check + '</button>'
+  +   '<div class="it-body">'
+  +     '<div class="it-head">'
+  +       '<h3 class="it-title">' + esc(i.title) + '</h3>'
+  +       (i.pinned ? '<span class="kind" title="angepinnt">' + IC.pin + '</span>' : '')
+  +       '<span class="badge ' + i.status + '">' + esc(ST_TXT[i.status]) + '</span>'
+  +     '</div>'
+  +     '<div class="it-meta">'
+  +       '<span class="kind ' + (i.kind === 'code' ? 'code' : '') + '">' + (i.kind === 'code' ? IC.code : IC.chat)
+  +         (i.kind === 'code' ? 'Code' : 'Chat') + '</span>'
+  +       meta.map(m => '<span class="dot"></span>' + m).join('')
+  +     '</div>'
+  +     (i.note ? '<p class="it-note"><b>Nächster Schritt:</b> ' + esc(i.note) + '</p>' : '')
+  +     '<div class="it-acts">'
+  +       (i.url ? '<a class="btn sm" href="' + esc(i.url) + '" target="_blank" rel="noopener">' + IC.open + 'Öffnen</a>' : '')
+  +       (i.status !== 'fertig'
+            ? '<button class="btn sm" data-act="fertig">' + IC.check + 'Fertig</button>'
+            : '<button class="btn sm" data-act="wieder">Wieder offen</button>')
+  +       '<button class="btn sm ghost" data-act="mehr" aria-label="Mehr">' + IC.more + '</button>'
+  +     '</div>'
+  +   '</div>'
+  + '</article>';
+}
+
+function renderSync(){
+  const led = $('#sync-led'), txt = $('#sync-txt');
+  const s = state.settings, m = state.meta;
+  led.className = 'led';
+  if(s.feedFrom === 'aus'){
+    txt.textContent = 'Feed aus – Einträge legst du selbst an';
+    return;
+  }
+  if(m.feedErr){ led.classList.add('bad'); txt.textContent = 'Feed: ' + m.feedErr; return; }
+  if(m.feedAt){
+    led.classList.add('ok');
+    txt.textContent = 'Feed: ' + m.feedCount + ' Einträge, ' + rel(new Date(m.feedAt).toISOString());
+  } else {
+    txt.textContent = 'Feed eingerichtet, noch nicht geladen';
+  }
+}
+
+function renderHints(b){
+  const s = state.settings, out = [];
+  const boostReady = s.boostMode === 'server' ? !!s.hubUrl : (!!s.fireUrl && !!s.fireToken);
+  if(!boostReady){
+    out.push(bar('info', '<b>Der Boostknopf ist noch nicht scharf.</b> Eine Routine auf claude.ai anlegen, '
+      + 'API-Auslöser hinzufügen, URL und Token hier einsetzen – dann startet ein Druck eine echte Session.',
+      'Boost einrichten', 'setup-boost'));
+  }
+  if(s.feedFrom === 'aus' && !state.items.length){
+    out.push(bar('info', '<b>Die Liste füllt sich nicht von allein.</b> Für das Auflisten eigener Sessions und Chats '
+      + 'gibt es keine öffentliche Schnittstelle. Eine Routine kann sie in der Cloud einsammeln und als Feed ablegen.',
+      'Feed einrichten', 'setup-feed'));
+  }
+  if(state.meta.feedErr){
+    out.push(bar('bad', '<b>Feed lässt sich nicht laden.</b> ' + esc(state.meta.feedErr), 'Nachsehen', 'setup-feed'));
+  }
+  $('#hints').innerHTML = out.join('');
+}
+function bar(kind, html, btn, act){
+  return '<div class="note-bar ' + kind + '">' + IC.info + '<span class="sp">' + html
+       + (btn ? ' <button class="btn sm" style="margin-top:9px" data-hint="' + act + '">' + esc(btn) + '</button>' : '')
+       + '</span></div>';
+}
+
+/* ==================================================================
+   5 · Feed
+   Für das Auflisten eigener Sessions und Chats gibt es keine
+   öffentliche Schnittstelle. Die App liest darum eine JSON-Datei,
+   die woanders zusammengestellt wird – vom eigenen Server oder von
+   einer Claude-Code-Routine (siehe ROUTINE.md). Erwartetes Format:
+     { "updated": "...", "items": [ { id, kind, title, url,
+       updated, status, note, repo, branch, pr }, ... ] }
+   Eine nackte Liste [ … ] wird auch angenommen.
+   ================================================================== */
+const LIMIT = 10;   // je Art: die letzten zehn
+
+function feedTarget(){
+  const s = state.settings;
+  if(s.feedFrom === 'hub') return { url: s.hubUrl ? joinUrl(s.hubUrl, 'api/feed') : '', token: s.hubToken };
+  if(s.feedFrom === 'url') return { url: s.feedUrl, token: s.feedToken };
+  return { url:'', token:'' };
+}
+
+async function syncFeed(manual){
+  const s = state.settings;
+  if(s.feedFrom === 'aus'){ if(manual) toast('Der Feed ist ausgeschaltet'); return; }
+  const t = feedTarget();
+  if(!t.url){
+    state.meta.feedErr = 'keine Adresse hinterlegt'; save(); render();
+    if(manual) openSettings('feed');
+    return;
+  }
+  busy(true);
+  try{
+    const headers = { 'Accept':'application/json' };
+    if(t.token) headers['Authorization'] = 'Bearer ' + t.token;
+    let res;
+    try{ res = await fetch(t.url, { headers, cache:'no-store', mode:'cors' }); }
+    catch(e){ throw new Error('Der Browser kam nicht durch (Netz oder CORS)'); }
+    if(!res.ok) throw new Error('Server antwortet mit ' + res.status);
+    const data = await res.json().catch(() => { throw new Error('Antwort ist kein JSON'); });
+    mergeFeed(data);
+    if(manual) toast(state.meta.feedCount + ' Einträge geladen');
+  }catch(e){
+    state.meta.feedErr = e.message || String(e);
+    save();
+    if(manual) toast('Feed: ' + state.meta.feedErr, 3600);
+  }finally{
+    busy(false); render();
+  }
+}
+
+function mergeFeed(data){
+  const arr = Array.isArray(data) ? data
+            : (data && Array.isArray(data.items) ? data.items : null);
+  if(!arr) throw new Error('JSON ohne "items"-Liste');
+
+  const fresh = arr.map(r => normItem(r, 'feed')).filter(i => i.url || i.title !== 'Session ohne Titel');
+  const per = { code: [], chat: [] };
+  for(const i of fresh){
+    if(per[i.kind] && per[i.kind].length < LIMIT && !per[i.kind].some(x => x.id === i.id)) per[i.kind].push(i);
+  }
+  const keep = per.code.concat(per.chat);
+  const seen = new Set(keep.map(i => i.id));
+
+  // Von Hand angelegtes bleibt. Abgehaktes aus dem Feed bleibt auch –
+  // sonst verschwände es aus dem Archiv, sobald es aus dem Feed fällt.
+  const rest = state.items.filter(i =>
+    !seen.has(i.id) && (i.source !== 'feed' || (state.local[i.id] || {}).done));
+
+  state.items = keep.concat(rest).slice(0, 200);
+  state.meta.feedAt = Date.now();
+  state.meta.feedErr = '';
+  state.meta.feedCount = keep.length;
+  pruneLocal();
+  save();
+}
+
+function pruneLocal(){
+  const ids = new Set(state.items.map(i => i.id));
+  for(const k of Object.keys(state.local)) if(!ids.has(k)) delete state.local[k];
+}
+function busy(on){
+  $('#btn-refresh').classList.toggle('spin', !!on);
+  const led = $('#sync-led');
+  if(on){ led.className = 'led busy'; $('#sync-txt').textContent = 'Feed wird geladen …'; }
+}
+
+/* ==================================================================
+   6 · BOOST
+   Ein Druck löst über die Routinen-Schnittstelle eine neue
+   Claude-Code-Session aus und öffnet sie.
+
+     POST https://api.anthropic.com/v1/claude_code/routines/<id>/fire
+       Authorization: Bearer sk-ant-oat01-…
+       anthropic-version: 2023-06-01
+       anthropic-beta: experimental-cc-routine-2026-04-01
+       { "text": "<Auftrag>" }
+     → { claude_code_session_id, claude_code_session_url }
+
+   Zwei Wege: direkt aus dem Browser, oder über den eigenen Server
+   (deploy/claude-hub). Der Server-Weg ist der verlässlichere – er
+   umgeht CORS und der Token bleibt daheim.
+   ================================================================== */
+let firing = false;
+
+class ApiErr extends Error{
+  constructor(status, msg, type){ super(msg); this.status = status; this.type = type; }
+}
+
+async function postJson(url, body, headers){
+  let res;
+  try{
+    res = await fetch(url, {
+      method : 'POST',
+      headers: { 'Content-Type':'application/json', ...(headers || {}) },
+      body   : JSON.stringify(body)
+    });
+  }catch(e){
+    throw new ApiErr(0, 'Der Browser durfte die Anfrage nicht abschicken. '
+      + 'Das ist meist CORS: dann hilft der Server-Weg (Einstellungen → Boost → über eigenen Server).');
+  }
+  const txt = await res.text();
+  let data = null;
+  try{ data = txt ? JSON.parse(txt) : null; }catch(_){}
+  if(!res.ok){
+    const err = data && data.error ? data.error : null;
+    const msg = (err && err.message) || txt.slice(0, 200) || res.statusText || 'Fehler';
+    throw new ApiErr(res.status, msg, err && err.type);
+  }
+  return data || {};
+}
+
+async function fireBoost(text){
+  const s = state.settings;
+  let raw;
+  if(s.boostMode === 'server'){
+    raw = await postJson(joinUrl(s.hubUrl, 'api/boost'), { text },
+      s.hubToken ? { 'Authorization':'Bearer ' + s.hubToken } : {});
+  } else {
+    raw = await postJson(s.fireUrl, { text }, {
+      'Authorization'    : 'Bearer ' + s.fireToken,
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta'   : BETA
+    });
+  }
+  const url = raw.claude_code_session_url || raw.url || '';
+  const id  = raw.claude_code_session_id  || raw.id  || idFromUrl(url);
+  if(!url) throw new ApiErr(0, 'Die Antwort enthielt keinen Session-Link.');
+  return { id: id || ('s' + hash(url)), url };
+}
+
+function explain(e){
+  if(!(e instanceof ApiErr)) return e.message || String(e);
+  switch(e.status){
+    case 400: return 'Abgelehnt (400). Meist ist die Routine pausiert – oder die URL zeigt nicht auf /fire. ' + e.message;
+    case 401: return 'Token passt nicht zu dieser Routine (401). Neu erzeugen und hier einsetzen.';
+    case 403: return 'Dein Konto hat für diese Schnittstelle keine Freigabe (403).';
+    case 404: return 'Diese Routine gibt es nicht (404). Stimmt die trig_…-Kennung in der URL?';
+    case 429: return 'Limit erreicht (429). Das Tageskontingent für Routinen oder deine Nutzung ist aufgebraucht.';
+    case 500: return 'Serverfehler (500). Gleich nochmal versuchen.';
+    case 503: return 'Dienst überlastet (503). In einem Moment nochmal.';
+    default : return e.message;
+  }
+}
+
+/* Fenster im selben Klick öffnen – danach blockt es der Browser. */
+function openBlank(){
+  let w = null;
+  try{ w = window.open('', '_blank'); }catch(_){}
+  if(w && w.document){
+    try{
+      w.document.write('<!doctype html><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>Session wird gestartet …</title>'
+        + '<style>body{margin:0;height:100vh;display:grid;place-items:center;background:#0B0D1A;color:#EFF0F7;'
+        + 'font:600 16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}'
+        + 'div{text-align:center}i{display:block;width:44px;height:44px;margin:0 auto 18px;border-radius:50%;'
+        + 'border:3px solid rgba(255,107,44,.35);border-top-color:#FF6B2C;animation:s .9s linear infinite}'
+        + '@keyframes s{to{transform:rotate(360deg)}}</style>'
+        + '<div><i></i>Session wird gestartet …</div>');
+      w.document.close();
+    }catch(_){}
+  }
+  return w;
+}
+
+async function doBoost(opts){
+  if(firing) return;
+  const s = state.settings;
+  const ready = s.boostMode === 'server' ? !!s.hubUrl : (!!s.fireUrl && !!s.fireToken);
+  if(!ready){ toast('Boost ist noch nicht eingerichtet'); openSettings('boost'); return; }
+
+  const text = ($('#task').value || '').trim() || s.defaultTask || '';
+  firing = true;
+  buzz([14, 45, 22]);
+  const btn = $('#boost');
+  btn.classList.add('firing'); btn.disabled = true;
+  $('#boost-lbl').textContent = 'ZÜNDET …';
+
+  const win = (s.autoOpen && !(opts && opts.noWindow)) ? openBlank() : null;
+  showLaunch(text);
+
+  try{
+    const r = await fireBoost(text);
+
+    // Sofort in die Liste – die Session läuft ab jetzt.
+    const it = normItem({
+      id: r.id, kind:'code', url: r.url,
+      title: text ? text.slice(0, 90) : 'Neue Session',
+      updated: new Date().toISOString(),
+      status:'laeuft',
+      note: text ? '' : 'Auftrag in der Session selbst stellen'
+    }, 'boost');
+    state.items = [it].concat(state.items.filter(x => x.id !== it.id));
+    save(); render();
+
+    btn.classList.remove('firing'); btn.classList.add('done');
+    buzz([10, 30, 10, 30, 30]);
+    $('#task').value = ''; $('#btn-task-clear').hidden = true;
+
+    if(win){ try{ win.location.replace(r.url); }catch(_){ } }
+    launchOk(r, !!win);
+  }catch(e){
+    if(win){ try{ win.close(); }catch(_){} }
+    launchBad(explain(e));
+    buzz([60, 40, 60]);
+  }finally{
+    firing = false;
+    btn.disabled = false;
+    btn.classList.remove('firing');
+    setTimeout(() => btn.classList.remove('done'), 400);
+    $('#boost-lbl').textContent = 'BOOST';
+  }
+}
+
+/* ---- Start-Overlay ------------------------------------------------ */
+function showLaunch(text){
+  closeLaunch();
+  const el = document.createElement('div');
+  el.className = 'launch'; el.id = 'launch';
+  el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true');
+  el.innerHTML =
+    '<div class="launch-in">'
+  +   '<div class="thrust"><div class="ring"></div><div class="core">'
+  +     '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+  +     '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>'
+  +     '<path d="M12 15 9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>'
+  +   '</div></div>'
+  +   '<h2>Session wird gestartet</h2>'
+  +   '<p>' + (text ? 'Auftrag: „' + esc(text.slice(0,140)) + '“' : 'Ohne Auftrag – du schreibst ihn in der Session.') + '</p>'
+  +   '<ul class="steps" id="lsteps">'
+  +     '<li class="on" data-s="1"><span class="bullet"></span>Routine wird ausgelöst</li>'
+  +     '<li data-s="2"><span class="bullet"></span>Session wird angelegt</li>'
+  +     '<li data-s="3"><span class="bullet"></span>Im Browser öffnen</li>'
+  +   '</ul>'
+  + '</div>';
+  document.body.appendChild(el);
+}
+function closeLaunch(){ const e = $('#launch'); if(e) e.remove(); }
+
+function launchOk(r, opened){
+  const el = $('#launch'); if(!el) return;
+  el.querySelector('.launch-in').innerHTML =
+    '<div class="ok-mark"><svg viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></svg></div>'
+  + '<h2>Session läuft</h2>'
+  + '<p>' + (opened
+      ? 'Sie ist in einem neuen Tab offen. Falls der Browser ihn geschluckt hat:'
+      : 'Tippe auf Öffnen, um sie im Browser anzusehen:') + '</p>'
+  + '<p style="margin-top:10px"><code>' + esc(r.id) + '</code></p>'
+  + '<div class="launch-acts">'
+  +   '<a class="btn pri wide" href="' + esc(r.url) + '" target="_blank" rel="noopener" data-l="close">Session öffnen</a>'
+  +   '<button class="btn wide" data-l="close">Hier bleiben</button>'
+  + '</div>';
+}
+function launchBad(msg){
+  const el = $('#launch'); if(!el) return;
+  el.querySelector('.launch-in').innerHTML =
+    '<div class="bad-mark"><svg viewBox="0 0 24 24"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></div>'
+  + '<h2>Kein Start</h2>'
+  + '<p>' + esc(msg) + '</p>'
+  + '<div class="launch-acts">'
+  +   '<button class="btn pri wide" data-l="settings">Einstellungen öffnen</button>'
+  +   '<button class="btn wide" data-l="close">Schliessen</button>'
+  + '</div>';
+}
+
+/* ==================================================================
+   7 · Blätter
+   ================================================================== */
+const X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+function closeSheet(){ $$('#sheets .sheet-bg, #sheets .sheet').forEach(e => e.remove()); }
+
+function sheet(title, bodyHtml){
+  closeSheet();
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  const sh = document.createElement('div'); sh.className = 'sheet';
+  sh.setAttribute('role','dialog'); sh.setAttribute('aria-modal','true'); sh.setAttribute('aria-label', title);
+  sh.innerHTML = '<div class="grab"></div>'
+    + '<div class="sheet-h"><h2>' + esc(title) + '</h2><span class="sp"></span>'
+    + '<button class="icon-btn" data-close="1" aria-label="Schliessen">' + X_SVG + '</button></div>'
+    + '<div class="sheet-b">' + bodyHtml + '</div>';
+  $('#sheets').append(bg, sh);
+  bg.addEventListener('click', closeSheet);
+  sh.addEventListener('click', (e) => { if(e.target.closest('[data-close]')) closeSheet(); });
+  return sh;
+}
+
+/* ---- Einstellungen ------------------------------------------------ */
+function openSettings(focus){
+  const s = state.settings;
+  const sh = sheet('Einstellungen', `
+    <details class="acc" id="acc-boost"><summary>${IC.bolt} So wird der Boostknopf scharf</summary><div class="acc-b">
+      <div class="step"><span class="no">1</span><div class="txt">Auf <a href="https://claude.ai/code/routines" target="_blank" rel="noopener">claude.ai/code/routines</a> eine <b>neue Routine</b> anlegen. Repository auswählen und als Anweisung etwas schreiben wie: <i>„Warte auf meine Anweisung. Steht im routine-fire-payload ein Auftrag, arbeite ihn ab.“</i></div></div>
+      <div class="step"><span class="no">2</span><div class="txt">Routine speichern, dann zum Bearbeiten öffnen → <b>Add another trigger</b> → <b>API</b>.</div></div>
+      <div class="step"><span class="no">3</span><div class="txt"><b>URL kopieren</b> (endet auf <code>/fire</code>), dann <b>Generate token</b> und den Token sofort kopieren – er wird nur einmal gezeigt.</div></div>
+      <div class="step"><span class="no">4</span><div class="txt">Beides hier unten einsetzen und auf <b>Verbindung testen</b> tippen. Danach startet jeder Druck auf BOOST eine echte Session.</div></div>
+      <p style="margin-top:4px">Der Token gilt nur für diese eine Routine, gibt keinen Lesezugriff aufs Konto und liegt ausschliesslich auf diesem Gerät.</p>
+    </div></details>
+
+    <div class="field">
+      <label for="st-mode">Wie der Knopf feuert</label>
+      <select class="inp" id="st-mode">
+        <option value="direkt">Direkt aus der App</option>
+        <option value="server">Über den eigenen Server</option>
+      </select>
+      <div class="hint">Direkt braucht nichts ausser Routine und Token. Sollte der Browser die Anfrage blocken (CORS), läuft es über den eigenen Server – <code>deploy/claude-hub</code> im Repo.</div>
+    </div>
+
+    <div id="grp-direkt">
+      <div class="field">
+        <label for="st-fireurl">Routinen-URL</label>
+        <input class="inp" id="st-fireurl" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+               placeholder="https://api.anthropic.com/v1/claude_code/routines/trig_…/fire">
+      </div>
+      <div class="field">
+        <label for="st-firetok">Routinen-Token</label>
+        <input class="inp" id="st-firetok" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-oat01-…">
+      </div>
+    </div>
+
+    <div id="grp-server">
+      <div class="field">
+        <label for="st-huburl">Adresse des eigenen Servers</label>
+        <input class="inp" id="st-huburl" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+               placeholder="https://hub.beispiel.ch">
+        <div class="hint">Ohne <code>/api/…</code> – die App hängt die Pfade selbst an.</div>
+      </div>
+      <div class="field">
+        <label for="st-hubtok">Server-Token</label>
+        <input class="inp" id="st-hubtok" type="password" autocomplete="off" spellcheck="false" placeholder="frei gewählt, siehe HUB_TOKEN">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="st-task">Standardauftrag</label>
+      <textarea class="inp" id="st-task" placeholder="Wird genommen, wenn das Feld über dem Knopf leer ist."></textarea>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:10px;font-weight:600;color:var(--txt)">
+        <input type="checkbox" id="st-autoopen" style="accent-color:var(--tint);width:20px;height:20px">
+        Session sofort im Browser öffnen
+      </label>
+      <div class="hint">Aus lassen, wenn dein Browser Pop-ups hart blockt – dann erscheint stattdessen ein Öffnen-Knopf.</div>
+    </div>
+    <div class="row"><button class="btn" id="st-test">Verbindung testen</button></div>
+
+    <div class="lbl" style="margin-top:26px">Feed</div>
+    <details class="acc" id="acc-feed"><summary>${IC.info} Woher die Liste kommt</summary><div class="acc-b">
+      <p>Für das Auflisten der eigenen Sessions und Chats gibt es <b>keine öffentliche Schnittstelle</b>. Die App liest darum eine JSON-Datei, die woanders zusammengestellt wird.</p>
+      <p>Der bequemste Weg: eine zweite Routine, die stündlich läuft, in der Cloud die letzten Sessions einsammelt, jede als <i>läuft · weiter · wartet · fertig</i> einstuft und das Ergebnis auf deinem Server ablegt. Fertiger Prompt dafür: <b>codewerk/ROUTINE.md</b> im Repo.</p>
+      <p>Ohne Feed funktioniert der Rest genauso: Einträge legst du mit <b>+</b> an oder schickst sie aus Claude über das Teilen-Menü herüber.</p>
+    </div></details>
+
+    <div class="field">
+      <label for="st-feedfrom">Quelle</label>
+      <select class="inp" id="st-feedfrom">
+        <option value="aus">Aus – ich pflege die Liste selbst</option>
+        <option value="hub">Vom eigenen Server</option>
+        <option value="url">Von einer beliebigen Adresse</option>
+      </select>
+    </div>
+    <div id="grp-feedurl">
+      <div class="field">
+        <label for="st-feedurl">Feed-Adresse</label>
+        <input class="inp" id="st-feedurl" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+               placeholder="https://…/claude-feed.json">
+      </div>
+      <div class="field">
+        <label for="st-feedtok">Token (falls nötig)</label>
+        <input class="inp" id="st-feedtok" type="password" autocomplete="off" spellcheck="false" placeholder="optional">
+      </div>
+    </div>
+    <div class="row"><button class="btn" id="st-feedtest">Feed jetzt laden</button><button class="btn ghost" id="st-paste">JSON von Hand einsetzen</button></div>
+
+    <div class="lbl" style="margin-top:26px">Darstellung</div>
+    <div class="field">
+      <label for="st-theme">Erscheinungsbild</label>
+      <select class="inp" id="st-theme">
+        <option value="auto">Wie das System</option>
+        <option value="light">Immer hell</option>
+        <option value="dark">Immer dunkel</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="st-stale">Ab wann etwas als liegengeblieben gilt</label>
+      <select class="inp" id="st-stale">
+        <option value="1">nach 1 Tag</option><option value="2">nach 2 Tagen</option>
+        <option value="3">nach 3 Tagen</option><option value="7">nach einer Woche</option>
+      </select>
+    </div>
+
+    <div class="lbl" style="margin-top:26px">Daten</div>
+    <div class="row">
+      <button class="btn" id="st-export">Einstellungen sichern</button>
+      <button class="btn" id="st-import">Sicherung einlesen</button>
+      <button class="btn danger" id="st-clear">Archiv leeren</button>
+    </div>
+    <p class="tiny" style="margin-top:12px">Alles bleibt in diesem Browser. Die Sicherung enthält auch die Token – behandle sie wie ein Passwort.</p>
+
+    <div class="row" style="margin-top:24px"><button class="btn pri wide" id="st-save">Sichern</button></div>
+  `);
+
+  // Werte einsetzen
+  $('#st-mode').value     = s.boostMode;
+  $('#st-fireurl').value  = s.fireUrl;
+  $('#st-firetok').value  = s.fireToken;
+  $('#st-huburl').value   = s.hubUrl;
+  $('#st-hubtok').value   = s.hubToken;
+  $('#st-task').value     = s.defaultTask;
+  $('#st-autoopen').checked = !!s.autoOpen;
+  $('#st-feedfrom').value = s.feedFrom;
+  $('#st-feedurl').value  = s.feedUrl;
+  $('#st-feedtok').value  = s.feedToken;
+  $('#st-theme').value    = s.theme;
+  $('#st-stale').value    = String(s.staleDays || 3);
+
+  const sync = () => {
+    $('#grp-direkt').hidden  = $('#st-mode').value !== 'direkt';
+    $('#grp-server').hidden  = $('#st-mode').value !== 'server';
+    $('#grp-feedurl').hidden = $('#st-feedfrom').value !== 'url';
+  };
+  $('#st-mode').addEventListener('change', sync);
+  $('#st-feedfrom').addEventListener('change', sync);
+  sync();
+
+  if(focus === 'boost'){ $('#acc-boost').open = true; }
+  if(focus === 'feed'){ $('#acc-feed').open = true; $('#st-feedfrom').scrollIntoView({block:'center'}); }
+
+  const collect = () => {
+    s.boostMode   = $('#st-mode').value;
+    s.fireUrl     = $('#st-fireurl').value.trim();
+    s.fireToken   = $('#st-firetok').value.trim();
+    s.hubUrl      = $('#st-huburl').value.trim();
+    s.hubToken    = $('#st-hubtok').value.trim();
+    s.defaultTask = $('#st-task').value.trim();
+    s.autoOpen    = $('#st-autoopen').checked;
+    s.feedFrom    = $('#st-feedfrom').value;
+    s.feedUrl     = $('#st-feedurl').value.trim();
+    s.feedToken   = $('#st-feedtok').value.trim();
+    s.theme       = $('#st-theme').value;
+    s.staleDays   = parseInt($('#st-stale').value, 10) || 3;
+    save(); applyTheme(); render();
+  };
+
+  $('#st-save').addEventListener('click', () => { collect(); closeSheet(); toast('Gesichert'); });
+  $('#st-test').addEventListener('click', async (e) => {
+    collect();
+    const b = e.currentTarget; b.disabled = true; b.textContent = 'Prüfe …';
+    try{
+      const r = await fireBoost('Verbindungstest aus CODEWERK. Bitte nur bestätigen, dass du erreichbar bist, und nichts verändern.');
+      toast('Verbindung steht – Testsession läuft');
+      window.open(r.url, '_blank', 'noopener');
+    }catch(err){ toast(explain(err), 5200); }
+    finally{ b.disabled = false; b.textContent = 'Verbindung testen'; }
+  });
+  $('#st-feedtest').addEventListener('click', async () => { collect(); await syncFeed(true); renderSync(); });
+  $('#st-paste').addEventListener('click', () => { collect(); openPaste(); });
+  $('#st-export').addEventListener('click', () => { collect(); exportData(); });
+  $('#st-import').addEventListener('click', importData);
+  $('#st-clear').addEventListener('click', () => {
+    const n = state.items.filter(i => (state.local[i.id] || {}).done).length;
+    if(!n) return toast('Archiv ist schon leer');
+    if(!confirm('Die ' + n + ' abgehakten Einträge endgültig entfernen?')) return;
+    state.items = state.items.filter(i => !(state.local[i.id] || {}).done);
+    pruneLocal(); save(); render(); toast('Archiv geleert');
+  });
+}
+
+/* ---- JSON von Hand ------------------------------------------------ */
+function openPaste(){
+  sheet('Feed-JSON einsetzen', `
+    <p class="muted" style="margin-bottom:12px">Die Ausgabe der Sammel-Routine hier einsetzen. Erwartet wird
+      <code>{"items":[…]}</code> oder direkt eine Liste.</p>
+    <textarea class="inp mono" id="pj" spellcheck="false" placeholder='{"items":[{"kind":"code","title":"…","url":"https://claude.ai/code/session_…","status":"offen","note":"…"}]}'></textarea>
+    <div class="row" style="margin-top:14px"><button class="btn pri wide" id="pj-ok">Übernehmen</button></div>
+  `);
+  $('#pj-ok').addEventListener('click', () => {
+    let data;
+    try{ data = JSON.parse($('#pj').value); }
+    catch(e){ return toast('Das ist kein gültiges JSON'); }
+    try{ mergeFeed(data); render(); closeSheet(); toast(state.meta.feedCount + ' Einträge übernommen'); }
+    catch(e){ toast(e.message); }
+  });
+}
+
+/* ---- Hinzufügen ---------------------------------------------------- */
+function openAdd(pre){
+  pre = pre || {};
+  sheet('Session oder Chat hinzufügen', `
+    <div class="field">
+      <label for="ad-url">Link aus Claude</label>
+      <input class="inp" id="ad-url" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+             placeholder="https://claude.ai/code/session_… oder https://claude.ai/chat/…">
+      <div class="hint">Art und Kennung liest die App selbst heraus.</div>
+    </div>
+    <div class="field">
+      <label for="ad-title">Worum geht es?</label>
+      <input class="inp" id="ad-title" type="text" placeholder="z. B. Rechnungs-PDF im DACHWERK">
+    </div>
+    <div class="field">
+      <label for="ad-status">Stand</label>
+      <select class="inp" id="ad-status">
+        <option value="offen">weiter – muss ich verfolgen</option>
+        <option value="laeuft">läuft gerade</option>
+        <option value="wartet">wartet auf etwas</option>
+        <option value="fertig">fertig</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="ad-note">Nächster Schritt</label>
+      <textarea class="inp" id="ad-note" placeholder="Was hier noch zu tun ist."></textarea>
+    </div>
+    <div class="row" style="margin-top:6px"><button class="btn pri wide" id="ad-ok">Hinzufügen</button></div>
+  `);
+  $('#ad-url').value    = pre.url || '';
+  $('#ad-title').value  = pre.title || '';
+  $('#ad-note').value   = pre.note || '';
+  if(!pre.url) setTimeout(() => $('#ad-url').focus(), 220);
+
+  $('#ad-ok').addEventListener('click', () => {
+    const url   = $('#ad-url').value.trim();
+    const title = $('#ad-title').value.trim();
+    if(!url && !title) return toast('Link oder Titel wird gebraucht');
+    const it = normItem({
+      url, title, status: $('#ad-status').value, note: $('#ad-note').value.trim(),
+      updated: new Date().toISOString()
+    }, 'manuell');
+    state.items = [it].concat(state.items.filter(x => x.id !== it.id));
+    delete state.local[it.id];
+    save(); render(); closeSheet(); toast('Hinzugefügt');
+  });
+}
+
+/* ---- Karte im Detail ---------------------------------------------- */
+function openItem(id){
+  const it = state.items.find(x => x.id === id);
+  if(!it) return;
+  const i = shown(it);
+  sheet(i.title, `
+    <div class="card flat tight" style="margin-bottom:16px">
+      <div class="kv"><span class="k">Art</span><span class="v">${i.kind === 'code' ? 'Claude Code' : 'Claude Chat'}</span></div>
+      <div class="kv"><span class="k">Kennung</span><span class="v"><code style="font-family:var(--fm);font-size:12px">${esc(i.id)}</code></span></div>
+      ${i.updated ? `<div class="kv"><span class="k">Zuletzt</span><span class="v">${esc(rel(i.updated))}</span></div>` : ''}
+      ${i.repo ? `<div class="kv"><span class="k">Repository</span><span class="v">${esc(i.repo)}</span></div>` : ''}
+      ${i.branch ? `<div class="kv"><span class="k">Branch</span><span class="v">${esc(i.branch)}</span></div>` : ''}
+      ${i.pr ? `<div class="kv"><span class="k">Pull Request</span><span class="v"><a href="${esc(i.pr)}" target="_blank" rel="noopener">öffnen</a></span></div>` : ''}
+      <div class="kv"><span class="k">Herkunft</span><span class="v">${i.source === 'feed' ? 'Feed' : i.source === 'boost' ? 'Boost' : 'von Hand'}</span></div>
+    </div>
+    <div class="field">
+      <label for="dt-status">Stand</label>
+      <select class="inp" id="dt-status">
+        <option value="offen">weiter – muss ich verfolgen</option>
+        <option value="laeuft">läuft gerade</option>
+        <option value="wartet">wartet auf etwas</option>
+        <option value="fertig">fertig</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="dt-note">Nächster Schritt</label>
+      <textarea class="inp" id="dt-note" placeholder="Was hier noch zu tun ist."></textarea>
+    </div>
+    <div class="row">
+      <button class="btn" id="dt-pin">${i.pinned ? 'Nicht mehr anpinnen' : 'Nach oben anpinnen'}</button>
+      ${i.url ? `<a class="btn" href="${esc(i.url)}" target="_blank" rel="noopener">In Claude öffnen</a>` : ''}
+      <button class="btn danger" id="dt-del">Entfernen</button>
+    </div>
+    <div class="row" style="margin-top:20px"><button class="btn pri wide" id="dt-save">Sichern</button></div>
+  `);
+  $('#dt-status').value = i.status;
+  $('#dt-note').value   = i.note || '';
+
+  $('#dt-save').addEventListener('click', () => {
+    setLocal(id, { status: $('#dt-status').value, note: $('#dt-note').value.trim() });
+    render(); closeSheet(); toast('Gesichert');
+  });
+  $('#dt-pin').addEventListener('click', () => {
+    setLocal(id, { pinned: !i.pinned }); render(); closeSheet();
+    toast(i.pinned ? 'Losgelöst' : 'Angepinnt');
+  });
+  $('#dt-del').addEventListener('click', () => {
+    if(!confirm('Diesen Eintrag entfernen? Aus dem Feed kann er beim nächsten Abgleich zurückkommen.')) return;
+    state.items = state.items.filter(x => x.id !== id);
+    delete state.local[id];
+    save(); render(); closeSheet(); toast('Entfernt');
+  });
+}
+
+/* ---- Sichern / Einlesen ------------------------------------------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'codewerk-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('Sicherung geladen');
+}
+function importData(){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.addEventListener('change', () => {
+    const f = inp.files && inp.files[0];
+    if(!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try{
+        const d = JSON.parse(String(rd.result));
+        if(!d || typeof d !== 'object') throw new Error('x');
+        state = { ...DEF, ...d };
+        state.settings = { ...DEF.settings, ...(d.settings || {}) };
+        state.meta     = { ...DEF.meta,     ...(d.meta || {}) };
+        state.items    = Array.isArray(d.items) ? d.items : [];
+        state.local    = d.local || {};
+        save(); applyTheme(); render(); closeSheet(); toast('Sicherung eingelesen');
+      }catch(e){ toast('Datei passt nicht'); }
+    };
+    rd.readAsText(f);
+  });
+  inp.click();
+}
+
+/* ==================================================================
+   8 · Verdrahtung
+   ================================================================== */
+function applyTheme(){
+  const t = state.settings.theme;
+  if(t === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+}
+
+function setView(v){
+  view = v;
+  $$('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+  render();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function boostHint(){
+  const s = state.settings;
+  const ready = s.boostMode === 'server' ? !!s.hubUrl : (!!s.fireUrl && !!s.fireToken);
+  $('#boost-hint').textContent = ready
+    ? 'startet eine neue Claude-Code-Session'
+    : 'noch nicht eingerichtet – tippen führt hin';
+}
+
+$('#btn-refresh').addEventListener('click', () => syncFeed(true));
+$('#btn-add').addEventListener('click', () => openAdd());
+$('#btn-settings').addEventListener('click', () => openSettings());
+$$('.seg button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+
+$('#hints').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-hint]');
+  if(!b) return;
+  openSettings(b.dataset.hint === 'setup-feed' ? 'feed' : 'boost');
+});
+
+$('#list').addEventListener('click', (e) => {
+  const art = e.target.closest('.item');
+  if(!art) return;
+  const id  = art.dataset.id;
+  const act = (e.target.closest('[data-act]') || {}).dataset;
+  if(!act) return;
+  if(act.act === 'tick'){
+    const now = !(state.local[id] || {}).done;
+    setLocal(id, { done: now });
+    buzz(now ? [8] : [4, 30, 4]);
+    art.classList.add('gone');
+    setTimeout(render, now ? 160 : 0);
+    if(now) toast('Abgehakt – liegt im Archiv');
+  } else if(act.act === 'fertig'){
+    setLocal(id, { status:'fertig' }); buzz([8]); render();
+  } else if(act.act === 'wieder'){
+    setLocal(id, { status:'offen' }); render();
+  } else if(act.act === 'mehr'){
+    openItem(id);
+  }
+});
+
+$('#boost').addEventListener('click', () => doBoost());
+$('#task').addEventListener('input', () => {
+  $('#btn-task-clear').hidden = !$('#task').value;
+});
+$('#task').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ e.preventDefault(); $('#task').blur(); doBoost(); }
+});
+$('#btn-task-clear').addEventListener('click', () => {
+  $('#task').value = ''; $('#btn-task-clear').hidden = true; $('#task').focus();
+});
+
+document.addEventListener('click', (e) => {
+  const l = e.target.closest('[data-l]');
+  if(!l) return;
+  if(l.dataset.l === 'settings'){ closeLaunch(); openSettings('boost'); }
+  else closeLaunch();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key !== 'Escape') return;
+  if($('#launch')) return closeLaunch();
+  closeSheet();
+});
+
+/* Teilen-Menü (Android) und App-Kurzbefehl */
+function handleParams(){
+  const q = new URLSearchParams(location.search);
+  if(!q.toString()) return;
+  const url   = (q.get('url') || firstUrl(q.get('text') || '') || '').trim();
+  const title = (q.get('title') || '').trim();
+  const wantsBoost = q.get('boost');
+  try{ history.replaceState(null, '', location.pathname); }catch(_){}
+  if(url || title){ setTimeout(() => openAdd({ url, title }), 120); return; }
+  if(wantsBoost) setTimeout(() => doBoost({ noWindow:true }), 300);
+}
+
+/* ==================================================================
+   9 · Start
+   ================================================================== */
+applyTheme();
+render();
+boostHint();
+handleParams();
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+if(state.settings.feedFrom !== 'aus') syncFeed(false);
+
+// Beim Zurückkommen nachladen, aber höchstens alle fünf Minuten.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState !== 'visible') return;
+  if(state.settings.feedFrom === 'aus') return;
+  if(Date.now() - (state.meta.feedAt || 0) < 300000) return;
+  syncFeed(false);
+});
+</script>
+</body>
+</html>
