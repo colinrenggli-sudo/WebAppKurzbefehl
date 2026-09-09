@@ -839,6 +839,40 @@ body.quiet .q { display: none !important; }
 .close-day svg { width: 18px; height: 18px; }
 .mini-chip { color: var(--tint-text); background: var(--tint-soft); }
 
+/* ---------- Token & Belohnungen ---------- */
+.token-hero { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; position: relative; overflow: hidden; }
+.token-hero::after { content: ''; position: absolute; right: -50px; bottom: -70px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(closest-side, rgba(229,161,0,0.18), transparent 70%); pointer-events: none; }
+.token-btn {
+  width: 104px; height: 104px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: linear-gradient(145deg, #FFE27A, #F2A50C 60%, #C97A00); color: #3A2400; font-size: 2.6rem; line-height: 1;
+  box-shadow: 0 10px 26px rgba(229,161,0,0.35), inset 0 -4px 0 rgba(0,0,0,0.12), inset 0 2px 0 rgba(255,255,255,0.45);
+  transition: transform var(--dur-fast), box-shadow var(--dur-fast); position: relative; z-index: 1;
+}
+.token-btn:active { transform: scale(0.93); box-shadow: 0 4px 12px rgba(229,161,0,0.3), inset 0 -2px 0 rgba(0,0,0,0.12); }
+.token-btn small { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--ff); }
+.token-btn.pop { animation: pop 0.5s var(--ease-spring); }
+.token-total { font-family: var(--ff-round); font-weight: 800; font-size: 2.2rem; letter-spacing: -0.03em; line-height: 1; }
+.token-total small { font-size: 1rem; color: var(--label-2); font-weight: 700; margin-left: 6px; }
+.reward-row { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; min-height: 68px; padding: 8px 0; border-bottom: 0.5px solid var(--sep); width: 100%; text-align: left; color: inherit; }
+.reward-row:last-child { border-bottom: 0; }
+.reward-emoji { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; background: var(--fill-4); }
+.reward-row.reached .reward-emoji { background: linear-gradient(135deg, rgba(255,214,10,0.35), rgba(255,149,0,0.25)); }
+.reward-text { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.reward-name { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reward-bar { height: 6px; border-radius: 3px; background: var(--fill-3); overflow: hidden; }
+.reward-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--gold), #FF9F0A); transition: width 0.8s var(--ease-out); }
+.reward-row.reached .reward-bar i { background: var(--tint); }
+.reward-meta { font-size: 0.706rem; font-weight: 600; color: var(--label-2); font-family: var(--ff-round); }
+.reward-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.reward-left { font-family: var(--ff-round); font-weight: 800; font-size: 1rem; }
+.reward-row.reached .reward-left { color: var(--tint-text); }
+.log-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; min-height: 52px; padding: 8px 0; border-bottom: 0.5px solid var(--sep); width: 100%; text-align: left; color: inherit; }
+.log-row:last-child { border-bottom: 0; }
+.log-note { font-size: 0.941rem; line-height: 1.3; word-break: break-word; }
+.log-note.empty { color: var(--label-2); font-style: italic; }
+.log-day { font-size: 0.706rem; color: var(--label-2); font-weight: 600; margin-top: 2px; font-family: var(--ff-round); }
+.log-amount { font-family: var(--ff-round); font-weight: 800; font-size: 1rem; color: var(--gold-text); background: rgba(229,161,0,0.14); padding: 4px 10px; border-radius: 12px; white-space: nowrap; }
+
 /* ---------- Desktop ---------- */
 @media (min-width: 720px) {
   :root { --gutter: 20px; }
@@ -903,6 +937,7 @@ body.quiet .q { display: none !important; }
   <main>
     <section class="view active" id="viewToday" role="tabpanel" aria-labelledby="tabToday"></section>
     <section class="view" id="viewTodos" role="tabpanel" aria-labelledby="tabTodos"></section>
+    <section class="view" id="viewTokens" role="tabpanel" aria-labelledby="tabTokens"></section>
     <section class="view" id="viewProgress" role="tabpanel" aria-labelledby="tabProgress"></section>
   </main>
 
@@ -916,6 +951,10 @@ body.quiet .q { display: none !important; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.6"/></svg>
         <span>To-Dos</span>
         <span class="tab-badge" id="todoBadge" hidden></span>
+      </button>
+      <button class="tab" id="tabTokens" role="tab" aria-selected="false" aria-controls="viewTokens" data-tab="tokens" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/><path d="M12 9.6v4.8M10.4 12h3.2"/></svg>
+        <span>Token</span>
       </button>
       <button class="tab" id="tabProgress" role="tab" aria-selected="false" aria-controls="viewProgress" data-tab="progress" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V11M10 19V5M16 19v-8M22 19H2"/></svg>
@@ -1065,6 +1104,67 @@ body.quiet .q { display: none !important; }
     <button class="sheet-close-hit" type="button" data-close aria-label="Schliessen"><span class="sheet-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
   </div>
   <div class="sheet-body" id="badgeBody"></div>
+</div>
+
+<!-- Token eintragen / bearbeiten -->
+<div class="sheet" id="tokenSheet" role="dialog" aria-modal="true" aria-labelledby="tokenSheetTitle">
+  <div class="sheet-grab" data-grab><i></i></div>
+  <div class="sheet-head">
+    <span class="sheet-title" id="tokenSheetTitle">Token eintragen</span>
+    <button class="sheet-close-hit" type="button" data-close aria-label="Schliessen"><span class="sheet-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <div class="field-label">Wie viele Token?</div>
+      <div class="chips" style="align-items:center; gap:12px">
+        <button class="chip" type="button" id="kMinus" aria-label="Weniger">−</button>
+        <span class="num" id="kAmount" style="font-weight:800; font-size:1.6rem; min-width:48px; text-align:center">1</span>
+        <button class="chip" type="button" id="kPlus" aria-label="Mehr">+</button>
+        <span class="chips" style="margin-left:auto"><button class="chip" type="button" data-k="1">1</button><button class="chip" type="button" data-k="5">5</button><button class="chip" type="button" data-k="10">10</button></span>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Was hast du geschafft?</div>
+      <textarea class="input" id="kNote" placeholder="z. B. Planer-App nach drei Monaten fertig – heisst jetzt HIGH" maxlength="200"></textarea>
+    </div>
+    <div class="field">
+      <div class="field-label">Datum</div>
+      <input class="input" id="kDay" type="date" aria-label="Datum">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn primary" type="button" id="kSave">Token eintragen</button>
+      <button class="btn danger" type="button" id="kDelete" hidden>Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Belohnung anlegen / bearbeiten -->
+<div class="sheet" id="rewardSheet" role="dialog" aria-modal="true" aria-labelledby="rewardSheetTitle">
+  <div class="sheet-grab" data-grab><i></i></div>
+  <div class="sheet-head">
+    <span class="sheet-title" id="rewardSheetTitle">Neue Belohnung</span>
+    <button class="sheet-close-hit" type="button" data-close aria-label="Schliessen"><span class="sheet-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <div class="field-label">Symbol</div>
+      <div class="emoji-grid" id="rEmoji"></div>
+      <div class="chips" style="margin-top:8px"><input class="input" id="rEmojiCustom" placeholder="oder eigenes Emoji …" maxlength="8" autocomplete="off" style="flex:1"></div>
+    </div>
+    <div class="field">
+      <div class="field-label">Name</div>
+      <input class="input" id="rName" placeholder="z. B. Kokosnuss" maxlength="40" autocomplete="off" enterkeyhint="done">
+    </div>
+    <div class="field">
+      <div class="field-label">Token bis zur Belohnung</div>
+      <input class="input" id="rPoints" type="number" inputmode="numeric" min="1" max="100000" placeholder="30">
+      <div class="field-hint">Jeder Token zählt für alle Belohnungen gleichzeitig. Erreicht ist eine Belohnung, sobald deine Gesamtsumme die Schwelle überschreitet.</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn primary" type="button" id="rSave">Sichern</button>
+      <button class="btn danger" type="button" id="rDelete" hidden>Löschen</button>
+    </div>
+  </div>
 </div>
 
 <!-- Tagesabschluss -->
@@ -1259,6 +1359,7 @@ const KEYS = {
   tasks: 'focusTasksV2', todos: 'focusTodosV1', todoSettings: 'focusTodoSettingsV1',
   settings: 'focusSettingsV1', history: 'focusHistory', lastReset: 'focusLastReset', game: 'focusGameV1',
   device: 'focusDeviceV1', // nur dieses Gerät: wann wurde hier zuletzt erinnert (nicht synchronisiert)
+  tokens: 'focusTokensV1', // Scoreboard: Token für erledigte Aufträge und Belohnungsziele
 };
 function lsGet(k, fallback) {
   try { const raw = localStorage.getItem(k); if (raw === null) return fallback; const v = JSON.parse(raw); return v == null ? fallback : v; }
@@ -1287,7 +1388,91 @@ const DEFAULT_GAME = {
 
 const DEFAULT_DEVICE = { lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {} };
 
-const S = { tasks: [], todos: [], settings: {}, history: {}, game: {}, device: {} };
+const S = { tasks: [], todos: [], settings: {}, history: {}, game: {}, device: {}, tokens: { entries: [], rewards: [] } };
+
+// ---------- Token & Belohnungen (Scoreboard) ----------
+// Ein Token = ein erledigter Auftrag aus dem echten Leben, kurz notiert. Jeder Token zählt für alle
+// Belohnungsziele gleichzeitig; ein Ziel ist erreicht, sobald die Gesamtsumme seine Schwelle überschreitet.
+const DEFAULT_REWARDS = [
+  { id: 'r_kokosnuss', emoji: '🥥', name: 'Kokosnuss', points: 30 },
+  { id: 'r_schwein', emoji: '🐖', name: 'Schwein', points: 100 },
+  { id: 'r_palme', emoji: '🌴', name: 'Palme', points: 500 },
+  { id: 'r_hund', emoji: '🐕', name: 'Hund', points: 1000 },
+];
+const REWARD_EMOJIS = ['🥥', '🐖', '🌴', '🐕', '🍕', '🍦', '🎬', '🎧', '📚', '👟', '🎮', '✈️', '🏝️', '🍣', '☕', '🛁', '💆', '🎁', '🚴', '⛺', '🎸', '🧗', '🍫', '🌸'];
+function normalizeTokenEntry(e) {
+  if (!e || typeof e !== 'object') return null;
+  const out = Object.assign({}, e);
+  out.id = String(out.id || uid('tok'));
+  out.day = isValidKey(out.day) ? out.day : todayKey();
+  out.at = typeof out.at === 'number' ? out.at : Date.now();
+  out.amount = clamp(parseInt(out.amount, 10) || 1, 1, 1000);
+  out.note = String(out.note || '').slice(0, 200);
+  out.updatedAt = typeof out.updatedAt === 'number' ? out.updatedAt : 0;
+  out.deleted = typeof out.deleted === 'number' ? out.deleted : null;
+  return out;
+}
+function normalizeReward(r, idx) {
+  if (!r || typeof r !== 'object') return null;
+  const out = Object.assign({}, r);
+  out.id = String(out.id || uid('rw'));
+  out.emoji = String(out.emoji || '🎁').slice(0, 8);
+  out.name = String(out.name || 'Belohnung').slice(0, 40);
+  out.points = clamp(parseInt(out.points, 10) || 1, 1, 100000);
+  out.order = typeof out.order === 'number' ? out.order : (idx || 0);
+  out.reachedAt = typeof out.reachedAt === 'number' ? out.reachedAt : null;
+  out.createdAt = typeof out.createdAt === 'number' ? out.createdAt : 0;
+  out.updatedAt = typeof out.updatedAt === 'number' ? out.updatedAt : 0;
+  out.deleted = typeof out.deleted === 'number' ? out.deleted : null;
+  return out;
+}
+function normalizeTokens(raw) {
+  const out = { entries: [], rewards: [] };
+  if (raw && typeof raw === 'object') {
+    if (Array.isArray(raw.entries)) out.entries = raw.entries.map(normalizeTokenEntry).filter(Boolean);
+    if (Array.isArray(raw.rewards)) out.rewards = raw.rewards.map(normalizeReward).filter(Boolean);
+  }
+  return out;
+}
+function seedRewards() { return DEFAULT_REWARDS.map((r, i) => normalizeReward(Object.assign({ order: i, createdAt: Date.now() }, r), i)); }
+function tokenEntries() { return S.tokens.entries.filter(e => !e.deleted).sort((a, b) => b.at - a.at); }
+function tokenTotal() { return memoized('tokens', () => S.tokens.entries.reduce((s, e) => s + (e.deleted ? 0 : e.amount), 0)); }
+function activeRewards() { return S.tokens.rewards.filter(r => !r.deleted).sort((a, b) => a.points - b.points || a.order - b.order); }
+// «Erreicht am» ist aus den Einträgen ableitbar (Zeitpunkt des Tokens, der die Schwelle knackt) – so bleibt es auf allen Geräten gleich
+function refreshRewards() {
+  const asc = tokenEntries().slice().sort((a, b) => a.at - b.at);
+  const newly = [];
+  S.tokens.rewards.forEach(r => {
+    if (r.deleted) return;
+    let sum = 0, at = null;
+    for (const e of asc) { sum += e.amount; if (sum >= r.points) { at = e.at; break; } }
+    if (at && !r.reachedAt) newly.push(r);
+    if (r.reachedAt !== at) { r.reachedAt = at; stateVersion++; }
+  });
+  return newly;
+}
+function addTokenEntry(amount, note, day) {
+  const e = normalizeTokenEntry({ id: uid('tok'), day: day || todayKey(), at: Date.now(), amount, note });
+  touch(e); S.tokens.entries.unshift(e); stateVersion++;
+  const reached = refreshRewards();
+  saveAll();
+  return { entry: e, reached, total: tokenTotal() };
+}
+function updateTokenEntry(id, patch) {
+  const e = S.tokens.entries.find(x => x.id === id); if (!e) return null;
+  Object.assign(e, normalizeTokenEntry(Object.assign({}, e, patch))); touch(e); stateVersion++;
+  const reached = refreshRewards(); saveAll(); return { entry: e, reached };
+}
+function deleteTokenEntry(id) { const e = S.tokens.entries.find(x => x.id === id); if (!e) return; e.deleted = Date.now(); touch(e); stateVersion++; refreshRewards(); saveAll(); }
+function saveReward(id, data) {
+  let r = id ? S.tokens.rewards.find(x => x.id === id) : null;
+  if (!r) { r = normalizeReward(Object.assign({ id: uid('rw'), createdAt: Date.now(), order: S.tokens.rewards.length }, data)); S.tokens.rewards.push(r); }
+  else Object.assign(r, normalizeReward(Object.assign({}, r, data)));
+  touch(r); stateVersion++;
+  const reached = refreshRewards(); saveAll(); return { reward: r, reached };
+}
+function deleteReward(id) { const r = S.tokens.rewards.find(x => x.id === id); if (!r) return; r.deleted = Date.now(); touch(r); stateVersion++; saveAll(); }
+function nextReward() { const total = tokenTotal(); return activeRewards().find(r => total < r.points) || null; }
 let stateVersion = 0; // für Memoisierung abgeleiteter Werte
 
 function normalizeTask(t, idx) {
@@ -1396,6 +1581,10 @@ function loadState() {
   if (!S.game.badgesSeen || typeof S.game.badgesSeen !== 'object') S.game.badgesSeen = {};
   if (!Array.isArray(S.game.notices)) S.game.notices = [];
 
+  const rawTok = lsGet(KEYS.tokens, null);
+  S.tokens = normalizeTokens(rawTok);
+  if (!rawTok) S.tokens.rewards = seedRewards();
+
   const dev = lsGet(KEYS.device, null);
   S.device = Object.assign({}, DEFAULT_DEVICE, dev || {});
   if (!S.device.alarmNotified || typeof S.device.alarmNotified !== 'object') S.device.alarmNotified = {};
@@ -1423,6 +1612,7 @@ function saveAll(opts) {
   lsSet(KEYS.history, S.history);
   lsSet(KEYS.game, S.game);
   lsSet(KEYS.device, S.device);
+  lsSet(KEYS.tokens, S.tokens);
   stateVersion++;
   if (!(opts && opts.silent)) saveHooks.forEach(fn => { try { fn(); } catch (e) { console.warn(e); } });
   return now;
@@ -2268,6 +2458,7 @@ function renderNav() {
   const today = todayKey();
   if (currentTab === 'today') { eyebrow.textContent = fmtNav(today) + (isPausedOn(today) ? ' · Pause' : ''); title.textContent = 'Heute'; }
   else if (currentTab === 'todos') { const open = S.todos.filter(t => !t.completed && !t.deleted).length; eyebrow.textContent = open ? `${open} offen` : 'Alles erledigt'; title.textContent = 'To-Dos'; }
+  else if (currentTab === 'tokens') { const total = tokenTotal(), nx = nextReward(); eyebrow.textContent = nx ? `${total} Token · noch ${nx.points - total} bis ${nx.emoji} ${nx.name}` : `${total} Token gesammelt`; title.textContent = 'Token'; }
   else { const st = currentStreak(); eyebrow.textContent = S.settings.quiet ? `${st} ${st === 1 ? 'Tag' : 'Tage'} in Folge` : `Level ${levelFromXp(totalXp())} · ${levelTitle(levelFromXp(totalXp()))}`; title.textContent = 'Fortschritt'; }
   $('levelPill').hidden = !!S.settings.quiet;
   const xp = totalXp(), lvl = levelFromXp(xp);
@@ -2275,7 +2466,7 @@ function renderNav() {
   const pct = hi > lo ? (xp - lo) / (hi - lo) * 100 : 100;
   $('levelPillText').textContent = 'Lvl ' + lvl;
   const ring = $('levelRing'); ring.style.strokeDashoffset = (69.1 * (1 - pct / 100)).toFixed(2);
-  $('navAdd').setAttribute('aria-label', currentTab === 'todos' ? 'Neues To-Do' : 'Neue Routine');
+  $('navAdd').setAttribute('aria-label', currentTab === 'todos' ? 'Neues To-Do' : currentTab === 'tokens' ? 'Token eintragen' : 'Neue Routine');
   $('navAdd').hidden = currentTab === 'progress';
   // Tab-Badge: überfällige + heute fällige To-Dos
   const due = S.todos.filter(t => !t.completed && !t.deleted && t.dueDate && t.dueDate <= today).length;
@@ -2648,19 +2839,63 @@ function renderProgress() {
   requestAnimationFrame(() => setRing($('weekRing'), ws.pct || 0));
 }
 
+// ---- Token-Scoreboard ----
+// «Erreicht heute» / «Erreicht gestern» / «Erreicht am Mo., 9. Sep.»
+function reachedLabel(ts) {
+  const l = dayLabel(appDay(ts));
+  return /^(Heute|Gestern)$/.test(l) ? 'Erreicht ' + l.toLowerCase() : 'Erreicht am ' + l;
+}
+function renderTokens() {
+  const v = $('viewTokens');
+  const total = tokenTotal();
+  const rewards = activeRewards();
+  const entries = tokenEntries();
+  const nx = nextReward();
+  const reachedCount = rewards.filter(r => r.reachedAt).length;
+  let html = `<section class="card token-hero" aria-label="Token">
+    <button class="token-btn" type="button" id="tokenBtn" data-act="tokenAdd" aria-label="Token eintragen">🪙<small>+ Token</small></button>
+    <div class="hero-text">
+      <div class="token-total num">${fmtNum(total)}<small>Token</small></div>
+      <div class="hero-msg">${entries.length ? (nx ? `Noch <b>${nx.points - total}</b> bis ${nx.emoji} ${escHtml(nx.name)}.` : 'Alle Belohnungen erreicht – Zeit für neue Ziele.') : 'Antippen, wenn du etwas geschafft hast. Jeder Token zählt für alle Belohnungen gleichzeitig.'}</div>
+      <div class="hero-badges"><span class="pill gold">${reachedCount}/${rewards.length} Belohnungen</span>${entries.length ? `<span class="pill">${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}</span>` : ''}</div>
+    </div>
+  </section>`;
+
+  html += `<div class="section-head"><span class="section-title">Belohnungen</span><button class="section-link" type="button" data-act="rewardAdd">Neu</button></div>`;
+  if (!rewards.length) html += `<div class="card empty"><div class="empty-emoji">🎁</div><div class="empty-title">Noch keine Belohnung</div><div class="empty-text">Lege fest, was du dir bei 30, 100 oder 500 Token gönnst.</div></div>`;
+  else html += `<section class="card" style="padding:4px 16px">${rewards.map(r => {
+    const pct = clamp(total / r.points * 100, 0, 100);
+    const reached = !!r.reachedAt;
+    return `<button class="reward-row${reached ? ' reached' : ''}" type="button" data-act="rewardEdit" data-id="${escAttr(r.id)}" aria-label="${escAttr(r.name)}, ${reached ? 'erreicht' : `noch ${r.points - total} Token`}">
+      <span class="reward-emoji" aria-hidden="true">${escHtml(r.emoji)}</span>
+      <span class="reward-text"><span class="reward-name">${escHtml(r.name)}</span><span class="reward-bar"><i style="width:${pct}%"></i></span><span class="reward-meta">${reached ? escHtml(reachedLabel(r.reachedAt)) : `${fmtNum(Math.min(total, r.points))} von ${fmtNum(r.points)} Token`}</span></span>
+      <span class="reward-right"><span class="reward-left">${reached ? ICON.check.replace('<svg ', '<svg style="width:22px;height:22px" ') : `noch ${fmtNum(r.points - total)}`}</span></span>
+    </button>`; }).join('')}</section>`;
+
+  html += `<div class="section-head"><span class="section-title">Protokoll</span><span class="section-meta">${entries.length ? `${fmtNum(total)} Token` : ''}</span></div>`;
+  if (!entries.length) html += `<div class="card empty" style="padding:22px"><div class="empty-emoji">🪙</div><div class="empty-title">Noch kein Token</div><div class="empty-text">Tippe auf die Münze, sobald du einen Auftrag erledigt hast – und schreib kurz dazu, was es war.</div></div>`;
+  else html += `<section class="card" style="padding:4px 16px">${entries.slice(0, 60).map(e => `<button class="log-row" type="button" data-act="tokenEdit" data-id="${escAttr(e.id)}">
+      <span><span class="log-note${e.note ? '' : ' empty'}">${e.note ? escHtml(e.note) : 'Ohne Notiz'}</span><div class="log-day">${escHtml(dayLabel(e.day))}</div></span>
+      <span class="log-amount">+${e.amount}</span>
+    </button>`).join('')}${entries.length > 60 ? `<div class="hint" style="padding:10px 0">… und ${entries.length - 60} weitere</div>` : ''}</section>`;
+  v.innerHTML = html;
+  bindView(v);
+}
+
 function renderAll() {
   renderNav();
   if (currentTab === 'today') renderToday();
   else if (currentTab === 'todos') renderTodos();
+  else if (currentTab === 'tokens') renderTokens();
   else renderProgress();
 }
 
 function switchTab(tab) {
-  if (!['today', 'todos', 'progress'].includes(tab)) return;
+  if (!['today', 'todos', 'tokens', 'progress'].includes(tab)) return;
   if (currentTab === tab) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   currentTab = tab;
   reorderMode = false;
-  ['today', 'todos', 'progress'].forEach(t => {
+  ['today', 'todos', 'tokens', 'progress'].forEach(t => {
     const view = $('view' + t[0].toUpperCase() + t.slice(1));
     const btn = $('tab' + t[0].toUpperCase() + t.slice(1));
     view.classList.toggle('active', t === tab);
@@ -3112,6 +3347,10 @@ function bindView(v) {
       case 'calPrev': calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderAll(); break;
       case 'calNext': calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderAll(); break;
       case 'badge': openBadge(el.dataset.id); break;
+      case 'tokenAdd': openTokenEntry(null); break;
+      case 'tokenEdit': openTokenEntry(id); break;
+      case 'rewardAdd': openRewardEditor(null); break;
+      case 'rewardEdit': openRewardEditor(id); break;
     }
   };
   v.onkeydown = (e) => {
@@ -3302,6 +3541,73 @@ function openBackfill() {
     } })),
   });
 }
+
+// ---- Token eintragen ----
+let editTokenId = null, kAmount = 1;
+function setAmount(n) { kAmount = clamp(n, 1, 1000); $('kAmount').textContent = kAmount; }
+function openTokenEntry(id) {
+  const e = id ? S.tokens.entries.find(x => x.id === id) : null;
+  editTokenId = e ? e.id : null;
+  $('tokenSheetTitle').textContent = e ? 'Token bearbeiten' : 'Token eintragen';
+  setAmount(e ? e.amount : 1);
+  $('kNote').value = e ? e.note : '';
+  $('kDay').value = e ? e.day : todayKey(); $('kDay').max = todayKey();
+  $('kDelete').hidden = !e; $('kSave').textContent = e ? 'Sichern' : 'Token eintragen';
+  openSheet('tokenSheet');
+  if (!e) setTimeout(() => $('kNote').focus(), 420);
+}
+$('kMinus').addEventListener('click', () => setAmount(kAmount - 1));
+$('kPlus').addEventListener('click', () => setAmount(kAmount + 1));
+document.querySelectorAll('#tokenSheet [data-k]').forEach(b => b.addEventListener('click', () => setAmount(+b.dataset.k)));
+$('kSave').addEventListener('click', () => {
+  const note = $('kNote').value.trim();
+  const day = isValidKey($('kDay').value) && $('kDay').value <= todayKey() ? $('kDay').value : todayKey();
+  const res = editTokenId ? updateTokenEntry(editTokenId, { amount: kAmount, note, day }) : addTokenEntry(kAmount, note, day);
+  closeSheet('tokenSheet');
+  if (currentTab !== 'tokens') switchTab('tokens'); else renderAll();
+  if (!res) return;
+  const btn = $('tokenBtn');
+  if (btn && !editTokenId) { btn.classList.add('pop'); confettiAt(btn, 26, Math.PI * 1.6); }
+  playSound(res.reached && res.reached.length ? 'big' : 'medium'); haptic(12);
+  if (!editTokenId) { const nx = nextReward(); toast('🪙', `<b>+${kAmount}</b> Token. ${nx ? `Noch ${nx.points - tokenTotal()} bis ${escHtml(nx.emoji)} ${escHtml(nx.name)}.` : 'Alle Belohnungen erreicht.'}`); }
+  (res.reached || []).forEach(r => celebrate({ emoji: r.emoji, eyebrow: 'Belohnung erreicht', title: r.name, text: `${fmtNum(r.points)} Token gesammelt. Gönn dir das – du hast es dir verdient.`, stats: [{ html: `🪙 ${fmtNum(tokenTotal())} Token`, cls: 'gold' }], rain: true }));
+});
+$('kDelete').addEventListener('click', () => { if (!editTokenId) return; const id = editTokenId; const snap = JSON.stringify(S.tokens.entries.find(x => x.id === id)); deleteTokenEntry(id); closeSheet('tokenSheet'); renderAll(); toast('🗑️', 'Eintrag gelöscht.', { label: 'Widerrufen', fn: () => { const e = S.tokens.entries.find(x => x.id === id); if (e) { Object.assign(e, JSON.parse(snap)); e.deleted = null; touch(e); stateVersion++; refreshRewards(); saveAll(); renderAll(); } } }); });
+$('kNote').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('kSave').click(); } });
+
+// ---- Belohnung anlegen / bearbeiten ----
+let editRewardId = null, rEmoji = '🎁';
+function openRewardEditor(id) {
+  const r = id ? S.tokens.rewards.find(x => x.id === id) : null;
+  editRewardId = r ? r.id : null;
+  $('rewardSheetTitle').textContent = r ? 'Belohnung bearbeiten' : 'Neue Belohnung';
+  rEmoji = r ? r.emoji : REWARD_EMOJIS[Math.floor(Math.random() * REWARD_EMOJIS.length)];
+  $('rName').value = r ? r.name : '';
+  $('rPoints').value = r ? r.points : '';
+  $('rEmojiCustom').value = REWARD_EMOJIS.includes(rEmoji) ? '' : rEmoji;
+  $('rDelete').hidden = !r;
+  renderRewardEmojis();
+  openSheet('rewardSheet');
+  if (!r) setTimeout(() => $('rName').focus(), 420);
+}
+function renderRewardEmojis() {
+  $('rEmoji').innerHTML = REWARD_EMOJIS.map(e => `<button class="emoji-opt${e === rEmoji ? ' on' : ''}" type="button" data-e="${escAttr(e)}" aria-label="${escAttr(e)}" aria-pressed="${e === rEmoji}">${escHtml(e)}</button>`).join('');
+  $('rEmoji').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { rEmoji = b.dataset.e; $('rEmojiCustom').value = ''; renderRewardEmojis(); }));
+}
+$('rEmojiCustom').addEventListener('input', () => { const v = $('rEmojiCustom').value.trim(); if (v) { rEmoji = v.slice(0, 8); renderRewardEmojis(); } });
+$('rSave').addEventListener('click', () => {
+  const name = $('rName').value.trim();
+  if (!name) { markInvalid($('rName'), 'Bitte einen Namen eingeben.'); return; }
+  const points = parseInt($('rPoints').value, 10);
+  if (!points || points < 1) { markInvalid($('rPoints'), 'Wie viele Token soll die Belohnung kosten?'); return; }
+  const res = saveReward(editRewardId, { emoji: rEmoji, name, points });
+  closeSheet('rewardSheet'); renderAll();
+  toast(rEmoji, `<b>${escHtml(name)}</b> bei ${fmtNum(points)} Token.`);
+  (res.reached || []).forEach(r => celebrate({ emoji: r.emoji, eyebrow: 'Belohnung erreicht', title: r.name, text: `${fmtNum(r.points)} Token hast du schon beisammen.`, rain: false }));
+});
+$('rDelete').addEventListener('click', () => { const r = S.tokens.rewards.find(x => x.id === editRewardId); if (!r) return; confirmSheet(`«${r.name}» löschen?`, 'Die gesammelten Token bleiben.', 'Belohnung löschen', () => { deleteReward(r.id); closeSheet('rewardSheet'); renderAll(); toast('🗑️', 'Belohnung gelöscht.', { label: 'Widerrufen', fn: () => { r.deleted = null; touch(r); stateVersion++; refreshRewards(); saveAll(); renderAll(); } }); }); });
+$('rName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('rPoints').focus(); } });
+$('rPoints').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('rSave').click(); } });
 
 // ---- Abzeichen-Detail ----
 function openBadge(id) {
@@ -3541,8 +3847,8 @@ function importDataFromInput(input) {
       const payload = JSON.parse(String(e.target.result));
       if (!payload || typeof payload !== 'object' || !payload.data) throw new Error('Datei hat ein unbekanntes Format');
       const d = payload.data;
-      const incoming = stateFromRaw({ tasks: d[KEYS.tasks], todos: d[KEYS.todos], settings: Object.assign({}, d[KEYS.todoSettings] || {}, d[KEYS.settings] || {}), history: d[KEYS.history], game: d[KEYS.game] });
-      if (!incoming.tasks.length && !incoming.todos.length && !Object.keys(incoming.history).length) throw new Error('Keine bekannten Daten gefunden');
+      const incoming = stateFromRaw({ tasks: d[KEYS.tasks], todos: d[KEYS.todos], settings: Object.assign({}, d[KEYS.todoSettings] || {}, d[KEYS.settings] || {}), history: d[KEYS.history], game: d[KEYS.game], tokens: d[KEYS.tokens] });
+      if (!incoming.tasks.length && !incoming.todos.length && !Object.keys(incoming.history).length && !incoming.tokens.entries.length) throw new Error('Keine bekannten Daten gefunden');
       confirmSheet('Backup importieren?', 'Die Daten aus der Datei werden mit den Daten auf diesem Gerät zusammengeführt. Nichts geht verloren.', 'Zusammenführen', () => {
         applyState(mergeStates(currentState(), incoming));
         saveAll(); renderAll(); toast('📥', 'Backup zusammengeführt.'); afterChangeChecks();
@@ -3593,7 +3899,7 @@ function loadFirebase() {
 // Zustand als reines Datenobjekt
 function currentState() {
   const settings = Object.assign({}, S.settings); delete settings.lastNotifiedDate; delete settings.lastEveningDate;
-  return { tasks: S.tasks, todos: S.todos, settings, history: S.history, game: S.game };
+  return { tasks: S.tasks, todos: S.todos, settings, history: S.history, game: S.game, tokens: S.tokens };
 }
 function stateFromRaw(raw) {
   raw = raw || {};
@@ -3606,7 +3912,8 @@ function stateFromRaw(raw) {
   const game = Object.assign({}, DEFAULT_GAME, (raw.game && typeof raw.game === 'object') ? raw.game : {});
   const earliest = Object.keys(history).sort()[0];
   if (earliest && (!isValidKey(game.firstDay) || game.firstDay > earliest)) game.firstDay = earliest;
-  return { tasks, todos, settings, history, game };
+  const tokens = normalizeTokens(raw.tokens);
+  return { tasks, todos, settings, history, game, tokens };
 }
 // Bei gleichem Zeitstempel entscheidet ein fester Vergleich – so konvergieren alle Geräte
 function pickDeterministic(a, b) { return stableStringify(a) <= stableStringify(b) ? a : b; }
@@ -3633,16 +3940,17 @@ function mergeEntry(a, b) {
   for (const id in b.todos) out.todos[id] = pick(out.todos[id], b.todos[id]);
   for (const k in b.bonus) out.bonus[k] = Math.max(out.bonus[k] || 0, b.bonus[k] || 0);
   out.skipped = Object.assign({}, a.skipped || {}, b.skipped || {});
-  out.celebratedPerfect = !!(a.celebratedPerfect || b.celebratedPerfect);
+  if (a.celebratedPerfect || b.celebratedPerfect) out.celebratedPerfect = true; else delete out.celebratedPerfect;
   const review = a.review && b.review ? ((b.review.at || 0) > (a.review.at || 0) ? b.review : a.review) : (a.review || b.review);
   if (review) out.review = review;
   out.completed = out.completed || b.completed;
   out.frozen = out.frozen || b.frozen;
-  out.jokerUsed = out.jokerUsed || b.jokerUsed;
+  if (out.jokerUsed || b.jokerUsed) out.jokerUsed = true; else delete out.jokerUsed;
   out.final = out.final || b.final;
   out.done = Math.max(out.done, b.done); out.total = Math.max(out.total, b.total);
   out.legacy = !!(a.legacy && b.legacy);
-  if (!out.legacy && a.legacy !== b.legacy) { const modern = a.legacy ? b : a; out.done = modern.done; out.total = modern.total; out.completed = out.completed || modern.completed; }
+  if (!out.legacy) delete out.legacy;
+  if (!out.legacy && !!a.legacy !== !!b.legacy) { const modern = a.legacy ? b : a; out.done = modern.done; out.total = modern.total; out.completed = out.completed || modern.completed; }
   out.timestamp = Math.max(a.timestamp || 0, b.timestamp || 0);
   out.xp = entryXp(out);
   return out;
@@ -3675,11 +3983,14 @@ function mergeStates(a, b) {
     jokersEarned: Math.max(ga.jokersEarned || 0, gb.jokersEarned || 0),
   });
   for (const id in game.badges) if (ga.badges && gb.badges && ga.badges[id] && gb.badges[id]) game.badges[id] = Math.min(ga.badges[id], gb.badges[id]);
-  return { tasks, todos, settings, history, game };
+  const ta = a.tokens || { entries: [], rewards: [] }, tb = b.tokens || { entries: [], rewards: [] };
+  const tokens = { entries: mergeById(ta.entries, tb.entries, normalizeTokenEntry), rewards: mergeById(ta.rewards, tb.rewards, normalizeReward) };
+  return { tasks, todos, settings, history, game, tokens };
 }
 function applyState(m, opts) {
   const localLast = S.game && S.game.lastOpenDay;
   S.tasks = m.tasks; S.todos = m.todos; S.history = m.history; S.game = m.game;
+  S.tokens = m.tokens || { entries: [], rewards: [] }; refreshRewards();
   S.settings = Object.assign({}, DEFAULT_SETTINGS, m.settings);
   if (!S.settings.tipsSeen || typeof S.settings.tipsSeen !== 'object') S.settings.tipsSeen = {};
   S.tasks.sort((a, b) => (a.order || 0) - (b.order || 0)).forEach((t, i) => { t.order = i; });
@@ -3707,8 +4018,11 @@ function hashState(st) {
   const s = Object.assign({}, st.settings, { updatedAt: 0 }); delete s.lastNotifiedDate; delete s.lastEveningDate;
   const g = Object.assign({}, st.game, { updatedAt: 0, notices: [] });
   const h = {};
-  for (const k in st.history) { const e = Object.assign({}, st.history[k]); delete e.timestamp; delete e.extra; h[k] = e; }
-  return stableStringify({ t: st.tasks, d: st.todos, s, h, g });
+  // Fehlende und «false»-Flags sind dasselbe – sonst weichen Hashes nach einem Merge grundlos ab
+  const FLAGS = ['celebratedPerfect', 'jokerUsed', 'final', 'legacy', 'frozen', 'completed'];
+  for (const k in st.history) { const e = Object.assign({}, st.history[k]); delete e.timestamp; delete e.extra; FLAGS.forEach(f => { if (!e[f]) delete e[f]; }); h[k] = e; }
+  const tk = st.tokens ? { entries: st.tokens.entries, rewards: (st.tokens.rewards || []).map(r => { const x = Object.assign({}, r); delete x.reachedAt; return x; }) } : null;
+  return stableStringify({ t: st.tasks, d: st.todos, s, h, g, tk });
 }
 function gatherCloudDoc() {
   const s = S.settings;
@@ -3716,7 +4030,7 @@ function gatherCloudDoc() {
     schema: 3, updatedAt: Date.now(),
     tasks: S.tasks, todos: S.todos, settings: s,
     todoSettings: { notifyEnabled: s.notifyEnabled, notifyTime: s.notifyTime, lastNotifiedDate: null }, // ältere App-Versionen
-    taskHistory: S.history, game: S.game,
+    taskHistory: S.history, game: S.game, tokens: S.tokens,
   };
 }
 function userDocRef(user) { return fbDb.collection('users').doc(user.uid).collection('state').doc('main'); }
@@ -3836,7 +4150,7 @@ function boot() {
   saveAll({ silent: true });
   resetCalToToday();
   // Deep-Link (z. B. aus der Kurzbefehle-App): ?tab=todos | progress | heute
-  try { const tab = new URLSearchParams(location.search).get('tab'); if (tab) { const map = { heute: 'today', today: 'today', todos: 'todos', progress: 'progress', fortschritt: 'progress' }; if (map[tab] && map[tab] !== currentTab) { currentTab = map[tab]; ['today', 'todos', 'progress'].forEach(t => { $('view' + t[0].toUpperCase() + t.slice(1)).classList.toggle('active', t === currentTab); const b = $('tab' + t[0].toUpperCase() + t.slice(1)); b.classList.toggle('active', t === currentTab); b.setAttribute('aria-selected', t === currentTab); }); } } } catch (e) {}
+  try { const tab = new URLSearchParams(location.search).get('tab'); if (tab) { const map = { heute: 'today', today: 'today', todos: 'todos', progress: 'progress', fortschritt: 'progress', token: 'tokens', tokens: 'tokens' }; if (map[tab] && map[tab] !== currentTab) { currentTab = map[tab]; ['today', 'todos', 'tokens', 'progress'].forEach(t => { $('view' + t[0].toUpperCase() + t.slice(1)).classList.toggle('active', t === currentTab); const b = $('tab' + t[0].toUpperCase() + t.slice(1)); b.classList.toggle('active', t === currentTab); b.setAttribute('aria-selected', t === currentTab); }); } } } catch (e) {}
   renderAll();
   updateAppBadge();
   setTimeout(flushNotices, 900);
@@ -3851,7 +4165,7 @@ function boot() {
   window.addEventListener('unhandledrejection', (e) => { console.error(e.reason); });
 
   document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-  $('navAdd').addEventListener('click', () => { if (currentTab === 'todos') openTodoEditor(null); else openTaskEditor(null); });
+  $('navAdd').addEventListener('click', () => { if (currentTab === 'todos') openTodoEditor(null); else if (currentTab === 'tokens') openTokenEntry(null); else openTaskEditor(null); });
   $('navSettings').addEventListener('click', openSettings);
   $('levelPill').addEventListener('click', () => switchTab('progress'));
   window.addEventListener('scroll', () => $('navbar').classList.toggle('scrolled', window.scrollY > 4), { passive: true });

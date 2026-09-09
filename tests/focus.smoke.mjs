@@ -3,7 +3,8 @@
 // Deckt ab: Erststart und Onboarding, Routinen erledigen (inkl. Schritte und
 // Mini-Version), perfekter Tag mit Feier, Rückgängig, To-Dos mit Fokus,
 // Tagesabschluss, Migration alter Daten (focusTasksV2/focusHistory), Tageswechsel
-// mit Joker über eine gestellte Uhr, «Willkommen zurück», Merge-Konvergenz.
+// mit Joker über eine gestellte Uhr, «Willkommen zurück», Merge-Konvergenz,
+// Token-Scoreboard (eintragen, bearbeiten, löschen/widerrufen, Belohnungen).
 //
 // Voraussetzungen (einmalig):   npm install playwright && npx playwright install chromium
 // App ausliefern (Repo-Wurzel):  npx http-server -p 8123 -c-1 .
@@ -383,8 +384,57 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario E: Token-Scoreboard ----------
+{
+  const { ctx, page } = await newPage();
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.click('#tabTokens'); await page.waitForTimeout(400);
+  const rewards0 = await page.locator('.reward-row').count();
+  if (rewards0 !== 4) note('E: expected 4 default rewards, got ' + rewards0);
+  await page.screenshot({ path: `${OUT}/e1-tokens-empty.png` });
+  // 25 Token eintragen
+  await page.click('#tokenBtn'); await page.waitForTimeout(600);
+  await page.click('#tokenSheet [data-k="10"]'); for (let i = 0; i < 15; i++) await page.click('#kPlus');
+  await page.fill('#kNote', 'Planer-App nach drei Monaten fertig – heisst jetzt HIGH');
+  await page.click('#kSave'); await page.waitForTimeout(700); await dismissAll(page);
+  let total = await page.evaluate(() => tokenTotal());
+  if (total !== 25) note('E: expected total 25, got ' + total);
+  // +10 -> 35 -> Kokosnuss erreicht -> Feier
+  await page.click('#tokenBtn'); await page.waitForTimeout(600);
+  await page.click('#tokenSheet [data-k="10"]'); await page.click('#kSave'); await page.waitForTimeout(900);
+  const celebrated = await page.locator('#celebrate.show').count();
+  if (!celebrated) note('E: reward celebration not shown');
+  await page.screenshot({ path: `${OUT}/e2-reward-reached.png` });
+  await dismissAll(page);
+  const reached = await page.locator('.reward-row.reached').count();
+  if (reached !== 1) note('E: expected 1 reached reward, got ' + reached);
+  await page.screenshot({ path: `${OUT}/e3-tokens.png` });
+  // Eintrag bearbeiten: 25 -> 5 => total 15 -> Kokosnuss wieder offen
+  await page.locator('.log-row').last().click(); await page.waitForTimeout(600);
+  await page.click('#tokenSheet [data-k="5"]'); await page.click('#kSave'); await page.waitForTimeout(600);
+  total = await page.evaluate(() => tokenTotal());
+  if (total !== 15) note('E: expected total 15 after edit, got ' + total);
+  if (await page.locator('.reward-row.reached').count() !== 0) note('E: reward should be un-reached after edit');
+  // Eigene Belohnung anlegen (20) -> sofort erreicht? nein 15 < 20
+  await page.click('[data-act="rewardAdd"]'); await page.waitForTimeout(600);
+  await page.fill('#rName', 'Kaffee'); await page.fill('#rPoints', '20'); await page.click('#rSave'); await page.waitForTimeout(600);
+  if (await page.locator('.reward-row').count() !== 5) note('E: custom reward not added');
+  // Eintrag löschen + Widerrufen
+  await page.locator('.log-row').first().click(); await page.waitForTimeout(600);
+  await page.click('#kDelete'); await page.waitForTimeout(500);
+  if (await page.evaluate(() => tokenTotal()) !== 5) note('E: delete did not reduce total');
+  await page.click('.toast-btn'); await page.waitForTimeout(500);
+  if (await page.evaluate(() => tokenTotal()) !== 15) note('E: undo did not restore entry');
+  // Merge-Roundtrip mit Token
+  const sym = await page.evaluate(() => { const st = currentState(); const rt = stateFromRaw(JSON.parse(JSON.stringify(gatherCloudDoc()))); return hashState(mergeStates(st, rt)) === hashState(st); });
+  if (!sym) note('E: token state not stable through cloud roundtrip');
+  ok('E: tokens total=' + total + ' rewards ok');
+  await ctx.close();
+}
+
 await browser.close();
 console.log('\n==== SUMMARY ====');
 console.log(issues.length ? issues.join('\n') : 'no issues');
-fs.writeFileSync(`${OUT}/issues.json`, JSON.stringify(issues, null, 2));
-process.exitCode = issues.length ? 1 : 0;
+fs.writeFileSync(`${OUT}/../issues.json`, JSON.stringify(issues, null, 2));

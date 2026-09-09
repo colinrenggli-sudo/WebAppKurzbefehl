@@ -5,7 +5,8 @@
 - **`index.html`** – [Focus](#focus--routinen--to-dos): Routinen und To-Dos, die man
   wirklich durchzieht. Tagesring, Serie mit Joker und «nie zweimal»-Regel,
   Mini-Version für schwere Tage, Tagesabschluss mit den drei wichtigsten
-  To-Dos für morgen, XP, Level und Abzeichen; Design nach Apple Human
+  To-Dos für morgen, XP, Level und Abzeichen, Token-Scoreboard mit
+  Belohnungen; Design nach Apple Human
   Interface Guidelines (hell und dunkel), offline als installierte App,
   Cloud-Sync, der Geräte zusammenführt statt überschreibt.
   [Live ansehen](https://colinrenggli-sudo.github.io/WebAppKurzbefehl/)
@@ -50,6 +51,7 @@ Kein Build, kein Server nötig. Am besten als App installieren: in Safari
 | **XP & Level** | Routine 10, To-Do 5 (+5 Fokus, gedeckelt), perfekter Tag 25 + Serienbonus, Einrichtung 10. Levelkurve 100·(L−1)^1.5 mit Titeln von «Anfang» bis «Ein Fels». Ruhiger Modus blendet alles davon aus |
 | **Abzeichen** | 30+, ohne Beschämung: auch «Zurück im Spiel», «Nie zweimal», «Mini zählt» |
 | **To-Dos** | Schnelleingabe, Fälligkeit und Tageszeit, bis zu drei Fokus-To-Dos in Reihenfolge, Mitwander-Hinweis nach drei Tagen, Überfällige mit einem Tipp auf heute legen |
+| **Token** | Scoreboard für erledigte Aufträge im echten Leben: Emoji antippen, kurz notieren, was geschafft wurde, Token gutschreiben. Jeder Token zählt für alle Belohnungen gleichzeitig (Standard: Kokosnuss 30, Schwein 100, Palme 500, Hund 1000; eigene Belohnungen mit Emoji und Schwelle möglich). Erreichte Belohnungen werden gefeiert; Einträge lassen sich bearbeiten, löschen und widerrufen |
 | **Daten** | alles im `localStorage` dieses Geräts; Backup als JSON; optional Cloud-Sync per Google-Login (Firestore). Geräte werden zusammengeführt – neuere Änderung gewinnt, Verlauf wird vereinigt, Löschungen und Rücknahmen überleben den Abgleich |
 
 Die Zahlen und Regeln stehen kommentiert am Anfang des Skripts in
@@ -66,7 +68,7 @@ ausgelöst: am Computer auch im Hintergrund, auf dem iPhone dann, wenn die
 App geöffnet wird oder kurz zuvor offen war. Ist die App im Vordergrund,
 erscheint ein Hinweis oben im Bild statt einer Systemmeldung. Für eine
 Erinnerung zu einer festen Uhrzeit hilft die Kurzbefehle-App: Automation
-«Um 07:30 → Focus öffnen»; `index.html?tab=heute`, `?tab=todos` und
+«Um 07:30 → Focus öffnen»; `index.html?tab=heute`, `?tab=todos`, `?tab=tokens` und
 `?tab=progress` öffnen direkt den passenden Tab.
 
 ### Google-Anmeldung in der installierten iPhone-App
@@ -90,7 +92,7 @@ Zwei Wege:
 `tests/focus.smoke.mjs` fährt die App mit Playwright in Chromium durch:
 Erststart, Routinen und To-Dos anlegen und erledigen, Tagesabschluss,
 Migration alter Daten, Tageswechsel mit Joker über eine gestellte Uhr,
-Merge-Konvergenz. Voraussetzungen und Aufruf stehen im Kopf der Datei.
+Merge-Konvergenz, Token-Scoreboard mit Belohnungen. Voraussetzungen und Aufruf stehen im Kopf der Datei.
 
 ## Selbst hosten
 
