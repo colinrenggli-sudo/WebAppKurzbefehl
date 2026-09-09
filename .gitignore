@@ -5,3 +5,7 @@ daten/
 # Zugangsdaten der Selbsthosting-Umgebung
 deploy/.env
 deploy/fitbit-sync/token.json
+
+# Screenshots des Playwright-Smoke-Tests
+tests/shots/
+node_modules/
