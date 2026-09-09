@@ -2,7 +2,14 @@
 
 ## Projekte
 
-- **`index.html`** – Kurzbefehl-App (Tasks, To-Dos, Fortschritt, Firebase-Sync)
+- **`index.html`** – [Focus](#focus--routinen--to-dos): Routinen und To-Dos, die man
+  wirklich durchzieht. Tagesring, Serie mit Joker und «nie zweimal»-Regel,
+  Mini-Version für schwere Tage, Tagesabschluss mit den drei wichtigsten
+  To-Dos für morgen, XP, Level und Abzeichen; Design nach Apple Human
+  Interface Guidelines (hell und dunkel), offline als installierte App,
+  Cloud-Sync, der Geräte zusammenführt statt überschreibt.
+  [Live ansehen](https://colinrenggli-sudo.github.io/WebAppKurzbefehl/)
+  oder `index.html` im Browser öffnen.
 - **`shop/`** – [ELF11 Trikot Shop](shop/README.md): testbarer Onlineshop-Demo
   für Retro-Fussballtrikots mit SEO-Vollausbau, simulierter Stripe-Kasse und
   Apple-HIG-Design. Einfach `shop/index.html` im Browser öffnen.
@@ -26,6 +33,64 @@
   Monteur-App am Handy (Sicherheitscheck, Checkliste, Fotos, Material,
   Zeit, Unterschrift). `dach/index.html` im Browser öffnen, Code `1234`
   für das Büro, `3456` für den Monteur.
+
+## Focus – Routinen & To-Dos
+
+Eine HTML-Datei (`index.html`), dazu `sw.js`, `manifest.json` und die Icons.
+Kein Build, kein Server nötig. Am besten als App installieren: in Safari
+**Teilen → Zum Home-Bildschirm**.
+
+### Was drin ist
+
+| Bereich | Mechanik |
+| --- | --- |
+| **Heute** | Tagesring (erledigte / geplante Routinen), Wochenstreifen, Routinen mit Schritten, Anker («Nachdem ich …»), Mini-Version, Erinnerungszeit und Wochentagen; «Heute im Fokus» zeigt die nummerierten Fokus-To-Dos; abends «Tag abschliessen» |
+| **Serie** | zählt Tage, an denen mindestens eine Routine erledigt wurde. Ein Joker (Start: 1, +1 alle 7 Tage, max. 2) springt an einem Tag ohne Haken automatisch ein. Ein einzelner Aussetzer nach einem erledigten Tag bricht nichts («nie zweimal»), Ruhetage sind neutral. Perfekte Tage (alle Routinen) geben Bonus und den Flammen-Kalender |
+| **Nachsicht** | Tagesende einstellbar (Standard 03:00), «Gestern nachtragen» über den Wochenstreifen, Pause für Ferien, «Willkommen zurück» nach längerer Abwesenheit, Routine pro Tag pausieren |
+| **XP & Level** | Routine 10, To-Do 5 (+5 Fokus, gedeckelt), perfekter Tag 25 + Serienbonus, Einrichtung 10. Levelkurve 100·(L−1)^1.5 mit Titeln von «Anfang» bis «Ein Fels». Ruhiger Modus blendet alles davon aus |
+| **Abzeichen** | 30+, ohne Beschämung: auch «Zurück im Spiel», «Nie zweimal», «Mini zählt» |
+| **To-Dos** | Schnelleingabe, Fälligkeit und Tageszeit, bis zu drei Fokus-To-Dos in Reihenfolge, Mitwander-Hinweis nach drei Tagen, Überfällige mit einem Tipp auf heute legen |
+| **Daten** | alles im `localStorage` dieses Geräts; Backup als JSON; optional Cloud-Sync per Google-Login (Firestore). Geräte werden zusammengeführt – neuere Änderung gewinnt, Verlauf wird vereinigt, Löschungen und Rücknahmen überleben den Abgleich |
+
+Die Zahlen und Regeln stehen kommentiert am Anfang des Skripts in
+`index.html` (`GAME`, `LEVEL_TITLES`, `BADGES`). Der Hintergrund dazu:
+Lally et al. 2010 (Gewohnheit nach ~66 Tagen, ein Aussetzer schadet nicht),
+Gollwitzer (Wenn-dann-Pläne), Deci & Ryan (Belohnung als Information, nicht
+als Grund – darum leise XP, kein Bonus für «rechtzeitig», keine
+Zufallsbelohnungen), Milkman (Neustart-Effekt am Montag und Monatsersten).
+
+### Erinnerungen – ehrlich benannt
+
+Die App hat keinen Server. Erinnerungen werden von der App selbst
+ausgelöst: am Computer auch im Hintergrund, auf dem iPhone dann, wenn die
+App geöffnet wird oder kurz zuvor offen war. Ist die App im Vordergrund,
+erscheint ein Hinweis oben im Bild statt einer Systemmeldung. Für eine
+Erinnerung zu einer festen Uhrzeit hilft die Kurzbefehle-App: Automation
+«Um 07:30 → Focus öffnen»; `index.html?tab=heute`, `?tab=todos` und
+`?tab=progress` öffnen direkt den passenden Tab.
+
+### Google-Anmeldung in der installierten iPhone-App
+
+Safari blockiert den Anmelde-Speicher fremder Domains. Solange die App von
+`github.io` läuft, aber die Anmeldung über `firebaseapp.com` geht, kann die
+Anmeldung in der installierten App scheitern (im Safari-Tab klappt sie).
+Zwei Wege:
+
+1. **Ohne Server:** in Safari anmelden, dort «Als Datei exportieren», in
+   der installierten App «Datei importieren» – wird zusammengeführt.
+2. **Eigene Domain (Selbsthosting):** in `deploy/nginx.conf` den Block
+   `/__/auth/` einkommentieren, in `index.html` bei `FIREBASE_CONFIG` das
+   `authDomain` auf die eigene Domain setzen, in der Firebase-Konsole
+   (Authentication → Settings → Authorized domains) die Domain ergänzen
+   und im Google-Cloud-OAuth-Client `https://<domain>/__/auth/handler` als
+   Redirect-URI eintragen.
+
+### Testen
+
+`tests/focus.smoke.mjs` fährt die App mit Playwright in Chromium durch:
+Erststart, Routinen und To-Dos anlegen und erledigen, Tagesabschluss,
+Migration alter Daten, Tageswechsel mit Joker über eine gestellte Uhr,
+Merge-Konvergenz. Voraussetzungen und Aufruf stehen im Kopf der Datei.
 
 ## Selbst hosten
 

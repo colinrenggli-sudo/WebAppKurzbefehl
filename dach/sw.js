@@ -11,7 +11,8 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(k => Promise.all(k.filter(n => n !== CACHE).map(n => caches.delete(n))))
+    // Nur eigene Caches aufräumen – die anderen Apps im Repo teilen sich denselben Origin
+    .then(k => Promise.all(k.filter(n => n.startsWith('dachwerk-') && n !== CACHE).map(n => caches.delete(n))))
     .then(() => self.clients.claim()));
 });
 
