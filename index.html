@@ -1424,7 +1424,7 @@ function normalizeReward(r, idx) {
   out.name = String(out.name || 'Belohnung').slice(0, 40);
   out.points = clamp(parseInt(out.points, 10) || 1, 1, 100000);
   out.order = typeof out.order === 'number' ? out.order : (idx || 0);
-  out.reachedAt = typeof out.reachedAt === 'number' ? out.reachedAt : null;
+  out.reachedAt = isValidKey(out.reachedAt) ? out.reachedAt : null; // Tagesschlüssel, aus den Einträgen abgeleitet
   out.createdAt = typeof out.createdAt === 'number' ? out.createdAt : 0;
   out.updatedAt = typeof out.updatedAt === 'number' ? out.updatedAt : 0;
   out.deleted = typeof out.deleted === 'number' ? out.deleted : null;
@@ -1439,19 +1439,20 @@ function normalizeTokens(raw) {
   return out;
 }
 function seedRewards() { return DEFAULT_REWARDS.map((r, i) => normalizeReward(Object.assign({ order: i, createdAt: Date.now() }, r), i)); }
-function tokenEntries() { return S.tokens.entries.filter(e => !e.deleted).sort((a, b) => b.at - a.at); }
+function tokenEntries() { return S.tokens.entries.filter(e => !e.deleted).sort((a, b) => String(b.day).localeCompare(String(a.day)) || b.at - a.at); }
 function tokenTotal() { return memoized('tokens', () => S.tokens.entries.reduce((s, e) => s + (e.deleted ? 0 : e.amount), 0)); }
 function activeRewards() { return S.tokens.rewards.filter(r => !r.deleted).sort((a, b) => a.points - b.points || a.order - b.order); }
-// «Erreicht am» ist aus den Einträgen ableitbar (Zeitpunkt des Tokens, der die Schwelle knackt) – so bleibt es auf allen Geräten gleich
+// «Erreicht am» ist aus den Einträgen ableitbar (der Tag des Tokens, der die Schwelle knackt) –
+// so steht auf jedem Gerät dasselbe, auch wenn ein Eintrag nachgetragen wurde.
 function refreshRewards() {
-  const asc = tokenEntries().slice().sort((a, b) => a.at - b.at);
+  const asc = tokenEntries().slice().sort((a, b) => String(a.day).localeCompare(String(b.day)) || a.at - b.at);
   const newly = [];
   S.tokens.rewards.forEach(r => {
     if (r.deleted) return;
-    let sum = 0, at = null;
-    for (const e of asc) { sum += e.amount; if (sum >= r.points) { at = e.at; break; } }
-    if (at && !r.reachedAt) newly.push(r);
-    if (r.reachedAt !== at) { r.reachedAt = at; stateVersion++; }
+    let sum = 0, day = null;
+    for (const e of asc) { sum += e.amount; if (sum >= r.points) { day = e.day; break; } }
+    if (day && !r.reachedAt) newly.push(r);
+    if (r.reachedAt !== day) { r.reachedAt = day; stateVersion++; }
   });
   return newly;
 }
@@ -1679,7 +1680,6 @@ function recomputeDay(k) {
   const before = e.done + '/' + e.total + '/' + e.completed;
   e.total = req.length;
   e.done = doneReq;
-  e.extra = Math.max(0, doneAll - doneReq);
   e.completed = req.length > 0 && doneReq === req.length;
   e.legacy = false;
   e.xp = entryXp(e);
@@ -1709,8 +1709,11 @@ function finalizeDay(k) {
   const streakBeforeK = streakBefore(k);
   e.final = true;
   if (e.done === 0 && e.total > 0 && !e.frozen) {
-    // Ein Tag ohne eine einzige Routine: Joker springt automatisch ein – und sagt es am Morgen danach
-    if ((S.game.jokers || 0) > 0 && streakBeforeK > 0) {
+    // Ein Tag ohne eine einzige Routine: Joker springt automatisch ein – und sagt es am Morgen danach.
+    // Erst prüfen, ob die Toleranz («ein Aussetzer pro Woche») den Tag ohnehin trägt: dann bleibt der Joker liegen.
+    if (computeStreakEndingAt(k) > 0) {
+      // Die Serie hält von selbst – kein Joker nötig
+    } else if ((S.game.jokers || 0) > 0 && streakBeforeK > 0) {
       S.game.jokers--; e.frozen = true; e.jokerUsed = true; touch(S.game);
       S.game.notices.push({ type: 'joker', day: k, jokersLeft: S.game.jokers, streak: streakBeforeK });
     } else if (computeStreakEndingAt(k) === 0) {
@@ -1911,12 +1914,18 @@ function completeTodo(td) {
   if (td.completed) return null;
   const today = todayKey();
   const e = dayEntry(today, true);
-  // Deckel: nur die ersten 5 To-Dos und 3 Fokus-Boni pro Tag geben XP – Haken gibt es immer
-  const counted = Object.values(e.todos).filter(r => recDone(r) && r.xp > 0).length;
-  const focusCounted = Object.values(e.todos).filter(r => recDone(r) && r.focus && r.xp > GAME.xpTodo).length;
-  const xp = (counted < GAME.todoDailyCap ? GAME.xpTodo : 0) + (td.focus && focusCounted < GAME.focusBonusMax ? GAME.xpFocusTodo : 0);
+  // Deckel: nur die ersten 5 To-Dos und 3 Fokus-Boni pro Tag geben XP – Haken gibt es immer.
+  // Die beiden Anteile werden im Datensatz vermerkt (base/bonus); aus der Summe allein
+  // liessen sie sich nicht zurückrechnen, und der Deckel fiel nach fünf To-Dos weg.
+  const gotBase = (r) => typeof r.base === 'boolean' ? r.base : r.xp > 0;
+  const gotBonus = (r) => typeof r.bonus === 'boolean' ? r.bonus : !!(r.focus && r.xp > GAME.xpTodo);
+  const counted = Object.values(e.todos).filter(r => recDone(r) && gotBase(r)).length;
+  const focusCounted = Object.values(e.todos).filter(r => recDone(r) && gotBonus(r)).length;
+  const base = counted < GAME.todoDailyCap ? GAME.xpTodo : 0;
+  const bonus = (td.focus && focusCounted < GAME.focusBonusMax) ? GAME.xpFocusTodo : 0;
+  const xp = base + bonus;
   td.completed = true; td.completedAt = new Date().toISOString(); touch(td);
-  e.todos[td.id] = { at: Date.now(), xp, focus: !!td.focus };
+  e.todos[td.id] = { at: Date.now(), xp, focus: !!td.focus, base: base > 0, bonus: bonus > 0 };
   e.xp = entryXp(e);
   saveAll();
   return { xp, focus: !!td.focus };
@@ -2033,13 +2042,20 @@ function idleDays() {
   return n;
 }
 // Gewohnheitsstärke: erledigte geplante Tage in den letzten 66 geplanten Tagen (Lally 2010, beschreibend)
+// Ein Tag zählt für eine Routine nur, wenn weder Ferien-Pause noch «heute pausiert» gilt
+function countsFor(t, k) {
+  if (isPausedOn(k)) return false;
+  const e = S.history[k];
+  if (e && e.skipped && e.skipped[t.id]) return false;
+  return t.skippedDate !== k;
+}
 function habitStrength(t) {
   const today = todayKey();
   let sched = 0, done = 0, k = today, guard = 0;
   while (sched < GAME.habitDays && guard++ < 800) {
     if (S.game.firstDay && k < S.game.firstDay) break;
     if (!existedOn(t, k) || !createdBefore(t, addDays(k, 1))) break;
-    if (isScheduledOn(t, k) && t.skippedDate !== k && !(k === today && !taskDoneOn(t, k))) { sched++; if (taskDoneOn(t, k)) done++; }
+    if (isScheduledOn(t, k) && countsFor(t, k) && !(k === today && !taskDoneOn(t, k))) { sched++; if (taskDoneOn(t, k)) done++; }
     k = addDays(k, -1);
   }
   return done;
@@ -2049,7 +2065,7 @@ function taskStreak(t) {
   let n = 0, k = today, guard = 0;
   while (guard++ < 800) {
     if (!existedOn(t, k) || !createdBefore(t, addDays(k, 1))) break;
-    if (isScheduledOn(t, k) && t.skippedDate !== k) {
+    if (isScheduledOn(t, k) && countsFor(t, k)) {
       const e = S.history[k];
       const done = taskDoneOn(t, k);
       if (done) n++;
@@ -2068,7 +2084,7 @@ function taskRate(t, days) {
   for (let i = 0; i < days; i++) {
     const k = addDays(today, -i);
     if (!existedOn(t, k) || !createdBefore(t, addDays(k, 1))) continue;
-    if (!isScheduledOn(t, k) || t.skippedDate === k) continue;
+    if (!isScheduledOn(t, k) || !countsFor(t, k)) continue;
     if (S.game.firstDay && k < S.game.firstDay) continue;
     const isDone = taskDoneOn(t, k);
     if (k === today && !isDone) continue; // heute offen: nicht werten
@@ -2078,9 +2094,10 @@ function taskRate(t, days) {
   return sched ? Math.round(done / sched * 100) : null;
 }
 function totalXp() { return memoized('xp', () => { let s = 0; for (const k in S.history) s += entryXp(S.history[k]); return s; }); }
-function totalCompletions() { return memoized('comp', () => S.tasks.filter(t => !t.deleted).reduce((s, t) => s + taskCount(t), 0)); }
+// Auch gelöschte Routinen zählen: das Erledigte ist passiert, und beide Dialoge versprechen, der Verlauf bleibe
+function totalCompletions() { return memoized('comp', () => S.tasks.reduce((s, t) => s + taskCount(t), 0)); }
 function perfectDays() { return memoized('perfect', () => Object.values(S.history).filter(e => e.completed).length); }
-function todosDoneCount() { return memoized('todos', () => S.todos.filter(t => t.completed && !t.deleted).length); }
+function todosDoneCount() { return memoized('todos', () => S.todos.filter(t => t.completed).length); }
 function calendarDoneCount(e) { return Object.values(e.tasks || {}).filter(recDone).length; }
 function weekStats(k) {
   // Mo–So der Woche von k: geplante vs. erledigte Routinen (heute offene nicht gewertet)
@@ -2096,9 +2113,11 @@ function weekStats(k) {
     } else if (e && e.legacy) {
       planned += req.length;
       done += e.completed ? req.length : Math.min(e.done, req.length);
+    } else if (e && e.frozen) {
+      // Joker-Tag: gehalten, aber nicht erledigt – neutral, wie ein Ruhetag
     } else {
       planned += req.length;
-      req.forEach(t => { if (taskDoneOn(t, d) || (e && e.frozen)) done++; });
+      req.forEach(t => { if (taskDoneOn(t, d)) done++; });
     }
     if (e && e.completed) perfect++;
   }
@@ -2155,7 +2174,7 @@ const BADGES = [
 ];
 function badgeContext() {
   return memoized('badgectx', () => {
-    let early = 0, late = 0, onTime = 0, subDone = 0, activeDays = 0, focusDays = 0, jokerUsed = false, comeback = false, perfectWeek = false, minis = 0, bounceBacks = 0;
+    let onTime = 0, subDone = 0, activeDays = 0, focusDays = 0, jokerUsed = false, comeback = false, perfectWeek = false, minis = 0, bounceBacks = 0;
     const keys = historyKeysSorted();
     const today = todayKey();
     for (const k of keys) {
@@ -2163,7 +2182,6 @@ function badgeContext() {
       let any = false, focusTotal = 0, focusDone = 0;
       for (const id in e.tasks) {
         const r = e.tasks[id]; if (!recDone(r)) continue; any = true;
-        if (typeof r.hour === 'number') { if (r.hour < 8) early++; if (r.hour >= 20) late++; }
         if (r.onTime) onTime++;
         if (r.kind === 'mini') minis++;
         subDone += r.sub || 0;
@@ -2202,9 +2220,9 @@ function badgeContext() {
     }
     const at = activeTasks();
     return {
-      completions: totalCompletions(), perfectDays: perfectDays(), best: bestStreak(), streak: currentStreak(),
-      todosDone: todosDoneCount(), level: levelFromXp(totalXp()), early, late, onTime, subDone, activeDays, focusDays,
-      jokerUsed, comeback, perfectWeek, minis, bounceBacks, taskCount: at.length, cues: at.filter(t => t.cue).length,
+      completions: totalCompletions(), perfectDays: perfectDays(), best: bestStreak(),
+      todosDone: todosDoneCount(), level: levelFromXp(totalXp()), onTime, subDone, activeDays, focusDays,
+      jokerUsed, comeback, perfectWeek, minis, bounceBacks, cues: at.filter(t => t.cue).length,
     };
   });
 }
@@ -2453,7 +2471,7 @@ function motivation(p, streak) {
   if (p.done === 0) {
     const idle = idleDays(), best = bestStreak();
     if (idle >= 3) return { title: 'Schön, dass du wieder da bist.', msg: `${idle} Tage Pause – kein Drama. ${best ? `Dein Rekord von ${best} Tagen bleibt stehen. ` : ''}Heute zählt Tag 1: mit einer anfangen.` };
-    if (h >= 20) return { title: 'Noch nichts erledigt heute', msg: (S.game.jokers || 0) > 0 ? `Eine Routine – auch die Mini-Version – reicht. Sonst springt um Mitternacht ein Joker ein (${S.game.jokers} übrig).` : 'Kein Joker mehr übrig. Eine Routine – auch die Mini-Version – genügt, damit die Serie bleibt.' };
+    if (h >= 20) return { title: 'Noch nichts erledigt heute', msg: (S.game.jokers || 0) > 0 ? `Eine Routine – auch die Mini-Version – reicht. Sonst springt beim Tageswechsel um ${pad2(dayEndHour())}:00 ein Joker ein (${S.game.jokers} übrig).` : 'Kein Joker mehr übrig. Eine Routine – auch die Mini-Version – genügt, damit die Serie bleibt.' };
     if (weekdayOf(today) === 1) return { title: 'Neue Woche, neuer Anlauf', msg: 'Welche Routine ist diese Woche die eine, die zählt? Mit ihr anfangen.' };
     if (d.getDate() === 1) return { title: `Der 1. ${MONTHS_LONG[d.getMonth()]}`, msg: 'Ein guter Tag für einen Neustart. Erste Routine, dann läuft es.' };
     return { title: greeting(), msg: streak > 0 ? 'Erste Routine, dann läuft es.' : 'Klein anfangen. Die erste Routine ist die wichtigste.' };
@@ -2782,7 +2800,7 @@ function renderProgress() {
     <div class="streak-flame${streak ? '' : ' cold'}">🔥</div>
     <div>
       <div class="streak-num num">${streak}<small>${streak === 1 ? 'Tag' : 'Tage'} dran</small></div>
-      <div class="streak-sub">${streak === 0 ? (best ? `Bester Lauf: ${best} Tage – der bleibt stehen, bis du ihn brichst. Heute zählt Tag 1.` : 'Eine erledigte Routine startet deinen Streak.') : streak >= best ? 'Persönlicher Rekord – weiter so!' : `Rekord: ${best} Tage. Noch ${best - streak + 1} bis zum neuen Rekord.`} Ein Aussetzer bricht nichts – zwei hintereinander schon.</div>
+      <div class="streak-sub">${streak === 0 ? (best ? `Bester Lauf: ${best} Tage – der bleibt stehen, bis du ihn brichst. Heute zählt Tag 1.` : 'Eine erledigte Routine startet deinen Streak.') : streak >= best ? 'Persönlicher Rekord – weiter so!' : `Rekord: ${best} Tage. Noch ${best - streak + 1} bis zum neuen Rekord.`} Ein Aussetzer pro Woche bricht nichts – der zweite schon.</div>
       <div class="jokers" aria-label="${jokers} Joker">
         ${Array.from({ length: GAME.jokerMax }, (_, i) => `<span class="joker${i < jokers ? ' on' : ''}">${ICON.snow}</span>`).join('')}
         <span class="joker-text">${jokers ? `${jokers} Joker – hält die Serie an einem Tag ohne Haken` : `Nächster Joker in ${nextJokerIn} Tag${nextJokerIn === 1 ? '' : 'en'} in Folge`}</span>
@@ -2798,7 +2816,7 @@ function renderProgress() {
   html += `<section class="card week-ring-card" aria-label="Diese Woche">
     <div class="ring-wrap small" id="weekRing">${ICON.ring(42)}<div class="ring-center"><span class="ring-num num">${ws.pct == null ? '–' : ws.pct + '<small>%</small>'}</span></div></div>
     <div><div class="hero-title">Diese Woche${ws.pct != null ? ` · ${ws.pct >= 90 ? 'Stark' : ws.pct >= 70 ? 'Solide' : 'Im Aufbau'}` : ''}</div><div class="hero-msg">${ws.planned ? `${ws.done} von ${ws.planned} geplanten Routinen erledigt · ${ws.perfect} perfekte Tag${ws.perfect === 1 ? '' : 'e'}` : 'Noch nichts gewertet – heute offene Routinen zählen erst, wenn sie erledigt sind.'}</div>
-    <div class="hero-msg" style="margin-top:6px">${ws.pct != null && ws.pct >= 90 ? 'Konstanz schlägt Perfektion. Das hier ist Konstanz.' : ws.pct != null && ws.pct >= 70 ? 'Solide Woche. Jede erledigte Routine zählt.' : 'Nie zweimal hintereinander auslassen – das ist die einzige Regel.'}</div></div>
+    <div class="hero-msg" style="margin-top:6px">${ws.pct != null && ws.pct >= 90 ? 'Konstanz schlägt Perfektion. Das hier ist Konstanz.' : ws.pct != null && ws.pct >= 70 ? 'Solide Woche. Jede erledigte Routine zählt.' : 'Höchstens ein Aussetzer pro Woche – das ist die einzige Regel.'}</div></div>
   </section>`;
 
   html += `<div class="stat-grid">
@@ -2824,7 +2842,7 @@ function renderProgress() {
         else if (e && e.frozen && k !== today) dots += '<i class="frozen"></i>';
         else dots += '<i></i>';
       }
-      const rate = taskRate(t, 30), st = taskStreak(t), hs = habitStrength(t);
+      const rate = taskRate(t, 14), st = taskStreak(t), hs = habitStrength(t);
       html += `<div class="rstat" style="--c:var(--${c.id})"><span class="rstat-emoji">${escHtml(t.emoji)}</span><span class="rstat-text"><span class="rstat-name">${escHtml(t.label)}</span><span class="dots" aria-label="letzte 14 Tage">${dots}</span><span class="habit-bar" title="Wird zur Gewohnheit"><i style="width:${Math.round(hs / GAME.habitDays * 100)}%"></i></span><span class="habit-cap">Wird zur Gewohnheit: ${hs} von ${GAME.habitDays} Tagen</span></span><span class="rstat-right"><span class="rstat-pct num">${rate == null ? '–' : rate + '%'}</span>${st ? `<span class="rstat-streak">🔥 ${st}</span>` : `<span class="rstat-streak" style="color:var(--label-3)">${taskCount(t)}×</span>`}</span></div>`;
     }
     html += '</section>';
@@ -2849,7 +2867,7 @@ function onDayLabel(verb, ts) {
   const l = dayLabel(appDay(ts));
   return /^(Heute|Gestern)$/.test(l) ? `${verb} ${l.toLowerCase()}` : `${verb} am ${l}`;
 }
-function reachedLabel(ts) { return onDayLabel('Erreicht', ts); }
+function reachedLabel(day) { const l = dayLabel(day); return /^(Heute|Gestern)$/.test(l) ? 'Erreicht ' + l.toLowerCase() : 'Erreicht am ' + l; }
 function renderTokens() {
   const v = $('viewTokens');
   const total = tokenTotal();
@@ -3357,7 +3375,7 @@ function bindView(v) {
       case 'toggleDone': showDoneTodos = !showDoneTodos; renderAll(); break;
       case 'allBadges': showAllBadges = !showAllBadges; renderAll(); break;
       case 'clearDone': confirmSheet('Erledigte To-Dos aufräumen?', 'Erledigte To-Dos, die älter als 7 Tage sind, werden entfernt. XP bleiben.', 'Aufräumen', () => { const cutoff = Date.now() - 7 * 864e5; let n = 0; S.todos.forEach(t => { if (t.completed && !t.deleted && t.completedAt && new Date(t.completedAt).getTime() < cutoff) { t.deleted = Date.now(); n++; } }); saveAll(); renderAll(); toast('🧹', `${n} To-Do${n === 1 ? '' : 's'} aufgeräumt.`); }); break;
-      case 'rescheduleOverdue': { const today = todayKey(); let n = 0; S.todos.forEach(t => { if (!t.completed && !t.deleted && t.dueDate && t.dueDate < today) { t.dueDate = today; touch(t); n++; } }); saveAll(); renderAll(); toast('📅', `${n} To-Do${n === 1 ? '' : 's'} auf heute gelegt. Frischer Start.`); break; }
+      case 'rescheduleOverdue': { const today = todayKey(); let n = 0; S.todos.forEach(t => { if (!t.completed && !t.deleted && !t.focus && t.dueDate && t.dueDate < today) { t.dueDate = today; touch(t); n++; } }); saveAll(); renderAll(); toast('📅', `${n} To-Do${n === 1 ? '' : 's'} auf heute gelegt. Frischer Start.`); break; }
       case 'calPrev': calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderAll(); break;
       case 'calNext': calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderAll(); break;
       case 'badge': openBadge(el.dataset.id); break;
@@ -3520,7 +3538,8 @@ function saveReview() {
   e.review = { mood: reviewMood || 'ok', at: Date.now(), focusTomorrow: reviewPicks.slice() };
   // Fokus für morgen setzen: gewählte bekommen den Stern (Rang = Reihenfolge), andere verlieren ihn
   const base = Date.now();
-  S.todos.forEach(t => { if (t.deleted || t.completed) return; const i = reviewPicks.indexOf(t.id); if (i >= 0) { t.focus = true; t.focusRank = base + i; t.focusDate = addDays(today, 1); t.carryCount = 0; touch(t); } else if (t.focus) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); } });
+  // Nur was neu in den Fokus kommt, fängt bei 0 an – sonst wüsste die App nie, dass ein To-Do mitwandert
+  S.todos.forEach(t => { if (t.deleted || t.completed) return; const i = reviewPicks.indexOf(t.id); if (i >= 0) { if (!t.focus) t.carryCount = 0; t.focus = true; t.focusRank = base + i; t.focusDate = addDays(today, 1); touch(t); } else if (t.focus) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); } });
   e.xp = entryXp(e);
   saveAll();
   closeSheet('reviewSheet');
@@ -4049,7 +4068,7 @@ function hashState(st) {
   const h = {};
   // Fehlende und «false»-Flags sind dasselbe – sonst weichen Hashes nach einem Merge grundlos ab
   const FLAGS = ['celebratedPerfect', 'jokerUsed', 'final', 'legacy', 'frozen', 'completed'];
-  for (const k in st.history) { const e = Object.assign({}, st.history[k]); delete e.timestamp; delete e.extra; FLAGS.forEach(f => { if (!e[f]) delete e[f]; }); h[k] = e; }
+  for (const k in st.history) { const e = Object.assign({}, st.history[k]); delete e.timestamp; delete e.extra; /* Altlast aus früheren Versionen */ FLAGS.forEach(f => { if (!e[f]) delete e[f]; }); h[k] = e; }
   const tk = st.tokens ? { entries: st.tokens.entries, rewards: (st.tokens.rewards || []).map(r => { const x = Object.assign({}, r); delete x.reachedAt; return x; }) } : null;
   return stableStringify({ t: st.tasks, d: st.todos, s, h, g, tk });
 }

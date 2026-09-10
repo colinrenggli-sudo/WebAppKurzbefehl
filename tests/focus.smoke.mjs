@@ -308,7 +308,8 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   if (streak !== 7) note('C: expected streak 7, got ' + streak);
   if (jokers !== 2) note('C: expected 2 jokers (1 start + 1 earned), got ' + jokers);
   ok(`C: streak ${streak}, jokers ${jokers}`);
-  // Tag 7 verpassen, Tag 8 öffnen -> Joker eingesetzt, Streak bleibt
+  // Tag 7 verpassen, Tag 8 öffnen: die Toleranz («ein Aussetzer pro Woche») trägt den Tag,
+  // der Joker bleibt liegen – er ist die Reserve für den zweiten Aussetzer.
   const t9 = new Date(base); t9.setDate(t9.getDate() + 8);
   await page.clock.setSystemTime(t9);
   await page.evaluate(() => tick());
@@ -316,10 +317,10 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   streak = await page.evaluate(() => currentStreak());
   jokers = await page.evaluate(() => S.game.jokers);
   const frozen = await page.evaluate(() => Object.values(S.history).filter(e => e.frozen).length);
-  if (frozen !== 1) note('C: expected 1 frozen day, got ' + frozen);
-  if (streak !== 7) note('C: expected streak 7 kept via joker, got ' + streak);
-  if (jokers !== 1) note('C: expected 1 joker left, got ' + jokers);
-  ok(`C after miss: streak ${streak}, jokers ${jokers}, frozen ${frozen}`);
+  if (frozen !== 0) note('C: a joker was spent although the tolerance covered the day (frozen ' + frozen + ')');
+  if (streak !== 7) note('C: expected streak 7 kept by the tolerance, got ' + streak);
+  if (jokers !== 2) note('C: expected both jokers untouched, got ' + jokers);
+  ok(`C after one miss: streak ${streak}, jokers ${jokers}, frozen ${frozen}`);
   // Weitere Tage verpassen -> Joker verbraucht, Streak bricht
   const t13 = new Date(base); t13.setDate(t13.getDate() + 12);
   await page.clock.setSystemTime(t13);
