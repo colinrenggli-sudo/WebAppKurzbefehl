@@ -20,32 +20,7 @@ er nur für dein iPhone, und dafür sorgt der Cloudflare Tunnel.
 
 ---
 
-## Schritt 1 · Cloudflare-Eintrag
-
-Der einzige Schritt, den kein Skript abnehmen kann.
-
-Zuerst prüfen, ob der Tunnel überhaupt schon von aussen erreichbar ist:
-am iPhone **WLAN ausschalten**, dann `https://schlaf.colin-renggli.ch/schlaf/`
-öffnen. Lädt die Seite über Mobilfunk, läuft der Tunnel.
-
-Cloudflare-Dashboard → Zero Trust → Networks → Tunnels → dein Tunnel →
-**Public Hostnames** → Add:
-
-| Feld | Wert |
-| --- | --- |
-| Subdomain | `routine` |
-| Domain | `gymlinkapp.ch` |
-| Service | `HTTP` → `webapps:8080` |
-
-Den DNS-Eintrag legt Cloudflare selbst an. Taucht `gymlinkapp.ch` im
-Auswahlfeld nicht auf, liegt die Domain nicht in diesem Cloudflare-Konto –
-dann muss sie dort zuerst hinzugefügt werden (Add a site), oder du nimmst
-eine Subdomain einer Domain, die schon drin ist.
-
-Läuft cloudflared nicht im selben Compose-Netz, steht statt `webapps:8080`
-die IP des Servers mit Port 8088.
-
-## Schritt 2 · Ein Befehl auf dem Server
+## Schritt 1 · Ein Befehl auf dem Server
 
 ```bash
 cd /mnt/user/appdata/webapps/repo
@@ -55,7 +30,8 @@ bash deploy/einrichten.sh https://routine.gymlinkapp.ch
 
 Das legt den Datenordner an und übergibt ihn dem Container, erzeugt den
 Abgleichschlüssel und die VAPID-Schlüssel für die Erinnerungen, startet
-alles und prüft, ob es antwortet. Am Ende steht dort ein Link:
+alles, prüft ob der Dienst antwortet – und ob die öffentliche Adresse
+schon erreichbar ist. Am Ende steht dort ein Link:
 
 ```
 https://routine.gymlinkapp.ch/#s=<dein Schlüssel>
@@ -67,24 +43,69 @@ sie sind. Würden sie neu erzeugt, wären alle verbundenen Geräte draussen.
 Läuft es nicht durch, sagt das Skript, woran es liegt. Das Log dazu:
 `cd deploy && docker compose logs --tail=40 high-sync web`.
 
-## Schritt 3 · Den Link am iPhone öffnen
+## Schritt 2 · Cloudflare-Eintrag
+
+Nur nötig, wenn das Skript oben «antwortet nicht» gemeldet hat. Es druckt
+dann genau die drei Werte, die hier einzutragen sind.
+
+Cloudflare-Dashboard → Zero Trust → Networks → Tunnels → dein Tunnel →
+**Public Hostnames** → Add:
+
+| Feld | Wert |
+| --- | --- |
+| Subdomain | `routine` |
+| Domain | `gymlinkapp.ch` |
+| Service | `HTTP` → `webapps:8080` |
+
+Den DNS-Eintrag legt Cloudflare selbst an. Danach `bash
+deploy/einrichten.sh https://routine.gymlinkapp.ch` noch einmal laufen
+lassen – es muss «ist erreichbar» sagen.
+
+Zwei Gründe, warum die Domain im Auswahlfeld fehlt:
+
+- Sie liegt nicht in diesem Cloudflare-Konto. Dann dort zuerst hinzufügen
+  (**Add a site**) und die Nameserver beim Registrar umstellen – das
+  dauert bis zu einem Tag. Schneller geht es mit einer Subdomain einer
+  Domain, die schon drin ist.
+- Der Tunnel läuft nicht: `cd deploy && docker compose --profile tunnel up -d`.
+
+Läuft cloudflared nicht im selben Compose-Netz, steht statt `webapps:8080`
+die IP des Servers mit Port 8088.
+
+## Schritt 3 · Am iPhone
+
+Wichtig ist die Reihenfolge. iOS behandelt Safari und die vom
+Home-Bildschirm gestartete App teilweise als zwei getrennte Welten – wer
+zuerst in Safari verbindet und danach installiert, steht unter Umständen
+wieder ohne Verbindung da.
 
 1. Falls du HIGH schon von GitHub Pages benutzt: dort **Einstellungen →
-   Als Datei exportieren**. Der Speicher hängt an der Adresse, beim
-   Wechsel bleibt sonst nichts erhalten.
-2. Den Link aus Schritt 2 in **Safari** öffnen. Die App verbindet sich von
-   selbst – in den Einstellungen steht danach «Verbunden».
-3. **Teilen → Zum Home-Bildschirm.** Das alte Symbol vorher löschen, sonst
-   hast du zwei. Ohne diesen Schritt gibt es keine Erinnerungen: iOS
-   erlaubt sie nur der installierten App.
-4. Falls du in Schritt 1 exportiert hast: **Einstellungen → Datei
-   importieren**.
-5. Schalter **Erinnerungen aufs Gerät** an. iOS fragt einmal nach der
+   Als Datei exportieren** und die Datei behalten. Der Speicher hängt an
+   der Adresse, beim Wechsel bleibt sonst nichts erhalten. Das alte Symbol
+   danach vom Home-Bildschirm löschen.
+2. `https://routine.gymlinkapp.ch/` in **Safari** öffnen.
+3. **Teilen → Zum Home-Bildschirm.** Ohne diesen Schritt gibt es keine
+   Erinnerungen: iOS erlaubt sie nur der installierten App.
+4. Die App **vom Home-Bildschirm** starten und **Einstellungen** öffnen:
+   - Steht dort schon «Verbunden», bist du fertig mit diesem Schritt.
+   - Sonst steht dort «Auf dieser Adresse läuft ein Server – es fehlt nur
+     der Schlüssel». Auf **Server einrichten**, die Adresse ist schon
+     ausgefüllt, den Schlüssel aus der Ausgabe des Skripts einfügen,
+     **Verbinden**.
+5. Falls du in 1. exportiert hast: **Einstellungen → Datei importieren**.
+6. Schalter **Erinnerungen aufs Gerät** an. iOS fragt einmal nach der
    Erlaubnis. Danach **Probe-Erinnerung vom Server** antippen: sie muss
    auch bei gesperrtem Bildschirm ankommen.
 
-Den Link nicht weitergeben – er enthält den Schlüssel. Für ein zweites
-eigenes Gerät gibt es in den Einstellungen **Kopplungscode kopieren**.
+Den Einrichtungslink aus Schritt 1 kannst du stattdessen auch direkt
+antippen – dann entfällt 4. Er richtet die App beim Öffnen selbst ein.
+Nur: hast du ihn in Safari geöffnet, kann die installierte App trotzdem
+noch nach dem Schlüssel fragen. Dann einfach 4. nachholen.
+
+Weder Link noch Schlüssel weitergeben – wer sie hat, kommt an deine Daten.
+Für ein zweites eigenes Gerät gibt es in den Einstellungen
+**Kopplungscode kopieren**: dieser eine Text darf am neuen Gerät ins Feld
+«Adresse», Adresse und Schlüssel werden automatisch getrennt.
 
 ## Vorher ausprobieren, ohne Cloudflare
 

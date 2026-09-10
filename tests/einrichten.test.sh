@@ -47,9 +47,11 @@ ATTRAPPE
 cat > "$WURZEL/bin/curl" <<'ATTRAPPE'
 #!/bin/bash
 echo "curl $*" >> "$ATTRAPPEN_LOG"
-cat "$ATTRAPPEN_GESUNDHEIT"
-[ -s "$ATTRAPPEN_GESUNDHEIT" ] || exit 7
-exit 0
+# Die öffentliche Adresse antwortet nur, wenn ATTRAPPEN_OEFFENTLICH gesetzt ist.
+case "$*" in
+  *localhost*) cat "$ATTRAPPEN_GESUNDHEIT"; [ -s "$ATTRAPPEN_GESUNDHEIT" ] || exit 7; exit 0 ;;
+  *) [ -n "${ATTRAPPEN_OEFFENTLICH:-}" ] || exit 7; echo '{"ok":true,"push":true}'; exit 0 ;;
+esac
 ATTRAPPE
 chmod +x "$WURZEL/bin/docker" "$WURZEL/bin/curl"
 export ATTRAPPEN_LOG="$WURZEL/aufrufe.log"
@@ -72,7 +74,8 @@ enthaelt "HIGH_DATA zeigt auf den Ordner" "$(cat "$ENVD")" "HIGH_DATA=$DATEN"
 enthaelt "VAPID_SUBJECT ist gesetzt" "$(cat "$ENVD")" "^VAPID_SUBJECT=mailto:"
 enthaelt "Container werden gestartet" "$(cat "$ATTRAPPEN_LOG")" "compose up -d --build"
 enthaelt "der Link wird gedruckt" "$AUS1" "https://routine.gymlinkapp.ch/#s=$TOKEN1"
-enthaelt "und der Hinweis, ihn nicht weiterzugeben" "$AUS1" "nicht weitergeben"
+enthaelt "und der Hinweis, ihn nicht weiterzugeben" "$AUS1" "weitergeben"
+enthaelt "der Schlüssel steht auch einzeln da" "$AUS1" "^    $TOKEN1$"
 
 # ---- Lauf 2: darf nichts Wichtiges anfassen ----
 : > "$ATTRAPPEN_LOG"
@@ -83,6 +86,23 @@ pruefe "VAPID-Schlüssel bleibt gleich" "$(sed -n 's|^VAPID_PUBLIC_KEY=||p' "$EN
 pruefe "kein zweites Erzeugen" "$(grep -c generateVAPIDKeys "$ATTRAPPEN_LOG")" "0"
 pruefe "genau ein SYNC_TOKEN in der Datei" "$(grep -c '^SYNC_TOKEN=' "$ENVD")" "1"
 pruefe "genau ein HIGH_DATA in der Datei" "$(grep -c '^HIGH_DATA=' "$ENVD")" "1"
+
+# ---- Öffentliche Adresse: nicht erreichbar → sagen, was fehlt ----
+: > "$ATTRAPPEN_LOG"
+AUS_ZU="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+pruefe "unerreichbare Adresse ist kein Abbruch" "$?" "0"
+enthaelt "sie wird als solche gemeldet" "$AUS_ZU" "antwortet nicht"
+enthaelt "mit der genauen Subdomain" "$AUS_ZU" "Subdomain: routine"
+enthaelt "und der genauen Domain" "$AUS_ZU" "Domain:    gymlinkapp.ch"
+enthaelt "der Link kommt trotzdem" "$AUS_ZU" "#s=$TOKEN1"
+
+# ---- Öffentliche Adresse: erreichbar ----
+AUS_AUF="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+enthaelt "erreichbare Adresse wird bestätigt" "$AUS_AUF" "ist erreichbar"
+ANZAHL=$((ANZAHL+1))
+if printf '%s' "$AUS_AUF" | grep -q "antwortet nicht"; then
+  FEHLER=$((FEHLER+1)); echo "FEHLT: erreichbare Adresse wird trotzdem bemängelt"
+else echo "ok: erreichbare Adresse wird nicht bemängelt"; fi
 
 # ---- Lauf 3: ohne Adresse ----
 AUS3="$(bash "$WURZEL/deploy/einrichten.sh" "" "$DATEN" 2>&1)"
