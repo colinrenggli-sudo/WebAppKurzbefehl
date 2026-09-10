@@ -3697,8 +3697,8 @@ function renderSettings() {
     <div>
       <div class="field-label">Erinnerungen</div>
       <div class="group">
-        <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">To-Do-Erinnerung</span><span class="row-sub">Täglich, wenn etwas offen oder fällig ist</span></span><button class="switch${s.notifyEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.notifyEnabled}" data-set="notifyEnabled" aria-label="To-Do-Erinnerung"></button></div>
-        ${s.notifyEnabled ? `<div class="row"><span class="row-ico" style="background:var(--orange);opacity:.7">🕘</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="notifyTime" value="${escAttr(s.notifyTime || '09:00')}" aria-label="Uhrzeit der To-Do-Erinnerung" style="min-height:44px;padding:6px 12px"></div>` : ''}
+        <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">Morgen-Erinnerung</span><span class="row-sub">Routinen und fällige To-Dos, wenn noch etwas offen ist</span></span><button class="switch${s.notifyEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.notifyEnabled}" data-set="notifyEnabled" aria-label="Morgen-Erinnerung"></button></div>
+        ${s.notifyEnabled ? `<div class="row"><span class="row-ico" style="background:var(--orange);opacity:.7">🕘</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="notifyTime" value="${escAttr(s.notifyTime || '09:00')}" aria-label="Uhrzeit der Morgen-Erinnerung" style="min-height:44px;padding:6px 12px"></div>` : ''}
         <div class="row"><span class="row-ico" style="background:var(--indigo)">🌙</span><span class="row-text"><span class="row-title">Abend-Check</span><span class="row-sub">Erinnert an noch offene Routinen</span></span><button class="switch${s.eveningEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.eveningEnabled}" data-set="eveningEnabled" aria-label="Abend-Check"></button></div>
         ${s.eveningEnabled ? `<div class="row"><span class="row-ico" style="background:var(--indigo);opacity:.7">🕗</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="eveningTime" value="${escAttr(s.eveningTime || '20:00')}" aria-label="Uhrzeit des Abend-Checks" style="min-height:44px;padding:6px 12px"></div>` : ''}
         <div class="row"><span class="row-ico" style="background:var(--label-3)">🔐</span><span class="row-text"><span class="row-title">Berechtigung</span>${nextReminderText() ? `<span class="row-sub">${escHtml(nextReminderText())}</span>` : ''}</span><span class="row-val${permOk ? ' ok' : ''}">${escHtml(perm)}</span></div>
@@ -3856,7 +3856,7 @@ function nextReminderText() {
   const s = S.settings, today = todayKey(), now = nowHM();
   const items = [];
   const clock = clockDay();
-  if (s.notifyEnabled) items.push({ t: s.notifyTime || '09:00', what: 'To-Dos', done: S.device.lastNotifiedDate === clock });
+  if (s.notifyEnabled) items.push({ t: s.notifyTime || '09:00', what: 'Morgen', done: S.device.lastNotifiedDate === clock });
   if (s.eveningEnabled) items.push({ t: s.eveningTime || '20:00', what: 'Abend-Check', done: S.device.lastEveningDate === clock });
   const pending = items.filter(i => !i.done && i.t <= now).sort((a, b) => a.t.localeCompare(b.t));
   if (pending.length) return `Erinnerung steht noch aus (${pending[0].what})`;

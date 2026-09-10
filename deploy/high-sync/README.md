@@ -39,7 +39,7 @@ Dazu noch von Hand in `.env`:
 
 ```
 VAPID_SUBJECT=mailto:deine@adresse.ch
-APP_URL=https://high.colin-renggli.ch/
+APP_URL=https://routine.colin-renggli.ch/
 HIGH_DATA=/mnt/user/appdata/high-daten
 ```
 
@@ -70,17 +70,26 @@ Der Abgleich läuft dann trotzdem, Erinnerungen kommen aber keine.
 
 ## Schritt 3 · Adresse im Tunnel
 
+Zuerst prüfen, ob der Tunnel überhaupt schon von aussen erreichbar ist:
+am iPhone **WLAN ausschalten**, dann `https://schlaf.colin-renggli.ch/schlaf/`
+öffnen. Lädt die Seite über Mobilfunk, läuft der Tunnel und die Domain
+liegt bei Cloudflare. Dann sind es unten zwei Klicks.
+
 Im Cloudflare-Dashboard → Zero Trust → Networks → Tunnels → dein Tunnel
 → **Public Hostnames** → Add:
 
 | Feld | Wert |
 | --- | --- |
-| Subdomain | `high` |
+| Subdomain | `routine` |
 | Domain | `colin-renggli.ch` |
 | Service | `HTTP` → `webapps:8080` |
 
-Danach liefert `https://high.colin-renggli.ch/` die App aus und
-`https://high.colin-renggli.ch/api/health` den Dienst. Beide auf
+Den DNS-Eintrag legt Cloudflare dabei selbst an, du musst nichts
+eintragen. Läuft cloudflared nicht im selben Compose-Netz, steht statt
+`webapps:8080` die IP des Servers mit Port 8088.
+
+Danach liefert `https://routine.colin-renggli.ch/` die App aus und
+`https://routine.colin-renggli.ch/api/health` den Dienst. Beide auf
 derselben Adresse: genau deshalb braucht es kein CORS und keine
 Anmeldung über eine fremde Domain.
 
@@ -89,10 +98,10 @@ Anmeldung über eine fremde Domain.
 1. In der alten App (GitHub Pages) **Einstellungen → Als Datei
    exportieren**. Der Speicher hängt an der Adresse, beim Wechsel bleibt
    sonst nichts erhalten.
-2. `https://high.colin-renggli.ch/` in Safari öffnen, **Teilen → Zum
+2. `https://routine.colin-renggli.ch/` in Safari öffnen, **Teilen → Zum
    Home-Bildschirm**. Das alte Symbol vorher löschen, sonst hast du zwei.
 3. App öffnen → **Einstellungen → Server einrichten**. Adresse
-   `https://high.colin-renggli.ch/api`, Schlüssel der `SYNC_TOKEN` aus
+   `https://routine.colin-renggli.ch/api`, Schlüssel der `SYNC_TOKEN` aus
    `.env`. Auf **Verbinden**.
 4. **Datei importieren** – das Backup aus Schritt 1.
 5. Schalter **Erinnerungen aufs Gerät** an. iOS fragt einmal nach der
