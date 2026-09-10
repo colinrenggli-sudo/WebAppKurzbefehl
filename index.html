@@ -2510,8 +2510,7 @@ function renderNav() {
   const badge = $('todoBadge'); badge.hidden = !due; badge.textContent = due;
 }
 
-// Ein im Tagesabschluss für morgen gesetzter Fokus zählt erst morgen – sonst stünde er
-// noch am selben Abend unter «To-Dos heute».
+// Ein in Zukunft datierter Fokus (aus älteren Daten) zählt erst an seinem Tag.
 function isFocusToday(t) { return !!t.focus && (!t.focusDate || t.focusDate <= todayKey()); }
 function taskMetaHtml(t, today) {
   const parts = [];
@@ -2847,7 +2846,7 @@ function renderProgress() {
       for (let i = 13; i >= 0; i--) {
         const k = addDays(today, -i);
         const e = S.history[k];
-        if (!isScheduledOn(t, k) || !existedOn(t, k) || t.skippedDate === k || !createdBefore(t, addDays(k, 1)) || (S.game.firstDay && k < S.game.firstDay)) dots += '<i class="rest"></i>';
+        if (!isScheduledOn(t, k) || !existedOn(t, k) || !countsFor(t, k) || !createdBefore(t, addDays(k, 1)) || (S.game.firstDay && k < S.game.firstDay)) dots += '<i class="rest"></i>';
         else if (taskDoneOn(t, k)) dots += '<i class="on"></i>';
         else if (e && e.frozen && k !== today) dots += '<i class="frozen"></i>';
         else dots += '<i></i>';
@@ -3385,7 +3384,7 @@ function bindView(v) {
       case 'toggleDone': showDoneTodos = !showDoneTodos; renderAll(); break;
       case 'allBadges': showAllBadges = !showAllBadges; renderAll(); break;
       case 'clearDone': confirmSheet('Erledigte To-Dos aufräumen?', 'Erledigte To-Dos, die älter als 7 Tage sind, werden entfernt. XP bleiben.', 'Aufräumen', () => { const cutoff = Date.now() - 7 * 864e5; let n = 0; S.todos.forEach(t => { if (t.completed && !t.deleted && t.completedAt && new Date(t.completedAt).getTime() < cutoff) { t.deleted = Date.now(); n++; } }); saveAll(); renderAll(); toast('🧹', `${n} To-Do${n === 1 ? '' : 's'} aufgeräumt.`); }); break;
-      case 'rescheduleOverdue': { const today = todayKey(); let n = 0; S.todos.forEach(t => { if (!t.completed && !t.deleted && !t.focus && t.dueDate && t.dueDate < today) { t.dueDate = today; touch(t); n++; } }); saveAll(); renderAll(); toast('📅', `${n} To-Do${n === 1 ? '' : 's'} auf heute gelegt. Frischer Start.`); break; }
+      case 'rescheduleOverdue': { const today = todayKey(); let n = 0; S.todos.forEach(t => { if (!t.completed && !t.deleted && !isFocusToday(t) && t.dueDate && t.dueDate < today) { t.dueDate = today; touch(t); n++; } }); saveAll(); renderAll(); toast('📅', `${n} To-Do${n === 1 ? '' : 's'} auf heute gelegt. Frischer Start.`); break; }
       case 'calPrev': calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderAll(); break;
       case 'calNext': calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderAll(); break;
       case 'badge': openBadge(el.dataset.id); break;
@@ -3490,7 +3489,7 @@ function initListDrag(list, handleSel, arr, onDone, isTasks) {
 }
 
 
-// ---- Tagesabschluss: Rückblick, ein Satz, die drei wichtigsten für morgen (Peak-End & Ivy Lee) ----
+// ---- Tagesabschluss: Rückblick, ein Satz, die drei wichtigsten als Nächstes (Peak-End & Ivy Lee) ----
 let reviewMood = null, reviewPicks = [];
 function openReview() {
   const today = todayKey();
@@ -3523,9 +3522,9 @@ function renderReview() {
       <div class="mood-row">${[['hard', '😮‍💨', 'schwer'], ['ok', '🙂', 'okay'], ['good', '😄', 'gut']].map(([k, ico, lbl]) => `<button class="mood${reviewMood === k ? ' on' : ''}" type="button" data-mood="${k}"><span>${ico}</span>${lbl}</button>`).join('')}</div>
     </div>
     <div>
-      <div class="field-label">Die drei wichtigsten für morgen</div>
+      <div class="field-label">Die drei wichtigsten als Nächstes</div>
       <div class="card tight" style="background:var(--fill-4);border:0;box-shadow:none;padding-top:4px;padding-bottom:4px">
-        ${openTodos.length ? openTodos.slice(0, 12).map(t => { const i = reviewPicks.indexOf(t.id); return `<button class="pick-row${i >= 0 ? ' on' : ''}" type="button" data-pick="${escAttr(t.id)}"><span class="rank">${i >= 0 ? i + 1 : '·'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.title)}</span>${t.dueDate ? `<span class="due ${t.dueDate < today ? 'overdue' : t.dueDate === today ? 'today' : 'future'}">${t.dueDate < today ? 'überfällig' : t.dueDate === today ? 'von heute' : escHtml(dayLabel(t.dueDate))}</span>` : ''}</button>`; }).join('') : '<div class="c2 t-sub" style="padding:10px 0">Keine offenen To-Dos. Ein guter Moment, die wichtigsten für morgen zu notieren.</div>'}
+        ${openTodos.length ? openTodos.slice(0, 12).map(t => { const i = reviewPicks.indexOf(t.id); return `<button class="pick-row${i >= 0 ? ' on' : ''}" type="button" data-pick="${escAttr(t.id)}"><span class="rank">${i >= 0 ? i + 1 : '·'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.title)}</span>${t.dueDate ? `<span class="due ${t.dueDate < today ? 'overdue' : t.dueDate === today ? 'today' : 'future'}">${t.dueDate < today ? 'überfällig' : t.dueDate === today ? 'von heute' : escHtml(dayLabel(t.dueDate))}</span>` : ''}</button>`; }).join('') : '<div class="c2 t-sub" style="padding:10px 0">Keine offenen To-Dos. Ein guter Moment, das Wichtigste für morgen zu notieren.</div>'}
         <div class="sub-add" style="margin-top:8px"><input class="input" id="reviewNewTodo" placeholder="Neu für morgen …" maxlength="120" autocomplete="off" enterkeyhint="done"><button type="button" id="reviewAddBtn" aria-label="Hinzufügen">${ICON.plus}</button></div>
       </div>
       <div class="field-hint">${tomorrowTasks.length ? `Morgen geplant: ${tomorrowTasks.map(t => escHtml(t.emoji)).join(' ')} ${tomorrowTasks.length} Routine${tomorrowTasks.length === 1 ? '' : 'n'}${firstTime ? `, die erste um ${firstTime}` : ''}.` : 'Morgen ist keine Routine geplant.'}</div>
@@ -3546,10 +3545,10 @@ function renderReview() {
 function saveReview() {
   const today = todayKey(), e = dayEntry(today, true);
   e.review = { mood: reviewMood || 'ok', at: Date.now(), focusTomorrow: reviewPicks.slice() };
-  // Fokus für morgen setzen: gewählte bekommen den Stern (Rang = Reihenfolge), andere verlieren ihn
+  // Fokus setzen: gewählte bekommen den Stern (Rang = Reihenfolge), andere verlieren ihn
   const base = Date.now();
   // Nur was neu in den Fokus kommt, fängt bei 0 an – sonst wüsste die App nie, dass ein To-Do mitwandert
-  S.todos.forEach(t => { if (t.deleted || t.completed) return; const i = reviewPicks.indexOf(t.id); if (i >= 0) { if (!t.focus) t.carryCount = 0; t.focus = true; t.focusRank = base + i; t.focusDate = addDays(today, 1); touch(t); } else if (t.focus) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); } });
+  S.todos.forEach(t => { if (t.deleted || t.completed) return; const i = reviewPicks.indexOf(t.id); if (i >= 0) { if (!t.focus) t.carryCount = 0; t.focus = true; t.focusRank = base + i; t.focusDate = today; touch(t); } else if (t.focus) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); } });
   e.xp = entryXp(e);
   saveAll();
   closeSheet('reviewSheet');

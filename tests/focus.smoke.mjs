@@ -469,6 +469,34 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await page.evaluate(() => closeSheet()); await page.waitForTimeout(1200);
   if (!(await page.locator('#celebrate.show').count())) note('F: deferred celebration was lost');
   await page.click('#celebrateBtn'); await page.waitForTimeout(500);
+  // Offene Tastatur: kein geschlossenes Sheet darf ins Bild rutschen, «Sichern» muss sichtbar bleiben
+  await page.evaluate(() => openTaskEditor(null)); await page.waitForTimeout(500);
+  await page.evaluate(() => document.documentElement.style.setProperty('--kb', '336px'));
+  await page.waitForTimeout(400);
+  const kb = await page.evaluate(() => {
+    const geister = [];
+    document.querySelectorAll('.sheet').forEach(el => {
+      if (el.classList.contains('show')) return;
+      const r = el.getBoundingClientRect(); const c = getComputedStyle(el);
+      if (r.top < innerHeight - 1 && c.opacity !== '0' && c.pointerEvents !== 'none') geister.push(el.id);
+    });
+    const save = document.getElementById('tSave').getBoundingClientRect();
+    return { geister, saveSichtbar: save.top >= 0 && save.bottom <= innerHeight + 1 };
+  });
+  if (kb.geister.length) note('F: closed sheets slide into view when the keyboard opens: ' + kb.geister.join(', '));
+  if (!kb.saveSichtbar) note('F: "Sichern" is not visible while the keyboard is open');
+  // Eine Meldung im Sheet muss über dem Sheet liegen, nicht dahinter
+  await page.evaluate(() => toast('⚠️', 'Test'));
+  await page.waitForTimeout(400);
+  const toastOben = await page.evaluate(() => {
+    const el = document.querySelector('.toast'); if (!el) return false;
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+    return el.contains(hit) || hit === el;
+  });
+  if (!toastOben) note('F: a toast fired inside a sheet is painted behind it');
+  await page.evaluate(() => { document.documentElement.style.removeProperty('--kb'); closeAllSheets(); });
+  await page.waitForTimeout(400);
   ok('F: reduced motion – no invisible blockers');
   await ctx.close();
 }
