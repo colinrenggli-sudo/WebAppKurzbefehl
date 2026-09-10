@@ -3918,9 +3918,14 @@ function importDataFromInput(input) {
 }
 
 // ---------- 13. Cloud-Sync (Firebase) mit Zusammenführen statt Überschreiben ----------
+// Eigene Domains, die «/__/auth/» an Firebase weiterreichen (Block in deploy/nginx.conf).
+// Läuft die App auf einer davon, findet die Anmeldung auf derselben Herkunft statt – dann
+// blockiert Safari nichts mehr und die Anmeldung klappt auch vom Home-Bildschirm aus.
+// Solange die Liste leer ist, bleibt alles wie bisher.
+const OWN_AUTH_DOMAINS = [];
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDNNZSZn-YUp6PyNnf_h_PoqerxtC6bJfQ",
-  authDomain: "focus-blocks-43c7e.firebaseapp.com",
+  authDomain: OWN_AUTH_DOMAINS.includes(location.hostname) ? location.hostname : "focus-blocks-43c7e.firebaseapp.com",
   projectId: "focus-blocks-43c7e",
   storageBucket: "focus-blocks-43c7e.firebasestorage.app",
   messagingSenderId: "938980650298",
