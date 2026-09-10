@@ -1396,7 +1396,7 @@ const DEFAULT_GAME = {
   schema: 3, updatedAt: 0,
 };
 
-const DEFAULT_DEVICE = { lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {} };
+const DEFAULT_DEVICE = { lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {}, authRedirectAt: null };
 
 const S = { tasks: [], todos: [], settings: {}, history: {}, game: {}, device: {}, tokens: { entries: [], rewards: [] } };
 
@@ -3918,11 +3918,15 @@ function importDataFromInput(input) {
 }
 
 // ---------- 13. Cloud-Sync (Firebase) mit Zusammenführen statt Überschreiben ----------
+// Eigene Domains, die «/__/auth/» an Firebase weiterreichen (Block in deploy/nginx.conf).
+// Läuft die App auf einer davon, findet die Anmeldung auf derselben Herkunft statt – dann
+// blockiert Safari nichts mehr und die Anmeldung klappt auch vom Home-Bildschirm aus.
+// Solange die Liste leer ist, bleibt alles wie bisher.
+const OWN_AUTH_DOMAINS = [];
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDNNZSZn-YUp6PyNnf_h_PoqerxtC6bJfQ",
-  authDomain: "focus-blocks-43c7e.firebaseapp.com",
+  authDomain: OWN_AUTH_DOMAINS.includes(location.hostname) ? location.hostname : "focus-blocks-43c7e.firebaseapp.com",
   projectId: "focus-blocks-43c7e",
-  storageBucket: "focus-blocks-43c7e.firebasestorage.app",
   messagingSenderId: "938980650298",
   appId: "1:938980650298:web:4e55fb726df72f7d677403",
 };
@@ -3948,7 +3952,13 @@ function loadFirebase() {
       fbAuth = firebase.auth(); fbDb = firebase.firestore(); fbProvider = new firebase.auth.GoogleAuthProvider();
       try { await fbDb.enablePersistence({ synchronizeTabs: true }); } catch (e) { /* mehrere Tabs oder nicht unterstützt – egal */ }
       fbAuth.onAuthStateChanged(handleAuthChange);
-      fbAuth.getRedirectResult().catch(e => { console.warn('Redirect:', e); if (e && e.code && e.code !== 'auth/no-auth-event') { syncStatusText = 'Anmeldung nicht abgeschlossen: ' + (e.message || e.code); refreshSyncUI(); } });
+      fbAuth.getRedirectResult()
+        .then(() => noteAuthRedirectOutcome())
+        .catch(e => {
+          console.warn('Redirect:', e);
+          if (e && e.code && e.code !== 'auth/no-auth-event') { syncStatusText = 'Anmeldung nicht abgeschlossen: ' + (e.message || e.code); refreshSyncUI(); }
+          noteAuthRedirectOutcome(e);
+        });
       return true;
     } catch (e) { console.warn(e); fbLoading = null; syncStatusText = 'Cloud nicht erreichbar (offline?).'; refreshSyncUI(); return false; }
   })();
@@ -4133,6 +4143,24 @@ async function startCloudSync(user) {
     else lastPushedHash = mergedHash;
   }, err => { console.error('Snapshot:', err); syncStatusText = 'Verbindung unterbrochen'; refreshSyncUI(); });
 }
+const CLOUD_DOC_LIMIT = 1048576; // Firestore: 1 MiB pro Dokument
+let cloudSizeWarned = false;
+// Gibt die Grösse zurück und warnt einmal pro Sitzung, bevor das Limit erreicht ist
+function checkCloudDocSize(doc) {
+  let bytes = 0;
+  try { bytes = new Blob([JSON.stringify(doc)]).size; } catch (e) { return 0; }
+  if (bytes > CLOUD_DOC_LIMIT * 0.8 && !cloudSizeWarned) {
+    cloudSizeWarned = true;
+    const kb = Math.round(bytes / 1024), drueber = bytes > CLOUD_DOC_LIMIT;
+    syncStatusText = `Cloud-Daten ${kb} KB von 1024 KB`;
+    refreshSyncUI();
+    toast('☁️', drueber
+      ? `Die Cloud-Daten sind über der Grenze (${kb} von 1024 KB) – die Cloud nimmt sie nicht mehr an. Erledigte To-Dos aufräumen schafft Platz.`
+      : `Die Cloud-Daten nähern sich der Grenze (${kb} von 1024 KB). Erledigte To-Dos aufräumen schafft Platz.`,
+      { label: 'Einstellungen', fn: openSettings });
+  }
+  return bytes;
+}
 function pushToCloud() {
   if (!currentUser || !fbDb || !initialSyncDone) return;
   if (cloudWriteTimer) clearTimeout(cloudWriteTimer);
@@ -4141,7 +4169,16 @@ function pushToCloud() {
     const h = hashState(currentState());
     if (h === lastPushedHash) return;
     lastPushedHash = h;
-    userDocRef(currentUser).set(gatherCloudDoc()).catch(e => { console.error('Cloud write:', e); lastPushedHash = null; syncStatusText = 'Schreiben fehlgeschlagen'; refreshSyncUI(); });
+    const doc = gatherCloudDoc();
+    checkCloudDocSize(doc);
+    userDocRef(currentUser).set(doc).catch(e => {
+      console.error('Cloud write:', e);
+      lastPushedHash = null;
+      const zuGross = e && String(e.message || '').toLowerCase().includes('too large');
+      syncStatusText = zuGross ? 'Cloud-Daten zu gross – erledigte To-Dos aufräumen' : 'Schreiben fehlgeschlagen';
+      refreshSyncUI();
+      if (zuGross) toast('☁️', 'Die Cloud nimmt das Dokument nicht mehr an: es ist über 1 MB gross. Erledigte To-Dos aufräumen hilft.', { label: 'Einstellungen', fn: openSettings });
+    });
   }, 800);
 }
 saveHooks.push(pushToCloud);
@@ -4153,7 +4190,12 @@ async function signInWithGoogle() {
   S.settings.cloudEnabled = true; touch(S.settings); saveAll({ silent: true });
   syncStatusText = 'Anmeldung …'; refreshSyncUI();
   try {
-    if (isStandalone()) { await fbAuth.signInWithRedirect(fbProvider); return; }
+    if (isStandalone()) {
+      // Merken, dass eine Anmeldung unterwegs ist: nach der Rückkehr ist der Speicher dieser Seite neu,
+      // und ohne Merker liesse sich «hat nicht geklappt» nicht von «nie versucht» unterscheiden.
+      S.device.authRedirectAt = Date.now(); saveAll({ silent: true });
+      await fbAuth.signInWithRedirect(fbProvider); return;
+    }
     await fbAuth.signInWithPopup(fbProvider);
   } catch (e) {
     const code = e && e.code || '';
@@ -4164,6 +4206,23 @@ async function signInWithGoogle() {
     refreshSyncUI();
     if (code !== 'auth/popup-closed-by-user') toast('⚠️', 'Anmeldung fehlgeschlagen.');
   }
+}
+// Kam die Anmeldung nach der Weiterleitung nicht zurück, sagt die App das – statt einfach
+// wieder «Nicht angemeldet» anzuzeigen, als wäre nie etwas passiert.
+function noteAuthRedirectOutcome(err) {
+  const started = S.device.authRedirectAt;
+  if (!started) return;
+  S.device.authRedirectAt = null; saveAll({ silent: true });
+  if (currentUser || (fbAuth && fbAuth.currentUser)) return; // hat geklappt
+  if (Date.now() - started > 15 * 60 * 1000) return; // zu lange her, um es dieser Anmeldung zuzuschreiben
+  syncStatusText = 'Anmeldung kam nicht zurück.';
+  refreshSyncUI();
+  setTimeout(() => actionSheet({
+    title: 'Anmeldung kam nicht zurück',
+    message: err && err.message ? String(err.message).slice(0, 160)
+      : 'Vom Home-Bildschirm aus blockiert Safari den Anmelde-Speicher fremder Domains – die Anmeldung kommt an, aber nicht bei der App zurück. Deine Daten liegen unverändert auf diesem Gerät.',
+    items: [{ label: 'Backup exportieren', fn: exportData }, { label: 'Einstellungen öffnen', fn: openSettings }],
+  }), 700);
 }
 async function signOutCloud() {
   if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
@@ -4180,6 +4239,7 @@ function handleAuthChange(user) {
   currentUser = user || null;
   if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
   initialSyncDone = false;
+  if (user) syncStatusText = ''; // eine alte Fehlermeldung soll nicht neben «Live-Sync aktiv» stehen bleiben
   refreshSyncUI();
   if (user) startCloudSync(user);
 }
