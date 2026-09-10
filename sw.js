@@ -10,7 +10,7 @@
 // Die Versionsnummer unten bei jeder Änderung an index.html hochzählen,
 // damit alte Caches sicher weggeräumt werden.
 
-const VERSION = 'focus-v3.1.0';
+const VERSION = 'focus-v3.2.0';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -34,7 +34,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
 
   // App-Hülle: Netz zuerst, dann Cache
-  if (url.origin === self.location.origin) {
+  // Nur die eigene Ebene bedienen – die Schwester-Apps (dach/, schlaf/, shop/, raumdesign/)
+  // liegen auf demselben Origin und dürfen nicht HIGHs index.html als Offline-Fallback bekommen.
+  const base = new URL('./', self.location).pathname;
+  const own = url.pathname.startsWith(base) && !/^[^?#]*\/(dach|schlaf|shop|raumdesign)\//.test(url.pathname);
+  if (url.origin === self.location.origin && own) {
     const isShell = req.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/manifest.json');
     if (isShell) {
       event.respondWith(
@@ -67,8 +71,10 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Nur ein Fenster dieser App nach vorne holen, nicht eine Schwester-App auf demselben Origin
+      const scope = self.registration.scope;
       for (const client of clients) {
-        if ('focus' in client) return client.focus();
+        if (client.url.startsWith(scope) && 'focus' in client) return client.focus();
       }
       if (self.clients.openWindow) return self.clients.openWindow('./');
     })

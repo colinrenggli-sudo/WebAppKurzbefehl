@@ -213,8 +213,9 @@ svg { display: block; }
 .level-pill .ring .track { stroke: var(--fill-2); }
 .level-pill .ring .val { stroke: var(--tint); stroke-linecap: round; transition: stroke-dashoffset 0.8s var(--ease-out); }
 
-/* 320-pt-Geräte: die Level-Plakette gibt ihren Text auf, damit der Titel lesbar bleibt */
-@media (max-width: 380px) {
+/* Schmale Geräte (iPhone SE, 320 pt): die Level-Plakette gibt ihren Text auf.
+   Bei grosser Schrift bricht der Titel um, statt zu «He…» gekürzt zu werden. */
+@media (max-width: 21rem) {
   .navbar-title { font-size: 1.7rem; }
   #levelPillText { display: none; }
   .level-pill { padding: 0 7px; }
@@ -232,7 +233,7 @@ main { flex: 1; display: flex; flex-direction: column; }
 }
 .section-title { font-size: 1.294rem; font-weight: 700; letter-spacing: -0.01em; }
 .section-meta { font-size: 0.882rem; color: var(--label-2); font-family: var(--ff-round); font-weight: 600; }
-.section-link { min-height: 44px; padding: 6px 10px; margin-right: -10px; font-size: 0.941rem; color: var(--link); font-weight: 600; padding: 6px 4px; min-height: 36px; }
+.section-link { font-size: 0.941rem; color: var(--link); font-weight: 600; padding: 8px 10px; margin-right: -10px; min-height: 44px; display: inline-flex; align-items: center; }
 
 /* ---------- Karten ---------- */
 .card {
@@ -580,12 +581,6 @@ button.week-day { color: inherit; font: inherit; }
 .badge.new::after { content: 'Neu'; position: absolute; top: 6px; right: 6px; font-size: 0.6rem; font-weight: 800; background: var(--red); color: #fff; padding: 2px 6px; border-radius: 8px; }
 .badge { position: relative; }
 
-.history-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; border-bottom: 0.5px solid var(--sep); font-size: 0.941rem; }
-.history-row:last-child { border-bottom: 0; }
-.history-date { color: var(--label); font-weight: 500; }
-.history-val { font-family: var(--ff-round); font-weight: 700; font-size: 0.882rem; padding: 3px 9px; border-radius: 9px; background: var(--fill-4); color: var(--label-2); }
-.history-val.perfect { background: var(--tint-soft); color: var(--tint-text); }
-.history-val.frozen { background: rgba(58,155,220,0.14); color: var(--freeze-text); }
 
 /* ---------- Tab Bar ---------- */
 .tabbar {
@@ -668,8 +663,8 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip {
-  min-height: 40px; padding: 0 14px; border-radius: 20px; background: var(--fill-4); color: var(--label);
-  font-size: 0.882rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; position: relative;
+  min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 22px; background: var(--fill-4); color: var(--label);
+  font-size: 0.882rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; position: relative;
   transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-fast);
 }
 .chip:active { transform: scale(0.96); }
@@ -719,13 +714,14 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .row-ico { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; color: #fff; }
 
 .switch { width: 51px; height: 31px; border-radius: 16px; background: var(--fill); position: relative; flex-shrink: 0; transition: background 0.25s; }
-.switch::before { content: ''; position: absolute; inset: -7px -6px; } /* 44pt-Trefferfläche */
+/* Aussehen bleibt 51×31 wie bei iOS, die Trefferfläche wächst unsichtbar auf 45 pt Höhe */
+.switch::before { content: ''; position: absolute; inset: -7px -6px; }
 .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.06); transition: transform 0.25s var(--ease-out); }
 .switch.on { background: var(--tint); }
 .switch.on::after { transform: translateX(20px); }
 
 .segmented { display: flex; background: var(--fill-3); border-radius: 10px; padding: 2px; }
-.seg { flex: 1; min-height: 40px; border-radius: 8px; font-size: 0.882rem; font-weight: 600; color: var(--label); transition: background var(--dur-fast), box-shadow var(--dur-fast); }
+.seg { flex: 1; min-height: 44px; border-radius: 8px; font-size: 0.882rem; font-weight: 600; color: var(--label); transition: background var(--dur-fast), box-shadow var(--dur-fast); }
 .seg.on { background: var(--bg-elev); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
 :root[data-theme="dark"] .seg.on { background: var(--bg-3); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg.on { background: var(--bg-3); } }
@@ -814,7 +810,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 
 /* ---------- Reorder-Modus-Leiste ---------- */
 .mode-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: var(--r-m); background: var(--tint-soft); font-size: 0.882rem; font-weight: 600; }
-.mode-bar button { min-height: 44px; color: var(--tint-text); font-weight: 800; min-height: 36px; padding: 0 8px; }
+.mode-bar button { color: var(--tint-text); font-weight: 800; min-height: 44px; padding: 0 10px; }
 
 
 /* ---------- Anker, Rang, Gewohnheitsstärke, Tagesabschluss, Ruhiger Modus ---------- */
@@ -1030,15 +1026,7 @@ body.quiet .q { display: none !important; }
         <input class="input" id="tAlarm" type="time">
         <button class="chip" type="button" id="tAlarmClear">Keine</button>
       </div>
-      <div class="field-hint">Du wirst erinnert, wenn die Routine bis zu dieser Zeit noch offen ist – sofern die App installiert ist und im Hintergrund liegt. Spät erledigt zählt genauso viel wie früh.</div>
-    </div>
-    <div class="field" id="tCountField" hidden>
-      <div class="field-label">Bisher erledigt</div>
-      <div class="chips" style="align-items:center; gap:12px">
-        <button class="chip" type="button" id="tCountMinus" aria-label="Weniger">−</button>
-        <span class="num" id="tCountVal" style="font-weight:800; font-size:1.2rem; min-width:36px; text-align:center">0</span>
-        <button class="chip" type="button" id="tCountPlus" aria-label="Mehr">+</button>
-      </div>
+      <div class="field-hint">Ab dieser Zeit steht die Uhrzeit auf der Karte rot, solange die Routine offen ist. Eine Meldung kommt nur, wenn die App gerade offen ist oder kurz zuvor offen war – die App hat keinen Server. Spät erledigt zählt genauso viel wie früh.</div>
     </div>
     <div class="sheet-actions">
       <button class="btn primary" type="button" id="tSave">Sichern</button>
@@ -1332,6 +1320,9 @@ function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-
 function dayEndHour() { const h = S.settings && typeof S.settings.dayEnd === 'number' ? S.settings.dayEnd : 3; return clamp(h, 0, 5); }
 function appDay(dateLike) { const d = dateLike instanceof Date ? new Date(dateLike.getTime()) : new Date(dateLike); if (isNaN(d)) return null; d.setHours(d.getHours() - dayEndHour()); return dateKey(d); }
 function todayKey() { return appDay(new Date()); }
+// Erinnerungen hängen am Kalendertag, nicht am App-Tag: sonst feuert eine Erinnerung,
+// die vor dem Tagesende (Standard 03:00) eingestellt ist, nach dem Tageswechsel erneut.
+function clockDay() { return dateKey(new Date()); }
 function keyToDate(k) { const [y, m, d] = String(k).split('-').map(Number); return new Date(y, m - 1, d); }
 function addDays(k, n) { const d = keyToDate(k); d.setDate(d.getDate() + n); return dateKey(d); }
 function daysBetween(a, b) { return Math.round((keyToDate(b) - keyToDate(a)) / 864e5); }
@@ -1756,7 +1747,7 @@ function processRollover() {
       if (t.skippedDate && t.skippedDate !== today) t.skippedDate = null;
       t.alarmNotifiedDate = null;
     });
-    for (const id in S.device.alarmNotified) if (S.device.alarmNotified[id] !== today) delete S.device.alarmNotified[id];
+    { const ck = clockDay(); for (const id in S.device.alarmNotified) if (S.device.alarmNotified[id] !== ck) delete S.device.alarmNotified[id]; }
     // Heute schon erledigte (Eintrag von einem anderen Gerät) wiederherstellen
     const e = S.history[today];
     if (e) S.tasks.forEach(t => { if (recDone(e.tasks[t.id])) { t.completed = true; t.subtasks.forEach(s => s.completed = true); } });
@@ -2477,10 +2468,11 @@ function renderNav() {
   const eyebrow = $('navEyebrow'), title = $('navTitle');
   const today = todayKey();
   if (currentTab === 'today') { eyebrow.textContent = fmtNav(today) + (isPausedOn(today) ? ' · Pause' : ''); title.textContent = 'Heute'; }
-  else if (currentTab === 'todos') { const open = S.todos.filter(t => !t.completed && !t.deleted).length; eyebrow.textContent = open ? `${open} offen` : 'Alles erledigt'; title.textContent = 'To-Dos'; }
-  else if (currentTab === 'tokens') { const total = tokenTotal(), nx = nextReward(); eyebrow.textContent = nx ? `${total} Token · noch ${nx.points - total} bis ${nx.emoji} ${nx.name}` : `${total} Token gesammelt`; title.textContent = 'Token'; }
-  else { const st = currentStreak(); eyebrow.textContent = S.settings.quiet ? `${st} ${st === 1 ? 'Tag' : 'Tage'} in Folge` : `Level ${levelFromXp(totalXp())} · ${levelTitle(levelFromXp(totalXp()))}`; title.textContent = 'Fortschritt'; }
-  $('levelPill').hidden = !!S.settings.quiet;
+  else if (currentTab === 'todos') { const open = S.todos.filter(t => !t.completed && !t.deleted).length; eyebrow.textContent = open ? `${open} offen` : ''; title.textContent = 'To-Dos'; }
+  else if (currentTab === 'tokens') { eyebrow.textContent = ''; title.textContent = 'Token'; }
+  else { eyebrow.textContent = ''; title.textContent = 'Fortschritt'; }
+  // Auf «Fortschritt» erklärt die Plakette nichts, was die Karte darunter nicht schon sagt
+  $('levelPill').hidden = !!S.settings.quiet || currentTab === 'progress';
   const xp = totalXp(), lvl = levelFromXp(xp);
   const lo = xpForLevel(lvl), hi = xpForLevel(lvl + 1);
   const pct = hi > lo ? (xp - lo) / (hi - lo) * 100 : 100;
@@ -2505,7 +2497,7 @@ function taskMetaHtml(t, today) {
   // Der Anker ist als Nebensatz gespeichert («den Kaffee gemacht habe») – «Nach: …» ergab kein Deutsch
   if (t.cue && !t.completed) parts.push(`<span class="meta-chip cue">Nachdem ich ${escHtml(t.cue)}</span>`);
   if (t.skippedDate === today) parts.push(`<span class="meta-chip">Heute pausiert</span>`);
-  else if (!isRequiredOn(t, today) && isScheduledOn(t, today) && !t.completed) parts.push(`<span class="meta-chip">Neu · ab morgen Pflicht</span>`);
+  else if (!createdBefore(t, today) && isScheduledOn(t, today) && !t.completed) parts.push(`<span class="meta-chip">Neu · ab morgen Pflicht</span>`);
   return parts.length ? `<div class="routine-meta">${parts.join('')}</div>` : '';
 }
 
@@ -2593,8 +2585,12 @@ function renderToday() {
     if (!n) { v.innerHTML = html; bindView(v); return; }
   }
 
-  const left = p.total - p.done;
-  const ringLabel = (p.total && left >= 1 && p.pct >= 60) ? `<span class="ring-num num">Noch ${left}</span>` : `<span class="ring-num num">${p.done}<small>/${p.total}</small></span>`;
+  if (!activeTasks().length) {
+    html += `<div class="card empty"><div class="empty-emoji">🎯</div><div class="empty-title">Noch keine Routine</div><div class="empty-text">Fang mit einer an – so klein, dass sie fast lächerlich ist.</div><button class="btn primary" type="button" data-act="newTask" style="margin-top:8px; flex:none">Routine anlegen</button></div>`;
+    v.innerHTML = html; bindView(v); return;
+  }
+
+  const ringLabel = `<span class="ring-num num">${p.done}<small>/${p.total}</small></span>`;
   html += `<section class="card hero" aria-label="Tagesfortschritt">
     <div class="ring-wrap${p.perfect ? ' done' : ''}" id="heroRing">${ICON.ring(44)}
       <div class="ring-center">${ringLabel}<span class="ring-sub">${p.perfect ? 'Perfekt' : 'Routinen'}</span></div>
@@ -2613,12 +2609,12 @@ function renderToday() {
   html += renderWeekStrip();
 
   if (!S.settings.tipsSeen.longpress && tasks.length) {
-    html += `<div class="tip"><span class="tip-ico">💡</span><div>Kreis rechts erledigt. Lange drücken zum Bearbeiten.<br><button type="button" data-act="tipSeen" data-tip="longpress">Verstanden</button></div></div>`;
+    html += `<div class="tip"><span class="tip-ico">💡</span><div>Antippen oder Kreis erledigt · lange drücken für mehr.<br><button type="button" data-act="tipSeen" data-tip="longpress">Verstanden</button></div></div>`;
   }
 
   if (reorderMode) html += `<div class="mode-bar"><span>Antippen zum Bearbeiten · am Griff ziehen zum Sortieren</span><button type="button" data-act="reorderDone">Fertig</button></div>`;
 
-  if (isPausedOn(today)) html += `<div class="tip"><span class="tip-ico">🏖️</span><div>Pause bis ${escHtml(dayLabel(S.game.pause.until))}. Deine Serien ruhen – erledigen darfst du trotzdem, zählt als Bonus.<br><button type="button" data-act="endPause">Pause beenden</button></div></div>`;
+  if (isPausedOn(today)) html += `<div class="tip"><span class="tip-ico">🏖️</span><div>Pause bis ${escHtml(dayLabel(S.game.pause.until))} · deine Serien ruhen – erledigen darfst du trotzdem, zählt als Bonus.<br><button type="button" data-act="endPause">Pause beenden</button></div></div>`;
   html += `<div class="section-head"><span class="section-title">Routinen</span>${tasks.length && !reorderMode ? `<button class="section-link" type="button" data-act="editMode">Bearbeiten</button>` : `<span class="section-meta">${tasks.length ? `${p.doneAll}/${p.shown} erledigt` : ''}</span>`}</div>`;
   if (!tasks.length) {
     const has = activeTasks().length;
@@ -2676,7 +2672,7 @@ function renderTodoRow(t, today, opts) {
   const meta = (chips.length || note) ? `<span class="todo-meta">${chips.join('')}${note}</span>` : '';
   const rank = opts.rank ? `<span class="rank" aria-label="Fokus ${opts.rank}">${opts.rank}</span>` : '';
   const carry = (!t.completed && t.focus && (t.carryCount || 0) >= GAME.carryLimit && opts.showCarry)
-    ? `<div class="carry-hint" style="grid-column:2 / -1"><span>Dieses To-Do wandert zum ${t.carryCount}. Mal mit. Kleiner machen oder loslassen?</span><span class="btns"><button type="button" data-act="todoEdit" data-id="${escAttr(t.id)}">Kleiner machen</button><button type="button" data-act="todoUnfocus" data-id="${escAttr(t.id)}">Loslassen</button></span></div>` : '';
+    ? `<div class="carry-hint" style="grid-column:2 / -1"><span>«${escHtml(t.title.length > 28 ? t.title.slice(0, 27) + '…' : t.title)}» wandert zum ${t.carryCount}. Mal mit. Kleiner machen oder loslassen?</span><span class="btns"><button type="button" data-act="todoEdit" data-id="${escAttr(t.id)}">Kleiner machen</button><button type="button" data-act="todoUnfocus" data-id="${escAttr(t.id)}">Loslassen</button></span></div>` : '';
   return `<div class="todo-row${t.completed ? ' done' : ''}" data-id="${escAttr(t.id)}">
     <button class="check-btn small" type="button" data-act="todoToggle" data-id="${escAttr(t.id)}" role="checkbox" aria-checked="${t.completed}" aria-label="${escAttr(t.title)} ${t.completed ? 'als offen markieren' : 'erledigen'}"><span class="check small${t.completed ? ' on' : ''}" style="--c:var(--tint)">${ICON.check}</span></button>
     <button class="todo-body" type="button" data-act="todoEdit" data-id="${escAttr(t.id)}"><span class="todo-title" style="display:flex;align-items:center;gap:8px">${rank}<span>${escHtml(t.title)}</span></span>${meta}</button>
@@ -2709,7 +2705,7 @@ function renderTodos() {
 
   // Fokus heute
   const dots = Array.from({ length: GAME.focusMax }, (_, i) => `<span class="focus-dot${i < focusDoneToday ? ' on' : ''}"></span>`).join('');
-  html += `<section class="card focus-card">
+  if (focus.length || open.length || focusDoneToday) html += `<section class="card focus-card">
     <div class="focus-head"><span class="focus-title">${ICON.star} Fokus heute</span><span class="focus-dots" aria-label="${focusDoneToday} von ${GAME.focusMax} erledigt">${dots}</span></div>
     ${focus.length ? `<div class="list-card" style="box-shadow:none;border:0;background:transparent">${focus.map((t, i) => renderTodoRow(t, today, { rank: i + 1, showCarry: true })).join('')}</div>` : `<div class="focus-hint">${focusDoneToday >= 1 ? `${focusDoneToday} Fokus-To-Do${focusDoneToday > 1 ? 's' : ''} erledigt. ${focusDoneToday >= GAME.focusMax ? 'Volltreffer – das Wichtigste ist durch.' : 'Das Wichtigste zuerst.'}` : `Noch kein Fokus gesetzt. Wähle mit ★ bis zu ${GAME.focusMax} To-Dos, die heute zählen – in der Reihenfolge, in der du sie angehst.`}</div>`}
   </section>`;
@@ -2752,7 +2748,7 @@ function renderCalendar() {
     const e = S.history[k];
     let cls = 'cal-day', fx = '';
     if (k > today) cls += ' future';
-    else if (st === 'perfect') { cls += ' l4'; fx = '🔥'; }
+    else if (st === 'perfect') { cls += ' l4'; }
     else if (st === 'frozen') { cls += ' frozen'; fx = '❄️'; }
     else if (e && e.total > 0 && e.done > 0) { const r = e.done / e.total; cls += r >= 0.75 ? ' l3' : r >= 0.5 ? ' l2' : ' l1'; }
     else if (e && !e.total && calendarDoneCount(e)) cls += ' l1';
@@ -2796,7 +2792,7 @@ function renderProgress() {
 
   html += `<section class="card level-card q" aria-label="Level">
     <div class="level-head"><div class="level-badge num">${lvl}</div><div><div class="level-name">${escHtml(levelTitle(lvl))}</div><div class="level-sub">${hi > lo ? `Noch ${hi - xp} XP bis Level ${lvl + 1} · ${escHtml(levelTitle(lvl + 1))}` : 'Höchstes Level erreicht'}</div></div></div>
-    <div class="xp-bar"><div class="xp-bar-top"><span><b class="num">${fmtNum(xp)} XP</b> gesamt</span><span class="num">${hi > lo ? `${xp - lo} / ${hi - lo}` : ''}</span></div><div class="xp-track"><div class="xp-fill" style="width:${hi > lo ? clamp((xp - lo) / (hi - lo) * 100, 0, 100) : 100}%"></div></div></div>
+    <div class="xp-bar"><div class="xp-bar-top"><span><b class="num">${fmtNum(xp)} XP</b> gesamt</span></div><div class="xp-track"><div class="xp-fill" style="width:${hi > lo ? clamp((xp - lo) / (hi - lo) * 100, 0, 100) : 100}%"></div></div></div>
   </section>`;
 
   html += `<section class="card week-ring-card" aria-label="Diese Woche">
@@ -2808,7 +2804,6 @@ function renderProgress() {
   html += `<div class="stat-grid">
     <div class="stat"><span class="stat-ico">✅</span><span class="stat-val num" style="color:var(--tint-text)">${totalCompletions()}</span><span class="stat-lbl">Routinen erledigt</span></div>
     <div class="stat"><span class="stat-ico">⭐</span><span class="stat-val num" style="color:var(--gold-text)">${perfectDays()}</span><span class="stat-lbl">Perfekte Tage</span></div>
-    <div class="stat"><span class="stat-ico">🏆</span><span class="stat-val num" style="color:var(--flame-text)">${best}</span><span class="stat-lbl">Längste Serie</span></div>
     <div class="stat"><span class="stat-ico">📝</span><span class="stat-val num" style="color:var(--indigo)">${todosDoneCount()}</span><span class="stat-lbl">To-Dos erledigt</span></div>
   </div>`;
 
@@ -2817,7 +2812,7 @@ function renderProgress() {
   // Pro Routine
   const at = activeTasks();
   if (at.length) {
-    html += `<div class="section-head"><span class="section-title">Deine Routinen</span><span class="section-meta">letzte 14 Tage</span></div><section class="card" style="padding:6px 16px">`;
+    html += `<div class="section-head"><span class="section-title">Deine Routinen</span></div><section class="card" style="padding:6px 16px">`;
     for (const t of at) {
       const c = colorById(t.colorId);
       let dots = '';
@@ -2830,7 +2825,7 @@ function renderProgress() {
         else dots += '<i></i>';
       }
       const rate = taskRate(t, 30), st = taskStreak(t), hs = habitStrength(t);
-      html += `<div class="rstat" style="--c:var(--${c.id})"><span class="rstat-emoji">${escHtml(t.emoji)}</span><span class="rstat-text"><span class="rstat-name">${escHtml(t.label)}</span><span class="dots" aria-label="letzte 14 Tage">${dots}</span><span class="habit-bar" title="Wird zur Gewohnheit"><i style="width:${Math.round(hs / GAME.habitDays * 100)}%"></i></span><span class="habit-cap">Wird zur Gewohnheit: ${hs} von ${GAME.habitDays} Tagen</span></span><span class="rstat-right"><span class="rstat-pct num">${rate == null ? '–' : rate + '%'}</span>${st ? `<span class="rstat-streak">🔥 ${st}</span>` : `<span class="rstat-streak" style="color:var(--label-3)">${t.counter}×</span>`}</span></div>`;
+      html += `<div class="rstat" style="--c:var(--${c.id})"><span class="rstat-emoji">${escHtml(t.emoji)}</span><span class="rstat-text"><span class="rstat-name">${escHtml(t.label)}</span><span class="dots" aria-label="letzte 14 Tage">${dots}</span><span class="habit-bar" title="Wird zur Gewohnheit"><i style="width:${Math.round(hs / GAME.habitDays * 100)}%"></i></span><span class="habit-cap">Wird zur Gewohnheit: ${hs} von ${GAME.habitDays} Tagen</span></span><span class="rstat-right"><span class="rstat-pct num">${rate == null ? '–' : rate + '%'}</span>${st ? `<span class="rstat-streak">🔥 ${st}</span>` : `<span class="rstat-streak" style="color:var(--label-3)">${taskCount(t)}×</span>`}</span></div>`;
     }
     html += '</section>';
   }
@@ -2839,17 +2834,6 @@ function renderProgress() {
   const unlocked = BADGES.filter(b => S.game.badges[b.id]), locked = BADGES.filter(b => !S.game.badges[b.id]);
   html += `<div class="section-head q"><span class="section-title">Abzeichen</span><span class="section-meta">${unlocked.length}/${BADGES.length}</span></div>
     <div class="badge-grid q">${unlocked.concat(locked).map(b => { const on = !!S.game.badges[b.id]; const isNew = on && !S.game.badgesSeen[b.id]; return `<button class="badge${on ? '' : ' locked'}${isNew ? ' new' : ''}" type="button" data-act="badge" data-id="${b.id}" aria-label="${escAttr(b.name)}${on ? '' : ' (gesperrt)'}"><span class="badge-ico">${b.emoji}</span><span class="badge-name">${escHtml(b.name)}</span></button>`; }).join('')}</div>`;
-
-  // Letzte 7 Kalendertage – auch die ohne Eintrag, damit Lücken sichtbar sind
-  if (historyKeysSorted().length) {
-    const keys = Array.from({ length: 7 }, (_, i) => addDays(today, -i));
-    html += `<div class="section-head"><span class="section-title">Letzte 7 Tage</span></div><section class="card" style="padding:4px 16px">${keys.map(k => {
-      const e = S.history[k]; const st = dayStatus(k);
-      const xp = e ? entryXp(e) : 0;
-      const val = st === 'perfect' ? '🔥 Alles erledigt' : st === 'frozen' ? '❄️ Joker' : st === 'rest' ? (S.game.firstDay && k < S.game.firstDay ? '–' : 'Ruhetag') : st === 'open' ? `${e ? e.done : 0}/${e ? e.total : requiredTasksFor(k).length} offen` : e ? `${e.done}/${e.total}` : `0/${requiredTasksFor(k).length}`;
-      return `<div class="history-row"><span class="history-date">${escHtml(dayLabel(k))}</span><span class="history-val${st === 'perfect' ? ' perfect' : st === 'frozen' ? ' frozen' : ''}">${val}${xp && !S.settings.quiet ? ` <span style="opacity:.7">· ${xp} XP</span>` : ''}</span></div>`;
-    }).join('')}</section>`;
-  }
 
   v.innerHTML = html;
   bindView(v);
@@ -2877,7 +2861,7 @@ function renderTokens() {
         : nx ? `Noch <b>${nx.points - total}</b> bis ${nx.emoji} ${escHtml(nx.name)}.`
         : rewards.length ? 'Alle Belohnungen erreicht – Zeit für neue Ziele.'
         : 'Setz dir ein Ziel: was gönnst du dir bei 30 Token?'}</div>
-      <div class="hero-badges">${rewards.length ? `<span class="pill gold">${reachedCount}/${rewards.length} Belohnungen</span>` : ''}${entries.length ? `<span class="pill">${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}</span>` : ''}</div>
+      <div class="hero-badges">${rewards.length ? `<span class="pill gold">${reachedCount}/${rewards.length} Belohnungen</span>` : ''}</div>
     </div>
   </section>`;
 
@@ -2889,10 +2873,10 @@ function renderTokens() {
     return `<button class="reward-row${reached ? ' reached' : ''}" type="button" data-act="rewardEdit" data-id="${escAttr(r.id)}" aria-label="${escAttr(r.name)}, ${reached ? 'erreicht' : `noch ${r.points - total} Token`}">
       <span class="reward-emoji" aria-hidden="true">${escHtml(r.emoji)}</span>
       <span class="reward-text"><span class="reward-name">${escHtml(r.name)}</span><span class="reward-bar"><i style="width:${pct}%"></i></span><span class="reward-meta">${reached ? escHtml(reachedLabel(r.reachedAt)) : `${fmtNum(Math.min(total, r.points))} von ${fmtNum(r.points)} Token`}</span></span>
-      <span class="reward-right"><span class="reward-left">${reached ? ICON.check.replace('<svg ', '<svg style="width:22px;height:22px" ') : `noch ${fmtNum(r.points - total)}`}</span></span>
+      ${reached ? `<span class="reward-right">${ICON.check.replace('<svg ', '<svg style="width:22px;height:22px" ')}</span>` : ''}
     </button>`; }).join('')}</section>`;
 
-  html += `<div class="section-head"><span class="section-title">Protokoll</span><span class="section-meta">${entries.length ? `${fmtNum(total)} Token` : ''}</span></div>`;
+  html += `<div class="section-head"><span class="section-title">Protokoll</span><span class="section-meta">${entries.length ? `${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}` : ''}</span></div>`;
   if (!entries.length) html += `<div class="card empty" style="padding:22px"><div class="empty-emoji">🪙</div><div class="empty-title">Noch kein Token</div><div class="empty-text">Tippe auf die Münze, sobald du einen Auftrag erledigt hast – und schreib kurz dazu, was es war.</div></div>`;
   else html += `<section class="card" style="padding:4px 16px">${entries.slice(0, 60).map(e => `<button class="log-row" type="button" data-act="tokenEdit" data-id="${escAttr(e.id)}">
       <span><span class="log-note${e.note ? '' : ' empty'}">${e.note ? escHtml(e.note) : 'Ohne Notiz'}</span><div class="log-day">${escHtml(dayLabel(e.day))}</div></span>
@@ -3024,7 +3008,7 @@ document.addEventListener('focusin', e => {
 });
 
 // ---- Routine-Editor ----
-let editTaskId = null, formSubs = [], formDays = [], formEmoji = EMOJIS[0], formColor = 'green', formCount = 0;
+let editTaskId = null, formSubs = [], formDays = [], formEmoji = EMOJIS[0], formColor = 'green';
 
 function openTaskEditor(id, preset) {
   editTaskId = id || null;
@@ -3040,8 +3024,6 @@ function openTaskEditor(id, preset) {
   formDays = t ? t.days.slice() : [0, 1, 2, 3, 4, 5, 6];
   formEmoji = t ? t.emoji : (preset && preset.emoji) || EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
   formColor = t ? t.colorId : (preset && preset.colorId) || COLORS[Math.floor(Math.random() * 6)].id;
-  formCount = t ? t.counter : 0;
-  $('tCountField').hidden = !t; $('tCountVal').textContent = formCount;
   $('tDelete').hidden = !t;
   $('tSubInput').value = '';
   renderEmojiGrid(); renderColorRow(); renderDayRow(); renderFormSubs();
@@ -3084,8 +3066,6 @@ $('tSubAdd').addEventListener('click', addFormSub);
 $('tSubInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addFormSub(); } });
 $('tName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('tName').blur(); } });
 $('tAlarmClear').addEventListener('click', () => { $('tAlarm').value = ''; });
-$('tCountMinus').addEventListener('click', () => { formCount = Math.max(0, formCount - 1); $('tCountVal').textContent = formCount; });
-$('tCountPlus').addEventListener('click', () => { formCount++; $('tCountVal').textContent = formCount; });
 $('tSave').addEventListener('click', saveTaskEditor);
 $('tDelete').addEventListener('click', () => { const t = taskById(editTaskId); if (!t) return; confirmSheet(`«${t.label}» löschen?`, 'Der Verlauf und die gesammelten XP bleiben erhalten.', 'Routine löschen', () => { closeSheet('taskSheet'); deleteTask(t); }); });
 
@@ -3118,7 +3098,6 @@ function saveTaskEditor() {
   t.mini = mini.slice(0, 40);
   if (t.alarmTime !== alarm) delete S.device.alarmNotified[t.id];
   t.alarmTime = hmValid(alarm) ? alarm : null;
-  t.counter = formCount;
   // Schritte: Erledigt-Status nach Name übernehmen
   const old = t.subtasks;
   t.subtasks = formSubs.map(n => { const o = old.find(s => s.name === n); return { name: n, completed: o ? o.completed : false }; });
@@ -3132,7 +3111,7 @@ function saveTaskEditor() {
   renderAll();
   if (wasNew && activeTasks().length > 8) setTimeout(() => toast('💡', 'Weniger ist mehr: HIGH ist für 3 bis 8 Routinen gebaut. Lieber wenige, die wirklich sitzen.'), 3200);
   if (wasNew) toast('✨', (S.settings.onboardingDone ? `<b>${escHtml(t.label)}</b> angelegt. Heute zählt sie als Bonus, ab morgen als Pflicht.` : `<b>${escHtml(t.label)}</b> angelegt.`) + (setupXp && !S.settings.quiet ? ` +${setupXp} XP für die Einrichtung.` : ''));
-  if (t.alarmTime) ensureNotifPermission().then(ok => { if (!ok) toast('🔔', 'Für Erinnerungen bitte Benachrichtigungen erlauben.', { label: 'Einstellungen', fn: openSettings }); });
+
   afterChangeChecks();
 }
 function deleteTask(t) {
@@ -3513,7 +3492,7 @@ function renderReview() {
     <div>
       <div class="field-label">Die drei wichtigsten für morgen</div>
       <div class="card tight" style="background:var(--fill-4);border:0;box-shadow:none;padding-top:4px;padding-bottom:4px">
-        ${openTodos.length ? openTodos.slice(0, 12).map(t => { const i = reviewPicks.indexOf(t.id); return `<button class="pick-row${i >= 0 ? ' on' : ''}" type="button" data-pick="${escAttr(t.id)}"><span class="rank">${i >= 0 ? i + 1 : '·'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.title)}</span>${t.dueDate ? `<span class="due ${t.dueDate < today ? 'overdue' : t.dueDate === today ? 'today' : 'future'}">${escHtml(dayLabel(t.dueDate))}</span>` : ''}</button>`; }).join('') : '<div class="c2 t-sub" style="padding:10px 0">Keine offenen To-Dos. Ein guter Moment, die wichtigsten für morgen zu notieren.</div>'}
+        ${openTodos.length ? openTodos.slice(0, 12).map(t => { const i = reviewPicks.indexOf(t.id); return `<button class="pick-row${i >= 0 ? ' on' : ''}" type="button" data-pick="${escAttr(t.id)}"><span class="rank">${i >= 0 ? i + 1 : '·'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.title)}</span>${t.dueDate ? `<span class="due ${t.dueDate < today ? 'overdue' : t.dueDate === today ? 'today' : 'future'}">${t.dueDate < today ? 'überfällig' : t.dueDate === today ? 'von heute' : escHtml(dayLabel(t.dueDate))}</span>` : ''}</button>`; }).join('') : '<div class="c2 t-sub" style="padding:10px 0">Keine offenen To-Dos. Ein guter Moment, die wichtigsten für morgen zu notieren.</div>'}
         <div class="sub-add" style="margin-top:8px"><input class="input" id="reviewNewTodo" placeholder="Neu für morgen …" maxlength="120" autocomplete="off" enterkeyhint="done"><button type="button" id="reviewAddBtn" aria-label="Hinzufügen">${ICON.plus}</button></div>
       </div>
       <div class="field-hint">${tomorrowTasks.length ? `Morgen geplant: ${tomorrowTasks.map(t => escHtml(t.emoji)).join(' ')} ${tomorrowTasks.length} Routine${tomorrowTasks.length === 1 ? '' : 'n'}${firstTime ? `, die erste um ${firstTime}` : ''}.` : 'Morgen ist keine Routine geplant.'}</div>
@@ -3661,9 +3640,9 @@ function renderSettings() {
       <div class="field-label">Erinnerungen</div>
       <div class="group">
         <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">To-Do-Erinnerung</span><span class="row-sub">Täglich, wenn etwas offen oder fällig ist</span></span><button class="switch${s.notifyEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.notifyEnabled}" data-set="notifyEnabled" aria-label="To-Do-Erinnerung"></button></div>
-        <div class="row"><span class="row-ico" style="background:var(--orange);opacity:.7">🕘</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="notifyTime" value="${escAttr(s.notifyTime || '09:00')}" aria-label="Uhrzeit To-Do-Erinnerung" style="min-height:40px;padding:6px 12px"></div>
+        ${s.notifyEnabled ? `<div class="row"><span class="row-ico" style="background:var(--orange);opacity:.7">🕘</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="notifyTime" value="${escAttr(s.notifyTime || '09:00')}" aria-label="Uhrzeit der To-Do-Erinnerung" style="min-height:44px;padding:6px 12px"></div>` : ''}
         <div class="row"><span class="row-ico" style="background:var(--indigo)">🌙</span><span class="row-text"><span class="row-title">Abend-Check</span><span class="row-sub">Erinnert an noch offene Routinen</span></span><button class="switch${s.eveningEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.eveningEnabled}" data-set="eveningEnabled" aria-label="Abend-Check"></button></div>
-        <div class="row"><span class="row-ico" style="background:var(--indigo);opacity:.7">🕗</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="eveningTime" value="${escAttr(s.eveningTime || '20:00')}" aria-label="Uhrzeit Abend-Check" style="min-height:40px;padding:6px 12px"></div>
+        ${s.eveningEnabled ? `<div class="row"><span class="row-ico" style="background:var(--indigo);opacity:.7">🕗</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="eveningTime" value="${escAttr(s.eveningTime || '20:00')}" aria-label="Uhrzeit des Abend-Checks" style="min-height:44px;padding:6px 12px"></div>` : ''}
         <div class="row"><span class="row-ico" style="background:var(--label-3)">🔐</span><span class="row-text"><span class="row-title">Berechtigung</span>${nextReminderText() ? `<span class="row-sub">${escHtml(nextReminderText())}</span>` : ''}</span><span class="row-val${permOk ? ' ok' : ''}">${escHtml(perm)}</span></div>
         <button class="row link" type="button" data-act="testNotif"><span class="row-text"><span class="row-title">Probe-Benachrichtigung senden</span><span class="row-sub">Zeigt, wie eine Systemmeldung dieser App aussieht</span></span></button>
       </div>
@@ -3673,14 +3652,14 @@ function renderSettings() {
       <div class="field-label">Tag & Pause</div>
       <div class="group">
         <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-text"><span class="row-title">Tagesende</span><span class="row-sub">Bis zu dieser Uhrzeit zählt Erledigtes noch zum Vortag – für lange Abende.</span></span><div class="segmented" id="dayEndSeg" role="radiogroup" aria-label="Tagesende">${[0, 2, 3, 4].map(h => { const on = (typeof s.dayEnd === 'number' ? s.dayEnd : 3) === h; return `<button class="seg${on ? ' on' : ''}" type="button" role="radio" aria-checked="${on}" data-dayend="${h}">${pad2(h)}:00</button>`; }).join('')}</div></div>
-        <div class="row"><span class="row-ico" style="background:var(--cyan)">🏖️</span><span class="row-text"><span class="row-title">Pause bis</span><span class="row-sub">${S.game.pause ? `Serien ruhen bis ${escHtml(dayLabel(S.game.pause.until))}.` : 'Ferien oder Krankheit: Serien ruhen, nichts gilt als verpasst.'}</span></span><input class="input" type="date" id="pauseUntil" value="${S.game.pause ? escAttr(S.game.pause.until) : ''}" min="${todayKey()}" aria-label="Pause bis" style="min-height:40px;padding:6px 10px;width:auto"></div>
+        <div class="row"><span class="row-ico" style="background:var(--cyan)">🏖️</span><span class="row-text"><span class="row-title">Pause bis</span><span class="row-sub">${S.game.pause ? `Serien ruhen bis ${escHtml(dayLabel(S.game.pause.until))}` : 'Ferien oder Krankheit: Serien ruhen, nichts gilt als verpasst.'}</span></span><input class="input" type="date" id="pauseUntil" value="${S.game.pause ? escAttr(S.game.pause.until) : ''}" min="${todayKey()}" aria-label="Pause bis" style="min-height:40px;padding:6px 10px;width:auto"></div>
       </div>
     </div>
     <div>
       <div class="field-label">Darstellung & Effekte</div>
       <div class="group">
         <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-title">Erscheinungsbild</span><div class="segmented" id="themeSeg" role="radiogroup" aria-label="Erscheinungsbild">${themeSeg}</div></div>
-        <div class="row"><span class="row-ico" style="background:var(--pink)">🎉</span><span class="row-text"><span class="row-title">Konfetti & Animationen</span></span><button class="switch${s.confetti ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.confetti}" data-set="confetti" aria-label="Konfetti"></button></div>
+        <div class="row"><span class="row-ico" style="background:var(--pink)">🎉</span><span class="row-text"><span class="row-title">Konfetti</span></span><button class="switch${s.confetti ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.confetti}" data-set="confetti" aria-label="Konfetti"></button></div>
         <div class="row"><span class="row-ico" style="background:var(--teal)">🔈</span><span class="row-text"><span class="row-title">Töne</span></span><button class="switch${s.sound ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.sound}" data-set="sound" aria-label="Töne"></button></div>
         <div class="row"><span class="row-ico" style="background:var(--gray)">🤫</span><span class="row-text"><span class="row-title">Ruhiger Modus</span><span class="row-sub">Blendet XP, Level und Abzeichen aus. Ring, Serie und Kalender bleiben.</span></span><button class="switch${s.quiet ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.quiet}" data-set="quiet" aria-label="Ruhiger Modus"></button></div>
       </div>
@@ -3715,7 +3694,11 @@ function renderSettings() {
       const ok = await ensureNotifPermission();
       if (!ok) { toast('🔔', 'Benachrichtigungen sind nicht erlaubt. Bitte in den System-Einstellungen freigeben.'); renderSettings(); return; }
     }
-    s[k] = !s[k]; touch(s); saveAll(); renderSettings(); scheduleTick();
+    s[k] = !s[k]; touch(s);
+    // Eben eingeschaltet und die Zeit ist heute schon vorbei: erst morgen erinnern, nicht sofort
+    if (s[k] && k === 'notifyEnabled' && nowHM() >= (s.notifyTime || '09:00')) S.device.lastNotifiedDate = clockDay();
+    if (s[k] && k === 'eveningEnabled' && nowHM() >= (s.eveningTime || '20:00')) S.device.lastEveningDate = clockDay();
+    saveAll(); renderSettings(); scheduleTick();
     if (k === 'sound' && s.sound) playSound('small');
     if (k === 'quiet') { document.body.classList.toggle('quiet', !!s.quiet); renderAll(); }
   }));
@@ -3727,13 +3710,16 @@ function renderSettings() {
     if (!isValidKey(v)) { S.game.pause = null; }
     else { const from = S.game.pause && S.game.pause.from && S.game.pause.from <= todayKey() ? S.game.pause.from : todayKey(); S.game.pause = { from, until: v }; }
     touch(S.game); recomputeDay(todayKey()); saveAll(); renderSettings(); renderAll();
-    toast('🏖️', S.game.pause ? `Pause bis ${escHtml(dayLabel(S.game.pause.until))}. Erholung zählt.` : 'Pause aufgehoben.');
+    toast('🏖️', S.game.pause ? `Pause bis ${escHtml(dayLabel(S.game.pause.until))} – Erholung zählt.` : 'Pause aufgehoben.');
   });
   body.querySelector('[data-act="testNotif"]').addEventListener('click', async () => {
     const ok = await ensureNotifPermission();
     if (!ok) { toast('🔔', 'Benachrichtigungen sind nicht erlaubt.'); renderSettings(); return; }
     const shown = await systemNotify('HIGH', 'So sehen Erinnerungen aus.', 'focus-test');
-    if (!shown) toast('⚠️', 'Systemmeldung nicht möglich. Auf dem iPhone geht das nur in der installierten App.');
+    // Im Vordergrund legt iOS die Meldung stumm in die Mitteilungszentrale – ohne diesen
+    // Hinweis sieht es so aus, als hätte der Knopf gar nichts getan.
+    if (shown) toast('🔔', 'Gesendet. Auf dem iPhone liegt sie in der Mitteilungszentrale – von oben herunterwischen.');
+    else toast('⚠️', 'Systemmeldung nicht möglich. Auf dem iPhone geht das nur in der installierten App.');
   });
   body.querySelector('[data-act="export"]').addEventListener('click', exportData);
   body.querySelector('[data-act="import"]').addEventListener('click', () => $('importFile').click());
@@ -3785,7 +3771,9 @@ async function notify(icon, title, body, tag, onTap) {
   if (document.visibilityState === 'visible' && document.hasFocus()) {
     // Nie über ein offenes Sheet oder eine Feier legen: der Hinweis würde genau die
     // Knöpfe zum Schliessen verdecken. false = später nochmals versuchen.
-    if (sheetStack.length || $('celebrate').classList.contains('show')) return false;
+    // Auch ein laufender Hinweis blockiert: sonst überschreiben sich mehrere Erinnerungen
+    // im selben Durchlauf und gelten trotzdem alle als gezeigt.
+    if (sheetStack.length || $('celebrate').classList.contains('show') || $('banner').classList.contains('show')) return false;
     showBanner(icon, title, body, onTap); return true;
   }
   return systemNotify(title, body, tag);
@@ -3793,8 +3781,9 @@ async function notify(icon, title, body, tag, onTap) {
 function nextReminderText() {
   const s = S.settings, today = todayKey(), now = nowHM();
   const items = [];
-  if (s.notifyEnabled) items.push({ t: s.notifyTime || '09:00', what: 'To-Dos', done: S.device.lastNotifiedDate === today });
-  if (s.eveningEnabled) items.push({ t: s.eveningTime || '20:00', what: 'Abend-Check', done: S.device.lastEveningDate === today });
+  const clock = clockDay();
+  if (s.notifyEnabled) items.push({ t: s.notifyTime || '09:00', what: 'To-Dos', done: S.device.lastNotifiedDate === clock });
+  if (s.eveningEnabled) items.push({ t: s.eveningTime || '20:00', what: 'Abend-Check', done: S.device.lastEveningDate === clock });
   const upcoming = items.filter(i => !i.done && i.t > now).sort((a, b) => a.t.localeCompare(b.t));
   if (upcoming.length) return `Nächste Erinnerung heute ${upcoming[0].t} (${upcoming[0].what})`;
   const later = items.sort((a, b) => a.t.localeCompare(b.t));
@@ -3810,10 +3799,10 @@ async function tick() {
     if (processRollover()) { saveAll({ silent: true }); dirty = true; resetCalToToday(); setTimeout(flushNotices, 400); }
     const s = S.settings, d = S.device;
     const now = nowHM();
-    const canNotify = ('Notification' in window) && Notification.permission === 'granted';
-    if (canNotify) {
+    const clock = clockDay();
+    {
       // To-Do-Erinnerung
-      if (s.notifyEnabled && now >= (s.notifyTime || '09:00') && d.lastNotifiedDate !== today) {
+      if (s.notifyEnabled && now >= (s.notifyTime || '09:00') && d.lastNotifiedDate !== clock) {
         const open = S.todos.filter(t => !t.completed && !t.deleted);
         const overdue = open.filter(t => t.dueDate && t.dueDate < today).length, due = open.filter(t => t.dueDate === today).length;
         let shown = true;
@@ -3821,22 +3810,22 @@ async function tick() {
           const parts = []; if (overdue) parts.push(`${overdue} überfällig`); if (due) parts.push(`${due} heute fällig`); if (!parts.length) parts.push(`${open.length} offen`);
           shown = await notify('📝', 'To-Dos', parts.join(' · '), 'focus-todo-daily', () => switchTab('todos'));
         }
-        if (shown) { d.lastNotifiedDate = today; saveAll({ silent: true }); }
+        if (shown) { d.lastNotifiedDate = clock; saveAll({ silent: true }); }
       }
       // Abend-Check für offene Routinen
-      if (s.eveningEnabled && now >= (s.eveningTime || '20:00') && d.lastEveningDate !== today) {
+      if (s.eveningEnabled && now >= (s.eveningTime || '20:00') && d.lastEveningDate !== clock) {
         const open = requiredTasksFor(today).filter(t => !t.completed);
         let shown = true;
         if (open.length) shown = await notify('🌙', open.length === 1 ? 'Eine Routine ist noch offen' : `${open.length} Routinen sind noch offen`, open.map(t => t.emoji + ' ' + t.label).join(', ') + (open.length === 1 ? ' – kurz erledigen, Streak halten.' : ' – Mini-Version zählt auch.'), 'focus-evening', () => switchTab('today'));
-        if (shown) { d.lastEveningDate = today; saveAll({ silent: true }); }
+        if (shown) { d.lastEveningDate = clock; saveAll({ silent: true }); }
       }
       // Alarme pro Routine
       let changed = false;
       for (const t of S.tasks) {
-        if (t.deleted || !t.alarmTime || t.completed || t.skippedDate === today || !isScheduledOn(t, today)) continue;
-        if (d.alarmNotified[t.id] === today || now < t.alarmTime) continue;
+        if (t.deleted || !t.alarmTime || t.completed || !isRequiredOn(t, today)) continue; // deckt Pause, Ruhetag und den Anlegetag mit ab
+        if (d.alarmNotified[t.id] === clock || now < t.alarmTime) continue;
         const shown = await notify(t.emoji, t.label, `Bis ${t.alarmTime} noch nicht erledigt – jetzt ist ein guter Moment.`, 'focus-task-' + t.id, () => switchTab('today'));
-        if (shown) { d.alarmNotified[t.id] = today; changed = true; }
+        if (shown) { d.alarmNotified[t.id] = clock; changed = true; }
       }
       if (changed) { saveAll({ silent: true }); dirty = true; }
     }
@@ -3849,12 +3838,12 @@ function scheduleTick() {
   if (tickTimer) { clearTimeout(tickTimer); tickTimer = null; }
   if (!tickInterval) tickInterval = setInterval(tick, 30 * 1000); // Rückfallebene, wenn Timer gedrosselt werden
   // Präziser Timer auf das nächste Ereignis
-  const today = todayKey(), now = new Date();
+  const today = todayKey(), clock = clockDay(), now = new Date();
   const times = [];
   const s = S.settings, d = S.device;
-  if (s.notifyEnabled && d.lastNotifiedDate !== today) times.push(s.notifyTime);
-  if (s.eveningEnabled && d.lastEveningDate !== today) times.push(s.eveningTime);
-  S.tasks.forEach(t => { if (!t.deleted && t.alarmTime && !t.completed && d.alarmNotified[t.id] !== today && isScheduledOn(t, today)) times.push(t.alarmTime); });
+  if (s.notifyEnabled && d.lastNotifiedDate !== clock) times.push(s.notifyTime);
+  if (s.eveningEnabled && d.lastEveningDate !== clock) times.push(s.eveningTime);
+  S.tasks.forEach(t => { if (!t.deleted && t.alarmTime && !t.completed && d.alarmNotified[t.id] !== clock && isRequiredOn(t, today)) times.push(t.alarmTime); });
   let next = null;
   times.filter(hmValid).forEach(hm => { const [h, m] = hm.split(':').map(Number); const d = new Date(now); d.setHours(h, m, 0, 0); if (d > now && (!next || d < next)) next = d; });
   const midnight = new Date(now); midnight.setHours(dayEndHour(), 0, 2, 0); if (midnight <= now) midnight.setDate(midnight.getDate() + 1);
@@ -4212,7 +4201,7 @@ function boot() {
 
   // Neue Abzeichen aus bestehendem Verlauf still freischalten (kein Feuerwerk für die Vergangenheit)
   const fresh = evaluateBadges();
-  fresh.forEach(b => { S.game.badgesSeen[b.id] = S.game.badgesSeen[b.id] || 0; });
+  fresh.forEach(b => { S.game.badgesSeen[b.id] = S.game.badgesSeen[b.id] || Date.now(); });
   if (fresh.length) saveAll({ silent: true });
   S.game.lastLevelSeen = Math.max(S.game.lastLevelSeen || 1, levelFromXp(totalXp()));
   saveAll({ silent: true });
