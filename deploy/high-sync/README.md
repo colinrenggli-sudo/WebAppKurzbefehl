@@ -20,108 +20,86 @@ er nur für dein iPhone, und dafür sorgt der Cloudflare Tunnel.
 
 ---
 
-## Schritt 1 · Datenordner und Schlüssel
+## Schritt 1 · Cloudflare-Eintrag
 
-Der Dienst läuft im Container nicht als root. Gehört der Datenordner
-root, kann er nichts schreiben – darum einmal anlegen und übergeben:
-
-```bash
-mkdir -p /mnt/user/appdata/webapps/high-daten
-chown -R 1000:1000 /mnt/user/appdata/webapps/high-daten
-```
-
-Stimmt das nicht, startet der Dienst gar nicht erst und schreibt ins
-Log, was zu tun ist. Ein Container, der scheinbar läuft und still nichts
-speichert, wäre schlimmer.
-
-Dann die Schlüssel, im Unraid-Terminal im Verzeichnis `deploy`:
-
-```bash
-# Zufallsschlüssel für den Abgleich
-echo "SYNC_TOKEN=$(head -c 32 /dev/urandom | base64 | tr -d '=+/' )" >> .env
-
-# Schlüsselpaar für die Erinnerungen (VAPID)
-docker compose build high-sync
-docker compose run --rm --no-deps high-sync \
-  node -e "const k=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey);console.log('VAPID_PRIVATE_KEY='+k.privateKey)" \
-  | tee -a .env
-```
-
-Dazu noch von Hand in `.env`:
-
-```
-VAPID_SUBJECT=mailto:deine@adresse.ch
-HIGH_DATA=/mnt/user/appdata/webapps/high-daten
-```
-
-`VAPID_SUBJECT` muss eine echte Adresse sein. Apple lehnt `localhost`
-und Platzhalter ab. Der private Schlüssel bleibt auf dem Server;
-`.env` ist per `.gitignore` ausgenommen und gehört nie ins Repo.
-
-## Schritt 2 · Starten
-
-```bash
-docker compose up -d --build
-docker compose logs -f high-sync
-```
-
-Im Log muss stehen: `bereit auf Port 8090 · Daten in /data · Zeitzone
-Europe/Zurich`. Steht dort die falsche Zeitzone, stimmen später die
-Erinnerungszeiten nicht.
-
-Prüfen:
-
-```bash
-curl -s http://localhost:8088/api/health
-# {"ok":true,"push":true}
-```
-
-`"push":false` heisst: die VAPID-Schlüssel fehlen oder sind unbrauchbar.
-Der Abgleich läuft dann trotzdem, Erinnerungen kommen aber keine.
-
-## Schritt 3 · Adresse im Tunnel
+Der einzige Schritt, den kein Skript abnehmen kann.
 
 Zuerst prüfen, ob der Tunnel überhaupt schon von aussen erreichbar ist:
 am iPhone **WLAN ausschalten**, dann `https://schlaf.colin-renggli.ch/schlaf/`
-öffnen. Lädt die Seite über Mobilfunk, läuft der Tunnel und die Domain
-liegt bei Cloudflare. Dann sind es unten zwei Klicks.
+öffnen. Lädt die Seite über Mobilfunk, läuft der Tunnel.
 
-Im Cloudflare-Dashboard → Zero Trust → Networks → Tunnels → dein Tunnel
-→ **Public Hostnames** → Add:
+Cloudflare-Dashboard → Zero Trust → Networks → Tunnels → dein Tunnel →
+**Public Hostnames** → Add:
 
 | Feld | Wert |
 | --- | --- |
 | Subdomain | `routine` |
-| Domain | `colin-renggli.ch` |
+| Domain | `gymlinkapp.ch` |
 | Service | `HTTP` → `webapps:8080` |
 
-Den DNS-Eintrag legt Cloudflare dabei selbst an, du musst nichts
-eintragen. Läuft cloudflared nicht im selben Compose-Netz, steht statt
-`webapps:8080` die IP des Servers mit Port 8088.
+Den DNS-Eintrag legt Cloudflare selbst an. Taucht `gymlinkapp.ch` im
+Auswahlfeld nicht auf, liegt die Domain nicht in diesem Cloudflare-Konto –
+dann muss sie dort zuerst hinzugefügt werden (Add a site), oder du nimmst
+eine Subdomain einer Domain, die schon drin ist.
 
-Danach liefert `https://routine.colin-renggli.ch/` die App aus und
-`https://routine.colin-renggli.ch/api/health` den Dienst. Beide auf
-derselben Adresse: genau deshalb braucht es kein CORS und keine
-Anmeldung über eine fremde Domain.
+Läuft cloudflared nicht im selben Compose-Netz, steht statt `webapps:8080`
+die IP des Servers mit Port 8088.
 
-## Schritt 4 · App verbinden
+## Schritt 2 · Ein Befehl auf dem Server
 
-1. In der alten App (GitHub Pages) **Einstellungen → Als Datei
-   exportieren**. Der Speicher hängt an der Adresse, beim Wechsel bleibt
-   sonst nichts erhalten.
-2. `https://routine.colin-renggli.ch/` in Safari öffnen, **Teilen → Zum
-   Home-Bildschirm**. Das alte Symbol vorher löschen, sonst hast du zwei.
-3. App öffnen → **Einstellungen → Server einrichten**. Adresse
-   `https://routine.colin-renggli.ch/api`, Schlüssel der `SYNC_TOKEN` aus
-   `.env`. Auf **Verbinden**.
-4. **Datei importieren** – das Backup aus Schritt 1.
+```bash
+cd /mnt/user/appdata/webapps/repo
+git pull
+bash deploy/einrichten.sh https://routine.gymlinkapp.ch
+```
+
+Das legt den Datenordner an und übergibt ihn dem Container, erzeugt den
+Abgleichschlüssel und die VAPID-Schlüssel für die Erinnerungen, startet
+alles und prüft, ob es antwortet. Am Ende steht dort ein Link:
+
+```
+https://routine.gymlinkapp.ch/#s=<dein Schlüssel>
+```
+
+Ein zweites Ausführen ist ungefährlich – vorhandene Schlüssel bleiben, wie
+sie sind. Würden sie neu erzeugt, wären alle verbundenen Geräte draussen.
+
+Läuft es nicht durch, sagt das Skript, woran es liegt. Das Log dazu:
+`cd deploy && docker compose logs --tail=40 high-sync web`.
+
+## Schritt 3 · Den Link am iPhone öffnen
+
+1. Falls du HIGH schon von GitHub Pages benutzt: dort **Einstellungen →
+   Als Datei exportieren**. Der Speicher hängt an der Adresse, beim
+   Wechsel bleibt sonst nichts erhalten.
+2. Den Link aus Schritt 2 in **Safari** öffnen. Die App verbindet sich von
+   selbst – in den Einstellungen steht danach «Verbunden».
+3. **Teilen → Zum Home-Bildschirm.** Das alte Symbol vorher löschen, sonst
+   hast du zwei. Ohne diesen Schritt gibt es keine Erinnerungen: iOS
+   erlaubt sie nur der installierten App.
+4. Falls du in Schritt 1 exportiert hast: **Einstellungen → Datei
+   importieren**.
 5. Schalter **Erinnerungen aufs Gerät** an. iOS fragt einmal nach der
    Erlaubnis. Danach **Probe-Erinnerung vom Server** antippen: sie muss
    auch bei gesperrtem Bildschirm ankommen.
 
-Ein zweites Gerät (Mac, iPad) braucht kein erneutes Tippen: auf dem
-verbundenen Gerät **Kopplungscode kopieren**, auf dem neuen in das Feld
-«Adresse» einfügen. Adresse und Schlüssel werden automatisch getrennt.
+Den Link nicht weitergeben – er enthält den Schlüssel. Für ein zweites
+eigenes Gerät gibt es in den Einstellungen **Kopplungscode kopieren**.
+
+## Vorher ausprobieren, ohne Cloudflare
+
+Der Abgleich lässt sich schon im eigenen Netz testen, bevor die Adresse
+steht:
+
+```bash
+bash deploy/einrichten.sh
+```
+
+Ohne Adresse druckt das Skript die Server-IP und den Schlüssel. Die App
+unter `http://<server-ip>:8088/` öffnen, **Einstellungen → Server
+einrichten**, Adresse `http://<server-ip>:8088/api` und den Schlüssel
+eintragen. Abgleich und App laufen damit. **Erinnerungen nicht:** dafür
+verlangt iOS https und die Installation auf dem Home-Bildschirm.
 
 ---
 
@@ -164,15 +142,17 @@ Bedeutung der Daten nicht und entscheidet nichts über sie.
 
 | Beobachtung | Wahrscheinliche Ursache |
 | --- | --- |
-| `"push":false` unter `/api/health` | VAPID-Schlüssel fehlen in `.env` |
+| Die Seite ist gar nicht erreichbar | Der Cloudflare-Eintrag aus Schritt 1 fehlt, oder cloudflared läuft nicht: `cd deploy && docker compose --profile tunnel up -d`. Prüfen lässt sich beides an einer Adresse, die schon geht |
+| `"push":false` unter `/api/health` | VAPID-Schlüssel fehlen in `.env` – `bash deploy/einrichten.sh` noch einmal laufen lassen |
 | Probe-Erinnerung kommt nicht an | App nicht vom Home-Bildschirm gestartet, oder Mitteilungen für HIGH in den iPhone-Einstellungen aus |
 | Erinnerung kommt zur falschen Zeit | Zeitzone des Containers, siehe Log beim Start |
 | Erinnerung kommt gar nicht mehr | Abo abgelaufen oder der Server hat neue VAPID-Schlüssel. Die App prüft beides bei jedem Start und meldet sich neu an; einmal öffnen genügt |
-| Dienst startet nicht, Log sagt «lässt sich nicht schreiben» | Der Datenordner gehört root, siehe Schritt 1 |
+| Dienst startet nicht, Log sagt «lässt sich nicht schreiben» | Der Datenordner gehört root: `chown -R 1000:1000 /mnt/user/appdata/webapps/high-daten` |
 | `/api/health` liefert 502 | Der Container `high-sync` läuft nicht: `docker compose up -d --build` |
 | «Schlüssel wird abgelehnt» in der App | `SYNC_TOKEN` in `.env` und in der App stimmen nicht überein |
-| «Andere Adresse als die App – das blockiert der Browser» | Die App wurde von einer anderen Adresse geöffnet als der Server, z. B. noch von GitHub Pages. Richtig ist der Weg über Schritt 4: von `routine.colin-renggli.ch` neu zum Home-Bildschirm hinzufügen. Nur für einen Übergang lässt sich in `.env` `ALLOW_ORIGIN=https://…` setzen |
-| Abgleich hängt bei «Nicht verbunden» | Tunnel oder Container aus; die App arbeitet lokal weiter und holt es nach |
+| «Andere Adresse als die App – das blockiert der Browser» | Die App wurde von einer anderen Adresse geöffnet als der Server, z. B. noch von GitHub Pages. Richtig ist der Weg über Schritt 3: den Link von `routine.gymlinkapp.ch` öffnen und von dort zum Home-Bildschirm hinzufügen. Nur für einen Übergang lässt sich in `.env` `ALLOW_ORIGIN=https://…` setzen |
+| «Eingerichtet – noch keine Verbindung» | Adresse ist gespeichert, der Server antwortet noch nicht. Tunnel oder Container aus; die App arbeitet lokal weiter und verbindet sich von selbst, sobald es geht |
+| Der Link tut nichts | Er wurde nicht in **Safari** geöffnet, sondern in einer anderen App. Adresse kopieren und in Safari einfügen |
 
 Log ansehen: `docker compose logs --tail=50 high-sync`. Jede verschickte
 Erinnerung steht dort mit Zeit und Anzahl Geräte.

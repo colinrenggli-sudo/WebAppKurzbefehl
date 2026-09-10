@@ -38,11 +38,16 @@ docker compose up -d
 docker compose ps
 ```
 
-Braucht das Plugin **Docker Compose Manager** (Apps → Compose). Ohne
-Plugin startet dieser Befehl **nur den Webserver** – die Apps laufen
-damit, HIGHs Abgleich und Erinnerungen aber nicht: die brauchen den
-zweiten Container aus `docker compose` (siehe
-[high-sync/README.md](high-sync/README.md)).
+Braucht das Plugin **Docker Compose Manager** (Apps → Compose).
+
+> **Für HIGH gibt es einen Weg in einem Zug:**
+> `bash deploy/einrichten.sh https://routine.gymlinkapp.ch` legt Ordner
+> und Schlüssel an, startet alles und druckt am Ende den Link fürs
+> iPhone. Siehe [high-sync/README.md](high-sync/README.md).
+
+Ohne das Plugin startet der Befehl unten **nur den Webserver** – die Apps
+laufen damit, HIGHs Abgleich und Erinnerungen aber nicht: die brauchen den
+zweiten Container aus `docker compose`.
 
 ```bash
 docker run -d --name webapps --restart unless-stopped \
