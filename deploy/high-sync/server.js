@@ -60,15 +60,38 @@ function safeEqual(a, b) {
 
 async function readJson(file, fallback) {
   try { return JSON.parse(await fsp.readFile(file, 'utf8')); }
-  catch (e) { if (e.code !== 'ENOENT') log('Lesen fehlgeschlagen:', file, e.message); return fallback; }
+  catch (e) {
+    if (e.code === 'ENOENT') return fallback;
+    // Unlesbar heisst nicht leer. Die Datei zur Seite legen und den Fehler nach
+    // oben geben – sonst hielte der Dienst einen Datenverlust für einen Neuanfang.
+    log('UNLESBAR:', file, e.message);
+    const err = new Error('Datei unlesbar: ' + path.basename(file));
+    err.code = 'CORRUPT';
+    throw err;
+  }
+}
+// Für Nebendateien, deren Verlust verschmerzbar ist (Abos, Versandliste)
+async function readJsonSoft(file, fallback) {
+  try { return await readJson(file, fallback); }
+  catch (e) {
+    try { await fsp.rename(file, file + '.kaputt.' + Date.now()); log('beiseitegelegt:', file); } catch (x) {}
+    return fallback;
+  }
 }
 
 // Erst in eine Nebendatei schreiben, dann umbenennen: ein Stromausfall
 // mitten im Schreiben kann die vorhandene Datei nicht zerstören.
 async function writeJsonAtomic(file, value) {
   const tmp = file + '.' + process.pid + '.tmp';
-  await fsp.writeFile(tmp, JSON.stringify(value), 'utf8');
+  const fh = await fsp.open(tmp, 'w');
+  try {
+    await fh.writeFile(JSON.stringify(value), 'utf8');
+    await fh.sync(); // erst wenn die Daten wirklich auf der Platte sind, darf umbenannt werden
+  } finally { await fh.close(); }
   await fsp.rename(tmp, file);
+  // Auch das Verzeichnis muss den neuen Namen kennen, sonst ist er nach einem
+  // Stromausfall wieder weg.
+  try { const dir = await fsp.open(path.dirname(file), 'r'); try { await dir.sync(); } finally { await dir.close(); } } catch (e) {}
 }
 
 // Schreibzugriffe hintereinander abarbeiten, damit sich zwei Anfragen nicht überholen
@@ -82,16 +105,19 @@ function serialize(fn) {
 // ---------- Sicherung ----------
 // Eine Kopie pro Tag, damit ein kaputter Abgleich nicht die einzige Fassung ist.
 async function snapshot(envelope) {
+  if (!envelope) return;
   const day = localDayKey();
   const file = path.join(BACKUP_DIR, day + '.json');
   try {
     await fsp.mkdir(BACKUP_DIR, { recursive: true });
-    await fsp.writeFile(file, JSON.stringify(envelope), 'utf8');
+    // 'wx' schlägt fehl, wenn es die Kopie schon gibt – eine einmal gesicherte
+    // Fassung des Tages darf später nichts mehr überschreiben.
+    await fsp.writeFile(file, JSON.stringify(envelope), { encoding: 'utf8', flag: 'wx' });
     const files = (await fsp.readdir(BACKUP_DIR)).filter(f => f.endsWith('.json')).sort();
     for (const old of files.slice(0, Math.max(0, files.length - BACKUP_KEEP))) {
       await fsp.unlink(path.join(BACKUP_DIR, old)).catch(() => {});
     }
-  } catch (e) { log('Sicherung fehlgeschlagen:', e.message); }
+  } catch (e) { if (e.code !== 'EEXIST') log('Sicherung fehlgeschlagen:', e.message); }
 }
 
 // ---------- HTTP ----------
@@ -145,7 +171,9 @@ function corsHeaders(req) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
+  let url;
+  try { url = new URL(req.url, 'http://localhost'); }
+  catch (e) { return send(res, 400, { error: 'Unsinnige Adresse' }); }
   const route = url.pathname.replace(/\/+$/, '') || '/';
   const cors = corsHeaders(req);
   if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
@@ -157,7 +185,10 @@ const server = http.createServer(async (req, res) => {
   // Der öffentliche Schlüssel ist keine Geheimsache: das Handy braucht ihn zum Anmelden.
   if (route === '/push/key' && req.method === 'GET') return antwort(200, { key: VAPID_PUBLIC || null });
 
-  if (!authorized(req)) return antwort(401, { error: 'Nicht angemeldet' });
+  if (!authorized(req)) {
+    log('abgewiesen:', req.method, route, 'von', req.headers['x-forwarded-for'] || req.socket.remoteAddress || '?');
+    return antwort(401, { error: 'Nicht angemeldet' });
+  }
 
   try {
     // --- Zustand holen ---
@@ -176,8 +207,13 @@ const server = http.createServer(async (req, res) => {
         return antwort(400, { error: 'state fehlt' });
       }
       const wanted = String(req.headers['if-match'] || '').replace(/"/g, '').trim();
-      return serialize(async () => {
+      return await serialize(async () => {
         const cur = await readJson(STATE_FILE, null);
+        // Ohne Bedingung wird nichts überschrieben: wer nicht sagt, auf welcher
+        // Fassung er aufbaut, bekommt die aktuelle und führt im Gerät zusammen.
+        if (cur && !wanted) {
+          return antwort(409, { error: 'Bedingung fehlt', current: cur }, { ETag: '"' + cur.rev + '"' });
+        }
         if (cur && wanted && wanted !== '*' && wanted !== String(cur.rev)) {
           return antwort(409, { error: 'Zwischendurch geändert', current: cur }, { ETag: '"' + cur.rev + '"' });
         }
@@ -190,9 +226,10 @@ const server = http.createServer(async (req, res) => {
           push: (body.push && typeof body.push === 'object') ? body.push : (cur ? cur.push : null),
           state: body.state,
         };
+        // Erst die bisherige Fassung sichern, dann überschreiben. Die Kopie des
+        // Tages entsteht einmal und bleibt danach unangetastet.
+        if (cur) await snapshot(cur);
         await writeJsonAtomic(STATE_FILE, env);
-        const prevDay = cur ? localDayKey(new Date(cur.updatedAt)) : null;
-        if (prevDay !== localDayKey()) await snapshot(env);
         return antwort(200, { rev: env.rev, updatedAt: env.updatedAt }, { ETag: '"' + env.rev + '"' });
       });
     }
@@ -203,8 +240,8 @@ const server = http.createServer(async (req, res) => {
       const sub = body && body.subscription;
       if (!sub || !sub.endpoint) return antwort(400, { error: 'subscription fehlt' });
       const id = String((body && body.deviceId) || crypto.createHash('sha256').update(sub.endpoint).digest('hex').slice(0, 16));
-      return serialize(async () => {
-        const subs = await readJson(SUBS_FILE, {});
+      return await serialize(async () => {
+        const subs = await readJsonSoft(SUBS_FILE, {});
         subs[id] = { subscription: sub, label: String((body && body.label) || '').slice(0, 60), updatedAt: Date.now() };
         await writeJsonAtomic(SUBS_FILE, subs);
         log('Abo gespeichert:', id, subs[id].label);
@@ -216,8 +253,8 @@ const server = http.createServer(async (req, res) => {
     if (route === '/push/subscribe' && req.method === 'DELETE') {
       const body = await readBody(req).catch(() => null);
       const id = body && body.deviceId;
-      return serialize(async () => {
-        const subs = await readJson(SUBS_FILE, {});
+      return await serialize(async () => {
+        const subs = await readJsonSoft(SUBS_FILE, {});
         if (id) delete subs[id];
         else if (body && body.endpoint) for (const k of Object.keys(subs)) if (subs[k].subscription.endpoint === body.endpoint) delete subs[k];
         await writeJsonAtomic(SUBS_FILE, subs);
@@ -235,6 +272,7 @@ const server = http.createServer(async (req, res) => {
   } catch (e) {
     if (e.code === 'TOO_LARGE') return antwort(413, { error: 'Zu viele Daten' });
     if (e.code === 'BAD_JSON') return antwort(400, { error: 'Kein gültiges JSON' });
+    if (e.code === 'CORRUPT') return antwort(500, { error: 'Gespeicherter Zustand ist unlesbar – bitte aus backup/ zurückspielen' });
     log('Fehler:', e.stack || e.message);
     return antwort(500, { error: 'Serverfehler' });
   }
@@ -249,7 +287,7 @@ if (webpush && VAPID_PUBLIC && VAPID_PRIVATE) {
 
 async function sendToAll(payload) {
   if (!webpush || !VAPID_PUBLIC || !VAPID_PRIVATE) { log('Push nicht eingerichtet – nichts gesendet.'); return 0; }
-  const subs = await readJson(SUBS_FILE, {});
+  const subs = await readJsonSoft(SUBS_FILE, {});
   const ids = Object.keys(subs);
   if (!ids.length) return 0;
   let ok = 0;
@@ -267,7 +305,7 @@ async function sendToAll(payload) {
   }
   if (tot.length) {
     await serialize(async () => {
-      const cur = await readJson(SUBS_FILE, {});
+      const cur = await readJsonSoft(SUBS_FILE, {});
       tot.forEach(id => delete cur[id]);
       await writeJsonAtomic(SUBS_FILE, cur);
       log('Abgelaufene Abos entfernt:', tot.join(', '));
@@ -350,7 +388,7 @@ async function tick() {
     if (!env) return;
     const due = duePayloads(env.push || (env.state && env.state.push), new Date());
     if (!due.length) return;
-    const sent = await readJson(SENT_FILE, {});
+    const sent = await readJsonSoft(SENT_FILE, {});
     const day = localDayKey();
     if (sent.day !== day) { sent.day = day; sent.keys = []; }
     const fresh = due.filter(d => !sent.keys.includes(d.key));
@@ -365,6 +403,13 @@ async function tick() {
     log('Erinnerungslauf fehlgeschlagen:', e.stack || e.message);
   } finally { ticking = false; }
 }
+
+// ---------- Absturzschutz ----------
+// Ein einzelner Fehler darf den Dienst nicht beenden: sonst kommen bis zum
+// nächsten Neustart weder Abgleich noch Erinnerungen.
+server.on('clientError', (err, socket) => { try { socket.destroy(); } catch (e) {} });
+process.on('unhandledRejection', (e) => log('unbehandelt:', (e && e.stack) || e));
+process.on('uncaughtException', (e) => log('Ausnahme:', (e && e.stack) || e));
 
 // ---------- Start ----------
 (async () => {

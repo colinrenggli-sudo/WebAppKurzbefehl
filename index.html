@@ -4136,9 +4136,13 @@ async function syncFetch(pfad, opts) {
 
 // Ein Durchgang: holen, zusammenführen, zurückschreiben. Bei einem Konflikt
 // (ein anderes Gerät war schneller) noch einmal von vorn, höchstens dreimal.
+let syncWieder = false;
 async function syncNow(opts) {
   opts = opts || {};
-  if (!syncConfigured() || syncBusy) return false;
+  if (!syncConfigured()) return false;
+  // Läuft schon einer: merken und danach gleich noch einmal, sonst geht die
+  // Änderung verloren, die währenddessen entstanden ist.
+  if (syncBusy) { syncWieder = true; return false; }
   if (navigator.onLine === false) { setSyncStatus('Offline – wird nachgeholt'); return false; }
   syncBusy = true;
   if (opts.loud) setSyncStatus('Gleiche ab …');
@@ -4154,21 +4158,40 @@ async function syncNow(opts) {
       const merged = remote ? mergeStates(currentState(), remote) : currentState();
       const mergedHash = hashState(merged);
       if (mergedHash !== vorher) {
-        applyState(merged, { otherLastOpenDay: remote && remote.game && remote.game.lastOpenDay });
-        saveAll({ silent: true }); renderAll(); afterChangeChecks();
+        // Vor dem Übernehmen eine Kopie: geht dabei etwas schief, steht danach
+        // wieder der alte Stand da statt eine halb übernommene Mischung.
+        const sicherung = JSON.stringify({ tasks: S.tasks, todos: S.todos, settings: S.settings, history: S.history, game: S.game, tokens: S.tokens });
+        try {
+          applyState(merged, { otherLastOpenDay: remote && remote.game && remote.game.lastOpenDay });
+          saveAll({ silent: true }); renderAll(); afterChangeChecks();
+        } catch (err) {
+          console.error('Übernehmen fehlgeschlagen:', err);
+          const alt = JSON.parse(sicherung);
+          S.tasks = alt.tasks; S.todos = alt.todos; S.settings = alt.settings;
+          S.history = alt.history; S.game = alt.game; S.tokens = alt.tokens;
+          stateVersion++; saveAll({ silent: true }); renderAll();
+          setSyncStatus('Abgleich abgebrochen – der Stand hier bleibt');
+          return false;
+        }
       }
       lastRev = rev;
 
       if (!remote || mergedHash !== hashState(remote)) {
+        // Genau den Stand merken, der rausgeht: was währenddessen dazukommt,
+        // gilt sonst als geschrieben und bliebe für immer liegen.
+        const gesendet = hashState(currentState());
         const koerper = JSON.stringify({ state: gatherCloudDoc(), push: buildPushPlan(), device: deviceLabel() });
         checkCloudDocSize(koerper);
         const put = await syncFetch('/state', { method: 'PUT', headers: rev ? { 'If-Match': '"' + rev + '"' } : {}, body: koerper });
         if (put.status === 409) continue; // ein anderes Gerät war schneller
         if (put.status === 413) { setSyncStatus('Daten zu gross für den Server'); return false; }
+        if (put.status === 500) { setSyncStatus('Server meldet ein Problem mit den Daten'); return false; }
         if (!put.ok) throw new Error('Speichern ' + put.status);
         lastRev = ((await put.json()) || {}).rev | 0;
+        lastPushedHash = gesendet;
+      } else {
+        lastPushedHash = hashState(currentState());
       }
-      lastPushedHash = hashState(currentState());
       lastSyncAt = Date.now(); syncFails = 0;
       setSyncStatus('');
       return true;
@@ -4179,10 +4202,19 @@ async function syncNow(opts) {
   } catch (e) {
     console.warn('Sync:', e);
     syncFails++;
-    setSyncStatus(e && e.name === 'AbortError' ? 'Server antwortet nicht' : 'Nicht verbunden – wird nachgeholt');
+    // Kommt die App von einer anderen Adresse als der Server, blockiert der Browser
+    // die Anfrage, bevor sie losgeht. Das sieht wie «Server weg» aus, ist es aber nicht.
+    let fremd = false;
+    try { fremd = new URL(syncBase()).origin !== location.origin; } catch (x) {}
+    setSyncStatus(e && e.name === 'AbortError' ? 'Server antwortet nicht'
+      : (fremd && e instanceof TypeError) ? 'Andere Adresse als die App – das blockiert der Browser'
+      : 'Nicht verbunden – wird nachgeholt');
     planRetry();
     return false;
-  } finally { syncBusy = false; }
+  } finally {
+    syncBusy = false;
+    if (syncWieder) { syncWieder = false; setTimeout(() => syncNow(), 400); }
+  }
 }
 
 function planRetry() {

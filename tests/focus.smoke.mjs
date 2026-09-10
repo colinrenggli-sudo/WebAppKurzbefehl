@@ -672,8 +672,12 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     r = await A.page.evaluate(async () => { const alt = S.device.syncToken; S.device.syncToken = 'falsch'; const ok = await syncNow(); const st = syncStatusText; S.device.syncToken = alt; return { ok, st }; });
     if (r.ok !== false || !/abgelehnt/i.test(r.st)) note('I: falscher Schlüssel wird nicht gemeldet');
     // Server weg: die App muss weiterlaufen und es sagen
+    // Nicht erreichbar: die App muss weiterlaufen und es sagen. Ein anderer Port ist
+    // für den Browser eine andere Herkunft, darum die entsprechende Meldung.
     r = await A.page.evaluate(async () => { const alt = S.device.syncUrl; S.device.syncUrl = 'http://127.0.0.1:9099'; const ok = await syncNow(); const st = syncStatusText; S.device.syncUrl = alt; return { ok, st }; });
     if (r.ok !== false || !r.st) note('I: fehlender Server wird nicht gemeldet');
+    const weiter = await A.page.evaluate(() => { S.tasks.push(normalizeTask({ id: 'sync-offline', label: 'Ohne Server', emoji: '🧱' })); saveAll({ silent: true }); return S.tasks.some(t => t.id === 'sync-offline'); });
+    if (!weiter) note('I: die App arbeitet ohne Server nicht weiter');
     ok('I: Abgleich über den eigenen Server – zwei Geräte, nichts verloren');
     await A.ctx.close(); await B.ctx.close();
   }
