@@ -189,7 +189,7 @@ svg { display: block; }
 .navbar-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; min-height: 48px; }
 .navbar-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .navbar-eyebrow { font-size: 0.765rem; font-weight: 600; letter-spacing: 0.02em; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.navbar-title { font-size: 2rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.navbar-title { font-size: 2rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.025em; overflow-wrap: anywhere; }
 .navbar-actions { display: flex; align-items: center; gap: 8px; padding-bottom: 4px; }
 .icon-btn {
   width: 44px; height: 44px; border-radius: 50%;
@@ -232,7 +232,7 @@ main { flex: 1; display: flex; flex-direction: column; }
 }
 .section-title { font-size: 1.294rem; font-weight: 700; letter-spacing: -0.01em; }
 .section-meta { font-size: 0.882rem; color: var(--label-2); font-family: var(--ff-round); font-weight: 600; }
-.section-link { font-size: 0.941rem; color: var(--link); font-weight: 600; padding: 6px 4px; min-height: 36px; }
+.section-link { min-height: 44px; padding: 6px 10px; margin-right: -10px; font-size: 0.941rem; color: var(--link); font-weight: 600; padding: 6px 4px; min-height: 36px; }
 
 /* ---------- Karten ---------- */
 .card {
@@ -250,13 +250,13 @@ main { flex: 1; display: flex; flex-direction: column; }
   content: ''; position: absolute; inset: auto -40% -60% auto; width: 220px; height: 220px; border-radius: 50%;
   background: radial-gradient(closest-side, var(--tint-soft), transparent 70%); pointer-events: none;
 }
-.ring-wrap { position: relative; width: 118px; height: 118px; }
+.ring-wrap { position: relative; width: max(118px, 7.4rem); height: max(118px, 7.4rem); flex-shrink: 0; }
 .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring-wrap circle { fill: none; stroke-width: 11; }
 .ring-wrap .track { stroke: color-mix(in srgb, var(--tint) 22%, transparent); }
 .ring-wrap .val { stroke: var(--tint); stroke-linecap: round; transition: stroke-dashoffset 0.9s var(--ease-out), stroke 0.4s; }
 .ring-wrap.done .val { stroke: var(--tint); filter: drop-shadow(0 0 6px var(--tint-soft)); }
-.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+.ring-center { position: absolute; inset: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; overflow: hidden; }
 .ring-num { font-family: var(--ff-round); font-weight: 800; font-size: 1.647rem; letter-spacing: -0.03em; line-height: 1; }
 .ring-num small { font-size: 0.882rem; color: var(--label-2); font-weight: 700; }
 .ring-sub { font-size: 0.647rem; font-weight: 700; color: var(--label-2); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
@@ -333,16 +333,16 @@ button.week-day { color: inherit; font: inherit; }
   width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
   padding: 12px 10px 12px 14px; text-align: left; color: inherit; min-height: 72px;
 }
-.routine-hit { display: grid; grid-template-columns: 48px 1fr; gap: 12px; align-items: center; min-width: 0; text-align: left; color: inherit; padding: 0; min-height: 48px; }
+.routine-hit { display: flex; gap: 12px; align-items: center; min-width: 0; text-align: left; color: inherit; padding: 0; min-height: 48px; }
 .routine-hit:active .routine-emoji { transform: scale(0.94); }
 .routine, .todo-row, .tabbar, .navbar, .sheet-grab, .action-sheet, .week, .badge, .rstat, .cal-grid { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .routine-emoji {
-  width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  flex: 0 0 48px; width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; background: color-mix(in srgb, var(--c) 18%, transparent);
   transition: transform var(--dur-fast);
 }
 @supports not (background: color-mix(in srgb, red 10%, white)) { .routine-emoji { background: var(--fill-3); } }
-.routine-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.routine-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .routine-title { font-size: 1rem; font-weight: 600; letter-spacing: -0.005em; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .routine.done .routine-title { color: var(--label-2); }
 .routine-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.706rem; font-weight: 600; color: var(--label-2); }
@@ -374,7 +374,7 @@ button.week-day { color: inherit; font: inherit; }
 .check.small svg { width: 14px; height: 14px; }
 .check-btn.small { width: 44px; height: 44px; }
 
-.chevron { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--label-3); }
+.chevron { flex: 0 0 auto; width: 28px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--label-3); }
 .chevron svg { width: 16px; height: 16px; transition: transform var(--dur); }
 .routine.open .chevron svg { transform: rotate(180deg); }
 
@@ -446,7 +446,7 @@ button.week-day { color: inherit; font: inherit; }
   animation: rise 0.3s var(--ease-out) both;
 }
 .todo-row.done { opacity: 0.6; }
-.todo-body { min-width: 0; padding: 6px 4px; text-align: left; color: inherit; display: flex; flex-direction: column; gap: 3px; }
+.todo-body { align-self: stretch; min-width: 0; padding: 6px 4px; text-align: left; color: inherit; display: flex; flex-direction: column; gap: 3px; }
 .todo-body:active { opacity: 0.7; }
 .todo-title { font-size: 1rem; font-weight: 500; line-height: 1.3; word-break: break-word; }
 .todo-row.done .todo-title { color: var(--label-2); font-weight: 400; }
@@ -595,17 +595,16 @@ button.week-day { color: inherit; font: inherit; }
   -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
   box-shadow: 0 -0.5px 0 var(--sep);
 }
-.tabbar-inner { max-width: var(--content-max); margin: 0 auto; display: flex; height: var(--tabbar-h); }
+.tabbar-inner { max-width: var(--content-max); margin: 0 auto; display: flex; min-height: var(--tabbar-h); }
 .tab {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   color: var(--gray); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.01em; padding-top: 4px;
   transition: color var(--dur-fast);
 }
-.tab svg { width: 26px; height: 26px; transition: transform var(--dur) var(--ease-spring); }
+.tab svg { width: 26px; height: 26px; flex-shrink: 0; transition: transform var(--dur) var(--ease-spring); }
 .tab.active { color: var(--tint-text); }
 .tab.active svg { transform: translateY(-1px); }
 .tab:active svg { transform: scale(0.9); }
-.tab .dot { position: absolute; }
 .tab-badge { position: absolute; top: 4px; margin-left: 16px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0 4px; font-family: var(--ff-round); }
 .tab { position: relative; }
 
@@ -703,8 +702,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .btn svg { width: 18px; height: 18px; }
 
 /* Inset grouped list (Einstellungen) */
-.group { background: var(--bg-elev-2); border-radius: var(--r-s); overflow: hidden; }
-:root[data-theme="light"] .group, .group { background: var(--fill-4); }
+.group { background: var(--fill-4); border-radius: var(--r-s); overflow: hidden; }
 .row {
   display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 8px 16px; position: relative; width: 100%; text-align: left; color: inherit;
 }
@@ -736,6 +734,9 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 
 /* Action Sheet */
 .action-sheet { background: transparent; box-shadow: none; padding: 0 10px calc(var(--safe-b) + 10px); gap: 8px; }
+/* Ohne diese Zeile lag «Abbrechen» bei vielen Einträgen unter dem Bildrand – und das Menü hatte keinen anderen Ausgang. */
+#actionBody { display: flex; flex-direction: column; gap: 8px; max-height: 100%; min-height: 0; }
+#actionBody .action-group:first-child { overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; }
 .action-group { background: var(--material-strong); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-radius: 14px; overflow: hidden; }
 .action-title { padding: 12px 16px 10px; font-size: 0.765rem; color: var(--label-2); text-align: center; font-weight: 600; border-bottom: 0.5px solid var(--sep); }
 .action-btn { width: 100%; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.176rem; color: var(--link); font-weight: 400; }
@@ -746,7 +747,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .action-btn svg { width: 20px; height: 20px; }
 
 /* ---------- Toast, Banner, XP-Flug ---------- */
-.toast-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px + var(--kb)); z-index: 48; display: flex; justify-content: center; pointer-events: none; padding: 0 16px; }
+.toast-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px + var(--kb)); z-index: 68; display: flex; justify-content: center; pointer-events: none; padding: 0 16px; }
 .toast {
   pointer-events: none; display: flex; align-items: center; gap: 12px; max-width: 420px; width: 100%;
   padding: 12px 14px 12px 16px; border-radius: 16px; background: var(--material-strong);
@@ -756,7 +757,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .toast.show { transform: none; opacity: 1; pointer-events: auto; }
 .toast-text { flex: 1; min-width: 0; }
 .toast-text b { font-family: var(--ff-round); font-weight: 800; }
-.toast-btn { color: var(--link); font-weight: 700; min-height: 36px; padding: 0 8px; }
+.toast-btn { color: var(--link); font-weight: 700; min-height: 44px; padding: 0 10px; }
 .toast-ico { font-size: 1.2rem; line-height: 1; }
 
 .banner {
@@ -813,7 +814,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 
 /* ---------- Reorder-Modus-Leiste ---------- */
 .mode-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: var(--r-m); background: var(--tint-soft); font-size: 0.882rem; font-weight: 600; }
-.mode-bar button { color: var(--tint-text); font-weight: 800; min-height: 36px; padding: 0 8px; }
+.mode-bar button { min-height: 44px; color: var(--tint-text); font-weight: 800; min-height: 36px; padding: 0 8px; }
 
 
 /* ---------- Anker, Rang, Gewohnheitsstärke, Tagesabschluss, Ruhiger Modus ---------- */
@@ -887,8 +888,6 @@ body.quiet .q { display: none !important; }
 /* ---------- Desktop ---------- */
 @media (min-width: 720px) {
   :root { --gutter: 20px; }
-  body { background: var(--bg); }
-  .tabbar-inner { border-radius: 0; }
 }
 @media (hover: hover) {
   .icon-btn:hover { background: var(--fill-2); }
@@ -907,6 +906,9 @@ body.quiet .q { display: none !important; }
   .xp-float { display: none; }
   .ring-wrap .val, .xp-fill, .sub-progress i { transition: none !important; }
   .tab svg, .check, .check svg, .icon-btn, .level-pill, .btn, .chip { transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease !important; }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --label-2: rgba(235,235,245,0.82); --label-3: rgba(235,235,245,0.62); --link: #4DA3FF; }
 }
 @media (prefers-contrast: more) {
   :root { --label-2: rgba(60,60,67,0.80); --label-3: rgba(60,60,67,0.55); --tint-text: #1A7A34; --link: #0040DD; }
@@ -2364,6 +2366,9 @@ function nextCelebration() {
   $('celebrateBtn').textContent = celebrateQueue.length ? 'Weiter' : 'Super!';
   const ov = $('celebrate');
   ov.removeAttribute('inert'); ov.removeAttribute('aria-hidden');
+  ov.setAttribute('aria-modal', 'true');
+  // Wie ein Sheet: der Hintergrund ist gesperrt, sonst wandert der Fokus auf verdeckte Knöpfe
+  $('app').setAttribute('inert', ''); $('app').classList.add('inert-bg');
   ov.classList.add('show');
   playSound('big');
   if (item.rain) confettiRain(); else confetti(innerWidth / 2, innerHeight * 0.4, 70, Math.PI * 2);
@@ -2371,7 +2376,8 @@ function nextCelebration() {
 }
 $('celebrateBtn').addEventListener('click', () => {
   const ov = $('celebrate');
-  ov.classList.remove('show');
+  ov.classList.remove('show'); ov.removeAttribute('aria-modal');
+  if (!sheetStack.length) { $('app').removeAttribute('inert'); $('app').classList.remove('inert-bg'); }
   setTimeout(() => { if (!ov.classList.contains('show')) { ov.setAttribute('inert', ''); ov.setAttribute('aria-hidden', 'true'); } nextCelebration(); }, 320);
 });
 $('celebrate').addEventListener('click', (e) => { if (e.target === e.currentTarget) $('celebrateBtn').click(); });
@@ -2459,7 +2465,7 @@ function motivation(p, streak) {
     if (h >= 20) return { title: 'Noch nichts erledigt heute', msg: (S.game.jokers || 0) > 0 ? `Eine Routine – auch die Mini-Version – reicht. Sonst springt um Mitternacht ein Joker ein (${S.game.jokers} übrig).` : 'Kein Joker mehr übrig. Eine Routine – auch die Mini-Version – genügt, damit die Serie bleibt.' };
     if (weekdayOf(today) === 1) return { title: 'Neue Woche, neuer Anlauf', msg: 'Welche Routine ist diese Woche die eine, die zählt? Mit ihr anfangen.' };
     if (d.getDate() === 1) return { title: `Der 1. ${MONTHS_LONG[d.getMonth()]}`, msg: 'Ein guter Tag für einen Neustart. Erste Routine, dann läuft es.' };
-    return { title: greeting(), msg: streak > 0 ? `${streak} Tage in Folge. Erste Routine, dann läuft es.` : 'Klein anfangen. Die erste Routine ist die wichtigste.' };
+    return { title: greeting(), msg: streak > 0 ? 'Erste Routine, dann läuft es.' : 'Klein anfangen. Die erste Routine ist die wichtigste.' };
   }
   if (left === 1) return { title: 'Nur noch eine', msg: 'Dann ist der Tag rund. Zieh es durch.' };
   if (p.pct >= 60) return { title: `Noch ${left}`, msg: 'Du bist über den Berg – der Rest ist Auslaufen.' };
@@ -2496,7 +2502,8 @@ function taskMetaHtml(t, today) {
     parts.push(`<span class="meta-chip alarm${late ? ' late' : ''}">${ICON.clock}${escHtml(t.alarmTime)}</span>`);
   }
   if (t.subtasks.length && !t.completed) { const d = t.subtasks.filter(s => s.completed).length; parts.push(`<span class="meta-chip sub">${d}/${t.subtasks.length}${d ? ' · angefangen' : ''}</span>`); }
-  if (t.cue && !t.completed) parts.push(`<span class="meta-chip cue">Nach: ${escHtml(t.cue)}</span>`);
+  // Der Anker ist als Nebensatz gespeichert («den Kaffee gemacht habe») – «Nach: …» ergab kein Deutsch
+  if (t.cue && !t.completed) parts.push(`<span class="meta-chip cue">Nachdem ich ${escHtml(t.cue)}</span>`);
   if (t.skippedDate === today) parts.push(`<span class="meta-chip">Heute pausiert</span>`);
   else if (!isRequiredOn(t, today) && isScheduledOn(t, today) && !t.completed) parts.push(`<span class="meta-chip">Neu · ab morgen Pflicht</span>`);
   return parts.length ? `<div class="routine-meta">${parts.join('')}</div>` : '';
@@ -2526,9 +2533,10 @@ function renderRoutineCard(t, today) {
             <span class="routine-title">${escHtml(t.label)}</span>
             ${taskMetaHtml(t, today)}
           </span>
+          ${hasSub && !reorderMode ? `<span class="chevron" aria-hidden="true">${ICON.chevron}</span>` : ''}
         </button>
         <span class="routine-right">
-          ${reorderMode ? `<span class="drag-handle" data-drag="${escAttr(t.id)}" aria-label="Verschieben">${ICON.drag}</span>` : hasSub ? `<span class="chevron">${ICON.chevron}</span>` : ''}
+          ${reorderMode ? `<span class="drag-handle" data-drag="${escAttr(t.id)}" aria-label="Verschieben">${ICON.drag}</span>` : ''}
           ${reorderMode ? '' : `<button class="check-btn" type="button" data-act="toggle" data-id="${escAttr(t.id)}" role="checkbox" aria-checked="${t.completed}" aria-label="${escAttr(t.label)} ${t.completed ? 'als offen markieren' : 'erledigen'}"><span class="check${t.completed ? ' on' : ''}">${ICON.check}</span></button>`}
         </span>
       </div>
@@ -2564,7 +2572,6 @@ function renderToday() {
   const p = todayProgress();
   const streak = currentStreak();
   const mot = motivation(p, streak);
-  const xp = totalXp(), lvl = levelFromXp(xp), lo = xpForLevel(lvl), hi = xpForLevel(lvl + 1);
   const dayXp = S.history[today] ? entryXp(S.history[today]) : 0;
   const quiet = !!S.settings.quiet;
 
@@ -2598,19 +2605,15 @@ function renderToday() {
       <div class="hero-badges">
         <span class="pill flame${isDoneStatus(dayStatus(today)) || p.total === 0 ? '' : ' cold'}" title="${isDoneStatus(dayStatus(today)) ? 'Serie heute gesichert' : 'Eine Routine sichert die Serie für heute'}">${ICON.flame}${streak} ${streak === 1 ? 'Tag' : 'Tage'}</span>
         ${dayXp && !quiet ? `<span class="pill xp q">+${dayXp} XP heute</span>` : ''}
-        ${(S.game.jokers || 0) > 0 ? `<span class="pill freeze" title="Joker">${ICON.snow}${S.game.jokers}</span>` : ''}
+        ${(S.game.jokers || 0) > 0 ? `<span class="pill freeze" title="Ein Joker hält die Serie an einem Tag ohne Haken">${ICON.snow}${S.game.jokers} Joker</span>` : ''}
       </div>
-      ${quiet ? '' : `<div class="xp-bar q" aria-label="Level-Fortschritt">
-        <div class="xp-bar-top"><span><b>Level ${lvl}</b> · ${escHtml(levelTitle(lvl))}</span><span class="num">${hi > lo ? (hi - xp <= (hi - lo) * 0.25 ? `Noch ${hi - xp} XP` : `${xp - lo} / ${hi - lo}`) : 'Max'}</span></div>
-        <div class="xp-track"><div class="xp-fill" style="width:${hi > lo ? clamp((xp - lo) / (hi - lo) * 100, 0, 100) : 100}%"></div></div>
-      </div>`}
     </div>
   </section>`;
 
   html += renderWeekStrip();
 
   if (!S.settings.tipsSeen.longpress && tasks.length) {
-    html += `<div class="tip"><span class="tip-ico">💡</span><div>Lange auf eine Routine drücken für Bearbeiten, Mini-Version, Pausieren oder Sortieren. Antippen klappt Schritte auf, der Kreis rechts erledigt.<br><button type="button" data-act="tipSeen" data-tip="longpress">Verstanden</button></div></div>`;
+    html += `<div class="tip"><span class="tip-ico">💡</span><div>Kreis rechts erledigt. Lange drücken zum Bearbeiten.<br><button type="button" data-act="tipSeen" data-tip="longpress">Verstanden</button></div></div>`;
   }
 
   if (reorderMode) html += `<div class="mode-bar"><span>Antippen zum Bearbeiten · am Griff ziehen zum Sortieren</span><button type="button" data-act="reorderDone">Fertig</button></div>`;
@@ -2941,7 +2944,8 @@ function openSheet(id) {
   $('scrim').classList.add('show');
   el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); el.setAttribute('aria-modal', 'true');
   el.classList.add('show');
-  el.style.zIndex = 50 + sheetStack.length;
+  el.style.zIndex = 50 + sheetStack.length * 2;
+  $('scrim').style.zIndex = 49 + sheetStack.length * 2; // Rückfrage über einem Editor muss den Editor wirklich sperren
   const body = el.querySelector('.sheet-body'); if (body) body.scrollTop = 0;
   setTimeout(() => { const f = el.querySelector('[autofocus]'); if (f) f.focus(); else el.setAttribute('tabindex', '-1'), el.focus({ preventScroll: true }); }, 60);
 }
@@ -2950,11 +2954,12 @@ function closeSheet(id) {
   if (!top) return;
   const idx = sheetStack.indexOf(top); if (idx >= 0) sheetStack.splice(idx, 1);
   const el = $(top);
+  if (sheetStack.length) $('scrim').style.zIndex = 49 + sheetStack.length * 2;
   if (el.contains(document.activeElement) && document.activeElement.blur) document.activeElement.blur(); // schliesst die Tastatur
   el.classList.remove('show'); el.classList.remove('dragging'); el.style.transform = ''; el.removeAttribute('aria-modal');
   setTimeout(() => { if (!el.classList.contains('show')) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); } }, 420);
   if (!sheetStack.length) {
-    $('scrim').classList.remove('show');
+    $('scrim').classList.remove('show'); $('scrim').style.zIndex = '';
     $('app').removeAttribute('inert'); $('app').classList.remove('inert-bg'); document.body.style.overflow = '';
     if (lastFocus && lastFocus.focus && lastFocus !== document.body && !(lastFocus.tagName === 'INPUT' || lastFocus.tagName === 'TEXTAREA')) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
     if (celebrateQueue.length && !celebrating) setTimeout(nextCelebration, 420); // aufgeschobene Feier nachholen
@@ -2965,7 +2970,11 @@ document.querySelectorAll('.sheet').forEach(el => { el.setAttribute('inert', '')
 { const ov = $('celebrate'); ov.setAttribute('inert', ''); ov.setAttribute('aria-hidden', 'true'); }
 function closeAllSheets() { while (sheetStack.length) closeSheet(); }
 $('scrim').addEventListener('click', () => closeSheet());
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetStack.length) closeSheet(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('celebrate').classList.contains('show')) $('celebrateBtn').click();
+  else if (sheetStack.length) closeSheet();
+});
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeSheet(b.closest('.sheet').id)));
 
 // Sheet per Griff nach unten wischen
@@ -2994,10 +3003,12 @@ document.querySelectorAll('.sheet').forEach(sheet => {
 function actionSheet(opts) {
   const body = $('actionBody');
   const items = opts.items.map((it, i) => `<button class="action-btn${it.destructive ? ' destructive' : ''}" type="button" data-i="${i}">${it.icon || ''}${escHtml(it.label)}</button>`).join('');
-  body.innerHTML = `<div class="action-group">${opts.title ? `<div class="action-title">${escHtml(opts.title)}${opts.message ? '<br>' + escHtml(opts.message) : ''}</div>` : ''}${items}</div>
+  body.innerHTML = `<div class="action-group">${opts.title ? `<div class="action-title" id="actionSheetTitle">${escHtml(opts.title)}${opts.message ? '<br>' + escHtml(opts.message) : ''}</div>` : ''}${items}</div>
     <div class="action-group"><button class="action-btn cancel" type="button" data-cancel>Abbrechen</button></div>`;
   body.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => { closeSheet('actionSheet'); setTimeout(() => opts.items[+b.dataset.i].fn(), 60); }));
   body.querySelector('[data-cancel]').addEventListener('click', () => closeSheet('actionSheet'));
+  const sheet = $('actionSheet');
+  if (opts.title) sheet.setAttribute('aria-labelledby', 'actionSheetTitle'); else { sheet.removeAttribute('aria-labelledby'); sheet.setAttribute('aria-label', 'Aktionen'); }
   openSheet('actionSheet');
 }
 function confirmSheet(title, message, label, fn, destructive) {
@@ -3644,7 +3655,7 @@ function renderSettings() {
   const s = S.settings;
   const perm = notifPermLabel();
   const permOk = ('Notification' in window) && Notification.permission === 'granted';
-  const themeSeg = ['system', 'light', 'dark'].map(t => `<button class="seg${(s.theme || 'system') === t ? ' on' : ''}" type="button" data-theme="${t}">${t === 'system' ? 'System' : t === 'light' ? 'Hell' : 'Dunkel'}</button>`).join('');
+  const themeSeg = ['system', 'light', 'dark'].map(t => { const on = (s.theme || 'system') === t; return `<button class="seg${on ? ' on' : ''}" type="button" role="radio" aria-checked="${on}" data-theme="${t}">${t === 'system' ? 'System' : t === 'light' ? 'Hell' : 'Dunkel'}</button>`; }).join('');
   $('settingsBody').innerHTML = `
     <div>
       <div class="field-label">Erinnerungen</div>
@@ -3661,14 +3672,14 @@ function renderSettings() {
     <div>
       <div class="field-label">Tag & Pause</div>
       <div class="group">
-        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-text"><span class="row-title">Tagesende</span><span class="row-sub">Bis zu dieser Uhrzeit zählt Erledigtes noch zum Vortag – für lange Abende.</span></span><div class="segmented" id="dayEndSeg">${[0, 2, 3, 4].map(h => `<button class="seg${(typeof s.dayEnd === 'number' ? s.dayEnd : 3) === h ? ' on' : ''}" type="button" data-dayend="${h}">${pad2(h)}:00</button>`).join('')}</div></div>
+        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-text"><span class="row-title">Tagesende</span><span class="row-sub">Bis zu dieser Uhrzeit zählt Erledigtes noch zum Vortag – für lange Abende.</span></span><div class="segmented" id="dayEndSeg" role="radiogroup" aria-label="Tagesende">${[0, 2, 3, 4].map(h => { const on = (typeof s.dayEnd === 'number' ? s.dayEnd : 3) === h; return `<button class="seg${on ? ' on' : ''}" type="button" role="radio" aria-checked="${on}" data-dayend="${h}">${pad2(h)}:00</button>`; }).join('')}</div></div>
         <div class="row"><span class="row-ico" style="background:var(--cyan)">🏖️</span><span class="row-text"><span class="row-title">Pause bis</span><span class="row-sub">${S.game.pause ? `Serien ruhen bis ${escHtml(dayLabel(S.game.pause.until))}.` : 'Ferien oder Krankheit: Serien ruhen, nichts gilt als verpasst.'}</span></span><input class="input" type="date" id="pauseUntil" value="${S.game.pause ? escAttr(S.game.pause.until) : ''}" min="${todayKey()}" aria-label="Pause bis" style="min-height:40px;padding:6px 10px;width:auto"></div>
       </div>
     </div>
     <div>
       <div class="field-label">Darstellung & Effekte</div>
       <div class="group">
-        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-title">Erscheinungsbild</span><div class="segmented" id="themeSeg">${themeSeg}</div></div>
+        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-title">Erscheinungsbild</span><div class="segmented" id="themeSeg" role="radiogroup" aria-label="Erscheinungsbild">${themeSeg}</div></div>
         <div class="row"><span class="row-ico" style="background:var(--pink)">🎉</span><span class="row-text"><span class="row-title">Konfetti & Animationen</span></span><button class="switch${s.confetti ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.confetti}" data-set="confetti" aria-label="Konfetti"></button></div>
         <div class="row"><span class="row-ico" style="background:var(--teal)">🔈</span><span class="row-text"><span class="row-title">Töne</span></span><button class="switch${s.sound ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.sound}" data-set="sound" aria-label="Töne"></button></div>
         <div class="row"><span class="row-ico" style="background:var(--gray)">🤫</span><span class="row-text"><span class="row-title">Ruhiger Modus</span><span class="row-sub">Blendet XP, Level und Abzeichen aus. Ring, Serie und Kalender bleiben.</span></span><button class="switch${s.quiet ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.quiet}" data-set="quiet" aria-label="Ruhiger Modus"></button></div>
