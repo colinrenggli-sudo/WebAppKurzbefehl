@@ -171,6 +171,7 @@ Bedeutung der Daten nicht und entscheidet nichts über sie.
 | Dienst startet nicht, Log sagt «lässt sich nicht schreiben» | Der Datenordner gehört root, siehe Schritt 1 |
 | `/api/health` liefert 502 | Der Container `high-sync` läuft nicht: `docker compose up -d --build` |
 | «Schlüssel wird abgelehnt» in der App | `SYNC_TOKEN` in `.env` und in der App stimmen nicht überein |
+| «Andere Adresse als die App – das blockiert der Browser» | Die App wurde von einer anderen Adresse geöffnet als der Server, z. B. noch von GitHub Pages. Richtig ist der Weg über Schritt 4: von `routine.colin-renggli.ch` neu zum Home-Bildschirm hinzufügen. Nur für einen Übergang lässt sich in `.env` `ALLOW_ORIGIN=https://…` setzen |
 | Abgleich hängt bei «Nicht verbunden» | Tunnel oder Container aus; die App arbeitet lokal weiter und holt es nach |
 
 Log ansehen: `docker compose logs --tail=50 high-sync`. Jede verschickte
