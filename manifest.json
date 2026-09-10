@@ -1,7 +1,7 @@
 {
-  "name": "Focus – Routinen & To-Dos",
-  "short_name": "Focus",
-  "description": "Routinen und To-Dos, die man wirklich durchzieht – mit Streaks, Level und einem Tagesring.",
+  "name": "HIGH – Routinen & To-Dos",
+  "short_name": "HIGH",
+  "description": "Routinen und To-Dos, die man wirklich durchzieht – mit Streak, Level, Token und einem Tagesring.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,11 +9,34 @@
   "background_color": "#000000",
   "theme_color": "#000000",
   "lang": "de-CH",
-  "categories": ["productivity", "lifestyle"],
+  "categories": [
+    "productivity",
+    "lifestyle"
+  ],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
