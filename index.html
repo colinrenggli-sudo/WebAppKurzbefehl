@@ -6,15 +6,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Focus">
+<meta name="apple-mobile-web-app-title" content="HIGH">
 <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Focus – Routinen und To-Dos, die man wirklich durchzieht.">
+<meta name="description" content="HIGH – Routinen und To-Dos, die man wirklich durchzieht.">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<title>Focus</title>
+<title>HIGH</title>
 <style>
 /* =====================================================================
    FOCUS – Designsystem nach Apple Human Interface Guidelines (iOS)
@@ -150,6 +150,7 @@ button { background: none; border: 0; cursor: pointer; }
 button:disabled { opacity: 0.4; cursor: default; }
 :focus { outline: none; }
 :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 6px; }
+.sheet:focus, .sheet:focus-visible { outline: none; } /* das Sheet selbst bekommt den Fokus nur, damit VoiceOver hineinspringt */
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 svg { display: block; }
@@ -211,6 +212,13 @@ svg { display: block; }
 .level-pill .ring circle { fill: none; stroke-width: 3; }
 .level-pill .ring .track { stroke: var(--fill-2); }
 .level-pill .ring .val { stroke: var(--tint); stroke-linecap: round; transition: stroke-dashoffset 0.8s var(--ease-out); }
+
+/* 320-pt-Geräte: die Level-Plakette gibt ihren Text auf, damit der Titel lesbar bleibt */
+@media (max-width: 380px) {
+  .navbar-title { font-size: 1.7rem; }
+  #levelPillText { display: none; }
+  .level-pill { padding: 0 7px; }
+}
 
 main { flex: 1; display: flex; flex-direction: column; }
 .view { display: none; flex-direction: column; gap: 14px; padding: 8px var(--gutter) calc(var(--tabbar-h) + var(--safe-b) + 28px); }
@@ -740,12 +748,12 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 /* ---------- Toast, Banner, XP-Flug ---------- */
 .toast-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px + var(--kb)); z-index: 48; display: flex; justify-content: center; pointer-events: none; padding: 0 16px; }
 .toast {
-  pointer-events: auto; display: flex; align-items: center; gap: 12px; max-width: 420px; width: 100%;
+  pointer-events: none; display: flex; align-items: center; gap: 12px; max-width: 420px; width: 100%;
   padding: 12px 14px 12px 16px; border-radius: 16px; background: var(--material-strong);
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--shadow-float); border: var(--card-border);
   font-size: 0.941rem; font-weight: 500; transform: translateY(20px); opacity: 0; transition: transform var(--dur) var(--ease-out), opacity var(--dur);
 }
-.toast.show { transform: none; opacity: 1; }
+.toast.show { transform: none; opacity: 1; pointer-events: auto; }
 .toast-text { flex: 1; min-width: 0; }
 .toast-text b { font-family: var(--ff-round); font-weight: 800; }
 .toast-btn { color: var(--link); font-weight: 700; min-height: 36px; padding: 0 8px; }
@@ -757,10 +765,13 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
   background: var(--material-strong); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
   box-shadow: var(--shadow-float); border: var(--card-border);
   display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center;
-  transform: translateY(-120%); transition: transform 0.45s var(--ease-sheet);
+  transform: translateY(-120%); opacity: 0; pointer-events: none;
+  transition: transform 0.45s var(--ease-sheet), opacity 0.25s ease;
   cursor: pointer;
 }
-.banner.show { transform: none; }
+/* Sichtbarkeit hängt an .show, nicht nur am transform – sonst holt ein
+   !important-Override (reduzierte Bewegung) den Hinweis als Geist zurück. */
+.banner.show { transform: none; opacity: 1; pointer-events: auto; }
 .banner-ico { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: var(--tint-soft); }
 .banner-title { font-size: 0.941rem; font-weight: 700; }
 .banner-body { font-size: 0.882rem; color: var(--label-2); margin-top: 1px; }
@@ -1205,7 +1216,7 @@ body.quiet .q { display: none !important; }
 
 <script>
 // =====================================================================
-// FOCUS – App-Logik
+// HIGH – App-Logik
 // Aufbau: 0 Konfiguration · 1 Hilfsfunktionen · 2 Zustand & Migration ·
 // 3 Planung (Wochentage) · 4 Tageswechsel & Joker · 5 Erledigen & XP ·
 // 6 Streaks, Statistik, Level, Abzeichen · 7 Feedback (Ton, Konfetti, Toast) ·
@@ -2339,6 +2350,9 @@ const celebrateQueue = [];
 let celebrating = false;
 function celebrate(item) { celebrateQueue.push(item); if (!celebrating) nextCelebration(); }
 function nextCelebration() {
+  // Nicht über ein offenes Sheet feiern – die Feier liegt sonst vor den Knöpfen
+  // des Sheets. Sie wird beim Schliessen nachgeholt.
+  if (sheetStack.length) { celebrating = false; return; }
   const item = celebrateQueue.shift();
   if (!item) { celebrating = false; return; }
   celebrating = true;
@@ -2561,7 +2575,7 @@ function renderToday() {
     const n = activeTasks().length;
     html += `<div class="card empty">
       <div class="empty-emoji">👋</div>
-      <div class="empty-title">${n ? `${n} Routine${n === 1 ? '' : 'n'} gewählt` : 'Willkommen bei Focus'}</div>
+      <div class="empty-title">${n ? `${n} Routine${n === 1 ? '' : 'n'} gewählt` : 'Willkommen bei HIGH'}</div>
       <div class="empty-text">${n ? 'Ein bis drei Routinen sind ein guter Start. Lieber wenige, die du wirklich durchziehst – erweitern kannst du jederzeit.' : 'Wähle eine Routine, die du täglich durchziehen willst – so klein, dass sie fast lächerlich ist. Dranbleiben ist das Ziel.'}</div>
       <div class="suggest-row">${left.map(s => `<button class="chip" type="button" data-act="starter" data-i="${STARTER_ROUTINES.indexOf(s)}">${s.emoji} ${escHtml(s.label)}</button>`).join('')}</div>
       <div class="suggest-row">
@@ -2856,8 +2870,11 @@ function renderTokens() {
     <button class="token-btn" type="button" id="tokenBtn" data-act="tokenAdd" aria-label="Token eintragen">🪙<small>+ Token</small></button>
     <div class="hero-text">
       <div class="token-total num">${fmtNum(total)}<small>Token</small></div>
-      <div class="hero-msg">${entries.length ? (nx ? `Noch <b>${nx.points - total}</b> bis ${nx.emoji} ${escHtml(nx.name)}.` : 'Alle Belohnungen erreicht – Zeit für neue Ziele.') : 'Antippen, wenn du etwas geschafft hast. Jeder Token zählt für alle Belohnungen gleichzeitig.'}</div>
-      <div class="hero-badges"><span class="pill gold">${reachedCount}/${rewards.length} Belohnungen</span>${entries.length ? `<span class="pill">${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}</span>` : ''}</div>
+      <div class="hero-msg">${!entries.length ? 'Antippen, wenn du etwas geschafft hast. Jeder Token zählt für alle Belohnungen gleichzeitig.'
+        : nx ? `Noch <b>${nx.points - total}</b> bis ${nx.emoji} ${escHtml(nx.name)}.`
+        : rewards.length ? 'Alle Belohnungen erreicht – Zeit für neue Ziele.'
+        : 'Setz dir ein Ziel: was gönnst du dir bei 30 Token?'}</div>
+      <div class="hero-badges">${rewards.length ? `<span class="pill gold">${reachedCount}/${rewards.length} Belohnungen</span>` : ''}${entries.length ? `<span class="pill">${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}</span>` : ''}</div>
     </div>
   </section>`;
 
@@ -2919,6 +2936,7 @@ function openSheet(id) {
   const el = $(id);
   if (!el || el.classList.contains('show')) return;
   if (!sheetStack.length) { lastFocus = document.activeElement; $('app').setAttribute('inert', ''); $('app').classList.add('inert-bg'); document.body.style.overflow = 'hidden'; }
+  hideBanner();
   sheetStack.push(id);
   $('scrim').classList.add('show');
   el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); el.setAttribute('aria-modal', 'true');
@@ -2939,6 +2957,7 @@ function closeSheet(id) {
     $('scrim').classList.remove('show');
     $('app').removeAttribute('inert'); $('app').classList.remove('inert-bg'); document.body.style.overflow = '';
     if (lastFocus && lastFocus.focus && lastFocus !== document.body && !(lastFocus.tagName === 'INPUT' || lastFocus.tagName === 'TEXTAREA')) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
+    if (celebrateQueue.length && !celebrating) setTimeout(nextCelebration, 420); // aufgeschobene Feier nachholen
   }
 }
 // Geschlossene Sheets sind für Tastatur und VoiceOver unsichtbar
@@ -3100,7 +3119,7 @@ function saveTaskEditor() {
   saveAll();
   closeSheet('taskSheet');
   renderAll();
-  if (wasNew && activeTasks().length > 8) setTimeout(() => toast('💡', 'Weniger ist mehr: Focus ist für 3 bis 8 Routinen gebaut. Lieber wenige, die wirklich sitzen.'), 3200);
+  if (wasNew && activeTasks().length > 8) setTimeout(() => toast('💡', 'Weniger ist mehr: HIGH ist für 3 bis 8 Routinen gebaut. Lieber wenige, die wirklich sitzen.'), 3200);
   if (wasNew) toast('✨', (S.settings.onboardingDone ? `<b>${escHtml(t.label)}</b> angelegt. Heute zählt sie als Bonus, ab morgen als Pflicht.` : `<b>${escHtml(t.label)}</b> angelegt.`) + (setupXp && !S.settings.quiet ? ` +${setupXp} XP für die Einrichtung.` : ''));
   if (t.alarmTime) ensureNotifPermission().then(ok => { if (!ok) toast('🔔', 'Für Erinnerungen bitte Benachrichtigungen erlauben.', { label: 'Einstellungen', fn: openSettings }); });
   afterChangeChecks();
@@ -3637,7 +3656,7 @@ function renderSettings() {
         <div class="row"><span class="row-ico" style="background:var(--label-3)">🔐</span><span class="row-text"><span class="row-title">Berechtigung</span>${nextReminderText() ? `<span class="row-sub">${escHtml(nextReminderText())}</span>` : ''}</span><span class="row-val${permOk ? ' ok' : ''}">${escHtml(perm)}</span></div>
         <button class="row link" type="button" data-act="testNotif"><span class="row-text"><span class="row-title">Probe-Benachrichtigung senden</span><span class="row-sub">Zeigt, wie eine Systemmeldung dieser App aussieht</span></span></button>
       </div>
-      <div class="hint" style="margin-top:8px">Ehrlich gesagt: Die App hat keinen Server. Erinnerungen werden von der App selbst ausgelöst – auf dem iPhone also dann, wenn du sie öffnest oder sie kurz zuvor offen war; am Computer auch im Hintergrund. Installiert («Teilen → Zum Home-Bildschirm», ab iOS 16.4) funktioniert es am besten. Für eine Erinnerung zur festen Uhrzeit hilft die Kurzbefehle-App: Automation «Um 07:30 → Focus öffnen».</div>
+      <div class="hint" style="margin-top:8px">Ehrlich gesagt: Die App hat keinen Server. Erinnerungen werden von der App selbst ausgelöst – auf dem iPhone also dann, wenn du sie öffnest oder sie kurz zuvor offen war; am Computer auch im Hintergrund. Installiert («Teilen → Zum Home-Bildschirm», ab iOS 16.4) funktioniert es am besten. Für eine Erinnerung zur festen Uhrzeit hilft die Kurzbefehle-App: Automation «Um 07:30 → HIGH öffnen».</div>
     </div>
     <div>
       <div class="field-label">Tag & Pause</div>
@@ -3677,7 +3696,7 @@ function renderSettings() {
         <button class="row destructive" type="button" data-act="resetAll"><span class="row-ico" style="background:var(--red)">🗑️</span><span class="row-text"><span class="row-title">Alles zurücksetzen</span><span class="row-sub">Löscht Routinen, To-Dos, Verlauf und XP auf diesem Gerät</span></span></button>
       </div>
     </div>
-    <div class="hint" style="text-align:center">Focus ${APP_VERSION} · ${escHtml(location.host || 'lokal')}</div>`;
+    <div class="hint" style="text-align:center">HIGH ${APP_VERSION} · ${escHtml(location.host || 'lokal')}</div>`;
   const body = $('settingsBody');
   body.querySelectorAll('[data-set]').forEach(sw => sw.addEventListener('click', async () => {
     const k = sw.dataset.set;
@@ -3702,7 +3721,7 @@ function renderSettings() {
   body.querySelector('[data-act="testNotif"]').addEventListener('click', async () => {
     const ok = await ensureNotifPermission();
     if (!ok) { toast('🔔', 'Benachrichtigungen sind nicht erlaubt.'); renderSettings(); return; }
-    const shown = await systemNotify('Focus', 'So sehen Erinnerungen aus.', 'focus-test');
+    const shown = await systemNotify('HIGH', 'So sehen Erinnerungen aus.', 'focus-test');
     if (!shown) toast('⚠️', 'Systemmeldung nicht möglich. Auf dem iPhone geht das nur in der installierten App.');
   });
   body.querySelector('[data-act="export"]').addEventListener('click', exportData);
@@ -3752,7 +3771,12 @@ async function systemNotify(title, body, tag) {
 // Im Vordergrund: dezenter Hinweis in der App. Im Hintergrund: Systembenachrichtigung.
 // Liefert true, wenn der Hinweis tatsächlich gezeigt wurde.
 async function notify(icon, title, body, tag, onTap) {
-  if (document.visibilityState === 'visible' && document.hasFocus()) { showBanner(icon, title, body, onTap); return true; }
+  if (document.visibilityState === 'visible' && document.hasFocus()) {
+    // Nie über ein offenes Sheet oder eine Feier legen: der Hinweis würde genau die
+    // Knöpfe zum Schliessen verdecken. false = später nochmals versuchen.
+    if (sheetStack.length || $('celebrate').classList.contains('show')) return false;
+    showBanner(icon, title, body, onTap); return true;
+  }
   return systemNotify(title, body, tag);
 }
 function nextReminderText() {

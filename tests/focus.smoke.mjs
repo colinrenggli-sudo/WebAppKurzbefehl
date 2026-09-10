@@ -434,6 +434,44 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario F: Reduzierte Bewegung – nichts Unsichtbares darf im Weg stehen ----------
+// Hintergrund: «Bewegung reduzieren» (iOS-Einstellung) hatte den ausgeblendeten
+// In-App-Hinweis sichtbar und tastbar gemacht. Er klebte über der obersten Leiste
+// und über dem Kopf jedes Sheets – «Neue Routine» liess sich nicht mehr schliessen.
+{
+  const ctx = await browser.newContext({ ...iphone, colorScheme: 'dark', locale: 'de-CH', timezoneId: 'Europe/Zurich', reducedMotion: 'reduce' });
+  const page = await ctx.newPage();
+  await page.clock.install({ time: NOON });
+  page.on('pageerror', e => note('F: pageerror: ' + e.message));
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const banner = await page.evaluate(() => { const c = getComputedStyle(document.getElementById('banner')); return { op: +c.opacity, pe: c.pointerEvents }; });
+  if (banner.op !== 0 || banner.pe !== 'none') note(`F: hidden banner is visible/tappable (opacity ${banner.op}, pointer-events ${banner.pe})`);
+  const topEl = await page.evaluate(() => { const el = document.elementFromPoint(30, 70); return el ? (el.id || el.className || el.tagName) : 'nothing'; });
+  if (/banner/.test(String(topEl))) note('F: banner covers the navbar area');
+  // Onboarding und Navigationsknöpfe müssen erreichbar sein
+  await page.click('[data-act="starter"][data-i="0"]'); await page.waitForTimeout(300);
+  await page.click('[data-act="onboardingDone"]'); await page.waitForTimeout(400);
+  try { await page.click('#navAdd', { timeout: 5000 }); } catch (e) { note('F: navbar "+" not tappable'); }
+  await page.waitForTimeout(600);
+  if (!(await page.locator('#taskSheet.show').count())) note('F: routine sheet did not open');
+  try { await page.click('#taskSheet [data-close]', { timeout: 5000 }); } catch (e) { note('F: routine sheet cannot be closed'); }
+  await page.waitForTimeout(600);
+  if (await page.locator('#taskSheet.show').count()) note('F: routine sheet stayed open');
+  // Ein Hinweis darf sich nie über ein offenes Sheet legen
+  await page.evaluate(() => openTaskEditor(null)); await page.waitForTimeout(500);
+  const delivered = await page.evaluate(() => notify('⏰', 'Test', 'Body', 'f-test'));
+  if (delivered !== false || await page.locator('#banner.show').count()) note('F: banner shown over an open sheet');
+  // Eine Feier wartet, bis das Sheet zu ist – und geht dabei nicht verloren
+  await page.evaluate(() => celebrate({ emoji: '🎉', eyebrow: 'Test', title: 'Test' })); await page.waitForTimeout(500);
+  if (await page.locator('#celebrate.show').count()) note('F: celebration covered an open sheet');
+  await page.evaluate(() => closeSheet()); await page.waitForTimeout(1200);
+  if (!(await page.locator('#celebrate.show').count())) note('F: deferred celebration was lost');
+  await page.click('#celebrateBtn'); await page.waitForTimeout(500);
+  ok('F: reduced motion – no invisible blockers');
+  await ctx.close();
+}
+
 await browser.close();
 console.log('\n==== SUMMARY ====');
 console.log(issues.length ? issues.join('\n') : 'no issues');
