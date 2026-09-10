@@ -188,8 +188,8 @@ svg { display: block; }
 .navbar.scrolled { box-shadow: 0 0.5px 0 var(--sep); }
 .navbar-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; min-height: 48px; }
 .navbar-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.navbar-eyebrow { font-size: 0.765rem; font-weight: 600; letter-spacing: 0.02em; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.navbar-title { font-size: 2rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.navbar-eyebrow { font-size: 0.765rem; font-weight: 600; letter-spacing: 0.02em; color: var(--label-2); line-height: 1.3; min-height: 1.3em; }
+.navbar-title { font-size: 2rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.025em; overflow-wrap: break-word; }
 .navbar-actions { display: flex; align-items: center; gap: 8px; padding-bottom: 4px; }
 .icon-btn {
   width: 44px; height: 44px; border-radius: 50%;
@@ -213,8 +213,9 @@ svg { display: block; }
 .level-pill .ring .track { stroke: var(--fill-2); }
 .level-pill .ring .val { stroke: var(--tint); stroke-linecap: round; transition: stroke-dashoffset 0.8s var(--ease-out); }
 
-/* 320-pt-Geräte: die Level-Plakette gibt ihren Text auf, damit der Titel lesbar bleibt */
-@media (max-width: 380px) {
+/* Schmale Geräte (iPhone SE, 320 pt): die Level-Plakette gibt ihren Text auf.
+   Bei grosser Schrift bricht der Titel um, statt zu «He…» gekürzt zu werden. */
+@media (max-width: 21rem) {
   .navbar-title { font-size: 1.7rem; }
   #levelPillText { display: none; }
   .level-pill { padding: 0 7px; }
@@ -232,7 +233,7 @@ main { flex: 1; display: flex; flex-direction: column; }
 }
 .section-title { font-size: 1.294rem; font-weight: 700; letter-spacing: -0.01em; }
 .section-meta { font-size: 0.882rem; color: var(--label-2); font-family: var(--ff-round); font-weight: 600; }
-.section-link { font-size: 0.941rem; color: var(--link); font-weight: 600; padding: 6px 4px; min-height: 36px; }
+.section-link { font-size: 0.941rem; color: var(--link); font-weight: 600; padding: 8px 10px; margin-right: -10px; min-height: 44px; display: inline-flex; align-items: center; }
 
 /* ---------- Karten ---------- */
 .card {
@@ -250,13 +251,13 @@ main { flex: 1; display: flex; flex-direction: column; }
   content: ''; position: absolute; inset: auto -40% -60% auto; width: 220px; height: 220px; border-radius: 50%;
   background: radial-gradient(closest-side, var(--tint-soft), transparent 70%); pointer-events: none;
 }
-.ring-wrap { position: relative; width: 118px; height: 118px; }
+.ring-wrap { position: relative; width: max(118px, 7.4rem); height: max(118px, 7.4rem); flex-shrink: 0; }
 .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring-wrap circle { fill: none; stroke-width: 11; }
 .ring-wrap .track { stroke: color-mix(in srgb, var(--tint) 22%, transparent); }
 .ring-wrap .val { stroke: var(--tint); stroke-linecap: round; transition: stroke-dashoffset 0.9s var(--ease-out), stroke 0.4s; }
 .ring-wrap.done .val { stroke: var(--tint); filter: drop-shadow(0 0 6px var(--tint-soft)); }
-.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+.ring-center { position: absolute; inset: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; overflow: hidden; }
 .ring-num { font-family: var(--ff-round); font-weight: 800; font-size: 1.647rem; letter-spacing: -0.03em; line-height: 1; }
 .ring-num small { font-size: 0.882rem; color: var(--label-2); font-weight: 700; }
 .ring-sub { font-size: 0.647rem; font-weight: 700; color: var(--label-2); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
@@ -333,16 +334,16 @@ button.week-day { color: inherit; font: inherit; }
   width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
   padding: 12px 10px 12px 14px; text-align: left; color: inherit; min-height: 72px;
 }
-.routine-hit { display: grid; grid-template-columns: 48px 1fr; gap: 12px; align-items: center; min-width: 0; text-align: left; color: inherit; padding: 0; min-height: 48px; }
+.routine-hit { display: flex; gap: 12px; align-items: center; min-width: 0; text-align: left; color: inherit; padding: 0; min-height: 48px; }
 .routine-hit:active .routine-emoji { transform: scale(0.94); }
 .routine, .todo-row, .tabbar, .navbar, .sheet-grab, .action-sheet, .week, .badge, .rstat, .cal-grid { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .routine-emoji {
-  width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  flex: 0 0 48px; width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; background: color-mix(in srgb, var(--c) 18%, transparent);
   transition: transform var(--dur-fast);
 }
 @supports not (background: color-mix(in srgb, red 10%, white)) { .routine-emoji { background: var(--fill-3); } }
-.routine-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.routine-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .routine-title { font-size: 1rem; font-weight: 600; letter-spacing: -0.005em; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .routine.done .routine-title { color: var(--label-2); }
 .routine-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.706rem; font-weight: 600; color: var(--label-2); }
@@ -374,7 +375,7 @@ button.week-day { color: inherit; font: inherit; }
 .check.small svg { width: 14px; height: 14px; }
 .check-btn.small { width: 44px; height: 44px; }
 
-.chevron { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--label-3); }
+.chevron { flex: 0 0 auto; width: 28px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--label-3); }
 .chevron svg { width: 16px; height: 16px; transition: transform var(--dur); }
 .routine.open .chevron svg { transform: rotate(180deg); }
 
@@ -446,7 +447,7 @@ button.week-day { color: inherit; font: inherit; }
   animation: rise 0.3s var(--ease-out) both;
 }
 .todo-row.done { opacity: 0.6; }
-.todo-body { min-width: 0; padding: 6px 4px; text-align: left; color: inherit; display: flex; flex-direction: column; gap: 3px; }
+.todo-body { align-self: stretch; min-width: 0; padding: 6px 4px; text-align: left; color: inherit; display: flex; flex-direction: column; gap: 3px; }
 .todo-body:active { opacity: 0.7; }
 .todo-title { font-size: 1rem; font-weight: 500; line-height: 1.3; word-break: break-word; }
 .todo-row.done .todo-title { color: var(--label-2); font-weight: 400; }
@@ -580,12 +581,6 @@ button.week-day { color: inherit; font: inherit; }
 .badge.new::after { content: 'Neu'; position: absolute; top: 6px; right: 6px; font-size: 0.6rem; font-weight: 800; background: var(--red); color: #fff; padding: 2px 6px; border-radius: 8px; }
 .badge { position: relative; }
 
-.history-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; border-bottom: 0.5px solid var(--sep); font-size: 0.941rem; }
-.history-row:last-child { border-bottom: 0; }
-.history-date { color: var(--label); font-weight: 500; }
-.history-val { font-family: var(--ff-round); font-weight: 700; font-size: 0.882rem; padding: 3px 9px; border-radius: 9px; background: var(--fill-4); color: var(--label-2); }
-.history-val.perfect { background: var(--tint-soft); color: var(--tint-text); }
-.history-val.frozen { background: rgba(58,155,220,0.14); color: var(--freeze-text); }
 
 /* ---------- Tab Bar ---------- */
 .tabbar {
@@ -595,17 +590,16 @@ button.week-day { color: inherit; font: inherit; }
   -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
   box-shadow: 0 -0.5px 0 var(--sep);
 }
-.tabbar-inner { max-width: var(--content-max); margin: 0 auto; display: flex; height: var(--tabbar-h); }
+.tabbar-inner { max-width: var(--content-max); margin: 0 auto; display: flex; min-height: var(--tabbar-h); }
 .tab {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   color: var(--gray); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.01em; padding-top: 4px;
   transition: color var(--dur-fast);
 }
-.tab svg { width: 26px; height: 26px; transition: transform var(--dur) var(--ease-spring); }
+.tab svg { width: 26px; height: 26px; flex-shrink: 0; transition: transform var(--dur) var(--ease-spring); }
 .tab.active { color: var(--tint-text); }
 .tab.active svg { transform: translateY(-1px); }
 .tab:active svg { transform: scale(0.9); }
-.tab .dot { position: absolute; }
 .tab-badge { position: absolute; top: 4px; margin-left: 16px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0 4px; font-family: var(--ff-round); }
 .tab { position: relative; }
 
@@ -616,7 +610,7 @@ button.week-day { color: inherit; font: inherit; }
 }
 .scrim.show { opacity: 1; pointer-events: auto; }
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: var(--kb); z-index: 50;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
   max-width: var(--content-max); margin: 0 auto;
   background: var(--bg-elev); border-radius: 14px 14px 0 0;
   box-shadow: var(--shadow-sheet);
@@ -627,7 +621,7 @@ button.week-day { color: inherit; font: inherit; }
 .input.invalid { border-color: var(--red); animation: shake 0.4s ease both; }
 @keyframes shake { 0%,100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 .field-error { font-size: 0.765rem; color: var(--red-text); padding: 6px 4px 0; font-weight: 600; }
-.sheet.show { transform: translateY(0); transition-duration: 0.5s, 0.2s; }
+.sheet.show { transform: translateY(0); bottom: var(--kb); transition-duration: 0.5s, 0.2s; }
 .sheet.dragging { transition: none; }
 .sheet-grab { width: 100%; padding: 8px 0 4px; display: flex; justify-content: center; touch-action: none; cursor: grab; }
 .sheet-grab i { width: 36px; height: 5px; border-radius: 3px; background: var(--label-4); display: block; }
@@ -637,7 +631,13 @@ button.week-day { color: inherit; font: inherit; }
 .sheet-close svg { width: 14px; height: 14px; }
 .sheet-close-hit { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
 .sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px calc(var(--safe-b) + 20px); display: flex; flex-direction: column; gap: 14px; }
-.sheet-actions { display: flex; gap: 10px; padding-top: 6px; }
+.sheet-actions {
+  display: flex; gap: 10px; margin-top: auto;
+  /* Bleibt am unteren Rand stehen, statt unter einem langen Formular zu verschwinden */
+  position: sticky; bottom: 0; z-index: 1;
+  padding: 10px 0 calc(var(--safe-b) + 10px); background: var(--bg-elev);
+  box-shadow: 0 -10px 14px -10px rgba(0,0,0,0.4);
+}
 
 .field-label { font-size: 0.765rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label-2); padding: 0 4px; margin-bottom: 8px; }
 .field { display: flex; flex-direction: column; }
@@ -669,8 +669,8 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip {
-  min-height: 40px; padding: 0 14px; border-radius: 20px; background: var(--fill-4); color: var(--label);
-  font-size: 0.882rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; position: relative;
+  min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 22px; background: var(--fill-4); color: var(--label);
+  font-size: 0.882rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; position: relative;
   transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-fast);
 }
 .chip:active { transform: scale(0.96); }
@@ -703,8 +703,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .btn svg { width: 18px; height: 18px; }
 
 /* Inset grouped list (Einstellungen) */
-.group { background: var(--bg-elev-2); border-radius: var(--r-s); overflow: hidden; }
-:root[data-theme="light"] .group, .group { background: var(--fill-4); }
+.group { background: var(--fill-4); border-radius: var(--r-s); overflow: hidden; }
 .row {
   display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 8px 16px; position: relative; width: 100%; text-align: left; color: inherit;
 }
@@ -721,13 +720,14 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .row-ico { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; color: #fff; }
 
 .switch { width: 51px; height: 31px; border-radius: 16px; background: var(--fill); position: relative; flex-shrink: 0; transition: background 0.25s; }
-.switch::before { content: ''; position: absolute; inset: -7px -6px; } /* 44pt-Trefferfläche */
+/* Aussehen bleibt 51×31 wie bei iOS, die Trefferfläche wächst unsichtbar auf 45 pt Höhe */
+.switch::before { content: ''; position: absolute; inset: -7px -6px; }
 .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.06); transition: transform 0.25s var(--ease-out); }
 .switch.on { background: var(--tint); }
 .switch.on::after { transform: translateX(20px); }
 
 .segmented { display: flex; background: var(--fill-3); border-radius: 10px; padding: 2px; }
-.seg { flex: 1; min-height: 40px; border-radius: 8px; font-size: 0.882rem; font-weight: 600; color: var(--label); transition: background var(--dur-fast), box-shadow var(--dur-fast); }
+.seg { flex: 1; min-height: 44px; border-radius: 8px; font-size: 0.882rem; font-weight: 600; color: var(--label); transition: background var(--dur-fast), box-shadow var(--dur-fast); }
 .seg.on { background: var(--bg-elev); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
 :root[data-theme="dark"] .seg.on { background: var(--bg-3); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg.on { background: var(--bg-3); } }
@@ -736,6 +736,9 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 
 /* Action Sheet */
 .action-sheet { background: transparent; box-shadow: none; padding: 0 10px calc(var(--safe-b) + 10px); gap: 8px; }
+/* Ohne diese Zeile lag «Abbrechen» bei vielen Einträgen unter dem Bildrand – und das Menü hatte keinen anderen Ausgang. */
+#actionBody { display: flex; flex-direction: column; gap: 8px; max-height: 100%; min-height: 0; }
+#actionBody .action-group:first-child { overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; }
 .action-group { background: var(--material-strong); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-radius: 14px; overflow: hidden; }
 .action-title { padding: 12px 16px 10px; font-size: 0.765rem; color: var(--label-2); text-align: center; font-weight: 600; border-bottom: 0.5px solid var(--sep); }
 .action-btn { width: 100%; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.176rem; color: var(--link); font-weight: 400; }
@@ -746,7 +749,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .action-btn svg { width: 20px; height: 20px; }
 
 /* ---------- Toast, Banner, XP-Flug ---------- */
-.toast-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px + var(--kb)); z-index: 48; display: flex; justify-content: center; pointer-events: none; padding: 0 16px; }
+.toast-wrap { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px + var(--kb)); z-index: 68; display: flex; justify-content: center; pointer-events: none; padding: 0 16px; }
 .toast {
   pointer-events: none; display: flex; align-items: center; gap: 12px; max-width: 420px; width: 100%;
   padding: 12px 14px 12px 16px; border-radius: 16px; background: var(--material-strong);
@@ -756,7 +759,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .toast.show { transform: none; opacity: 1; pointer-events: auto; }
 .toast-text { flex: 1; min-width: 0; }
 .toast-text b { font-family: var(--ff-round); font-weight: 800; }
-.toast-btn { color: var(--link); font-weight: 700; min-height: 36px; padding: 0 8px; }
+.toast-btn { color: var(--link); font-weight: 700; min-height: 44px; padding: 0 10px; }
 .toast-ico { font-size: 1.2rem; line-height: 1; }
 
 .banner {
@@ -813,7 +816,7 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 
 /* ---------- Reorder-Modus-Leiste ---------- */
 .mode-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: var(--r-m); background: var(--tint-soft); font-size: 0.882rem; font-weight: 600; }
-.mode-bar button { color: var(--tint-text); font-weight: 800; min-height: 36px; padding: 0 8px; }
+.mode-bar button { color: var(--tint-text); font-weight: 800; min-height: 44px; padding: 0 10px; }
 
 
 /* ---------- Anker, Rang, Gewohnheitsstärke, Tagesabschluss, Ruhiger Modus ---------- */
@@ -887,8 +890,6 @@ body.quiet .q { display: none !important; }
 /* ---------- Desktop ---------- */
 @media (min-width: 720px) {
   :root { --gutter: 20px; }
-  body { background: var(--bg); }
-  .tabbar-inner { border-radius: 0; }
 }
 @media (hover: hover) {
   .icon-btn:hover { background: var(--fill-2); }
@@ -907,6 +908,9 @@ body.quiet .q { display: none !important; }
   .xp-float { display: none; }
   .ring-wrap .val, .xp-fill, .sub-progress i { transition: none !important; }
   .tab svg, .check, .check svg, .icon-btn, .level-pill, .btn, .chip { transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease !important; }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --label-2: rgba(235,235,245,0.82); --label-3: rgba(235,235,245,0.62); --link: #4DA3FF; }
 }
 @media (prefers-contrast: more) {
   :root { --label-2: rgba(60,60,67,0.80); --label-3: rgba(60,60,67,0.55); --tint-text: #1A7A34; --link: #0040DD; }
@@ -1028,15 +1032,7 @@ body.quiet .q { display: none !important; }
         <input class="input" id="tAlarm" type="time">
         <button class="chip" type="button" id="tAlarmClear">Keine</button>
       </div>
-      <div class="field-hint">Du wirst erinnert, wenn die Routine bis zu dieser Zeit noch offen ist – sofern die App installiert ist und im Hintergrund liegt. Spät erledigt zählt genauso viel wie früh.</div>
-    </div>
-    <div class="field" id="tCountField" hidden>
-      <div class="field-label">Bisher erledigt</div>
-      <div class="chips" style="align-items:center; gap:12px">
-        <button class="chip" type="button" id="tCountMinus" aria-label="Weniger">−</button>
-        <span class="num" id="tCountVal" style="font-weight:800; font-size:1.2rem; min-width:36px; text-align:center">0</span>
-        <button class="chip" type="button" id="tCountPlus" aria-label="Mehr">+</button>
-      </div>
+      <div class="field-hint">Ab dieser Zeit steht die Uhrzeit auf der Karte rot, solange die Routine offen ist. Eine Meldung kommt nur, wenn die App gerade offen ist oder kurz zuvor offen war – die App hat keinen Server. Spät erledigt zählt genauso viel wie früh.</div>
     </div>
     <div class="sheet-actions">
       <button class="btn primary" type="button" id="tSave">Sichern</button>
@@ -1330,6 +1326,9 @@ function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-
 function dayEndHour() { const h = S.settings && typeof S.settings.dayEnd === 'number' ? S.settings.dayEnd : 3; return clamp(h, 0, 5); }
 function appDay(dateLike) { const d = dateLike instanceof Date ? new Date(dateLike.getTime()) : new Date(dateLike); if (isNaN(d)) return null; d.setHours(d.getHours() - dayEndHour()); return dateKey(d); }
 function todayKey() { return appDay(new Date()); }
+// Erinnerungen hängen am Kalendertag, nicht am App-Tag: sonst feuert eine Erinnerung,
+// die vor dem Tagesende (Standard 03:00) eingestellt ist, nach dem Tageswechsel erneut.
+function clockDay() { return dateKey(new Date()); }
 function keyToDate(k) { const [y, m, d] = String(k).split('-').map(Number); return new Date(y, m - 1, d); }
 function addDays(k, n) { const d = keyToDate(k); d.setDate(d.getDate() + n); return dateKey(d); }
 function daysBetween(a, b) { return Math.round((keyToDate(b) - keyToDate(a)) / 864e5); }
@@ -1431,7 +1430,7 @@ function normalizeReward(r, idx) {
   out.name = String(out.name || 'Belohnung').slice(0, 40);
   out.points = clamp(parseInt(out.points, 10) || 1, 1, 100000);
   out.order = typeof out.order === 'number' ? out.order : (idx || 0);
-  out.reachedAt = typeof out.reachedAt === 'number' ? out.reachedAt : null;
+  out.reachedAt = isValidKey(out.reachedAt) ? out.reachedAt : null; // Tagesschlüssel, aus den Einträgen abgeleitet
   out.createdAt = typeof out.createdAt === 'number' ? out.createdAt : 0;
   out.updatedAt = typeof out.updatedAt === 'number' ? out.updatedAt : 0;
   out.deleted = typeof out.deleted === 'number' ? out.deleted : null;
@@ -1446,19 +1445,20 @@ function normalizeTokens(raw) {
   return out;
 }
 function seedRewards() { return DEFAULT_REWARDS.map((r, i) => normalizeReward(Object.assign({ order: i, createdAt: Date.now() }, r), i)); }
-function tokenEntries() { return S.tokens.entries.filter(e => !e.deleted).sort((a, b) => b.at - a.at); }
+function tokenEntries() { return S.tokens.entries.filter(e => !e.deleted).sort((a, b) => String(b.day).localeCompare(String(a.day)) || b.at - a.at); }
 function tokenTotal() { return memoized('tokens', () => S.tokens.entries.reduce((s, e) => s + (e.deleted ? 0 : e.amount), 0)); }
 function activeRewards() { return S.tokens.rewards.filter(r => !r.deleted).sort((a, b) => a.points - b.points || a.order - b.order); }
-// «Erreicht am» ist aus den Einträgen ableitbar (Zeitpunkt des Tokens, der die Schwelle knackt) – so bleibt es auf allen Geräten gleich
+// «Erreicht am» ist aus den Einträgen ableitbar (der Tag des Tokens, der die Schwelle knackt) –
+// so steht auf jedem Gerät dasselbe, auch wenn ein Eintrag nachgetragen wurde.
 function refreshRewards() {
-  const asc = tokenEntries().slice().sort((a, b) => a.at - b.at);
+  const asc = tokenEntries().slice().sort((a, b) => String(a.day).localeCompare(String(b.day)) || a.at - b.at);
   const newly = [];
   S.tokens.rewards.forEach(r => {
     if (r.deleted) return;
-    let sum = 0, at = null;
-    for (const e of asc) { sum += e.amount; if (sum >= r.points) { at = e.at; break; } }
-    if (at && !r.reachedAt) newly.push(r);
-    if (r.reachedAt !== at) { r.reachedAt = at; stateVersion++; }
+    let sum = 0, day = null;
+    for (const e of asc) { sum += e.amount; if (sum >= r.points) { day = e.day; break; } }
+    if (day && !r.reachedAt) newly.push(r);
+    if (r.reachedAt !== day) { r.reachedAt = day; stateVersion++; }
   });
   return newly;
 }
@@ -1686,7 +1686,6 @@ function recomputeDay(k) {
   const before = e.done + '/' + e.total + '/' + e.completed;
   e.total = req.length;
   e.done = doneReq;
-  e.extra = Math.max(0, doneAll - doneReq);
   e.completed = req.length > 0 && doneReq === req.length;
   e.legacy = false;
   e.xp = entryXp(e);
@@ -1716,8 +1715,11 @@ function finalizeDay(k) {
   const streakBeforeK = streakBefore(k);
   e.final = true;
   if (e.done === 0 && e.total > 0 && !e.frozen) {
-    // Ein Tag ohne eine einzige Routine: Joker springt automatisch ein – und sagt es am Morgen danach
-    if ((S.game.jokers || 0) > 0 && streakBeforeK > 0) {
+    // Ein Tag ohne eine einzige Routine: Joker springt automatisch ein – und sagt es am Morgen danach.
+    // Erst prüfen, ob die Toleranz («ein Aussetzer pro Woche») den Tag ohnehin trägt: dann bleibt der Joker liegen.
+    if (computeStreakEndingAt(k) > 0) {
+      // Die Serie hält von selbst – kein Joker nötig
+    } else if ((S.game.jokers || 0) > 0 && streakBeforeK > 0) {
       S.game.jokers--; e.frozen = true; e.jokerUsed = true; touch(S.game);
       S.game.notices.push({ type: 'joker', day: k, jokersLeft: S.game.jokers, streak: streakBeforeK });
     } else if (computeStreakEndingAt(k) === 0) {
@@ -1754,7 +1756,7 @@ function processRollover() {
       if (t.skippedDate && t.skippedDate !== today) t.skippedDate = null;
       t.alarmNotifiedDate = null;
     });
-    for (const id in S.device.alarmNotified) if (S.device.alarmNotified[id] !== today) delete S.device.alarmNotified[id];
+    { const ck = clockDay(); for (const id in S.device.alarmNotified) if (S.device.alarmNotified[id] !== ck) delete S.device.alarmNotified[id]; }
     // Heute schon erledigte (Eintrag von einem anderen Gerät) wiederherstellen
     const e = S.history[today];
     if (e) S.tasks.forEach(t => { if (recDone(e.tasks[t.id])) { t.completed = true; t.subtasks.forEach(s => s.completed = true); } });
@@ -1918,12 +1920,18 @@ function completeTodo(td) {
   if (td.completed) return null;
   const today = todayKey();
   const e = dayEntry(today, true);
-  // Deckel: nur die ersten 5 To-Dos und 3 Fokus-Boni pro Tag geben XP – Haken gibt es immer
-  const counted = Object.values(e.todos).filter(r => recDone(r) && r.xp > 0).length;
-  const focusCounted = Object.values(e.todos).filter(r => recDone(r) && r.focus && r.xp > GAME.xpTodo).length;
-  const xp = (counted < GAME.todoDailyCap ? GAME.xpTodo : 0) + (td.focus && focusCounted < GAME.focusBonusMax ? GAME.xpFocusTodo : 0);
+  // Deckel: nur die ersten 5 To-Dos und 3 Fokus-Boni pro Tag geben XP – Haken gibt es immer.
+  // Die beiden Anteile werden im Datensatz vermerkt (base/bonus); aus der Summe allein
+  // liessen sie sich nicht zurückrechnen, und der Deckel fiel nach fünf To-Dos weg.
+  const gotBase = (r) => typeof r.base === 'boolean' ? r.base : r.xp > 0;
+  const gotBonus = (r) => typeof r.bonus === 'boolean' ? r.bonus : !!(r.focus && r.xp > GAME.xpTodo);
+  const counted = Object.values(e.todos).filter(r => recDone(r) && gotBase(r)).length;
+  const focusCounted = Object.values(e.todos).filter(r => recDone(r) && gotBonus(r)).length;
+  const base = counted < GAME.todoDailyCap ? GAME.xpTodo : 0;
+  const bonus = (td.focus && focusCounted < GAME.focusBonusMax) ? GAME.xpFocusTodo : 0;
+  const xp = base + bonus;
   td.completed = true; td.completedAt = new Date().toISOString(); touch(td);
-  e.todos[td.id] = { at: Date.now(), xp, focus: !!td.focus };
+  e.todos[td.id] = { at: Date.now(), xp, focus: !!td.focus, base: base > 0, bonus: bonus > 0 };
   e.xp = entryXp(e);
   saveAll();
   return { xp, focus: !!td.focus };
@@ -2040,13 +2048,20 @@ function idleDays() {
   return n;
 }
 // Gewohnheitsstärke: erledigte geplante Tage in den letzten 66 geplanten Tagen (Lally 2010, beschreibend)
+// Ein Tag zählt für eine Routine nur, wenn weder Ferien-Pause noch «heute pausiert» gilt
+function countsFor(t, k) {
+  if (isPausedOn(k)) return false;
+  const e = S.history[k];
+  if (e && e.skipped && e.skipped[t.id]) return false;
+  return t.skippedDate !== k;
+}
 function habitStrength(t) {
   const today = todayKey();
   let sched = 0, done = 0, k = today, guard = 0;
   while (sched < GAME.habitDays && guard++ < 800) {
     if (S.game.firstDay && k < S.game.firstDay) break;
     if (!existedOn(t, k) || !createdBefore(t, addDays(k, 1))) break;
-    if (isScheduledOn(t, k) && t.skippedDate !== k && !(k === today && !taskDoneOn(t, k))) { sched++; if (taskDoneOn(t, k)) done++; }
+    if (isScheduledOn(t, k) && countsFor(t, k) && !(k === today && !taskDoneOn(t, k))) { sched++; if (taskDoneOn(t, k)) done++; }
     k = addDays(k, -1);
   }
   return done;
@@ -2056,7 +2071,7 @@ function taskStreak(t) {
   let n = 0, k = today, guard = 0;
   while (guard++ < 800) {
     if (!existedOn(t, k) || !createdBefore(t, addDays(k, 1))) break;
-    if (isScheduledOn(t, k) && t.skippedDate !== k) {
+    if (isScheduledOn(t, k) && countsFor(t, k)) {
       const e = S.history[k];
       const done = taskDoneOn(t, k);
       if (done) n++;
@@ -2075,7 +2090,7 @@ function taskRate(t, days) {
   for (let i = 0; i < days; i++) {
     const k = addDays(today, -i);
     if (!existedOn(t, k) || !createdBefore(t, addDays(k, 1))) continue;
-    if (!isScheduledOn(t, k) || t.skippedDate === k) continue;
+    if (!isScheduledOn(t, k) || !countsFor(t, k)) continue;
     if (S.game.firstDay && k < S.game.firstDay) continue;
     const isDone = taskDoneOn(t, k);
     if (k === today && !isDone) continue; // heute offen: nicht werten
@@ -2085,9 +2100,10 @@ function taskRate(t, days) {
   return sched ? Math.round(done / sched * 100) : null;
 }
 function totalXp() { return memoized('xp', () => { let s = 0; for (const k in S.history) s += entryXp(S.history[k]); return s; }); }
-function totalCompletions() { return memoized('comp', () => S.tasks.filter(t => !t.deleted).reduce((s, t) => s + taskCount(t), 0)); }
+// Auch gelöschte Routinen zählen: das Erledigte ist passiert, und beide Dialoge versprechen, der Verlauf bleibe
+function totalCompletions() { return memoized('comp', () => S.tasks.reduce((s, t) => s + taskCount(t), 0)); }
 function perfectDays() { return memoized('perfect', () => Object.values(S.history).filter(e => e.completed).length); }
-function todosDoneCount() { return memoized('todos', () => S.todos.filter(t => t.completed && !t.deleted).length); }
+function todosDoneCount() { return memoized('todos', () => S.todos.filter(t => t.completed).length); }
 function calendarDoneCount(e) { return Object.values(e.tasks || {}).filter(recDone).length; }
 function weekStats(k) {
   // Mo–So der Woche von k: geplante vs. erledigte Routinen (heute offene nicht gewertet)
@@ -2103,9 +2119,11 @@ function weekStats(k) {
     } else if (e && e.legacy) {
       planned += req.length;
       done += e.completed ? req.length : Math.min(e.done, req.length);
+    } else if (e && e.frozen) {
+      // Joker-Tag: gehalten, aber nicht erledigt – neutral, wie ein Ruhetag
     } else {
       planned += req.length;
-      req.forEach(t => { if (taskDoneOn(t, d) || (e && e.frozen)) done++; });
+      req.forEach(t => { if (taskDoneOn(t, d)) done++; });
     }
     if (e && e.completed) perfect++;
   }
@@ -2118,8 +2136,8 @@ function todayProgress() {
   const req = shown.filter(t => isRequiredOn(t, today));
   const doneReq = req.filter(t => t.completed).length;
   const doneAll = shown.filter(t => t.completed).length;
-  const total = req.length || shown.length;
-  const done = req.length ? doneReq : doneAll;
+  const total = req.length || (isPausedOn(today) ? 0 : shown.length); // in der Pause ist ehrlich 0 von 0
+  const done = req.length ? doneReq : (total ? doneAll : 0); // in der Pause gibt es keinen Nenner – also auch keinen Zähler
   return { total, done, pct: total ? Math.round(done / total * 100) : 0, perfect: !!(e && e.completed), shown: shown.length, doneAll };
 }
 
@@ -2162,7 +2180,7 @@ const BADGES = [
 ];
 function badgeContext() {
   return memoized('badgectx', () => {
-    let early = 0, late = 0, onTime = 0, subDone = 0, activeDays = 0, focusDays = 0, jokerUsed = false, comeback = false, perfectWeek = false, minis = 0, bounceBacks = 0;
+    let onTime = 0, subDone = 0, activeDays = 0, focusDays = 0, jokerUsed = false, comeback = false, perfectWeek = false, minis = 0, bounceBacks = 0;
     const keys = historyKeysSorted();
     const today = todayKey();
     for (const k of keys) {
@@ -2170,7 +2188,6 @@ function badgeContext() {
       let any = false, focusTotal = 0, focusDone = 0;
       for (const id in e.tasks) {
         const r = e.tasks[id]; if (!recDone(r)) continue; any = true;
-        if (typeof r.hour === 'number') { if (r.hour < 8) early++; if (r.hour >= 20) late++; }
         if (r.onTime) onTime++;
         if (r.kind === 'mini') minis++;
         subDone += r.sub || 0;
@@ -2209,9 +2226,9 @@ function badgeContext() {
     }
     const at = activeTasks();
     return {
-      completions: totalCompletions(), perfectDays: perfectDays(), best: bestStreak(), streak: currentStreak(),
-      todosDone: todosDoneCount(), level: levelFromXp(totalXp()), early, late, onTime, subDone, activeDays, focusDays,
-      jokerUsed, comeback, perfectWeek, minis, bounceBacks, taskCount: at.length, cues: at.filter(t => t.cue).length,
+      completions: totalCompletions(), perfectDays: perfectDays(), best: bestStreak(),
+      todosDone: todosDoneCount(), level: levelFromXp(totalXp()), onTime, subDone, activeDays, focusDays,
+      jokerUsed, comeback, perfectWeek, minis, bounceBacks, cues: at.filter(t => t.cue).length,
     };
   });
 }
@@ -2364,6 +2381,9 @@ function nextCelebration() {
   $('celebrateBtn').textContent = celebrateQueue.length ? 'Weiter' : 'Super!';
   const ov = $('celebrate');
   ov.removeAttribute('inert'); ov.removeAttribute('aria-hidden');
+  ov.setAttribute('aria-modal', 'true');
+  // Wie ein Sheet: der Hintergrund ist gesperrt, sonst wandert der Fokus auf verdeckte Knöpfe
+  $('app').setAttribute('inert', ''); $('app').classList.add('inert-bg');
   ov.classList.add('show');
   playSound('big');
   if (item.rain) confettiRain(); else confetti(innerWidth / 2, innerHeight * 0.4, 70, Math.PI * 2);
@@ -2371,7 +2391,8 @@ function nextCelebration() {
 }
 $('celebrateBtn').addEventListener('click', () => {
   const ov = $('celebrate');
-  ov.classList.remove('show');
+  ov.classList.remove('show'); ov.removeAttribute('aria-modal');
+  if (!sheetStack.length) { $('app').removeAttribute('inert'); $('app').classList.remove('inert-bg'); }
   setTimeout(() => { if (!ov.classList.contains('show')) { ov.setAttribute('inert', ''); ov.setAttribute('aria-hidden', 'true'); } nextCelebration(); }, 320);
 });
 $('celebrate').addEventListener('click', (e) => { if (e.target === e.currentTarget) $('celebrateBtn').click(); });
@@ -2437,7 +2458,7 @@ let openTaskId = null;      // aufgeklappte Routine
 let reorderMode = false;
 let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
 function resetCalToToday() { const d = keyToDate(todayKey()); calMonth = d.getMonth(); calYear = d.getFullYear(); }
-let showDoneTodos = false;
+let showDoneTodos = false, showAllBadges = false;
 
 function setRing(svgEl, pct) {
   const val = svgEl && svgEl.querySelector('.val');
@@ -2449,17 +2470,18 @@ function setRing(svgEl, pct) {
 function motivation(p, streak) {
   const h = new Date().getHours();
   const today = todayKey(), d = keyToDate(today);
-  if (p.total === 0) return { title: 'Heute ist frei', msg: 'Deine Routinen sind für andere Tage geplant. Ein To-Do gefällig?' };
+  if (isPausedOn(today)) return { title: 'Pause', msg: `Serien ruhen bis ${dayLabel(S.game.pause.until)} · erledigen darfst du trotzdem, es zählt als Bonus.` };
+  if (p.total === 0) return { title: 'Heute ist frei', msg: activeTasks().length ? 'Deine Routinen sind für andere Tage geplant. Ein To-Do gefällig?' : 'Ein To-Do gefällig?' };
   if (p.perfect) return { title: 'Alles erledigt.', msg: streak > 1 ? `Tag ${streak} in Folge. Der Rest des Tages gehört dir.` : 'Ring voll. Morgen darf wieder normal sein.' };
   const left = p.total - p.done;
   if (left <= 0) return { title: 'Alles erledigt', msg: 'Neue Routinen zählen ab morgen für die Serie. Der Rest des Tages gehört dir.' };
   if (p.done === 0) {
     const idle = idleDays(), best = bestStreak();
     if (idle >= 3) return { title: 'Schön, dass du wieder da bist.', msg: `${idle} Tage Pause – kein Drama. ${best ? `Dein Rekord von ${best} Tagen bleibt stehen. ` : ''}Heute zählt Tag 1: mit einer anfangen.` };
-    if (h >= 20) return { title: 'Noch nichts erledigt heute', msg: (S.game.jokers || 0) > 0 ? `Eine Routine – auch die Mini-Version – reicht. Sonst springt um Mitternacht ein Joker ein (${S.game.jokers} übrig).` : 'Kein Joker mehr übrig. Eine Routine – auch die Mini-Version – genügt, damit die Serie bleibt.' };
+    if (h >= 20) return { title: 'Noch nichts erledigt heute', msg: (S.game.jokers || 0) > 0 ? `Eine Routine – auch die Mini-Version – reicht. Sonst springt beim Tageswechsel um ${pad2(dayEndHour())}:00 ein Joker ein (${S.game.jokers} übrig).` : 'Kein Joker mehr übrig. Eine Routine – auch die Mini-Version – genügt, damit die Serie bleibt.' };
     if (weekdayOf(today) === 1) return { title: 'Neue Woche, neuer Anlauf', msg: 'Welche Routine ist diese Woche die eine, die zählt? Mit ihr anfangen.' };
     if (d.getDate() === 1) return { title: `Der 1. ${MONTHS_LONG[d.getMonth()]}`, msg: 'Ein guter Tag für einen Neustart. Erste Routine, dann läuft es.' };
-    return { title: greeting(), msg: streak > 0 ? `${streak} Tage in Folge. Erste Routine, dann läuft es.` : 'Klein anfangen. Die erste Routine ist die wichtigste.' };
+    return { title: greeting(), msg: streak > 0 ? 'Erste Routine, dann läuft es.' : 'Klein anfangen. Die erste Routine ist die wichtigste.' };
   }
   if (left === 1) return { title: 'Nur noch eine', msg: 'Dann ist der Tag rund. Zieh es durch.' };
   if (p.pct >= 60) return { title: `Noch ${left}`, msg: 'Du bist über den Berg – der Rest ist Auslaufen.' };
@@ -2471,10 +2493,11 @@ function renderNav() {
   const eyebrow = $('navEyebrow'), title = $('navTitle');
   const today = todayKey();
   if (currentTab === 'today') { eyebrow.textContent = fmtNav(today) + (isPausedOn(today) ? ' · Pause' : ''); title.textContent = 'Heute'; }
-  else if (currentTab === 'todos') { const open = S.todos.filter(t => !t.completed && !t.deleted).length; eyebrow.textContent = open ? `${open} offen` : 'Alles erledigt'; title.textContent = 'To-Dos'; }
-  else if (currentTab === 'tokens') { const total = tokenTotal(), nx = nextReward(); eyebrow.textContent = nx ? `${total} Token · noch ${nx.points - total} bis ${nx.emoji} ${nx.name}` : `${total} Token gesammelt`; title.textContent = 'Token'; }
-  else { const st = currentStreak(); eyebrow.textContent = S.settings.quiet ? `${st} ${st === 1 ? 'Tag' : 'Tage'} in Folge` : `Level ${levelFromXp(totalXp())} · ${levelTitle(levelFromXp(totalXp()))}`; title.textContent = 'Fortschritt'; }
-  $('levelPill').hidden = !!S.settings.quiet;
+  else if (currentTab === 'todos') { const open = S.todos.filter(t => !t.completed && !t.deleted).length; eyebrow.textContent = open ? `${open} offen` : ''; title.textContent = 'To-Dos'; }
+  else if (currentTab === 'tokens') { eyebrow.textContent = ''; title.textContent = 'Token'; }
+  else { eyebrow.textContent = ''; title.textContent = 'Fortschritt'; }
+  // Auf «Fortschritt» erklärt die Plakette nichts, was die Karte darunter nicht schon sagt
+  $('levelPill').hidden = !!S.settings.quiet || currentTab === 'progress';
   const xp = totalXp(), lvl = levelFromXp(xp);
   const lo = xpForLevel(lvl), hi = xpForLevel(lvl + 1);
   const pct = hi > lo ? (xp - lo) / (hi - lo) * 100 : 100;
@@ -2487,6 +2510,8 @@ function renderNav() {
   const badge = $('todoBadge'); badge.hidden = !due; badge.textContent = due;
 }
 
+// Ein in Zukunft datierter Fokus (aus älteren Daten) zählt erst an seinem Tag.
+function isFocusToday(t) { return !!t.focus && (!t.focusDate || t.focusDate <= todayKey()); }
 function taskMetaHtml(t, today) {
   const parts = [];
   const rec = S.history[today] && S.history[today].tasks[t.id];
@@ -2496,9 +2521,10 @@ function taskMetaHtml(t, today) {
     parts.push(`<span class="meta-chip alarm${late ? ' late' : ''}">${ICON.clock}${escHtml(t.alarmTime)}</span>`);
   }
   if (t.subtasks.length && !t.completed) { const d = t.subtasks.filter(s => s.completed).length; parts.push(`<span class="meta-chip sub">${d}/${t.subtasks.length}${d ? ' · angefangen' : ''}</span>`); }
-  if (t.cue && !t.completed) parts.push(`<span class="meta-chip cue">Nach: ${escHtml(t.cue)}</span>`);
+  // Der Anker ist als Nebensatz gespeichert («den Kaffee gemacht habe») – «Nach: …» ergab kein Deutsch
+  if (t.cue && !t.completed) parts.push(`<span class="meta-chip cue">Nachdem ich ${escHtml(t.cue)}</span>`);
   if (t.skippedDate === today) parts.push(`<span class="meta-chip">Heute pausiert</span>`);
-  else if (!isRequiredOn(t, today) && isScheduledOn(t, today) && !t.completed) parts.push(`<span class="meta-chip">Neu · ab morgen Pflicht</span>`);
+  else if (!createdBefore(t, today) && isScheduledOn(t, today) && !t.completed) parts.push(`<span class="meta-chip">Neu · ab morgen Pflicht</span>`);
   return parts.length ? `<div class="routine-meta">${parts.join('')}</div>` : '';
 }
 
@@ -2526,9 +2552,10 @@ function renderRoutineCard(t, today) {
             <span class="routine-title">${escHtml(t.label)}</span>
             ${taskMetaHtml(t, today)}
           </span>
+          ${hasSub && !reorderMode ? `<span class="chevron" aria-hidden="true">${ICON.chevron}</span>` : ''}
         </button>
         <span class="routine-right">
-          ${reorderMode ? `<span class="drag-handle" data-drag="${escAttr(t.id)}" aria-label="Verschieben">${ICON.drag}</span>` : hasSub ? `<span class="chevron">${ICON.chevron}</span>` : ''}
+          ${reorderMode ? `<span class="drag-handle" data-drag="${escAttr(t.id)}" aria-label="Verschieben">${ICON.drag}</span>` : ''}
           ${reorderMode ? '' : `<button class="check-btn" type="button" data-act="toggle" data-id="${escAttr(t.id)}" role="checkbox" aria-checked="${t.completed}" aria-label="${escAttr(t.label)} ${t.completed ? 'als offen markieren' : 'erledigen'}"><span class="check${t.completed ? ' on' : ''}">${ICON.check}</span></button>`}
         </span>
       </div>
@@ -2564,7 +2591,6 @@ function renderToday() {
   const p = todayProgress();
   const streak = currentStreak();
   const mot = motivation(p, streak);
-  const xp = totalXp(), lvl = levelFromXp(xp), lo = xpForLevel(lvl), hi = xpForLevel(lvl + 1);
   const dayXp = S.history[today] ? entryXp(S.history[today]) : 0;
   const quiet = !!S.settings.quiet;
 
@@ -2586,8 +2612,12 @@ function renderToday() {
     if (!n) { v.innerHTML = html; bindView(v); return; }
   }
 
-  const left = p.total - p.done;
-  const ringLabel = (p.total && left >= 1 && p.pct >= 60) ? `<span class="ring-num num">Noch ${left}</span>` : `<span class="ring-num num">${p.done}<small>/${p.total}</small></span>`;
+  if (!activeTasks().length) {
+    html += `<div class="card empty"><div class="empty-emoji">🎯</div><div class="empty-title">Noch keine Routine</div><div class="empty-text">Fang mit einer an – so klein, dass sie fast lächerlich ist.</div><button class="btn primary" type="button" data-act="newTask" style="margin-top:8px; flex:none">Routine anlegen</button></div>`;
+    v.innerHTML = html; bindView(v); return;
+  }
+
+  const ringLabel = `<span class="ring-num num">${p.done}<small>/${p.total}</small></span>`;
   html += `<section class="card hero" aria-label="Tagesfortschritt">
     <div class="ring-wrap${p.perfect ? ' done' : ''}" id="heroRing">${ICON.ring(44)}
       <div class="ring-center">${ringLabel}<span class="ring-sub">${p.perfect ? 'Perfekt' : 'Routinen'}</span></div>
@@ -2596,26 +2626,22 @@ function renderToday() {
       <div class="hero-title">${escHtml(mot.title)}</div>
       <div class="hero-msg">${escHtml(mot.msg)}</div>
       <div class="hero-badges">
-        <span class="pill flame${isDoneStatus(dayStatus(today)) || p.total === 0 ? '' : ' cold'}" title="${isDoneStatus(dayStatus(today)) ? 'Serie heute gesichert' : 'Eine Routine sichert die Serie für heute'}">${ICON.flame}${streak} ${streak === 1 ? 'Tag' : 'Tage'}</span>
+        <span class="pill flame${isDoneStatus(dayStatus(today)) || p.total === 0 ? '' : ' cold'}">${ICON.flame}${streak} ${streak === 1 ? 'Tag' : 'Tage'}</span>
         ${dayXp && !quiet ? `<span class="pill xp q">+${dayXp} XP heute</span>` : ''}
-        ${(S.game.jokers || 0) > 0 ? `<span class="pill freeze" title="Joker">${ICON.snow}${S.game.jokers}</span>` : ''}
+        ${(S.game.jokers || 0) > 0 ? `<span class="pill freeze" title="Ein Joker hält die Serie an einem Tag ohne Haken">${ICON.snow}${S.game.jokers} Joker</span>` : ''}
       </div>
-      ${quiet ? '' : `<div class="xp-bar q" aria-label="Level-Fortschritt">
-        <div class="xp-bar-top"><span><b>Level ${lvl}</b> · ${escHtml(levelTitle(lvl))}</span><span class="num">${hi > lo ? (hi - xp <= (hi - lo) * 0.25 ? `Noch ${hi - xp} XP` : `${xp - lo} / ${hi - lo}`) : 'Max'}</span></div>
-        <div class="xp-track"><div class="xp-fill" style="width:${hi > lo ? clamp((xp - lo) / (hi - lo) * 100, 0, 100) : 100}%"></div></div>
-      </div>`}
     </div>
   </section>`;
 
   html += renderWeekStrip();
 
   if (!S.settings.tipsSeen.longpress && tasks.length) {
-    html += `<div class="tip"><span class="tip-ico">💡</span><div>Lange auf eine Routine drücken für Bearbeiten, Mini-Version, Pausieren oder Sortieren. Antippen klappt Schritte auf, der Kreis rechts erledigt.<br><button type="button" data-act="tipSeen" data-tip="longpress">Verstanden</button></div></div>`;
+    html += `<div class="tip"><span class="tip-ico">💡</span><div>Antippen oder Kreis erledigt · lange drücken für mehr.<br><button type="button" data-act="tipSeen" data-tip="longpress">Verstanden</button></div></div>`;
   }
 
   if (reorderMode) html += `<div class="mode-bar"><span>Antippen zum Bearbeiten · am Griff ziehen zum Sortieren</span><button type="button" data-act="reorderDone">Fertig</button></div>`;
 
-  if (isPausedOn(today)) html += `<div class="tip"><span class="tip-ico">🏖️</span><div>Pause bis ${escHtml(dayLabel(S.game.pause.until))}. Deine Serien ruhen – erledigen darfst du trotzdem, zählt als Bonus.<br><button type="button" data-act="endPause">Pause beenden</button></div></div>`;
+  if (isPausedOn(today)) html += `<div class="tip"><span class="tip-ico">🏖️</span><div>Pause bis ${escHtml(dayLabel(S.game.pause.until))} · deine Serien ruhen – erledigen darfst du trotzdem, zählt als Bonus.<br><button type="button" data-act="endPause">Pause beenden</button></div></div>`;
   html += `<div class="section-head"><span class="section-title">Routinen</span>${tasks.length && !reorderMode ? `<button class="section-link" type="button" data-act="editMode">Bearbeiten</button>` : `<span class="section-meta">${tasks.length ? `${p.doneAll}/${p.shown} erledigt` : ''}</span>`}</div>`;
   if (!tasks.length) {
     const has = activeTasks().length;
@@ -2634,13 +2660,13 @@ function renderToday() {
   }
   if (!reorderMode) html += `<button class="add-row" type="button" data-act="newTask">${ICON.plus} Neue Routine</button>`;
 
-  // Heute im Fokus: To-Dos für heute (Fokus zuerst, nummeriert)
-  const focusTodos = S.todos.filter(t => !t.deleted && !t.completed && (t.focus || (t.dueDate && t.dueDate <= today)));
+  // To-Dos heute: mit Stern gesetzte zuerst (nummeriert), dann heute fällige
+  const focusTodos = S.todos.filter(t => !t.deleted && !t.completed && (isFocusToday(t) || (t.dueDate && t.dueDate <= today)));
   focusTodos.sort((a, b) => (b.focus - a.focus) || ((a.focusRank || 0) - (b.focusRank || 0)) || String(a.dueDate || '9').localeCompare(String(b.dueDate || '9')) || (todRank(a.timeOfDay) - todRank(b.timeOfDay)));
   const doneFocusToday = S.todos.filter(t => !t.deleted && t.completed && t.completedAt && appDay(t.completedAt) === today && (t.focus || (t.dueDate && t.dueDate <= today)));
   if (focusTodos.length || doneFocusToday.length) {
     let rank = 0;
-    html += `<div class="section-head"><span class="section-title">Heute im Fokus</span><button class="section-link" type="button" data-act="gotoTodos">Alle To-Dos</button></div>
+    html += `<div class="section-head"><span class="section-title">To-Dos heute</span><button class="section-link" type="button" data-act="gotoTodos">Alle To-Dos</button></div>
       <div class="list-card">${focusTodos.map(t => renderTodoRow(t, today, { rank: t.focus ? ++rank : 0 })).join('')}${doneFocusToday.slice(0, 3).map(t => renderTodoRow(t, today)).join('')}</div>`;
   }
 
@@ -2673,7 +2699,7 @@ function renderTodoRow(t, today, opts) {
   const meta = (chips.length || note) ? `<span class="todo-meta">${chips.join('')}${note}</span>` : '';
   const rank = opts.rank ? `<span class="rank" aria-label="Fokus ${opts.rank}">${opts.rank}</span>` : '';
   const carry = (!t.completed && t.focus && (t.carryCount || 0) >= GAME.carryLimit && opts.showCarry)
-    ? `<div class="carry-hint" style="grid-column:2 / -1"><span>Dieses To-Do wandert zum ${t.carryCount}. Mal mit. Kleiner machen oder loslassen?</span><span class="btns"><button type="button" data-act="todoEdit" data-id="${escAttr(t.id)}">Kleiner machen</button><button type="button" data-act="todoUnfocus" data-id="${escAttr(t.id)}">Loslassen</button></span></div>` : '';
+    ? `<div class="carry-hint" style="grid-column:2 / -1"><span>«${escHtml(t.title.length > 28 ? t.title.slice(0, 27) + '…' : t.title)}» wandert zum ${t.carryCount}. Mal mit. Kleiner machen oder loslassen?</span><span class="btns"><button type="button" data-act="todoEdit" data-id="${escAttr(t.id)}">Kleiner machen</button><button type="button" data-act="todoUnfocus" data-id="${escAttr(t.id)}">Loslassen</button></span></div>` : '';
   return `<div class="todo-row${t.completed ? ' done' : ''}" data-id="${escAttr(t.id)}">
     <button class="check-btn small" type="button" data-act="todoToggle" data-id="${escAttr(t.id)}" role="checkbox" aria-checked="${t.completed}" aria-label="${escAttr(t.title)} ${t.completed ? 'als offen markieren' : 'erledigen'}"><span class="check small${t.completed ? ' on' : ''}" style="--c:var(--tint)">${ICON.check}</span></button>
     <button class="todo-body" type="button" data-act="todoEdit" data-id="${escAttr(t.id)}"><span class="todo-title" style="display:flex;align-items:center;gap:8px">${rank}<span>${escHtml(t.title)}</span></span>${meta}</button>
@@ -2687,11 +2713,11 @@ function renderTodos() {
   const today = todayKey();
   const all = S.todos.filter(t => !t.deleted);
   const open = all.filter(t => !t.completed);
-  const focus = open.filter(t => t.focus).sort((a, b) => (a.focusRank || 0) - (b.focusRank || 0));
-  const overdue = open.filter(t => !t.focus && t.dueDate && t.dueDate < today);
-  const dueToday = open.filter(t => !t.focus && t.dueDate === today);
-  const noDate = open.filter(t => !t.focus && !t.dueDate);
-  const later = open.filter(t => !t.focus && t.dueDate && t.dueDate > today);
+  const focus = open.filter(isFocusToday).sort((a, b) => (a.focusRank || 0) - (b.focusRank || 0));
+  const overdue = open.filter(t => !isFocusToday(t) && t.dueDate && t.dueDate < today);
+  const dueToday = open.filter(t => !isFocusToday(t) && t.dueDate === today);
+  const noDate = open.filter(t => !isFocusToday(t) && !t.dueDate);
+  const later = open.filter(t => !isFocusToday(t) && t.dueDate && t.dueDate > today);
   const done = all.filter(t => t.completed).sort((a, b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')));
   const byTod = (a, b) => (todRank(a.timeOfDay) - todRank(b.timeOfDay)) || String(b.createdAt).localeCompare(String(a.createdAt));
   overdue.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || byTod(a, b));
@@ -2706,8 +2732,8 @@ function renderTodos() {
 
   // Fokus heute
   const dots = Array.from({ length: GAME.focusMax }, (_, i) => `<span class="focus-dot${i < focusDoneToday ? ' on' : ''}"></span>`).join('');
-  html += `<section class="card focus-card">
-    <div class="focus-head"><span class="focus-title">${ICON.star} Fokus heute</span><span class="focus-dots" aria-label="${focusDoneToday} von ${GAME.focusMax} erledigt">${dots}</span></div>
+  if (focus.length || open.length || focusDoneToday) html += `<section class="card focus-card">
+    <div class="focus-head"><span class="focus-title">${ICON.star} Fokus heute</span>${focusDoneToday ? `<span class="focus-dots" aria-label="${focusDoneToday} von ${GAME.focusMax} erledigt">${dots}</span>` : ''}</div>
     ${focus.length ? `<div class="list-card" style="box-shadow:none;border:0;background:transparent">${focus.map((t, i) => renderTodoRow(t, today, { rank: i + 1, showCarry: true })).join('')}</div>` : `<div class="focus-hint">${focusDoneToday >= 1 ? `${focusDoneToday} Fokus-To-Do${focusDoneToday > 1 ? 's' : ''} erledigt. ${focusDoneToday >= GAME.focusMax ? 'Volltreffer – das Wichtigste ist durch.' : 'Das Wichtigste zuerst.'}` : `Noch kein Fokus gesetzt. Wähle mit ★ bis zu ${GAME.focusMax} To-Dos, die heute zählen – in der Reihenfolge, in der du sie angehst.`}</div>`}
   </section>`;
 
@@ -2749,7 +2775,7 @@ function renderCalendar() {
     const e = S.history[k];
     let cls = 'cal-day', fx = '';
     if (k > today) cls += ' future';
-    else if (st === 'perfect') { cls += ' l4'; fx = '🔥'; }
+    else if (st === 'perfect') { cls += ' l4'; }
     else if (st === 'frozen') { cls += ' frozen'; fx = '❄️'; }
     else if (e && e.total > 0 && e.done > 0) { const r = e.done / e.total; cls += r >= 0.75 ? ' l3' : r >= 0.5 ? ' l2' : ' l1'; }
     else if (e && !e.total && calendarDoneCount(e)) cls += ' l1';
@@ -2783,7 +2809,7 @@ function renderProgress() {
     <div class="streak-flame${streak ? '' : ' cold'}">🔥</div>
     <div>
       <div class="streak-num num">${streak}<small>${streak === 1 ? 'Tag' : 'Tage'} dran</small></div>
-      <div class="streak-sub">${streak === 0 ? (best ? `Bester Lauf: ${best} Tage – der bleibt stehen, bis du ihn brichst. Heute zählt Tag 1.` : 'Eine erledigte Routine startet deinen Streak.') : streak >= best ? 'Persönlicher Rekord – weiter so!' : `Rekord: ${best} Tage. Noch ${best - streak + 1} bis zum neuen Rekord.`} Ein Aussetzer bricht nichts – zwei hintereinander schon.</div>
+      <div class="streak-sub">${streak === 0 ? (best ? `Bester Lauf: ${best} Tage – der bleibt stehen, bis du ihn brichst. Heute zählt Tag 1.` : 'Eine erledigte Routine startet deinen Streak.') : streak >= best ? 'Persönlicher Rekord – weiter so!' : `Rekord: ${best} Tage. Noch ${best - streak + 1} bis zum neuen Rekord.`} Ein Aussetzer pro Woche bricht nichts – der zweite schon.</div>
       <div class="jokers" aria-label="${jokers} Joker">
         ${Array.from({ length: GAME.jokerMax }, (_, i) => `<span class="joker${i < jokers ? ' on' : ''}">${ICON.snow}</span>`).join('')}
         <span class="joker-text">${jokers ? `${jokers} Joker – hält die Serie an einem Tag ohne Haken` : `Nächster Joker in ${nextJokerIn} Tag${nextJokerIn === 1 ? '' : 'en'} in Folge`}</span>
@@ -2793,19 +2819,18 @@ function renderProgress() {
 
   html += `<section class="card level-card q" aria-label="Level">
     <div class="level-head"><div class="level-badge num">${lvl}</div><div><div class="level-name">${escHtml(levelTitle(lvl))}</div><div class="level-sub">${hi > lo ? `Noch ${hi - xp} XP bis Level ${lvl + 1} · ${escHtml(levelTitle(lvl + 1))}` : 'Höchstes Level erreicht'}</div></div></div>
-    <div class="xp-bar"><div class="xp-bar-top"><span><b class="num">${fmtNum(xp)} XP</b> gesamt</span><span class="num">${hi > lo ? `${xp - lo} / ${hi - lo}` : ''}</span></div><div class="xp-track"><div class="xp-fill" style="width:${hi > lo ? clamp((xp - lo) / (hi - lo) * 100, 0, 100) : 100}%"></div></div></div>
+    <div class="xp-bar"><div class="xp-bar-top"><span><b class="num">${fmtNum(xp)} XP</b> gesamt</span></div><div class="xp-track"><div class="xp-fill" style="width:${hi > lo ? clamp((xp - lo) / (hi - lo) * 100, 0, 100) : 100}%"></div></div></div>
   </section>`;
 
   html += `<section class="card week-ring-card" aria-label="Diese Woche">
     <div class="ring-wrap small" id="weekRing">${ICON.ring(42)}<div class="ring-center"><span class="ring-num num">${ws.pct == null ? '–' : ws.pct + '<small>%</small>'}</span></div></div>
     <div><div class="hero-title">Diese Woche${ws.pct != null ? ` · ${ws.pct >= 90 ? 'Stark' : ws.pct >= 70 ? 'Solide' : 'Im Aufbau'}` : ''}</div><div class="hero-msg">${ws.planned ? `${ws.done} von ${ws.planned} geplanten Routinen erledigt · ${ws.perfect} perfekte Tag${ws.perfect === 1 ? '' : 'e'}` : 'Noch nichts gewertet – heute offene Routinen zählen erst, wenn sie erledigt sind.'}</div>
-    <div class="hero-msg" style="margin-top:6px">${ws.pct != null && ws.pct >= 90 ? 'Konstanz schlägt Perfektion. Das hier ist Konstanz.' : ws.pct != null && ws.pct >= 70 ? 'Solide Woche. Jede erledigte Routine zählt.' : 'Nie zweimal hintereinander auslassen – das ist die einzige Regel.'}</div></div>
+    <div class="hero-msg" style="margin-top:6px">${ws.pct != null && ws.pct >= 90 ? 'Konstanz schlägt Perfektion. Das hier ist Konstanz.' : ws.pct != null && ws.pct >= 70 ? 'Solide Woche. Jede erledigte Routine zählt.' : 'Höchstens ein Aussetzer pro Woche – das ist die einzige Regel.'}</div></div>
   </section>`;
 
   html += `<div class="stat-grid">
     <div class="stat"><span class="stat-ico">✅</span><span class="stat-val num" style="color:var(--tint-text)">${totalCompletions()}</span><span class="stat-lbl">Routinen erledigt</span></div>
     <div class="stat"><span class="stat-ico">⭐</span><span class="stat-val num" style="color:var(--gold-text)">${perfectDays()}</span><span class="stat-lbl">Perfekte Tage</span></div>
-    <div class="stat"><span class="stat-ico">🏆</span><span class="stat-val num" style="color:var(--flame-text)">${best}</span><span class="stat-lbl">Längste Serie</span></div>
     <div class="stat"><span class="stat-ico">📝</span><span class="stat-val num" style="color:var(--indigo)">${todosDoneCount()}</span><span class="stat-lbl">To-Dos erledigt</span></div>
   </div>`;
 
@@ -2814,39 +2839,31 @@ function renderProgress() {
   // Pro Routine
   const at = activeTasks();
   if (at.length) {
-    html += `<div class="section-head"><span class="section-title">Deine Routinen</span><span class="section-meta">letzte 14 Tage</span></div><section class="card" style="padding:6px 16px">`;
+    html += `<div class="section-head"><span class="section-title">Deine Routinen</span></div><section class="card" style="padding:6px 16px">`;
     for (const t of at) {
       const c = colorById(t.colorId);
       let dots = '';
       for (let i = 13; i >= 0; i--) {
         const k = addDays(today, -i);
         const e = S.history[k];
-        if (!isScheduledOn(t, k) || !existedOn(t, k) || t.skippedDate === k || !createdBefore(t, addDays(k, 1)) || (S.game.firstDay && k < S.game.firstDay)) dots += '<i class="rest"></i>';
+        if (!isScheduledOn(t, k) || !existedOn(t, k) || !countsFor(t, k) || !createdBefore(t, addDays(k, 1)) || (S.game.firstDay && k < S.game.firstDay)) dots += '<i class="rest"></i>';
         else if (taskDoneOn(t, k)) dots += '<i class="on"></i>';
         else if (e && e.frozen && k !== today) dots += '<i class="frozen"></i>';
         else dots += '<i></i>';
       }
-      const rate = taskRate(t, 30), st = taskStreak(t), hs = habitStrength(t);
-      html += `<div class="rstat" style="--c:var(--${c.id})"><span class="rstat-emoji">${escHtml(t.emoji)}</span><span class="rstat-text"><span class="rstat-name">${escHtml(t.label)}</span><span class="dots" aria-label="letzte 14 Tage">${dots}</span><span class="habit-bar" title="Wird zur Gewohnheit"><i style="width:${Math.round(hs / GAME.habitDays * 100)}%"></i></span><span class="habit-cap">Wird zur Gewohnheit: ${hs} von ${GAME.habitDays} Tagen</span></span><span class="rstat-right"><span class="rstat-pct num">${rate == null ? '–' : rate + '%'}</span>${st ? `<span class="rstat-streak">🔥 ${st}</span>` : `<span class="rstat-streak" style="color:var(--label-3)">${t.counter}×</span>`}</span></div>`;
+      const rate = taskRate(t, 14), st = taskStreak(t), hs = habitStrength(t);
+      html += `<div class="rstat" style="--c:var(--${c.id})"><span class="rstat-emoji">${escHtml(t.emoji)}</span><span class="rstat-text"><span class="rstat-name">${escHtml(t.label)}</span><span class="dots" aria-label="letzte 14 Tage">${dots}</span><span class="habit-bar" title="Wird zur Gewohnheit"><i style="width:${Math.round(hs / GAME.habitDays * 100)}%"></i></span><span class="habit-cap">Wird zur Gewohnheit: ${hs} von ${GAME.habitDays} Tagen</span></span><span class="rstat-right"><span class="rstat-pct num">${rate == null ? '–' : rate + '%'}</span>${st ? `<span class="rstat-streak">🔥 ${st}</span>` : `<span class="rstat-streak" style="color:var(--label-3)">${taskCount(t)}×</span>`}</span></div>`;
     }
     html += '</section>';
   }
 
   // Abzeichen
   const unlocked = BADGES.filter(b => S.game.badges[b.id]), locked = BADGES.filter(b => !S.game.badges[b.id]);
-  html += `<div class="section-head q"><span class="section-title">Abzeichen</span><span class="section-meta">${unlocked.length}/${BADGES.length}</span></div>
-    <div class="badge-grid q">${unlocked.concat(locked).map(b => { const on = !!S.game.badges[b.id]; const isNew = on && !S.game.badgesSeen[b.id]; return `<button class="badge${on ? '' : ' locked'}${isNew ? ' new' : ''}" type="button" data-act="badge" data-id="${b.id}" aria-label="${escAttr(b.name)}${on ? '' : ' (gesperrt)'}"><span class="badge-ico">${b.emoji}</span><span class="badge-name">${escHtml(b.name)}</span></button>`; }).join('')}</div>`;
-
-  // Letzte 7 Kalendertage – auch die ohne Eintrag, damit Lücken sichtbar sind
-  if (historyKeysSorted().length) {
-    const keys = Array.from({ length: 7 }, (_, i) => addDays(today, -i));
-    html += `<div class="section-head"><span class="section-title">Letzte 7 Tage</span></div><section class="card" style="padding:4px 16px">${keys.map(k => {
-      const e = S.history[k]; const st = dayStatus(k);
-      const xp = e ? entryXp(e) : 0;
-      const val = st === 'perfect' ? '🔥 Alles erledigt' : st === 'frozen' ? '❄️ Joker' : st === 'rest' ? (S.game.firstDay && k < S.game.firstDay ? '–' : 'Ruhetag') : st === 'open' ? `${e ? e.done : 0}/${e ? e.total : requiredTasksFor(k).length} offen` : e ? `${e.done}/${e.total}` : `0/${requiredTasksFor(k).length}`;
-      return `<div class="history-row"><span class="history-date">${escHtml(dayLabel(k))}</span><span class="history-val${st === 'perfect' ? ' perfect' : st === 'frozen' ? ' frozen' : ''}">${val}${xp && !S.settings.quiet ? ` <span style="opacity:.7">· ${xp} XP</span>` : ''}</span></div>`;
-    }).join('')}</section>`;
-  }
+  // Nur die verdienten und die nächsten erreichbaren zeigen – die volle Wand ist einen Tipp entfernt
+  const nextUp = locked.slice(0, Math.max(3, 6 - unlocked.length % 3));
+  const list = showAllBadges ? unlocked.concat(locked) : unlocked.concat(nextUp);
+  html += `<div class="section-head q"><span class="section-title">Abzeichen</span>${locked.length > nextUp.length ? `<button class="section-link" type="button" data-act="allBadges">${showAllBadges ? `Nur die nächsten` : `Alle ${BADGES.length}`}</button>` : `<span class="section-meta">${unlocked.length}/${BADGES.length}</span>`}</div>
+    <div class="badge-grid q">${list.map(b => { const on = !!S.game.badges[b.id]; const isNew = on && !S.game.badgesSeen[b.id]; return `<button class="badge${on ? '' : ' locked'}${isNew ? ' new' : ''}" type="button" data-act="badge" data-id="${b.id}" aria-label="${escAttr(b.name)}${on ? '' : ' (gesperrt)'}"><span class="badge-ico">${b.emoji}</span><span class="badge-name">${escHtml(b.name)}</span></button>`; }).join('')}</div>`;
 
   v.innerHTML = html;
   bindView(v);
@@ -2854,11 +2871,12 @@ function renderProgress() {
 }
 
 // ---- Token-Scoreboard ----
-// «Erreicht heute» / «Erreicht gestern» / «Erreicht am Mo., 9. Sep.»
-function reachedLabel(ts) {
+// «Erreicht heute» statt «Erreicht am Heute» – «am» passt nur zu einem Datum
+function onDayLabel(verb, ts) {
   const l = dayLabel(appDay(ts));
-  return /^(Heute|Gestern)$/.test(l) ? 'Erreicht ' + l.toLowerCase() : 'Erreicht am ' + l;
+  return /^(Heute|Gestern)$/.test(l) ? `${verb} ${l.toLowerCase()}` : `${verb} am ${l}`;
 }
+function reachedLabel(day) { const l = dayLabel(day); return /^(Heute|Gestern)$/.test(l) ? 'Erreicht ' + l.toLowerCase() : 'Erreicht am ' + l; }
 function renderTokens() {
   const v = $('viewTokens');
   const total = tokenTotal();
@@ -2874,7 +2892,7 @@ function renderTokens() {
         : nx ? `Noch <b>${nx.points - total}</b> bis ${nx.emoji} ${escHtml(nx.name)}.`
         : rewards.length ? 'Alle Belohnungen erreicht – Zeit für neue Ziele.'
         : 'Setz dir ein Ziel: was gönnst du dir bei 30 Token?'}</div>
-      <div class="hero-badges">${rewards.length ? `<span class="pill gold">${reachedCount}/${rewards.length} Belohnungen</span>` : ''}${entries.length ? `<span class="pill">${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}</span>` : ''}</div>
+      <div class="hero-badges">${rewards.length ? `<span class="pill gold">${reachedCount}/${rewards.length} Belohnungen</span>` : ''}</div>
     </div>
   </section>`;
 
@@ -2886,10 +2904,10 @@ function renderTokens() {
     return `<button class="reward-row${reached ? ' reached' : ''}" type="button" data-act="rewardEdit" data-id="${escAttr(r.id)}" aria-label="${escAttr(r.name)}, ${reached ? 'erreicht' : `noch ${r.points - total} Token`}">
       <span class="reward-emoji" aria-hidden="true">${escHtml(r.emoji)}</span>
       <span class="reward-text"><span class="reward-name">${escHtml(r.name)}</span><span class="reward-bar"><i style="width:${pct}%"></i></span><span class="reward-meta">${reached ? escHtml(reachedLabel(r.reachedAt)) : `${fmtNum(Math.min(total, r.points))} von ${fmtNum(r.points)} Token`}</span></span>
-      <span class="reward-right"><span class="reward-left">${reached ? ICON.check.replace('<svg ', '<svg style="width:22px;height:22px" ') : `noch ${fmtNum(r.points - total)}`}</span></span>
+      ${reached ? `<span class="reward-right">${ICON.check.replace('<svg ', '<svg style="width:22px;height:22px" ')}</span>` : ''}
     </button>`; }).join('')}</section>`;
 
-  html += `<div class="section-head"><span class="section-title">Protokoll</span><span class="section-meta">${entries.length ? `${fmtNum(total)} Token` : ''}</span></div>`;
+  html += `<div class="section-head"><span class="section-title">Protokoll</span><span class="section-meta">${entries.length ? `${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}` : ''}</span></div>`;
   if (!entries.length) html += `<div class="card empty" style="padding:22px"><div class="empty-emoji">🪙</div><div class="empty-title">Noch kein Token</div><div class="empty-text">Tippe auf die Münze, sobald du einen Auftrag erledigt hast – und schreib kurz dazu, was es war.</div></div>`;
   else html += `<section class="card" style="padding:4px 16px">${entries.slice(0, 60).map(e => `<button class="log-row" type="button" data-act="tokenEdit" data-id="${escAttr(e.id)}">
       <span><span class="log-note${e.note ? '' : ' empty'}">${e.note ? escHtml(e.note) : 'Ohne Notiz'}</span><div class="log-day">${escHtml(dayLabel(e.day))}</div></span>
@@ -2941,7 +2959,8 @@ function openSheet(id) {
   $('scrim').classList.add('show');
   el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); el.setAttribute('aria-modal', 'true');
   el.classList.add('show');
-  el.style.zIndex = 50 + sheetStack.length;
+  el.style.zIndex = 50 + sheetStack.length * 2;
+  $('scrim').style.zIndex = 49 + sheetStack.length * 2; // Rückfrage über einem Editor muss den Editor wirklich sperren
   const body = el.querySelector('.sheet-body'); if (body) body.scrollTop = 0;
   setTimeout(() => { const f = el.querySelector('[autofocus]'); if (f) f.focus(); else el.setAttribute('tabindex', '-1'), el.focus({ preventScroll: true }); }, 60);
 }
@@ -2950,11 +2969,12 @@ function closeSheet(id) {
   if (!top) return;
   const idx = sheetStack.indexOf(top); if (idx >= 0) sheetStack.splice(idx, 1);
   const el = $(top);
+  if (sheetStack.length) $('scrim').style.zIndex = 49 + sheetStack.length * 2;
   if (el.contains(document.activeElement) && document.activeElement.blur) document.activeElement.blur(); // schliesst die Tastatur
   el.classList.remove('show'); el.classList.remove('dragging'); el.style.transform = ''; el.removeAttribute('aria-modal');
   setTimeout(() => { if (!el.classList.contains('show')) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); } }, 420);
   if (!sheetStack.length) {
-    $('scrim').classList.remove('show');
+    $('scrim').classList.remove('show'); $('scrim').style.zIndex = '';
     $('app').removeAttribute('inert'); $('app').classList.remove('inert-bg'); document.body.style.overflow = '';
     if (lastFocus && lastFocus.focus && lastFocus !== document.body && !(lastFocus.tagName === 'INPUT' || lastFocus.tagName === 'TEXTAREA')) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
     if (celebrateQueue.length && !celebrating) setTimeout(nextCelebration, 420); // aufgeschobene Feier nachholen
@@ -2965,7 +2985,11 @@ document.querySelectorAll('.sheet').forEach(el => { el.setAttribute('inert', '')
 { const ov = $('celebrate'); ov.setAttribute('inert', ''); ov.setAttribute('aria-hidden', 'true'); }
 function closeAllSheets() { while (sheetStack.length) closeSheet(); }
 $('scrim').addEventListener('click', () => closeSheet());
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetStack.length) closeSheet(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('celebrate').classList.contains('show')) $('celebrateBtn').click();
+  else if (sheetStack.length) closeSheet();
+});
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeSheet(b.closest('.sheet').id)));
 
 // Sheet per Griff nach unten wischen
@@ -2994,10 +3018,12 @@ document.querySelectorAll('.sheet').forEach(sheet => {
 function actionSheet(opts) {
   const body = $('actionBody');
   const items = opts.items.map((it, i) => `<button class="action-btn${it.destructive ? ' destructive' : ''}" type="button" data-i="${i}">${it.icon || ''}${escHtml(it.label)}</button>`).join('');
-  body.innerHTML = `<div class="action-group">${opts.title ? `<div class="action-title">${escHtml(opts.title)}${opts.message ? '<br>' + escHtml(opts.message) : ''}</div>` : ''}${items}</div>
+  body.innerHTML = `<div class="action-group">${opts.title ? `<div class="action-title" id="actionSheetTitle">${escHtml(opts.title)}${opts.message ? '<br>' + escHtml(opts.message) : ''}</div>` : ''}${items}</div>
     <div class="action-group"><button class="action-btn cancel" type="button" data-cancel>Abbrechen</button></div>`;
   body.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => { closeSheet('actionSheet'); setTimeout(() => opts.items[+b.dataset.i].fn(), 60); }));
   body.querySelector('[data-cancel]').addEventListener('click', () => closeSheet('actionSheet'));
+  const sheet = $('actionSheet');
+  if (opts.title) sheet.setAttribute('aria-labelledby', 'actionSheetTitle'); else { sheet.removeAttribute('aria-labelledby'); sheet.setAttribute('aria-label', 'Aktionen'); }
   openSheet('actionSheet');
 }
 function confirmSheet(title, message, label, fn, destructive) {
@@ -3013,7 +3039,7 @@ document.addEventListener('focusin', e => {
 });
 
 // ---- Routine-Editor ----
-let editTaskId = null, formSubs = [], formDays = [], formEmoji = EMOJIS[0], formColor = 'green', formCount = 0;
+let editTaskId = null, formSubs = [], formDays = [], formEmoji = EMOJIS[0], formColor = 'green';
 
 function openTaskEditor(id, preset) {
   editTaskId = id || null;
@@ -3029,8 +3055,6 @@ function openTaskEditor(id, preset) {
   formDays = t ? t.days.slice() : [0, 1, 2, 3, 4, 5, 6];
   formEmoji = t ? t.emoji : (preset && preset.emoji) || EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
   formColor = t ? t.colorId : (preset && preset.colorId) || COLORS[Math.floor(Math.random() * 6)].id;
-  formCount = t ? t.counter : 0;
-  $('tCountField').hidden = !t; $('tCountVal').textContent = formCount;
   $('tDelete').hidden = !t;
   $('tSubInput').value = '';
   renderEmojiGrid(); renderColorRow(); renderDayRow(); renderFormSubs();
@@ -3073,8 +3097,6 @@ $('tSubAdd').addEventListener('click', addFormSub);
 $('tSubInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addFormSub(); } });
 $('tName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('tName').blur(); } });
 $('tAlarmClear').addEventListener('click', () => { $('tAlarm').value = ''; });
-$('tCountMinus').addEventListener('click', () => { formCount = Math.max(0, formCount - 1); $('tCountVal').textContent = formCount; });
-$('tCountPlus').addEventListener('click', () => { formCount++; $('tCountVal').textContent = formCount; });
 $('tSave').addEventListener('click', saveTaskEditor);
 $('tDelete').addEventListener('click', () => { const t = taskById(editTaskId); if (!t) return; confirmSheet(`«${t.label}» löschen?`, 'Der Verlauf und die gesammelten XP bleiben erhalten.', 'Routine löschen', () => { closeSheet('taskSheet'); deleteTask(t); }); });
 
@@ -3107,7 +3129,6 @@ function saveTaskEditor() {
   t.mini = mini.slice(0, 40);
   if (t.alarmTime !== alarm) delete S.device.alarmNotified[t.id];
   t.alarmTime = hmValid(alarm) ? alarm : null;
-  t.counter = formCount;
   // Schritte: Erledigt-Status nach Name übernehmen
   const old = t.subtasks;
   t.subtasks = formSubs.map(n => { const o = old.find(s => s.name === n); return { name: n, completed: o ? o.completed : false }; });
@@ -3121,7 +3142,7 @@ function saveTaskEditor() {
   renderAll();
   if (wasNew && activeTasks().length > 8) setTimeout(() => toast('💡', 'Weniger ist mehr: HIGH ist für 3 bis 8 Routinen gebaut. Lieber wenige, die wirklich sitzen.'), 3200);
   if (wasNew) toast('✨', (S.settings.onboardingDone ? `<b>${escHtml(t.label)}</b> angelegt. Heute zählt sie als Bonus, ab morgen als Pflicht.` : `<b>${escHtml(t.label)}</b> angelegt.`) + (setupXp && !S.settings.quiet ? ` +${setupXp} XP für die Einrichtung.` : ''));
-  if (t.alarmTime) ensureNotifPermission().then(ok => { if (!ok) toast('🔔', 'Für Erinnerungen bitte Benachrichtigungen erlauben.', { label: 'Einstellungen', fn: openSettings }); });
+
   afterChangeChecks();
 }
 function deleteTask(t) {
@@ -3361,8 +3382,9 @@ function bindView(v) {
       case 'todoUnfocus': { const t = todoById(id); if (t) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); saveAll(); renderAll(); toast('🍃', 'Losgelassen. Es bleibt in der Liste, ohne zu drängen.'); } break; }
       case 'review': openReview(); break;
       case 'toggleDone': showDoneTodos = !showDoneTodos; renderAll(); break;
+      case 'allBadges': showAllBadges = !showAllBadges; renderAll(); break;
       case 'clearDone': confirmSheet('Erledigte To-Dos aufräumen?', 'Erledigte To-Dos, die älter als 7 Tage sind, werden entfernt. XP bleiben.', 'Aufräumen', () => { const cutoff = Date.now() - 7 * 864e5; let n = 0; S.todos.forEach(t => { if (t.completed && !t.deleted && t.completedAt && new Date(t.completedAt).getTime() < cutoff) { t.deleted = Date.now(); n++; } }); saveAll(); renderAll(); toast('🧹', `${n} To-Do${n === 1 ? '' : 's'} aufgeräumt.`); }); break;
-      case 'rescheduleOverdue': { const today = todayKey(); let n = 0; S.todos.forEach(t => { if (!t.completed && !t.deleted && t.dueDate && t.dueDate < today) { t.dueDate = today; touch(t); n++; } }); saveAll(); renderAll(); toast('📅', `${n} To-Do${n === 1 ? '' : 's'} auf heute gelegt. Frischer Start.`); break; }
+      case 'rescheduleOverdue': { const today = todayKey(); let n = 0; S.todos.forEach(t => { if (!t.completed && !t.deleted && !isFocusToday(t) && t.dueDate && t.dueDate < today) { t.dueDate = today; touch(t); n++; } }); saveAll(); renderAll(); toast('📅', `${n} To-Do${n === 1 ? '' : 's'} auf heute gelegt. Frischer Start.`); break; }
       case 'calPrev': calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderAll(); break;
       case 'calNext': calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderAll(); break;
       case 'badge': openBadge(el.dataset.id); break;
@@ -3467,7 +3489,7 @@ function initListDrag(list, handleSel, arr, onDone, isTasks) {
 }
 
 
-// ---- Tagesabschluss: Rückblick, ein Satz, die drei wichtigsten für morgen (Peak-End & Ivy Lee) ----
+// ---- Tagesabschluss: Rückblick, ein Satz, die drei wichtigsten als Nächstes (Peak-End & Ivy Lee) ----
 let reviewMood = null, reviewPicks = [];
 function openReview() {
   const today = todayKey();
@@ -3500,9 +3522,9 @@ function renderReview() {
       <div class="mood-row">${[['hard', '😮‍💨', 'schwer'], ['ok', '🙂', 'okay'], ['good', '😄', 'gut']].map(([k, ico, lbl]) => `<button class="mood${reviewMood === k ? ' on' : ''}" type="button" data-mood="${k}"><span>${ico}</span>${lbl}</button>`).join('')}</div>
     </div>
     <div>
-      <div class="field-label">Die drei wichtigsten für morgen</div>
+      <div class="field-label">Die drei wichtigsten als Nächstes</div>
       <div class="card tight" style="background:var(--fill-4);border:0;box-shadow:none;padding-top:4px;padding-bottom:4px">
-        ${openTodos.length ? openTodos.slice(0, 12).map(t => { const i = reviewPicks.indexOf(t.id); return `<button class="pick-row${i >= 0 ? ' on' : ''}" type="button" data-pick="${escAttr(t.id)}"><span class="rank">${i >= 0 ? i + 1 : '·'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.title)}</span>${t.dueDate ? `<span class="due ${t.dueDate < today ? 'overdue' : t.dueDate === today ? 'today' : 'future'}">${escHtml(dayLabel(t.dueDate))}</span>` : ''}</button>`; }).join('') : '<div class="c2 t-sub" style="padding:10px 0">Keine offenen To-Dos. Ein guter Moment, die wichtigsten für morgen zu notieren.</div>'}
+        ${openTodos.length ? openTodos.slice(0, 12).map(t => { const i = reviewPicks.indexOf(t.id); return `<button class="pick-row${i >= 0 ? ' on' : ''}" type="button" data-pick="${escAttr(t.id)}"><span class="rank">${i >= 0 ? i + 1 : '·'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.title)}</span>${t.dueDate ? `<span class="due ${t.dueDate < today ? 'overdue' : t.dueDate === today ? 'today' : 'future'}">${t.dueDate < today ? 'überfällig' : t.dueDate === today ? 'von heute' : escHtml(dayLabel(t.dueDate))}</span>` : ''}</button>`; }).join('') : '<div class="c2 t-sub" style="padding:10px 0">Keine offenen To-Dos. Ein guter Moment, das Wichtigste für morgen zu notieren.</div>'}
         <div class="sub-add" style="margin-top:8px"><input class="input" id="reviewNewTodo" placeholder="Neu für morgen …" maxlength="120" autocomplete="off" enterkeyhint="done"><button type="button" id="reviewAddBtn" aria-label="Hinzufügen">${ICON.plus}</button></div>
       </div>
       <div class="field-hint">${tomorrowTasks.length ? `Morgen geplant: ${tomorrowTasks.map(t => escHtml(t.emoji)).join(' ')} ${tomorrowTasks.length} Routine${tomorrowTasks.length === 1 ? '' : 'n'}${firstTime ? `, die erste um ${firstTime}` : ''}.` : 'Morgen ist keine Routine geplant.'}</div>
@@ -3523,9 +3545,10 @@ function renderReview() {
 function saveReview() {
   const today = todayKey(), e = dayEntry(today, true);
   e.review = { mood: reviewMood || 'ok', at: Date.now(), focusTomorrow: reviewPicks.slice() };
-  // Fokus für morgen setzen: gewählte bekommen den Stern (Rang = Reihenfolge), andere verlieren ihn
+  // Fokus setzen: gewählte bekommen den Stern (Rang = Reihenfolge), andere verlieren ihn
   const base = Date.now();
-  S.todos.forEach(t => { if (t.deleted || t.completed) return; const i = reviewPicks.indexOf(t.id); if (i >= 0) { t.focus = true; t.focusRank = base + i; t.focusDate = addDays(today, 1); t.carryCount = 0; touch(t); } else if (t.focus) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); } });
+  // Nur was neu in den Fokus kommt, fängt bei 0 an – sonst wüsste die App nie, dass ein To-Do mitwandert
+  S.todos.forEach(t => { if (t.deleted || t.completed) return; const i = reviewPicks.indexOf(t.id); if (i >= 0) { if (!t.focus) t.carryCount = 0; t.focus = true; t.focusRank = base + i; t.focusDate = today; touch(t); } else if (t.focus) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); } });
   e.xp = entryXp(e);
   saveAll();
   closeSheet('reviewSheet');
@@ -3633,7 +3656,7 @@ function openBadge(id) {
   const b = BADGES.find(x => x.id === id); if (!b) return;
   const on = S.game.badges[id];
   $('badgeSheetTitle').textContent = on ? 'Abzeichen' : 'Noch gesperrt';
-  $('badgeBody').innerHTML = `<div class="empty" style="padding-top:8px"><div class="badge-ico" style="width:88px;height:88px;font-size:2.6rem;${on ? '' : 'filter:grayscale(1);opacity:.5'}">${b.emoji}</div><div class="empty-title">${escHtml(b.name)}</div><div class="empty-text">${escHtml(b.desc)}</div>${on ? `<div class="pill gold" style="margin-top:6px">Freigeschaltet am ${escHtml(dayLabel(dateKey(new Date(on))))}</div>` : ''}</div>`;
+  $('badgeBody').innerHTML = `<div class="empty" style="padding-top:8px"><div class="badge-ico" style="width:88px;height:88px;font-size:2.6rem;${on ? '' : 'filter:grayscale(1);opacity:.5'}">${b.emoji}</div><div class="empty-title">${escHtml(b.name)}</div><div class="empty-text">${escHtml(b.desc)}</div>${on ? `<div class="pill gold" style="margin-top:6px">${escHtml(onDayLabel('Freigeschaltet', on))}</div>` : ''}</div>`;
   if (on && !S.game.badgesSeen[id]) { S.game.badgesSeen[id] = Date.now(); saveAll({ silent: true }); }
   openSheet('badgeSheet');
 }
@@ -3644,15 +3667,15 @@ function renderSettings() {
   const s = S.settings;
   const perm = notifPermLabel();
   const permOk = ('Notification' in window) && Notification.permission === 'granted';
-  const themeSeg = ['system', 'light', 'dark'].map(t => `<button class="seg${(s.theme || 'system') === t ? ' on' : ''}" type="button" data-theme="${t}">${t === 'system' ? 'System' : t === 'light' ? 'Hell' : 'Dunkel'}</button>`).join('');
+  const themeSeg = ['system', 'light', 'dark'].map(t => { const on = (s.theme || 'system') === t; return `<button class="seg${on ? ' on' : ''}" type="button" role="radio" aria-checked="${on}" data-theme="${t}">${t === 'system' ? 'System' : t === 'light' ? 'Hell' : 'Dunkel'}</button>`; }).join('');
   $('settingsBody').innerHTML = `
     <div>
       <div class="field-label">Erinnerungen</div>
       <div class="group">
         <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">To-Do-Erinnerung</span><span class="row-sub">Täglich, wenn etwas offen oder fällig ist</span></span><button class="switch${s.notifyEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.notifyEnabled}" data-set="notifyEnabled" aria-label="To-Do-Erinnerung"></button></div>
-        <div class="row"><span class="row-ico" style="background:var(--orange);opacity:.7">🕘</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="notifyTime" value="${escAttr(s.notifyTime || '09:00')}" aria-label="Uhrzeit To-Do-Erinnerung" style="min-height:40px;padding:6px 12px"></div>
+        ${s.notifyEnabled ? `<div class="row"><span class="row-ico" style="background:var(--orange);opacity:.7">🕘</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="notifyTime" value="${escAttr(s.notifyTime || '09:00')}" aria-label="Uhrzeit der To-Do-Erinnerung" style="min-height:44px;padding:6px 12px"></div>` : ''}
         <div class="row"><span class="row-ico" style="background:var(--indigo)">🌙</span><span class="row-text"><span class="row-title">Abend-Check</span><span class="row-sub">Erinnert an noch offene Routinen</span></span><button class="switch${s.eveningEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.eveningEnabled}" data-set="eveningEnabled" aria-label="Abend-Check"></button></div>
-        <div class="row"><span class="row-ico" style="background:var(--indigo);opacity:.7">🕗</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="eveningTime" value="${escAttr(s.eveningTime || '20:00')}" aria-label="Uhrzeit Abend-Check" style="min-height:40px;padding:6px 12px"></div>
+        ${s.eveningEnabled ? `<div class="row"><span class="row-ico" style="background:var(--indigo);opacity:.7">🕗</span><span class="row-text"><span class="row-title">Uhrzeit</span></span><input class="input" type="time" data-time="eveningTime" value="${escAttr(s.eveningTime || '20:00')}" aria-label="Uhrzeit des Abend-Checks" style="min-height:44px;padding:6px 12px"></div>` : ''}
         <div class="row"><span class="row-ico" style="background:var(--label-3)">🔐</span><span class="row-text"><span class="row-title">Berechtigung</span>${nextReminderText() ? `<span class="row-sub">${escHtml(nextReminderText())}</span>` : ''}</span><span class="row-val${permOk ? ' ok' : ''}">${escHtml(perm)}</span></div>
         <button class="row link" type="button" data-act="testNotif"><span class="row-text"><span class="row-title">Probe-Benachrichtigung senden</span><span class="row-sub">Zeigt, wie eine Systemmeldung dieser App aussieht</span></span></button>
       </div>
@@ -3661,15 +3684,15 @@ function renderSettings() {
     <div>
       <div class="field-label">Tag & Pause</div>
       <div class="group">
-        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-text"><span class="row-title">Tagesende</span><span class="row-sub">Bis zu dieser Uhrzeit zählt Erledigtes noch zum Vortag – für lange Abende.</span></span><div class="segmented" id="dayEndSeg">${[0, 2, 3, 4].map(h => `<button class="seg${(typeof s.dayEnd === 'number' ? s.dayEnd : 3) === h ? ' on' : ''}" type="button" data-dayend="${h}">${pad2(h)}:00</button>`).join('')}</div></div>
-        <div class="row"><span class="row-ico" style="background:var(--cyan)">🏖️</span><span class="row-text"><span class="row-title">Pause bis</span><span class="row-sub">${S.game.pause ? `Serien ruhen bis ${escHtml(dayLabel(S.game.pause.until))}.` : 'Ferien oder Krankheit: Serien ruhen, nichts gilt als verpasst.'}</span></span><input class="input" type="date" id="pauseUntil" value="${S.game.pause ? escAttr(S.game.pause.until) : ''}" min="${todayKey()}" aria-label="Pause bis" style="min-height:40px;padding:6px 10px;width:auto"></div>
+        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-text"><span class="row-title">Tagesende</span><span class="row-sub">Bis zu dieser Uhrzeit zählt Erledigtes noch zum Vortag – für lange Abende.</span></span><div class="segmented" id="dayEndSeg" role="radiogroup" aria-label="Tagesende">${[0, 2, 3, 4].map(h => { const on = (typeof s.dayEnd === 'number' ? s.dayEnd : 3) === h; return `<button class="seg${on ? ' on' : ''}" type="button" role="radio" aria-checked="${on}" data-dayend="${h}">${pad2(h)}:00</button>`; }).join('')}</div></div>
+        <div class="row"><span class="row-ico" style="background:var(--cyan)">🏖️</span><span class="row-text"><span class="row-title">Pause bis</span><span class="row-sub">${S.game.pause ? `Serien ruhen bis ${escHtml(dayLabel(S.game.pause.until))}` : 'Ferien oder Krankheit: Serien ruhen, nichts gilt als verpasst.'}</span></span><input class="input" type="date" id="pauseUntil" value="${S.game.pause ? escAttr(S.game.pause.until) : ''}" min="${todayKey()}" aria-label="Pause bis" style="min-height:40px;padding:6px 10px;width:auto"></div>
       </div>
     </div>
     <div>
       <div class="field-label">Darstellung & Effekte</div>
       <div class="group">
-        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-title">Erscheinungsbild</span><div class="segmented" id="themeSeg">${themeSeg}</div></div>
-        <div class="row"><span class="row-ico" style="background:var(--pink)">🎉</span><span class="row-text"><span class="row-title">Konfetti & Animationen</span></span><button class="switch${s.confetti ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.confetti}" data-set="confetti" aria-label="Konfetti"></button></div>
+        <div class="row" style="flex-direction:column;align-items:stretch;gap:10px"><span class="row-title">Erscheinungsbild</span><div class="segmented" id="themeSeg" role="radiogroup" aria-label="Erscheinungsbild">${themeSeg}</div></div>
+        <div class="row"><span class="row-ico" style="background:var(--pink)">🎉</span><span class="row-text"><span class="row-title">Konfetti</span></span><button class="switch${s.confetti ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.confetti}" data-set="confetti" aria-label="Konfetti"></button></div>
         <div class="row"><span class="row-ico" style="background:var(--teal)">🔈</span><span class="row-text"><span class="row-title">Töne</span></span><button class="switch${s.sound ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.sound}" data-set="sound" aria-label="Töne"></button></div>
         <div class="row"><span class="row-ico" style="background:var(--gray)">🤫</span><span class="row-text"><span class="row-title">Ruhiger Modus</span><span class="row-sub">Blendet XP, Level und Abzeichen aus. Ring, Serie und Kalender bleiben.</span></span><button class="switch${s.quiet ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.quiet}" data-set="quiet" aria-label="Ruhiger Modus"></button></div>
       </div>
@@ -3704,7 +3727,11 @@ function renderSettings() {
       const ok = await ensureNotifPermission();
       if (!ok) { toast('🔔', 'Benachrichtigungen sind nicht erlaubt. Bitte in den System-Einstellungen freigeben.'); renderSettings(); return; }
     }
-    s[k] = !s[k]; touch(s); saveAll(); renderSettings(); scheduleTick();
+    s[k] = !s[k]; touch(s);
+    // Eben eingeschaltet und die Zeit ist heute schon vorbei: erst morgen erinnern, nicht sofort
+    if (s[k] && k === 'notifyEnabled' && nowHM() >= (s.notifyTime || '09:00')) S.device.lastNotifiedDate = clockDay();
+    if (s[k] && k === 'eveningEnabled' && nowHM() >= (s.eveningTime || '20:00')) S.device.lastEveningDate = clockDay();
+    saveAll(); renderSettings(); scheduleTick();
     if (k === 'sound' && s.sound) playSound('small');
     if (k === 'quiet') { document.body.classList.toggle('quiet', !!s.quiet); renderAll(); }
   }));
@@ -3716,13 +3743,16 @@ function renderSettings() {
     if (!isValidKey(v)) { S.game.pause = null; }
     else { const from = S.game.pause && S.game.pause.from && S.game.pause.from <= todayKey() ? S.game.pause.from : todayKey(); S.game.pause = { from, until: v }; }
     touch(S.game); recomputeDay(todayKey()); saveAll(); renderSettings(); renderAll();
-    toast('🏖️', S.game.pause ? `Pause bis ${escHtml(dayLabel(S.game.pause.until))}. Erholung zählt.` : 'Pause aufgehoben.');
+    toast('🏖️', S.game.pause ? `Pause bis ${escHtml(dayLabel(S.game.pause.until))} – Erholung zählt.` : 'Pause aufgehoben.');
   });
   body.querySelector('[data-act="testNotif"]').addEventListener('click', async () => {
     const ok = await ensureNotifPermission();
     if (!ok) { toast('🔔', 'Benachrichtigungen sind nicht erlaubt.'); renderSettings(); return; }
     const shown = await systemNotify('HIGH', 'So sehen Erinnerungen aus.', 'focus-test');
-    if (!shown) toast('⚠️', 'Systemmeldung nicht möglich. Auf dem iPhone geht das nur in der installierten App.');
+    // Im Vordergrund legt iOS die Meldung stumm in die Mitteilungszentrale – ohne diesen
+    // Hinweis sieht es so aus, als hätte der Knopf gar nichts getan.
+    if (shown) toast('🔔', 'Gesendet. Auf dem iPhone liegt sie in der Mitteilungszentrale – von oben herunterwischen.');
+    else toast('⚠️', 'Systemmeldung nicht möglich. Auf dem iPhone geht das nur in der installierten App.');
   });
   body.querySelector('[data-act="export"]').addEventListener('click', exportData);
   body.querySelector('[data-act="import"]').addEventListener('click', () => $('importFile').click());
@@ -3774,7 +3804,9 @@ async function notify(icon, title, body, tag, onTap) {
   if (document.visibilityState === 'visible' && document.hasFocus()) {
     // Nie über ein offenes Sheet oder eine Feier legen: der Hinweis würde genau die
     // Knöpfe zum Schliessen verdecken. false = später nochmals versuchen.
-    if (sheetStack.length || $('celebrate').classList.contains('show')) return false;
+    // Auch ein laufender Hinweis blockiert: sonst überschreiben sich mehrere Erinnerungen
+    // im selben Durchlauf und gelten trotzdem alle als gezeigt.
+    if (sheetStack.length || $('celebrate').classList.contains('show') || $('banner').classList.contains('show')) return false;
     showBanner(icon, title, body, onTap); return true;
   }
   return systemNotify(title, body, tag);
@@ -3782,8 +3814,11 @@ async function notify(icon, title, body, tag, onTap) {
 function nextReminderText() {
   const s = S.settings, today = todayKey(), now = nowHM();
   const items = [];
-  if (s.notifyEnabled) items.push({ t: s.notifyTime || '09:00', what: 'To-Dos', done: S.device.lastNotifiedDate === today });
-  if (s.eveningEnabled) items.push({ t: s.eveningTime || '20:00', what: 'Abend-Check', done: S.device.lastEveningDate === today });
+  const clock = clockDay();
+  if (s.notifyEnabled) items.push({ t: s.notifyTime || '09:00', what: 'To-Dos', done: S.device.lastNotifiedDate === clock });
+  if (s.eveningEnabled) items.push({ t: s.eveningTime || '20:00', what: 'Abend-Check', done: S.device.lastEveningDate === clock });
+  const pending = items.filter(i => !i.done && i.t <= now).sort((a, b) => a.t.localeCompare(b.t));
+  if (pending.length) return `Erinnerung steht noch aus (${pending[0].what})`;
   const upcoming = items.filter(i => !i.done && i.t > now).sort((a, b) => a.t.localeCompare(b.t));
   if (upcoming.length) return `Nächste Erinnerung heute ${upcoming[0].t} (${upcoming[0].what})`;
   const later = items.sort((a, b) => a.t.localeCompare(b.t));
@@ -3799,10 +3834,10 @@ async function tick() {
     if (processRollover()) { saveAll({ silent: true }); dirty = true; resetCalToToday(); setTimeout(flushNotices, 400); }
     const s = S.settings, d = S.device;
     const now = nowHM();
-    const canNotify = ('Notification' in window) && Notification.permission === 'granted';
-    if (canNotify) {
+    const clock = clockDay();
+    {
       // To-Do-Erinnerung
-      if (s.notifyEnabled && now >= (s.notifyTime || '09:00') && d.lastNotifiedDate !== today) {
+      if (s.notifyEnabled && now >= (s.notifyTime || '09:00') && d.lastNotifiedDate !== clock) {
         const open = S.todos.filter(t => !t.completed && !t.deleted);
         const overdue = open.filter(t => t.dueDate && t.dueDate < today).length, due = open.filter(t => t.dueDate === today).length;
         let shown = true;
@@ -3810,22 +3845,22 @@ async function tick() {
           const parts = []; if (overdue) parts.push(`${overdue} überfällig`); if (due) parts.push(`${due} heute fällig`); if (!parts.length) parts.push(`${open.length} offen`);
           shown = await notify('📝', 'To-Dos', parts.join(' · '), 'focus-todo-daily', () => switchTab('todos'));
         }
-        if (shown) { d.lastNotifiedDate = today; saveAll({ silent: true }); }
+        if (shown) { d.lastNotifiedDate = clock; saveAll({ silent: true }); }
       }
       // Abend-Check für offene Routinen
-      if (s.eveningEnabled && now >= (s.eveningTime || '20:00') && d.lastEveningDate !== today) {
+      if (s.eveningEnabled && now >= (s.eveningTime || '20:00') && d.lastEveningDate !== clock) {
         const open = requiredTasksFor(today).filter(t => !t.completed);
         let shown = true;
         if (open.length) shown = await notify('🌙', open.length === 1 ? 'Eine Routine ist noch offen' : `${open.length} Routinen sind noch offen`, open.map(t => t.emoji + ' ' + t.label).join(', ') + (open.length === 1 ? ' – kurz erledigen, Streak halten.' : ' – Mini-Version zählt auch.'), 'focus-evening', () => switchTab('today'));
-        if (shown) { d.lastEveningDate = today; saveAll({ silent: true }); }
+        if (shown) { d.lastEveningDate = clock; saveAll({ silent: true }); }
       }
       // Alarme pro Routine
       let changed = false;
       for (const t of S.tasks) {
-        if (t.deleted || !t.alarmTime || t.completed || t.skippedDate === today || !isScheduledOn(t, today)) continue;
-        if (d.alarmNotified[t.id] === today || now < t.alarmTime) continue;
+        if (t.deleted || !t.alarmTime || t.completed || !isRequiredOn(t, today)) continue; // deckt Pause, Ruhetag und den Anlegetag mit ab
+        if (d.alarmNotified[t.id] === clock || now < t.alarmTime) continue;
         const shown = await notify(t.emoji, t.label, `Bis ${t.alarmTime} noch nicht erledigt – jetzt ist ein guter Moment.`, 'focus-task-' + t.id, () => switchTab('today'));
-        if (shown) { d.alarmNotified[t.id] = today; changed = true; }
+        if (shown) { d.alarmNotified[t.id] = clock; changed = true; }
       }
       if (changed) { saveAll({ silent: true }); dirty = true; }
     }
@@ -3838,12 +3873,12 @@ function scheduleTick() {
   if (tickTimer) { clearTimeout(tickTimer); tickTimer = null; }
   if (!tickInterval) tickInterval = setInterval(tick, 30 * 1000); // Rückfallebene, wenn Timer gedrosselt werden
   // Präziser Timer auf das nächste Ereignis
-  const today = todayKey(), now = new Date();
+  const today = todayKey(), clock = clockDay(), now = new Date();
   const times = [];
   const s = S.settings, d = S.device;
-  if (s.notifyEnabled && d.lastNotifiedDate !== today) times.push(s.notifyTime);
-  if (s.eveningEnabled && d.lastEveningDate !== today) times.push(s.eveningTime);
-  S.tasks.forEach(t => { if (!t.deleted && t.alarmTime && !t.completed && d.alarmNotified[t.id] !== today && isScheduledOn(t, today)) times.push(t.alarmTime); });
+  if (s.notifyEnabled && d.lastNotifiedDate !== clock) times.push(s.notifyTime);
+  if (s.eveningEnabled && d.lastEveningDate !== clock) times.push(s.eveningTime);
+  S.tasks.forEach(t => { if (!t.deleted && t.alarmTime && !t.completed && d.alarmNotified[t.id] !== clock && isRequiredOn(t, today)) times.push(t.alarmTime); });
   let next = null;
   times.filter(hmValid).forEach(hm => { const [h, m] = hm.split(':').map(Number); const d = new Date(now); d.setHours(h, m, 0, 0); if (d > now && (!next || d < next)) next = d; });
   const midnight = new Date(now); midnight.setHours(dayEndHour(), 0, 2, 0); if (midnight <= now) midnight.setDate(midnight.getDate() + 1);
@@ -4044,7 +4079,7 @@ function hashState(st) {
   const h = {};
   // Fehlende und «false»-Flags sind dasselbe – sonst weichen Hashes nach einem Merge grundlos ab
   const FLAGS = ['celebratedPerfect', 'jokerUsed', 'final', 'legacy', 'frozen', 'completed'];
-  for (const k in st.history) { const e = Object.assign({}, st.history[k]); delete e.timestamp; delete e.extra; FLAGS.forEach(f => { if (!e[f]) delete e[f]; }); h[k] = e; }
+  for (const k in st.history) { const e = Object.assign({}, st.history[k]); delete e.timestamp; delete e.extra; /* Altlast aus früheren Versionen */ FLAGS.forEach(f => { if (!e[f]) delete e[f]; }); h[k] = e; }
   const tk = st.tokens ? { entries: st.tokens.entries, rewards: (st.tokens.rewards || []).map(r => { const x = Object.assign({}, r); delete x.reachedAt; return x; }) } : null;
   return stableStringify({ t: st.tasks, d: st.todos, s, h, g, tk });
 }
@@ -4166,6 +4201,7 @@ function refreshSyncUI() {
 // ---------- 14. Start ----------
 function boot() {
   loadState();
+  refreshRewards(); // «Erreicht am» aus den Einträgen ableiten (auch nach einem Format-Wechsel)
   applyTheme();
   document.body.classList.toggle('quiet', !!S.settings.quiet);
   processRollover();
@@ -4201,7 +4237,7 @@ function boot() {
 
   // Neue Abzeichen aus bestehendem Verlauf still freischalten (kein Feuerwerk für die Vergangenheit)
   const fresh = evaluateBadges();
-  fresh.forEach(b => { S.game.badgesSeen[b.id] = S.game.badgesSeen[b.id] || 0; });
+  fresh.forEach(b => { S.game.badgesSeen[b.id] = S.game.badgesSeen[b.id] || Date.now(); });
   if (fresh.length) saveAll({ silent: true });
   S.game.lastLevelSeen = Math.max(S.game.lastLevelSeen || 1, levelFromXp(totalXp()));
   saveAll({ silent: true });

@@ -308,7 +308,8 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   if (streak !== 7) note('C: expected streak 7, got ' + streak);
   if (jokers !== 2) note('C: expected 2 jokers (1 start + 1 earned), got ' + jokers);
   ok(`C: streak ${streak}, jokers ${jokers}`);
-  // Tag 7 verpassen, Tag 8 öffnen -> Joker eingesetzt, Streak bleibt
+  // Tag 7 verpassen, Tag 8 öffnen: die Toleranz («ein Aussetzer pro Woche») trägt den Tag,
+  // der Joker bleibt liegen – er ist die Reserve für den zweiten Aussetzer.
   const t9 = new Date(base); t9.setDate(t9.getDate() + 8);
   await page.clock.setSystemTime(t9);
   await page.evaluate(() => tick());
@@ -316,10 +317,10 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   streak = await page.evaluate(() => currentStreak());
   jokers = await page.evaluate(() => S.game.jokers);
   const frozen = await page.evaluate(() => Object.values(S.history).filter(e => e.frozen).length);
-  if (frozen !== 1) note('C: expected 1 frozen day, got ' + frozen);
-  if (streak !== 7) note('C: expected streak 7 kept via joker, got ' + streak);
-  if (jokers !== 1) note('C: expected 1 joker left, got ' + jokers);
-  ok(`C after miss: streak ${streak}, jokers ${jokers}, frozen ${frozen}`);
+  if (frozen !== 0) note('C: a joker was spent although the tolerance covered the day (frozen ' + frozen + ')');
+  if (streak !== 7) note('C: expected streak 7 kept by the tolerance, got ' + streak);
+  if (jokers !== 2) note('C: expected both jokers untouched, got ' + jokers);
+  ok(`C after one miss: streak ${streak}, jokers ${jokers}, frozen ${frozen}`);
   // Weitere Tage verpassen -> Joker verbraucht, Streak bricht
   const t13 = new Date(base); t13.setDate(t13.getDate() + 12);
   await page.clock.setSystemTime(t13);
@@ -468,8 +469,159 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await page.evaluate(() => closeSheet()); await page.waitForTimeout(1200);
   if (!(await page.locator('#celebrate.show').count())) note('F: deferred celebration was lost');
   await page.click('#celebrateBtn'); await page.waitForTimeout(500);
+  // Offene Tastatur: kein geschlossenes Sheet darf ins Bild rutschen, «Sichern» muss sichtbar bleiben
+  await page.evaluate(() => openTaskEditor(null)); await page.waitForTimeout(500);
+  await page.evaluate(() => document.documentElement.style.setProperty('--kb', '336px'));
+  await page.waitForTimeout(400);
+  const kb = await page.evaluate(() => {
+    const geister = [];
+    document.querySelectorAll('.sheet').forEach(el => {
+      if (el.classList.contains('show')) return;
+      const r = el.getBoundingClientRect(); const c = getComputedStyle(el);
+      if (r.top < innerHeight - 1 && c.opacity !== '0' && c.pointerEvents !== 'none') geister.push(el.id);
+    });
+    const save = document.getElementById('tSave').getBoundingClientRect();
+    return { geister, saveSichtbar: save.top >= 0 && save.bottom <= innerHeight + 1 };
+  });
+  if (kb.geister.length) note('F: closed sheets slide into view when the keyboard opens: ' + kb.geister.join(', '));
+  if (!kb.saveSichtbar) note('F: "Sichern" is not visible while the keyboard is open');
+  // Eine Meldung im Sheet muss über dem Sheet liegen, nicht dahinter
+  await page.evaluate(() => toast('⚠️', 'Test'));
+  await page.waitForTimeout(400);
+  const toastOben = await page.evaluate(() => {
+    const el = document.querySelector('.toast'); if (!el) return false;
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+    return el.contains(hit) || hit === el;
+  });
+  if (!toastOben) note('F: a toast fired inside a sheet is painted behind it');
+  await page.evaluate(() => { document.documentElement.style.removeProperty('--kb'); closeAllSheets(); });
+  await page.waitForTimeout(400);
   ok('F: reduced motion – no invisible blockers');
   await ctx.close();
+}
+
+// ---------- Szenario G: Erinnerungen ----------
+// Hintergrund: Ohne erteilte Systemberechtigung passierte gar nichts – auch der In-App-Hinweis
+// nicht, der keine Berechtigung braucht. Ausserdem überschrieben sich mehrere Erinnerungen
+// im selben Durchlauf, Alarme feuerten in der Pause und nach dem Tageswechsel ein zweites Mal.
+{
+  const ctx = await browser.newContext({ ...iphone, colorScheme: 'dark', locale: 'de-CH', timezoneId: 'Europe/Zurich' });
+  const page = await ctx.newPage();
+  const EVENING = new Date(NOON); EVENING.setHours(21, 0, 0, 0);
+  await page.clock.install({ time: EVENING });
+  page.on('pageerror', e => note('G: pageerror: ' + e.message));
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  // Ohne Berechtigung (Chromium verweigert standardmässig) muss der In-App-Hinweis trotzdem kommen
+  const shown = await page.evaluate(async () => {
+    S.settings.onboardingDone = true; S.settings.eveningEnabled = true; S.settings.eveningTime = '20:00';
+    S.tasks = [normalizeTask({ id: 'g1', label: 'Bewegung', emoji: '🏃' })];
+    S.device.lastEveningDate = null;
+    saveAll(); renderAll();
+    await tick();
+    return { perm: (window.Notification && Notification.permission) || 'none', banner: document.getElementById('banner').classList.contains('show'), title: document.getElementById('bannerTitle').textContent, marked: S.device.lastEveningDate };
+  });
+  if (shown.perm === 'granted') note('G: test expected an ungranted permission, got granted');
+  if (!shown.banner) note('G: no in-app reminder without system permission (' + JSON.stringify(shown) + ')');
+  if (!shown.marked) note('G: reminder was not marked as delivered');
+  // Ein zweiter Hinweis darf den ersten nicht überschreiben, sondern wartet
+  const second = await page.evaluate(async () => await notify('📝', 'Zweiter', 'Hinweis', 'g-2'));
+  if (second !== false) note('G: a second reminder overwrote the visible one');
+  await page.evaluate(() => hideBanner());
+  // Alarme schweigen in der Pause
+  const paused = await page.evaluate(async () => {
+    S.tasks[0].alarmTime = '07:00';
+    S.game.pause = { from: todayKey(), until: addDays(todayKey(), 7) };
+    S.device.alarmNotified = {}; saveAll();
+    await tick();
+    return document.getElementById('banner').classList.contains('show');
+  });
+  if (paused) note('G: routine alarm fired during a pause');
+  // Und am Anlegetag der Routine ebenfalls nicht
+  const fresh = await page.evaluate(async () => {
+    S.game.pause = null;
+    S.tasks[0].createdAt = Date.now();
+    S.device.alarmNotified = {}; saveAll();
+    await tick();
+    return document.getElementById('banner').classList.contains('show');
+  });
+  if (fresh) note('G: alarm fired for a routine created today');
+  // Nach dem Tageswechsel um 03:00 darf dieselbe Erinnerung nicht erneut kommen
+  const twice = await page.evaluate(async () => {
+    S.tasks[0].createdAt = Date.now() - 86400000 * 5;
+    S.device.alarmNotified = {}; S.device.lastEveningDate = null; saveAll();
+    await tick();
+    const first = document.getElementById('banner').classList.contains('show');
+    hideBanner();
+    const before = JSON.stringify(S.device.alarmNotified);
+    return { first, before };
+  });
+  if (!twice.first) note('G: alarm did not fire for an overdue routine');
+  await page.clock.setFixedTime(new Date(NOON.getFullYear(), NOON.getMonth(), NOON.getDate() + 1, 3, 30, 0));
+  const again = await page.evaluate(async () => { await tick(); return document.getElementById('banner').classList.contains('show'); });
+  if (again) note('G: the same alarm fired again after the 03:00 day change');
+  ok('G: reminders – in-app without permission, one at a time, quiet during a pause');
+  await ctx.close();
+}
+
+// ---------- Szenario H: Darstellungsvarianten ----------
+// Hell, erhöhter Kontrast und ein schmales Gerät: nichts darf herausragen,
+// jedes Sheet muss sich schliessen lassen, keine Fehler in der Konsole.
+{
+  for (const [name, opts] of [
+    ['hell', { colorScheme: 'light' }],
+    ['kontrast', { colorScheme: 'dark', contrast: 'more' }],
+    ['schmal', { colorScheme: 'dark', viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
+  ]) {
+    const ctx = await browser.newContext({ ...iphone, locale: 'de-CH', timezoneId: 'Europe/Zurich', ...opts });
+    const page = await ctx.newPage();
+    await page.clock.install({ time: NOON });
+    page.on('pageerror', e => note(`H (${name}): pageerror: ` + e.message));
+    await page.goto(BASE, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => {
+      S.settings.onboardingDone = true;
+      S.tasks = [normalizeTask({ label: 'Meditieren', emoji: '🧘' }), normalizeTask({ label: 'Bewegung', emoji: '🏃', subtasks: [{ name: 'Aufwärmen' }, { name: 'Laufen' }] })];
+      S.todos = [normalizeTodo({ title: 'Steuererklärung fertig machen', focus: true, focusRank: 1 })];
+      addTokenEntry(12, 'Keller aufgeräumt');
+      saveAll(); renderAll();
+    });
+    await page.waitForTimeout(500);
+    for (let i = 0; i < 6; i++) { if (await page.locator('#celebrate.show').count()) { await page.click('#celebrateBtn'); await page.waitForTimeout(400); } else break; }
+    await page.evaluate(() => { closeAllSheets(); hideBanner(); });
+    for (const tab of ['today', 'todos', 'tokens', 'progress']) {
+      await page.evaluate(t => switchTab(t), tab); await page.waitForTimeout(350);
+      const bad = await page.evaluate((tab) => {
+        const out = [];
+        if (document.documentElement.scrollWidth > innerWidth + 1) out.push(`${tab}: horizontaler Überlauf`);
+        document.querySelectorAll('.view.active *').forEach(el => {
+          const r = el.getBoundingClientRect();
+          if (r.width && (r.left < -1 || r.right > innerWidth + 1)) {
+            const cls = (el.className && String(el.className).split(' ')[0]) || el.tagName;
+            if (!/dots|cal-|badge-grid/.test(cls)) out.push(`${tab}: «${cls}» ragt heraus`);
+          }
+        });
+        return out;
+      }, tab);
+      bad.forEach(b => note(`H (${name}): ${b}`));
+    }
+    for (const [sheet, fn] of [['taskSheet', () => openTaskEditor(null)], ['settings', () => openSettings()], ['review', () => openReview()]]) {
+      await page.evaluate(fn); await page.waitForTimeout(450);
+      if (!(await page.locator('.sheet.show').count())) { note(`H (${name}): ${sheet} öffnet nicht`); continue; }
+      const state = await page.evaluate(() => {
+        const s = document.querySelector('.sheet.show'); const b = s.querySelector('[data-close]');
+        if (!b) return 'kein Schliessknopf';
+        const r = b.getBoundingClientRect();
+        const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+        return (b.contains(hit) || hit === b) ? 'ok' : 'verdeckt';
+      });
+      if (state !== 'ok') note(`H (${name}): ${sheet} Schliessknopf ${state}`);
+      await page.evaluate(() => closeAllSheets()); await page.waitForTimeout(350);
+    }
+    await ctx.close();
+  }
+  ok('H: hell, Kontrast und 320 pt – nichts ragt heraus, alle Sheets schliessbar');
 }
 
 await browser.close();

@@ -2,7 +2,7 @@
 
 ## Projekte
 
-- **`index.html`** – [Focus](#focus--routinen--to-dos): Routinen und To-Dos, die man
+- **`index.html`** – [HIGH](#high--routinen--to-dos): Routinen und To-Dos, die man
   wirklich durchzieht. Tagesring, Serie mit Joker und «nie zweimal»-Regel,
   Mini-Version für schwere Tage, Tagesabschluss mit den drei wichtigsten
   To-Dos für morgen, XP, Level und Abzeichen, Token-Scoreboard mit
@@ -35,7 +35,7 @@
   Zeit, Unterschrift). `dach/index.html` im Browser öffnen, Code `1234`
   für das Büro, `3456` für den Monteur.
 
-## Focus – Routinen & To-Dos
+## HIGH – Routinen & To-Dos
 
 Eine HTML-Datei (`index.html`), dazu `sw.js`, `manifest.json` und die Icons.
 Kein Build, kein Server nötig. Am besten als App installieren: in Safari
@@ -49,7 +49,7 @@ Kein Build, kein Server nötig. Am besten als App installieren: in Safari
 | **Serie** | zählt Tage, an denen mindestens eine Routine erledigt wurde. Ein Joker (Start: 1, +1 alle 7 Tage, max. 2) springt an einem Tag ohne Haken automatisch ein. Ein einzelner Aussetzer nach einem erledigten Tag bricht nichts («nie zweimal»), Ruhetage sind neutral. Perfekte Tage (alle Routinen) geben Bonus und den Flammen-Kalender |
 | **Nachsicht** | Tagesende einstellbar (Standard 03:00), «Gestern nachtragen» über den Wochenstreifen, Pause für Ferien, «Willkommen zurück» nach längerer Abwesenheit, Routine pro Tag pausieren |
 | **XP & Level** | Routine 10, To-Do 5 (+5 Fokus, gedeckelt), perfekter Tag 25 + Serienbonus, Einrichtung 10. Levelkurve 100·(L−1)^1.5 mit Titeln von «Anfang» bis «Ein Fels». Ruhiger Modus blendet alles davon aus |
-| **Abzeichen** | 30+, ohne Beschämung: auch «Zurück im Spiel», «Nie zweimal», «Mini zählt» |
+| **Abzeichen** | 30+, ohne Beschämung: auch «Zurück im Spiel», «Nie zweimal», «Mini zählt». Sichtbar sind die verdienten und die nächsten erreichbaren, alle auf einen Tipp |
 | **To-Dos** | Schnelleingabe, Fälligkeit und Tageszeit, bis zu drei Fokus-To-Dos in Reihenfolge, Mitwander-Hinweis nach drei Tagen, Überfällige mit einem Tipp auf heute legen |
 | **Token** | Scoreboard für erledigte Aufträge im echten Leben: Emoji antippen, kurz notieren, was geschafft wurde, Token gutschreiben. Jeder Token zählt für alle Belohnungen gleichzeitig (Standard: Kokosnuss 30, Schwein 100, Palme 500, Hund 1000; eigene Belohnungen mit Emoji und Schwelle möglich). Erreichte Belohnungen werden gefeiert; Einträge lassen sich bearbeiten, löschen und widerrufen |
 | **Daten** | alles im `localStorage` dieses Geräts; Backup als JSON; optional Cloud-Sync per Google-Login (Firestore). Geräte werden zusammengeführt – neuere Änderung gewinnt, Verlauf wird vereinigt, Löschungen und Rücknahmen überleben den Abgleich |
@@ -66,9 +66,13 @@ Zufallsbelohnungen), Milkman (Neustart-Effekt am Montag und Monatsersten).
 Die App hat keinen Server. Erinnerungen werden von der App selbst
 ausgelöst: am Computer auch im Hintergrund, auf dem iPhone dann, wenn die
 App geöffnet wird oder kurz zuvor offen war. Ist die App im Vordergrund,
-erscheint ein Hinweis oben im Bild statt einer Systemmeldung. Für eine
+erscheint ein Hinweis oben im Bild statt einer Systemmeldung – dafür
+braucht es keine Systemberechtigung. Pro Durchlauf kommt höchstens ein
+Hinweis, nie über einem offenen Fenster; was man einmal hatte, kommt am
+selben Kalendertag nicht wieder, und während einer Pause schweigen auch
+die Routine-Erinnerungen. Für eine
 Erinnerung zu einer festen Uhrzeit hilft die Kurzbefehle-App: Automation
-«Um 07:30 → Focus öffnen»; `index.html?tab=heute`, `?tab=todos`, `?tab=tokens` und
+«Um 07:30 → HIGH öffnen»; `index.html?tab=heute`, `?tab=todos`, `?tab=tokens` und
 `?tab=progress` öffnen direkt den passenden Tab.
 
 ### Google-Anmeldung in der installierten iPhone-App
@@ -92,7 +96,10 @@ Zwei Wege:
 `tests/focus.smoke.mjs` fährt die App mit Playwright in Chromium durch:
 Erststart, Routinen und To-Dos anlegen und erledigen, Tagesabschluss,
 Migration alter Daten, Tageswechsel mit Joker über eine gestellte Uhr,
-Merge-Konvergenz, Token-Scoreboard mit Belohnungen. Voraussetzungen und Aufruf stehen im Kopf der Datei.
+Merge-Konvergenz, Token-Scoreboard mit Belohnungen, den Modus «Bewegung
+reduzieren» (nichts Unsichtbares darf Knöpfe blockieren) und die
+Erinnerungen (ohne Systemberechtigung, keine Überlagerung, Ruhe in der
+Pause). Voraussetzungen und Aufruf stehen im Kopf der Datei.
 
 ## Selbst hosten
 
