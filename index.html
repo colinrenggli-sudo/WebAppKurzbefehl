@@ -1425,7 +1425,7 @@ const DEFAULT_GAME = {
 // Gerät – ein zweites Gerät hat ein eigenes Abo oder gar keins.
 const DEFAULT_DEVICE = {
   lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {},
-  syncUrl: null, syncToken: null,
+  syncUrl: null, syncToken: null, lastSyncAt: 0,
   pushEnabled: false, pushDeviceId: null,
   serverSent: null,   // { day, keys: [] } – was der Server heute schon verschickt hat
 };
@@ -3699,7 +3699,15 @@ function openBadge(id) {
 }
 
 // ---- Einstellungen ----
-function openSettings() { renderSettings(); openSheet('settingsSheet'); }
+function openSettings() {
+  renderSettings();
+  openSheet('settingsSheet');
+  // Genau hier ist die Frage «läuft der Dienst auf dieser Adresse?» etwas
+  // wert – und nur hier. Beim Start wäre es eine Anfrage ins Leere.
+  if (!syncConfigured() && serverHier === null) {
+    pruefeServerHier().then(() => { if (sheetStack.includes('settingsSheet')) renderSettings(); });
+  }
+}
 function renderSettings() {
   const s = S.settings;
   const perm = notifPermLabel();
@@ -4249,6 +4257,9 @@ async function syncNow(opts) {
         lastPushedHash = hashState(currentState());
       }
       lastSyncAt = Date.now(); syncFails = 0;
+      // Merken, dass es je geklappt hat: sonst stünde nach jedem Neustart
+      // «noch keine Verbindung», obwohl längst alles läuft.
+      if (S.device.lastSyncAt !== lastSyncAt) { S.device.lastSyncAt = lastSyncAt; lsSet(KEYS.device, S.device); }
       setSyncStatus('');
       return true;
     }
@@ -4438,6 +4449,28 @@ function openSyncSetup() {
   openSheet('syncSheet');
   setTimeout(() => $('syncUrlInput').focus(), 120);
 }
+// Adressen im eigenen Netz sind zum Ausprobieren erlaubt, aber nur zum
+// Ausprobieren: ohne https gibt es keine Erinnerungen, das sagt die App auch.
+function istHeimadresse(url) {
+  return /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url);
+}
+
+// Ein Weg für alle: Formular, Kopplungscode und Einrichtungslink landen hier.
+async function verbindeMit(url, token) {
+  url = String(url || '').trim().replace(/\/+$/, '');
+  token = String(token || '').trim();
+  if (!/^https:\/\/.+/.test(url) && !istHeimadresse(url)) { toast('⚠️', 'Die Adresse muss mit https:// beginnen.'); return false; }
+  if (token.length < 16) { toast('⚠️', 'Der Schlüssel ist zu kurz – nimm den langen aus deploy/.env.'); return false; }
+  S.device.syncUrl = url; S.device.syncToken = token; saveAll({ silent: true });
+  setSyncStatus('Prüfe …'); renderSettings();
+  const ok = await syncNow({ loud: true });
+  // Auch wenn es nicht klappt, bleibt die Adresse stehen: meistens ist der
+  // Server nur noch nicht so weit, und dann verbindet es sich von selbst.
+  if (ok) startSyncPolling();
+  renderSettings();
+  return ok;
+}
+
 async function saveSyncSetup() {
   // «https://…/api|SCHLUESSEL» in einem Feld ist bequemer als zweimal tippen
   const roh = $('syncUrlInput').value.trim();
@@ -4446,25 +4479,83 @@ async function saveSyncSetup() {
     $('syncUrlInput').value = a.trim();
     if (b && b.trim()) $('syncTokenInput').value = b.trim();
   }
-  const url = $('syncUrlInput').value.trim().replace(/\/+$/, '');
-  const token = $('syncTokenInput').value.trim();
-  if (!/^https:\/\/.+/.test(url) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(url)) { toast('⚠️', 'Die Adresse muss mit https:// beginnen.'); return; }
-  if (token.length < 16) { toast('⚠️', 'Der Schlüssel ist zu kurz – nimm den langen aus deploy/.env.'); return; }
-  S.device.syncUrl = url; S.device.syncToken = token; saveAll({ silent: true });
-  setSyncStatus('Prüfe …'); renderSettings();
-  const ok = await syncNow({ loud: true });
-  if (ok) { closeSheet('syncSheet'); toast('☁️', 'Verbunden. Ab jetzt wird abgeglichen.'); startSyncPolling(); }
-  else toast('⚠️', 'Verbindung nicht möglich: ' + (syncStatusText || 'unbekannter Fehler'));
-  renderSettings();
+  const url = $('syncUrlInput').value.trim();
+  const ok = await verbindeMit(url, $('syncTokenInput').value.trim());
+  if (ok) {
+    closeSheet('syncSheet');
+    toast('☁️', 'Verbunden. Ab jetzt wird abgeglichen.');
+    if (istHeimadresse(S.device.syncUrl)) setTimeout(() => toast('🔔', 'Über http geht der Abgleich, Erinnerungen aber nicht. Dafür braucht es die Adresse mit https.'), 2600);
+  } else if (S.device.syncUrl) {
+    toast('⚠️', 'Noch keine Verbindung: ' + (syncStatusText || 'unbekannter Fehler') + '. Die Adresse bleibt gespeichert, die App versucht es weiter.');
+  }
 }
 function disconnectSync() {
   confirmSheet('Verbindung trennen?', 'Die Daten bleiben auf diesem Gerät und auf dem Server. Nur der Abgleich hört auf.', 'Trennen', () => {
     disablePush();
-    S.device.syncUrl = null; S.device.syncToken = null; S.device.pushDeviceId = null; saveAll({ silent: true });
-    lastRev = 0; lastPushedHash = null; setSyncStatus(''); renderSettings();
+    S.device.syncUrl = null; S.device.syncToken = null; S.device.pushDeviceId = null;
+    S.device.lastSyncAt = 0; S.device.serverSent = null;
+    saveAll({ silent: true });
+    lastRev = 0; lastPushedHash = null; lastSyncAt = 0; syncFails = 0;
+    if (syncPoll) { clearInterval(syncPoll); syncPoll = null; }
+    if (syncRetryTimer) { clearTimeout(syncRetryTimer); syncRetryTimer = null; }
+    setSyncStatus(''); renderSettings();
   });
 }
 // Ein Gerät, das schon verbunden ist, gibt beides in einer Zeile weiter.
+// ---- Einrichten mit einem einzigen Link ----
+// Das Einrichtungsskript druckt am Ende
+//     https://routine.example.ch/#s=SCHLUESSEL
+// Was hinter der Raute steht, schickt der Browser nie an einen Server – es
+// bleibt auf dem Gerät. Trotzdem verschwindet es sofort aus der Adresszeile,
+// damit es nicht im Verlauf stehen bleibt.
+async function verbindeAusLink() {
+  const roh = String(location.hash || '').replace(/^#/, '');
+  if (!roh || roh.indexOf('s=') === -1) return false;
+  let wert = null;
+  try { wert = new URLSearchParams(roh).get('s'); } catch (e) { return false; }
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!wert) return false;
+  // «URL|SCHLUESSEL», oder nur der Schlüssel – dann liegt der Dienst hier.
+  let url, token;
+  if (wert.includes('|')) { const [a, b] = wert.split('|'); url = a.trim(); token = (b || '').trim(); }
+  else { url = location.origin + '/api'; token = wert.trim(); }
+  if (token.length < 16) { toast('⚠️', 'Der Schlüssel in diesem Link ist unbrauchbar.'); return false; }
+
+  const kurz = (x) => String(x).replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  if (syncConfigured() && kurz(S.device.syncUrl) !== kurz(url)) {
+    // Nie stillschweigend den Server wechseln – das wäre der eine Klick, mit
+    // dem jemand die Daten woandershin schickt.
+    confirmSheet('Anderen Server verwenden?',
+      `Dieses Gerät gleicht mit ${kurz(S.device.syncUrl)} ab. Der Link zeigt auf ${kurz(url)}.`,
+      'Wechseln', () => verbindenUndMelden(url, token), false);
+    return false;
+  }
+  return await verbindenUndMelden(url, token);
+}
+async function verbindenUndMelden(url, token) {
+  const ok = await verbindeMit(url, token);
+  if (ok) toast('☁️', 'Mit dem eigenen Server verbunden. Ab jetzt wird abgeglichen.');
+  else toast('⚠️', 'Server noch nicht erreichbar (' + (syncStatusText || 'unbekannt') + '). Die Adresse ist gespeichert – sobald er läuft, verbindet es sich von selbst.');
+  return ok;
+}
+
+// Liegt der Dienst auf derselben Adresse wie die App, sagt das die
+// Einstellungsseite. Das spart nicht nur Tippen, es beantwortet auch gleich
+// die Frage «läuft der Container überhaupt».
+let serverHier = null;   // null = noch nicht geprüft
+async function pruefeServerHier() {
+  if (!/^https?:$/.test(location.protocol)) { serverHier = false; return false; }
+  const ctl = new AbortController();
+  const frist = setTimeout(() => ctl.abort(), 5000);
+  try {
+    const res = await fetch(location.origin + '/api/health', { cache: 'no-store', signal: ctl.signal });
+    const j = res.ok ? await res.json() : null;
+    serverHier = !!(j && j.ok);
+  } catch (e) { serverHier = false; }
+  finally { clearTimeout(frist); }
+  return serverHier;
+}
+
 function copyPairingCode() {
   const code = syncBase() + '|' + S.device.syncToken;
   const fertig = () => toast('📋', 'Kopplungscode kopiert. Auf dem anderen Gerät in die Adresszeile der Einrichtung einfügen.');
@@ -4482,13 +4573,15 @@ function refreshSyncUI() {
   const title = $('syncTitle'), sub = $('syncSub'), btn = $('syncBtnLabel');
   if (!title) return;
   if (syncConfigured()) {
-    title.textContent = 'Verbunden';
-    const wann = lastSyncAt ? 'zuletzt ' + new Date(lastSyncAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : 'noch nicht abgeglichen';
+    // «Verbunden» erst, wenn wirklich einmal etwas hin und her ging. Sonst
+    // stünde da Verbundenheit, wo nur eine Adresse gespeichert ist.
+    title.textContent = lastSyncAt ? 'Verbunden' : 'Eingerichtet – noch keine Verbindung';
+    const wann = lastSyncAt ? 'zuletzt ' + new Date(lastSyncAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : 'wartet auf den Server';
     sub.textContent = syncStatusText || (syncBase().replace(/^https?:\/\//, '') + ' · ' + wann);
     btn.textContent = 'Verbindung trennen'; btn.style.color = 'var(--red)';
   } else {
     title.textContent = 'Nicht verbunden';
-    sub.textContent = syncStatusText || 'Daten liegen nur auf diesem Gerät.';
+    sub.textContent = syncStatusText || (serverHier ? 'Auf dieser Adresse läuft ein Server – es fehlt nur der Schlüssel.' : 'Daten liegen nur auf diesem Gerät.');
     btn.textContent = 'Server einrichten'; btn.style.color = '';
   }
 }
@@ -4540,13 +4633,29 @@ function boot() {
   S.game.lastLevelSeen = Math.max(S.game.lastLevelSeen || 1, levelFromXp(totalXp()));
   saveAll({ silent: true });
 
-  // Cloud nur laden, wenn sie schon einmal aktiv war (spart Daten und Startzeit)
-  if (syncConfigured()) {
-    setTimeout(() => { syncNow(); refreshPushSubscription(); }, 600);
+  // Wird der Link angetippt, während die App schon offen ist, wechselt nur
+  // der Teil hinter der Raute – die Seite lädt dabei nicht neu. Ohne das hier
+  // würde genau dann nichts passieren.
+  window.addEventListener('hashchange', () => { verbindeAusLink(); });
+
+  // «Schon einmal verbunden» überlebt einen Neustart – sonst stünde in den
+  // Einstellungen jedes Mal «noch keine Verbindung», obwohl längst alles läuft.
+  lastSyncAt = S.device.lastSyncAt || 0;
+
+  // Immer zuhören, nicht nur wenn beim Start schon ein Server eingetragen
+  // war: eingerichtet wird oft erst danach, über den Link oder von Hand.
+  window.addEventListener('online', () => { if (syncConfigured()) syncNow(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && syncConfigured()) syncNow(); });
+
+  // Einrichtungslink (#s=…) noch vor allem anderen: danach ist der Server
+  // eingerichtet, und der Abgleich unten läuft gleich mit dem richtigen Ziel.
+  setTimeout(async () => {
+    const ausLink = await verbindeAusLink();
+    if (!syncConfigured()) return;
+    if (!ausLink) syncNow();   // beim Einrichten über den Link lief er schon
+    refreshPushSubscription();
     startSyncPolling();
-    window.addEventListener('online', () => syncNow());
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow(); });
-  }
+  }, 600);
 }
 try { boot(); }
 catch (err) {

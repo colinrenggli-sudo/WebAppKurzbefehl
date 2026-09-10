@@ -100,8 +100,9 @@ Vier Testläufe, alle ohne Netz und ohne Konto:
 | `tests/high-sync.plan.test.mjs` | die Erinnerungslogik des Dienstes als reine Rechnung: Tagesende um 03:00, Wecker nach Mitternacht, Ferien, erledigte Routinen | Sekunden |
 | `tests/high-sync.haerte.test.mjs` | dass der Dienst nichts still verliert: kein Überschreiben ohne Bedingung, unlesbare Dateien gelten nie als leer, unsinnige Anfragen werfen ihn nicht um | Sekunden |
 | `tests/high-sync.versand.test.mjs` | dass keine Erinnerung verlorengeht: ein gescheitertes Gerät wird wiederholt, kein anderes doppelt, abgelaufene Abos fliegen raus, und bei kaputtem Zustand läuft es aus der Tageskopie weiter | ~1 min |
+| `tests/einrichten.test.sh` | `deploy/einrichten.sh` ohne Docker: erzeugt die Schlüssel einmal und beim zweiten Lauf gerade nicht mehr, druckt den richtigen Link, bricht mit verständlicher Meldung ab | ~1 min |
 
-Playwright braucht der erste, die anderen drei laufen mit blossem Node.
+Playwright braucht der erste, die übrigen laufen mit blossem Node bzw. Bash.
 Voraussetzungen und Aufruf stehen jeweils im Kopf der Datei.
 
 ## Selbst hosten

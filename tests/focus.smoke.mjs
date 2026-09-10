@@ -31,7 +31,14 @@ async function newPage(opts = {}) {
   const page = await ctx.newPage();
   await page.clock.install({ time: NOON });
   page.on('pageerror', e => note('pageerror: ' + e.message));
-  page.on('console', m => { if (m.type() === 'error' && !/favicon|net::ERR/i.test(m.text())) note('console.error: ' + m.text()); });
+  // Die Suche nach einem Dienst auf derselben Adresse endet ohne Server
+  // erwartungsgemäss mit 404 – das ist kein Fehler der App.
+  page.on('console', m => {
+    if (m.type() !== 'error') return;
+    const wo = (m.location() && m.location().url) || '';
+    if (/favicon|net::ERR/i.test(m.text()) || /\/api\/health/.test(wo)) return;
+    note('console.error: ' + m.text() + (wo ? ' (' + wo + ')' : ''));
+  });
   return { ctx, page };
 }
 
@@ -698,6 +705,59 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     if (!weiter) note('I: die App arbeitet ohne Server nicht weiter');
     ok('I: Abgleich über den eigenen Server – zwei Geräte, nichts verloren');
     await A.ctx.close(); await B.ctx.close();
+  }
+}
+
+
+// ---------- Szenario J: Einrichten mit einem einzigen Link ----------
+// Das Skript deploy/einrichten.sh druckt am Ende «…/#s=SCHLUESSEL». Ein
+// Antippen muss reichen: verbunden, Schlüssel aus der Adresszeile verschwunden.
+{
+  const API = process.env.SYNC_API || '';
+  const TOKEN = process.env.SYNC_TOKEN || '';
+  let erreichbar = false;
+  if (API && TOKEN) { try { erreichbar = (await fetch(API + '/health')).ok; } catch (e) {} }
+  if (!erreichbar) {
+    ok('J: übersprungen (kein Sync-Dienst)');
+  } else {
+    const linkFuer = (wert) => BASE + '#s=' + encodeURIComponent(wert);
+    // a) Ein Öffnen genügt
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(linkFuer(API + '|' + TOKEN), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(2500);
+      const r = await page.evaluate(() => ({ url: S.device.syncUrl, token: !!S.device.syncToken, hash: location.hash, sync: lastSyncAt > 0 }));
+      if (r.url !== API) note('J: Adresse aus dem Link nicht übernommen: ' + r.url);
+      if (!r.token) note('J: Schlüssel aus dem Link nicht übernommen');
+      if (r.hash) note('J: der Schlüssel steht noch in der Adresszeile: ' + r.hash);
+      if (!r.sync) note('J: es wurde nicht abgeglichen');
+      await ctx.close();
+    }
+    // b) Ein Link auf einen anderen Server wechselt nicht von selbst
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(linkFuer(API + '|' + TOKEN), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(2000);
+      await page.goto('about:blank');
+      await page.goto(linkFuer('https://fremd.example.ch/api|' + TOKEN), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1500);
+      const gefragt = await page.locator('#actionSheet.show').count() > 0;
+      const url = await page.evaluate(() => S.device.syncUrl);
+      if (!gefragt) note('J: Wechsel auf einen fremden Server wurde nicht nachgefragt');
+      if (url !== API) note('J: Server wurde ohne Nachfrage gewechselt: ' + url);
+      await ctx.close();
+    }
+    // c) Unbrauchbarer Schlüssel richtet nichts an
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(linkFuer('kurz'), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1200);
+      const r = await page.evaluate(() => ({ konfiguriert: syncConfigured(), hash: location.hash }));
+      if (r.konfiguriert) note('J: unbrauchbarer Schlüssel wurde übernommen');
+      if (r.hash) note('J: unbrauchbarer Schlüssel bleibt in der Adresszeile');
+      await ctx.close();
+    }
+    ok('J: Einrichten über den Link – ein Öffnen genügt, kein stiller Serverwechsel');
   }
 }
 
