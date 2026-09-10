@@ -10,7 +10,7 @@
 // Die Versionsnummer unten bei jeder Änderung an index.html hochzählen,
 // damit alte Caches sicher weggeräumt werden.
 
-const VERSION = 'focus-v3.3.0';
+const VERSION = 'focus-v3.4.0';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -32,6 +32,9 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // Firebase legt seinen Anmelde-Handler unter /__/auth/ ab. Der darf nie aus dem Cache
+  // beantwortet werden, sonst bricht die Google-Anmeldung unter eigener Domain stumm ab.
+  if (url.pathname.startsWith('/__/')) return;
 
   // App-Hülle: Netz zuerst, dann Cache
   // Nur die eigene Ebene bedienen – die Schwester-Apps (dach/, schlaf/, shop/, raumdesign/)

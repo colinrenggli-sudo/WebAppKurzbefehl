@@ -3927,7 +3927,6 @@ const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDNNZSZn-YUp6PyNnf_h_PoqerxtC6bJfQ",
   authDomain: OWN_AUTH_DOMAINS.includes(location.hostname) ? location.hostname : "focus-blocks-43c7e.firebaseapp.com",
   projectId: "focus-blocks-43c7e",
-  storageBucket: "focus-blocks-43c7e.firebasestorage.app",
   messagingSenderId: "938980650298",
   appId: "1:938980650298:web:4e55fb726df72f7d677403",
 };
@@ -4144,6 +4143,24 @@ async function startCloudSync(user) {
     else lastPushedHash = mergedHash;
   }, err => { console.error('Snapshot:', err); syncStatusText = 'Verbindung unterbrochen'; refreshSyncUI(); });
 }
+const CLOUD_DOC_LIMIT = 1048576; // Firestore: 1 MiB pro Dokument
+let cloudSizeWarned = false;
+// Gibt die Grösse zurück und warnt einmal pro Sitzung, bevor das Limit erreicht ist
+function checkCloudDocSize(doc) {
+  let bytes = 0;
+  try { bytes = new Blob([JSON.stringify(doc)]).size; } catch (e) { return 0; }
+  if (bytes > CLOUD_DOC_LIMIT * 0.8 && !cloudSizeWarned) {
+    cloudSizeWarned = true;
+    const kb = Math.round(bytes / 1024), drueber = bytes > CLOUD_DOC_LIMIT;
+    syncStatusText = `Cloud-Daten ${kb} KB von 1024 KB`;
+    refreshSyncUI();
+    toast('☁️', drueber
+      ? `Die Cloud-Daten sind über der Grenze (${kb} von 1024 KB) – die Cloud nimmt sie nicht mehr an. Erledigte To-Dos aufräumen schafft Platz.`
+      : `Die Cloud-Daten nähern sich der Grenze (${kb} von 1024 KB). Erledigte To-Dos aufräumen schafft Platz.`,
+      { label: 'Einstellungen', fn: openSettings });
+  }
+  return bytes;
+}
 function pushToCloud() {
   if (!currentUser || !fbDb || !initialSyncDone) return;
   if (cloudWriteTimer) clearTimeout(cloudWriteTimer);
@@ -4152,7 +4169,16 @@ function pushToCloud() {
     const h = hashState(currentState());
     if (h === lastPushedHash) return;
     lastPushedHash = h;
-    userDocRef(currentUser).set(gatherCloudDoc()).catch(e => { console.error('Cloud write:', e); lastPushedHash = null; syncStatusText = 'Schreiben fehlgeschlagen'; refreshSyncUI(); });
+    const doc = gatherCloudDoc();
+    checkCloudDocSize(doc);
+    userDocRef(currentUser).set(doc).catch(e => {
+      console.error('Cloud write:', e);
+      lastPushedHash = null;
+      const zuGross = e && String(e.message || '').toLowerCase().includes('too large');
+      syncStatusText = zuGross ? 'Cloud-Daten zu gross – erledigte To-Dos aufräumen' : 'Schreiben fehlgeschlagen';
+      refreshSyncUI();
+      if (zuGross) toast('☁️', 'Die Cloud nimmt das Dokument nicht mehr an: es ist über 1 MB gross. Erledigte To-Dos aufräumen hilft.', { label: 'Einstellungen', fn: openSettings });
+    });
   }, 800);
 }
 saveHooks.push(pushToCloud);
