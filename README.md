@@ -52,7 +52,8 @@ Kein Build, kein Server nötig. Am besten als App installieren: in Safari
 | **Abzeichen** | 30+, ohne Beschämung: auch «Zurück im Spiel», «Nie zweimal», «Mini zählt». Sichtbar sind die verdienten und die nächsten erreichbaren, alle auf einen Tipp |
 | **To-Dos** | Schnelleingabe, Fälligkeit und Tageszeit, bis zu drei Fokus-To-Dos in Reihenfolge, Mitwander-Hinweis nach drei Tagen, Überfällige mit einem Tipp auf heute legen |
 | **Token** | Scoreboard für erledigte Aufträge im echten Leben: Emoji antippen, kurz notieren, was geschafft wurde, Token gutschreiben. Jeder Token zählt für alle Belohnungen gleichzeitig (Standard: Kokosnuss 30, Schwein 100, Palme 500, Hund 1000; eigene Belohnungen mit Emoji und Schwelle möglich). Erreichte Belohnungen werden gefeiert; Einträge lassen sich bearbeiten, löschen und widerrufen |
-| **Daten** | alles im `localStorage` dieses Geräts; Backup als JSON; optional Cloud-Sync per Google-Login (Firestore). Geräte werden zusammengeführt – neuere Änderung gewinnt, Verlauf wird vereinigt, Löschungen und Rücknahmen überleben den Abgleich |
+| **Daten** | alles im `localStorage` dieses Geräts; Backup als JSON; optional Abgleich mit dem [eigenen Server](deploy/high-sync/README.md). Geräte werden zusammengeführt – neuere Änderung gewinnt, Verlauf wird vereinigt, Löschungen und Rücknahmen überleben den Abgleich |
+| **Erinnerungen** | ohne Server nur, solange die App offen ist – iOS friert sie im Hintergrund ein. Mit dem eigenen Server kommen sie als echte Mitteilung, auch bei gesperrtem Bildschirm |
 
 Die Zahlen und Regeln stehen kommentiert am Anfang des Skripts in
 `index.html` (`GAME`, `LEVEL_TITLES`, `BADGES`). Der Hintergrund dazu:
@@ -75,21 +76,19 @@ Erinnerung zu einer festen Uhrzeit hilft die Kurzbefehle-App: Automation
 «Um 07:30 → HIGH öffnen»; `index.html?tab=heute`, `?tab=todos`, `?tab=tokens` und
 `?tab=progress` öffnen direkt den passenden Tab.
 
-### Google-Anmeldung in der installierten iPhone-App
+### Erinnerungen, die wirklich ankommen
 
-Safari blockiert den Anmelde-Speicher fremder Domains. Solange die App von
-`github.io` läuft, aber die Anmeldung über `firebaseapp.com` geht, kann die
-Anmeldung in der installierten App scheitern (im Safari-Tab klappt sie).
-Zwei Wege:
+iOS friert eine Web-App im Hintergrund ein: solange HIGH nicht offen
+ist, läuft darin kein Code, also auch kein Timer. Eine Meldung um 07:30
+kann deshalb nur von aussen kommen. Dafür gibt es unter
+[`deploy/high-sync/`](deploy/high-sync/README.md) einen kleinen Dienst
+für den eigenen Server. Er hält den Zustand als JSON-Datei und schickt
+die Erinnerungen als Web Push.
 
-1. **Ohne Server:** in Safari anmelden, dort «Als Datei exportieren», in
-   der installierten App «Datei importieren» – wird zusammengeführt.
-2. **Eigene Domain (Selbsthosting):** in `deploy/nginx.conf` den Block
-   `/__/auth/` einkommentieren, in `index.html` bei `FIREBASE_CONFIG` das
-   `authDomain` auf die eigene Domain setzen, in der Firebase-Konsole
-   (Authentication → Settings → Authorized domains) die Domain ergänzen
-   und im Google-Cloud-OAuth-Client `https://<domain>/__/auth/handler` als
-   Redirect-URI eintragen.
+Zum Verschicken muss der Server nicht von aussen erreichbar sein, er
+schickt nur ausgehend. Erreichbar sein muss er nur für das eigene Gerät.
+App und Schnittstelle liegen dabei auf derselben Adresse, deshalb
+braucht es weder CORS noch eine Anmeldung über eine fremde Domain.
 
 ### Testen
 

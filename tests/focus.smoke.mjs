@@ -624,6 +624,61 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   ok('H: hell, Kontrast und 320 pt – nichts ragt heraus, alle Sheets schliessbar');
 }
 
+// ---------- Szenario I: Abgleich mit dem eigenen Server ----------
+// Braucht den Dienst aus deploy/high-sync. Ohne ihn wird das Szenario übersprungen.
+//   SYNC_API=http://127.0.0.1:8099 SYNC_TOKEN=… node tests/focus.smoke.mjs
+{
+  const API = process.env.SYNC_API || '';
+  const TOKEN = process.env.SYNC_TOKEN || '';
+  let erreichbar = false;
+  if (API && TOKEN) {
+    try { erreichbar = (await fetch(API + '/health')).ok; } catch (e) { erreichbar = false; }
+  }
+  if (!erreichbar) {
+    ok('I: übersprungen (kein Sync-Dienst – SYNC_API und SYNC_TOKEN setzen)');
+  } else {
+    const mach = async () => {
+      const ctx = await browser.newContext({ ...iphone, colorScheme: 'dark', locale: 'de-CH', timezoneId: 'Europe/Zurich' });
+      const page = await ctx.newPage();
+      await page.clock.install({ time: NOON });
+      page.on('pageerror', e => note('I: pageerror: ' + e.message));
+      await page.goto(BASE, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(400);
+      await page.evaluate(([u, t]) => { S.settings.onboardingDone = true; S.device.syncUrl = u; S.device.syncToken = t; saveAll({ silent: true }); }, [API, TOKEN]);
+      return { ctx, page };
+    };
+    const A = await mach();
+    let r = await A.page.evaluate(async () => {
+      S.tasks = [normalizeTask({ id: 'sync-a', label: 'Meditieren', emoji: '🧘' })];
+      saveAll({ silent: true });
+      return { ok: await syncNow({ loud: true }), status: syncStatusText };
+    });
+    if (!r.ok) note('I: erster Abgleich fehlgeschlagen: ' + r.status);
+    const B = await mach();
+    r = await B.page.evaluate(async () => ({ ok: await syncNow(), labels: S.tasks.filter(t => !t.deleted).map(t => t.label) }));
+    if (!r.labels.includes('Meditieren')) note('I: zweites Gerät bekommt die Routine nicht');
+    // Beide ändern gleichzeitig – nichts darf verlorengehen
+    await A.page.evaluate(() => { S.todos.push(normalizeTodo({ id: 'sync-ta', title: 'Von A' })); saveAll({ silent: true }); });
+    await B.page.evaluate(() => { S.todos.push(normalizeTodo({ id: 'sync-tb', title: 'Von B' })); saveAll({ silent: true }); });
+    await Promise.all([A.page.evaluate(() => syncNow()), B.page.evaluate(() => syncNow())]);
+    await A.page.evaluate(() => syncNow()); await B.page.evaluate(() => syncNow());
+    const meine = (page) => page.evaluate(() => S.todos.filter(t => !t.deleted && /^sync-t/.test(t.id)).map(t => t.id).sort());
+    const aT = await meine(A.page), bT = await meine(B.page);
+    if (aT.length !== 2 || JSON.stringify(aT) !== JSON.stringify(bT)) note('I: gleichzeitige Änderungen gingen verloren: ' + JSON.stringify({ aT, bT }));
+    // Der Erinnerungsplan muss beim Server liegen
+    const env = await (await fetch(API + '/state', { headers: { Authorization: 'Bearer ' + TOKEN } })).json();
+    if (!(env.push && env.push.today && env.push.today.day)) note('I: kein Erinnerungsplan auf dem Server');
+    // Falscher Schlüssel muss auffallen
+    r = await A.page.evaluate(async () => { const alt = S.device.syncToken; S.device.syncToken = 'falsch'; const ok = await syncNow(); const st = syncStatusText; S.device.syncToken = alt; return { ok, st }; });
+    if (r.ok !== false || !/abgelehnt/i.test(r.st)) note('I: falscher Schlüssel wird nicht gemeldet');
+    // Server weg: die App muss weiterlaufen und es sagen
+    r = await A.page.evaluate(async () => { const alt = S.device.syncUrl; S.device.syncUrl = 'http://127.0.0.1:9099'; const ok = await syncNow(); const st = syncStatusText; S.device.syncUrl = alt; return { ok, st }; });
+    if (r.ok !== false || !r.st) note('I: fehlender Server wird nicht gemeldet');
+    ok('I: Abgleich über den eigenen Server – zwei Geräte, nichts verloren');
+    await A.ctx.close(); await B.ctx.close();
+  }
+}
+
 await browser.close();
 console.log('\n==== SUMMARY ====');
 console.log(issues.length ? issues.join('\n') : 'no issues');

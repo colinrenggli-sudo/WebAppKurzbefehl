@@ -7,9 +7,11 @@ optional per Cloudflare Tunnel unter der eigenen Domain.
 
 **Warum überhaupt selbst hosten,** wo es auf GitHub Pages schon läuft?
 Eigene Adresse (`schlaf.colin-renggli.ch` statt der langen GitHub-URL),
-kein fremder Anbieter dazwischen, und du kannst später Dinge ergänzen,
-die Pages nicht kann – etwa einen kleinen Dienst, der Fitbit-Daten
-nachts von selbst abholt.
+kein fremder Anbieter dazwischen, und du kannst Dinge ergänzen, die
+Pages nicht kann: einen Dienst, der die Fitbit-Daten nachts von selbst
+abholt – und für HIGH die Erinnerungen, die auch ankommen, wenn die App
+zu ist. Dafür gibt es [`high-sync/`](high-sync/README.md); ohne Server
+gibt es auf dem iPhone keine Meldung ausserhalb der geöffneten App.
 
 ---
 

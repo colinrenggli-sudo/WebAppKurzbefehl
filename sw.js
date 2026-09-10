@@ -10,7 +10,7 @@
 // Die Versionsnummer unten bei jeder Änderung an index.html hochzählen,
 // damit alte Caches sicher weggeräumt werden.
 
-const VERSION = 'focus-v3.4.0';
+const VERSION = 'focus-v4.0.0';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -68,6 +68,22 @@ self.addEventListener('fetch', (event) => {
       })
     );
   }
+});
+
+self.addEventListener('push', (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
+  const titel = d.title || 'HIGH';
+  const opts = {
+    body: d.body || 'Zeit für deine Routinen.',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: d.tag || 'high',
+    renotify: true,
+    data: { url: d.url || './' },
+  };
+  // Ohne showNotification entzieht iOS der App die Erlaubnis – darum immer etwas zeigen.
+  event.waitUntil(self.registration.showNotification(titel, opts));
 });
 
 self.addEventListener('notificationclick', (event) => {

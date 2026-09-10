@@ -1103,6 +1103,30 @@ body.quiet .q { display: none !important; }
   <div class="sheet-body" id="settingsBody"></div>
 </div>
 
+<!-- Eigenen Server einrichten -->
+<div class="sheet" id="syncSheet" role="dialog" aria-modal="true" aria-labelledby="syncSheetTitle">
+  <div class="sheet-grab" data-grab><i></i></div>
+  <div class="sheet-head">
+    <span class="sheet-title" id="syncSheetTitle">Eigener Server</span>
+    <button class="sheet-close-hit" type="button" data-close aria-label="Schliessen"><span class="sheet-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <div class="field-label">Adresse</div>
+      <input class="input" id="syncUrlInput" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://high.example.ch/api">
+      <div class="field-hint">Der Kopplungscode eines schon verbundenen Geräts darf hier ganz hinein – Adresse und Schlüssel werden dann automatisch getrennt.</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Schlüssel</div>
+      <input class="input" id="syncTokenInput" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="langer Zufallsschlüssel">
+      <div class="field-hint">Steht in <b>deploy/.env</b> als SYNC_TOKEN. Wer ihn hat, kann deine Daten lesen und schreiben – also nicht weitergeben.</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn primary" type="button" id="syncSaveBtn">Verbinden</button>
+    </div>
+  </div>
+</div>
+
 <!-- Abzeichen-Detail -->
 <div class="sheet" id="badgeSheet" role="dialog" aria-modal="true" aria-labelledby="badgeSheetTitle">
   <div class="sheet-grab" data-grab><i></i></div>
@@ -1387,6 +1411,7 @@ const DEFAULT_SETTINGS = {
   sound: true, confetti: true, theme: 'system',
   quiet: false,        // Ruhiger Modus: XP, Level und Abzeichen ausblenden
   dayEnd: 3,           // Tagesende (Uhr): bis dahin zählt Erledigtes noch zum Vortag
+  pushEnabled: false,  // Erinnerungen vom eigenen Server aufs Gerät
   onboardingDone: false, tipsSeen: {}, updatedAt: 0,
 };
 const DEFAULT_GAME = {
@@ -1396,7 +1421,7 @@ const DEFAULT_GAME = {
   schema: 3, updatedAt: 0,
 };
 
-const DEFAULT_DEVICE = { lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {}, authRedirectAt: null };
+const DEFAULT_DEVICE = { lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {}, syncUrl: null, syncToken: null, pushDeviceId: null };
 
 const S = { tasks: [], todos: [], settings: {}, history: {}, game: {}, device: {}, tokens: { entries: [], rewards: [] } };
 
@@ -3698,12 +3723,17 @@ function renderSettings() {
       </div>
     </div>
     <div>
-      <div class="field-label">Cloud-Sync</div>
+      <div class="field-label">Eigener Server</div>
       <div class="group">
-        <div class="row"><span class="row-ico" style="background:var(--blue)">☁️</span><span class="row-text"><span class="row-title" id="syncTitle">Nicht angemeldet</span><span class="row-sub" id="syncSub">Daten liegen nur auf diesem Gerät.</span></span></div>
-        <button class="row link" type="button" id="syncBtn"><span class="row-text"><span class="row-title" id="syncBtnLabel">Mit Google anmelden</span></span></button>
+        <div class="row"><span class="row-ico" style="background:var(--blue)">🏠</span><span class="row-text"><span class="row-title" id="syncTitle">Nicht verbunden</span><span class="row-sub" id="syncSub">Daten liegen nur auf diesem Gerät.</span></span></div>
+        ${syncConfigured() ? `
+        <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">Erinnerungen aufs Gerät</span><span class="row-sub">Kommen auch, wenn die App zu ist</span></span><button class="switch${s.pushEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.pushEnabled}" data-act="togglePush" aria-label="Erinnerungen aufs Gerät"></button></div>
+        <button class="row link" type="button" data-act="syncNow"><span class="row-text"><span class="row-title">Jetzt abgleichen</span></span></button>
+        ${s.pushEnabled ? `<button class="row link" type="button" data-act="pushTest"><span class="row-text"><span class="row-title">Probe-Erinnerung vom Server</span><span class="row-sub">Kommt auch bei gesperrtem Bildschirm</span></span></button>` : ''}
+        <button class="row link" type="button" data-act="pairCode"><span class="row-text"><span class="row-title">Kopplungscode kopieren</span><span class="row-sub">Für ein zweites Gerät</span></span></button>` : ''}
+        <button class="row link" type="button" id="syncBtn"><span class="row-text"><span class="row-title" id="syncBtnLabel">Server einrichten</span></span></button>
       </div>
-      <div class="hint" style="margin-top:8px" id="syncHint">Mehrere Geräte werden zusammengeführt statt überschrieben: Routinen, To-Dos und Verlauf bleiben von überall erhalten.</div>
+      <div class="hint" style="margin-top:8px" id="syncHint">Geräte werden zusammengeführt statt überschrieben. Der Server hält eine Kopie und schickt die Erinnerungen – ohne ihn läuft die App normal weiter, nur eben ohne beides.</div>
     </div>
     <div>
       <div class="field-label">Backup</div>
@@ -3757,8 +3787,19 @@ function renderSettings() {
   body.querySelector('[data-act="export"]').addEventListener('click', exportData);
   body.querySelector('[data-act="import"]').addEventListener('click', () => $('importFile').click());
   $('importFile').addEventListener('change', () => importDataFromInput($('importFile')));
-  body.querySelector('[data-act="resetAll"]').addEventListener('click', () => confirmSheet('Wirklich alles zurücksetzen?', 'Alle Routinen, To-Dos, der Verlauf und die XP auf diesem Gerät werden gelöscht. Cloud-Daten bleiben, bis du dich abmeldest.', 'Alles löschen', () => { Object.values(KEYS).forEach(k => localStorage.removeItem(k)); location.reload(); }));
+  body.querySelector('[data-act="resetAll"]').addEventListener('click', () => confirmSheet('Wirklich alles zurücksetzen?', 'Alle Routinen, To-Dos, der Verlauf und die XP auf diesem Gerät werden gelöscht. Auf dem Server bleibt die letzte Fassung, bis du sie dort löschst.', 'Alles löschen', () => { Object.values(KEYS).forEach(k => localStorage.removeItem(k)); location.reload(); }));
   $('syncBtn').addEventListener('click', handleSyncBtn);
+  const bind = (act, fn) => { const el = body.querySelector('[data-act="' + act + '"]'); if (el) el.addEventListener('click', fn); };
+  bind('togglePush', () => { if (S.settings.pushEnabled) disablePush(); else enablePush(); });
+  bind('syncNow', async () => { const ok = await syncNow({ loud: true }); toast(ok ? '☁️' : '⚠️', ok ? 'Abgeglichen.' : (syncStatusText || 'Abgleich nicht möglich.')); renderSettings(); });
+  bind('pairCode', copyPairingCode);
+  bind('pushTest', async () => {
+    try {
+      const res = await syncFetch('/push/test', { method: 'POST', body: '{}' });
+      const j = await res.json().catch(() => ({}));
+      toast(res.ok && j.sent ? '🔔' : '⚠️', res.ok && j.sent ? `Probe an ${j.sent} Gerät${j.sent === 1 ? '' : 'e'} geschickt. Sie kommt gleich an.` : 'Der Server konnte nichts schicken. Ist das Gerät angemeldet?');
+    } catch (e) { toast('⚠️', 'Server nicht erreichbar.'); }
+  });
   refreshSyncUI();
 }
 function applyTheme() {
@@ -3917,53 +3958,15 @@ function importDataFromInput(input) {
   reader.readAsText(file);
 }
 
-// ---------- 13. Cloud-Sync (Firebase) mit Zusammenführen statt Überschreiben ----------
-// Eigene Domains, die «/__/auth/» an Firebase weiterreichen (Block in deploy/nginx.conf).
-// Läuft die App auf einer davon, findet die Anmeldung auf derselben Herkunft statt – dann
-// blockiert Safari nichts mehr und die Anmeldung klappt auch vom Home-Bildschirm aus.
-// Solange die Liste leer ist, bleibt alles wie bisher.
-const OWN_AUTH_DOMAINS = [];
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDNNZSZn-YUp6PyNnf_h_PoqerxtC6bJfQ",
-  authDomain: OWN_AUTH_DOMAINS.includes(location.hostname) ? location.hostname : "focus-blocks-43c7e.firebaseapp.com",
-  projectId: "focus-blocks-43c7e",
-  messagingSenderId: "938980650298",
-  appId: "1:938980650298:web:4e55fb726df72f7d677403",
-};
-const FIREBASE_SCRIPTS = [
-  'https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js',
-];
-let fbAuth = null, fbDb = null, fbProvider = null, currentUser = null, cloudUnsub = null;
-let fbLoading = null, initialSyncDone = false, cloudWriteTimer = null, lastPushedHash = null, syncStatusText = '', syncRetries = 0, syncRetryTimer = null;
-
-function loadScript(src) {
-  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.async = true; s.crossOrigin = 'anonymous'; s.onload = res; s.onerror = () => rej(new Error('Laden fehlgeschlagen: ' + src)); document.head.appendChild(s); });
-}
-function loadFirebase() {
-  if (fbAuth) return Promise.resolve(true);
-  if (fbLoading) return fbLoading;
-  fbLoading = (async () => {
-    try {
-      for (const src of FIREBASE_SCRIPTS) await loadScript(src);
-      if (typeof firebase === 'undefined') throw new Error('Firebase SDK nicht verfügbar');
-      firebase.initializeApp(FIREBASE_CONFIG);
-      fbAuth = firebase.auth(); fbDb = firebase.firestore(); fbProvider = new firebase.auth.GoogleAuthProvider();
-      try { await fbDb.enablePersistence({ synchronizeTabs: true }); } catch (e) { /* mehrere Tabs oder nicht unterstützt – egal */ }
-      fbAuth.onAuthStateChanged(handleAuthChange);
-      fbAuth.getRedirectResult()
-        .then(() => noteAuthRedirectOutcome())
-        .catch(e => {
-          console.warn('Redirect:', e);
-          if (e && e.code && e.code !== 'auth/no-auth-event') { syncStatusText = 'Anmeldung nicht abgeschlossen: ' + (e.message || e.code); refreshSyncUI(); }
-          noteAuthRedirectOutcome(e);
-        });
-      return true;
-    } catch (e) { console.warn(e); fbLoading = null; syncStatusText = 'Cloud nicht erreichbar (offline?).'; refreshSyncUI(); return false; }
-  })();
-  return fbLoading;
-}
+// ---------- 13. Abgleich mit dem eigenen Server ----------
+// Kein fremder Anbieter, keine Anmeldung über Dritte: die App spricht mit einem
+// kleinen Dienst auf dem eigenen Server (deploy/high-sync). Der hält eine
+// JSON-Datei und verschickt die Erinnerungen. Zusammengeführt wird hier im
+// Gerät – der Server entscheidet nichts, er merkt sich nur.
+//
+// Adresse und Schlüssel liegen in S.device, also nur auf diesem Gerät und nie
+// im abgeglichenen Zustand. Ein zweites Gerät bekommt beides über den
+// Kopplungscode.
 
 // Zustand als reines Datenobjekt
 function currentState() {
@@ -4102,161 +4105,266 @@ function gatherCloudDoc() {
     taskHistory: S.history, game: S.game, tokens: S.tokens,
   };
 }
-function userDocRef(user) { return fbDb.collection('users').doc(user.uid).collection('state').doc('main'); }
+// ---- Verbindung ----
+let syncStatusText = '', syncBusy = false, syncDebounce = null, syncRetryTimer = null, syncPoll = null;
+let lastRev = 0, lastPushedHash = null, syncFails = 0, lastSyncAt = 0;
 
-async function startCloudSync(user) {
-  initialSyncDone = false;
-  syncStatusText = 'Synchronisiere …'; refreshSyncUI();
-  const ref = userDocRef(user);
-  try {
-    const snap = await ref.get();
-    const cloud = snap.exists ? stateFromRaw(snap.data()) : null;
-    const merged = cloud ? mergeStates(currentState(), cloud) : currentState();
-    applyState(merged, { otherLastOpenDay: cloud && cloud.game.lastOpenDay }); saveAll({ silent: true }); renderAll();
-    const h = hashState(currentState());
-    if (!cloud || hashState(cloud) !== h) { await ref.set(gatherCloudDoc()); }
-    lastPushedHash = h;
-    initialSyncDone = true;
-    syncStatusText = ''; refreshSyncUI();
-    afterChangeChecks();
-  } catch (e) {
-    console.error('Sync:', e);
-    syncStatusText = 'Noch nicht verbunden – neuer Versuch folgt'; refreshSyncUI();
-    syncRetries++;
-    if (syncRetryTimer) clearTimeout(syncRetryTimer);
-    syncRetryTimer = setTimeout(() => { if (currentUser && !initialSyncDone) startCloudSync(currentUser); }, Math.min(60000, 3000 * Math.pow(2, syncRetries)));
-    return;
-  }
-  syncRetries = 0;
-  if (cloudUnsub) cloudUnsub();
-  cloudUnsub = ref.onSnapshot(snap => {
-    if (!snap.exists || !initialSyncDone) return;
-    if (snap.metadata && snap.metadata.hasPendingWrites) return; // eigenes Echo
-    const cloud = stateFromRaw(snap.data());
-    const cloudHash = hashState(cloud);
-    const localHash = hashState(currentState());
-    if (cloudHash === localHash) { lastPushedHash = localHash; return; }
-    const merged = mergeStates(currentState(), cloud);
-    const mergedHash = hashState(merged);
-    if (mergedHash !== localHash) { applyState(merged, { otherLastOpenDay: cloud.game.lastOpenDay }); saveAll({ silent: true }); renderAll(); afterChangeChecks(); }
-    if (mergedHash !== cloudHash) pushToCloud();
-    else lastPushedHash = mergedHash;
-  }, err => { console.error('Snapshot:', err); syncStatusText = 'Verbindung unterbrochen'; refreshSyncUI(); });
+function syncConfigured() { return !!(S.device.syncUrl && S.device.syncToken); }
+function syncBase() { return String(S.device.syncUrl || '').replace(/\/+$/, ''); }
+function deviceLabel() {
+  const ua = navigator.userAgent || '';
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Macintosh/.test(ua)) return 'Mac';
+  if (/Android/.test(ua)) return 'Android';
+  return 'Gerät';
 }
-const CLOUD_DOC_LIMIT = 1048576; // Firestore: 1 MiB pro Dokument
+function setSyncStatus(t) { if (syncStatusText !== t) { syncStatusText = t; refreshSyncUI(); } }
+
+// Jede Anfrage bekommt eine Frist: ein Server, der nicht antwortet, darf die App nicht aufhalten.
+async function syncFetch(pfad, opts) {
+  opts = opts || {};
+  const ctl = new AbortController();
+  const frist = setTimeout(() => ctl.abort(), 15000);
+  try {
+    return await fetch(syncBase() + pfad, Object.assign({}, opts, {
+      signal: ctl.signal, cache: 'no-store', credentials: 'omit',
+      headers: Object.assign({ Authorization: 'Bearer ' + S.device.syncToken, 'Content-Type': 'application/json' }, opts.headers || {}),
+    }));
+  } finally { clearTimeout(frist); }
+}
+
+// Ein Durchgang: holen, zusammenführen, zurückschreiben. Bei einem Konflikt
+// (ein anderes Gerät war schneller) noch einmal von vorn, höchstens dreimal.
+async function syncNow(opts) {
+  opts = opts || {};
+  if (!syncConfigured() || syncBusy) return false;
+  if (navigator.onLine === false) { setSyncStatus('Offline – wird nachgeholt'); return false; }
+  syncBusy = true;
+  if (opts.loud) setSyncStatus('Gleiche ab …');
+  try {
+    for (let versuch = 0; versuch < 3; versuch++) {
+      const res = await syncFetch('/state');
+      if (res.status === 401) { setSyncStatus('Schlüssel wird abgelehnt'); return false; }
+      let remote = null, rev = 0;
+      if (res.status === 200) { const env = await res.json(); remote = stateFromRaw(env.state); rev = env.rev | 0; }
+      else if (res.status !== 404) throw new Error('Antwort ' + res.status);
+
+      const vorher = hashState(currentState());
+      const merged = remote ? mergeStates(currentState(), remote) : currentState();
+      const mergedHash = hashState(merged);
+      if (mergedHash !== vorher) {
+        applyState(merged, { otherLastOpenDay: remote && remote.game && remote.game.lastOpenDay });
+        saveAll({ silent: true }); renderAll(); afterChangeChecks();
+      }
+      lastRev = rev;
+
+      if (!remote || mergedHash !== hashState(remote)) {
+        const koerper = JSON.stringify({ state: gatherCloudDoc(), push: buildPushPlan(), device: deviceLabel() });
+        checkCloudDocSize(koerper);
+        const put = await syncFetch('/state', { method: 'PUT', headers: rev ? { 'If-Match': '"' + rev + '"' } : {}, body: koerper });
+        if (put.status === 409) continue; // ein anderes Gerät war schneller
+        if (put.status === 413) { setSyncStatus('Daten zu gross für den Server'); return false; }
+        if (!put.ok) throw new Error('Speichern ' + put.status);
+        lastRev = ((await put.json()) || {}).rev | 0;
+      }
+      lastPushedHash = hashState(currentState());
+      lastSyncAt = Date.now(); syncFails = 0;
+      setSyncStatus('');
+      return true;
+    }
+    setSyncStatus('Abgleich kollidiert – nächster Versuch folgt');
+    planRetry();
+    return false;
+  } catch (e) {
+    console.warn('Sync:', e);
+    syncFails++;
+    setSyncStatus(e && e.name === 'AbortError' ? 'Server antwortet nicht' : 'Nicht verbunden – wird nachgeholt');
+    planRetry();
+    return false;
+  } finally { syncBusy = false; }
+}
+
+function planRetry() {
+  if (syncRetryTimer) clearTimeout(syncRetryTimer);
+  const wartezeit = Math.min(5 * 60000, 4000 * Math.pow(2, Math.min(syncFails, 6)));
+  syncRetryTimer = setTimeout(() => { syncRetryTimer = null; syncNow(); }, wartezeit);
+}
+// Nach jeder Änderung, aber gebündelt: wer drei Haken hintereinander setzt, schreibt einmal.
+function syncSoon() {
+  if (!syncConfigured()) return;
+  if (hashState(currentState()) === lastPushedHash) return;
+  if (syncDebounce) clearTimeout(syncDebounce);
+  syncDebounce = setTimeout(() => { syncDebounce = null; syncNow(); }, 1500);
+}
+saveHooks.push(syncSoon);
+
+const CLOUD_DOC_LIMIT = 8 * 1024 * 1024; // der Dienst nimmt 8 MB an
 let cloudSizeWarned = false;
-// Gibt die Grösse zurück und warnt einmal pro Sitzung, bevor das Limit erreicht ist
-function checkCloudDocSize(doc) {
+function checkCloudDocSize(koerper) {
   let bytes = 0;
-  try { bytes = new Blob([JSON.stringify(doc)]).size; } catch (e) { return 0; }
+  try { bytes = new Blob([koerper]).size; } catch (e) { return 0; }
   if (bytes > CLOUD_DOC_LIMIT * 0.8 && !cloudSizeWarned) {
     cloudSizeWarned = true;
-    const kb = Math.round(bytes / 1024), drueber = bytes > CLOUD_DOC_LIMIT;
-    syncStatusText = `Cloud-Daten ${kb} KB von 1024 KB`;
-    refreshSyncUI();
-    toast('☁️', drueber
-      ? `Die Cloud-Daten sind über der Grenze (${kb} von 1024 KB) – die Cloud nimmt sie nicht mehr an. Erledigte To-Dos aufräumen schafft Platz.`
-      : `Die Cloud-Daten nähern sich der Grenze (${kb} von 1024 KB). Erledigte To-Dos aufräumen schafft Platz.`,
-      { label: 'Einstellungen', fn: openSettings });
+    toast('☁️', `Die Daten werden gross (${Math.round(bytes / 1024)} KB). Erledigte To-Dos aufräumen schafft Platz.`, { label: 'Einstellungen', fn: openSettings });
   }
   return bytes;
 }
-function pushToCloud() {
-  if (!currentUser || !fbDb || !initialSyncDone) return;
-  if (cloudWriteTimer) clearTimeout(cloudWriteTimer);
-  cloudWriteTimer = setTimeout(() => {
-    cloudWriteTimer = null;
-    const h = hashState(currentState());
-    if (h === lastPushedHash) return;
-    lastPushedHash = h;
-    const doc = gatherCloudDoc();
-    checkCloudDocSize(doc);
-    userDocRef(currentUser).set(doc).catch(e => {
-      console.error('Cloud write:', e);
-      lastPushedHash = null;
-      const zuGross = e && String(e.message || '').toLowerCase().includes('too large');
-      syncStatusText = zuGross ? 'Cloud-Daten zu gross – erledigte To-Dos aufräumen' : 'Schreiben fehlgeschlagen';
-      refreshSyncUI();
-      if (zuGross) toast('☁️', 'Die Cloud nimmt das Dokument nicht mehr an: es ist über 1 MB gross. Erledigte To-Dos aufräumen hilft.', { label: 'Einstellungen', fn: openSettings });
-    });
-  }, 800);
-}
-saveHooks.push(pushToCloud);
 
-async function signInWithGoogle() {
-  syncStatusText = 'Lade Cloud …'; refreshSyncUI();
-  const ok = await loadFirebase();
-  if (!ok || !fbAuth) { toast('☁️', 'Cloud nicht erreichbar. Bist du online?'); return; }
-  S.settings.cloudEnabled = true; touch(S.settings); saveAll({ silent: true });
-  syncStatusText = 'Anmeldung …'; refreshSyncUI();
+// ---- Erinnerungsplan für den Server ----
+// Der Server rechnet nichts über Routinen. Er bekommt hier alles, was er
+// braucht: wann erinnert werden soll und was gerade offen ist.
+function buildPushPlan() {
+  const today = todayKey(), s = S.settings;
+  const offen = requiredTasksFor(today).filter(t => !t.completed);
+  const offeneTodos = S.todos.filter(t => !t.deleted && !t.completed && ((t.dueDate && t.dueDate <= today) || isFocusToday(t))).length;
+  return {
+    version: 1,
+    tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'Europe/Zurich',
+    morning: { at: s.notifyTime || '07:30', enabled: !!s.notifyEnabled },
+    evening: { at: s.eveningTime || '20:00', enabled: !!s.eveningEnabled },
+    tasks: todaysTasks().filter(t => t.alarmTime && isRequiredOn(t, today) && !t.completed).map(t => ({ id: t.id, label: t.label, emoji: t.emoji, at: t.alarmTime })),
+    today: {
+      day: today,
+      openRoutines: offen.length,
+      openLabels: offen.slice(0, 4).map(t => (t.emoji ? t.emoji + ' ' : '') + t.label),
+      openTodos: offeneTodos,
+      doneTaskIds: S.tasks.filter(t => !t.deleted && t.completed).map(t => t.id),
+    },
+  };
+}
+
+// ---- Erinnerungen aufs Gerät ----
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function pushSupported() { return !!(swReg && 'PushManager' in window && 'Notification' in window); }
+
+async function enablePush() {
+  if (!syncConfigured()) { toast('☁️', 'Erst den Server einrichten.'); return false; }
+  if (!pushSupported()) {
+    toast('🔔', isStandalone() ? 'Dieses Gerät kann keine Erinnerungen empfangen.' : 'Erst zum Home-Bildschirm hinzufügen – nur dort erlaubt iOS Erinnerungen.');
+    return false;
+  }
+  const erlaubt = await ensureNotifPermission();
+  if (!erlaubt) { toast('🔔', 'Ohne Erlaubnis für Mitteilungen geht es nicht. In den iPhone-Einstellungen unter HIGH freigeben.'); renderSettings(); return false; }
   try {
-    if (isStandalone()) {
-      // Merken, dass eine Anmeldung unterwegs ist: nach der Rückkehr ist der Speicher dieser Seite neu,
-      // und ohne Merker liesse sich «hat nicht geklappt» nicht von «nie versucht» unterscheiden.
-      S.device.authRedirectAt = Date.now(); saveAll({ silent: true });
-      await fbAuth.signInWithRedirect(fbProvider); return;
+    const keyRes = await fetch(syncBase() + '/push/key', { cache: 'no-store' });
+    const { key } = await keyRes.json();
+    if (!key) { toast('🔔', 'Der Server hat noch keinen Schlüssel für Erinnerungen.'); return false; }
+    let sub = await swReg.pushManager.getSubscription();
+    if (sub && sub.options && sub.options.applicationServerKey) {
+      const alt = new Uint8Array(sub.options.applicationServerKey);
+      const neu = urlBase64ToUint8Array(key);
+      if (alt.length !== neu.length || !alt.every((v, i) => v === neu[i])) { await sub.unsubscribe().catch(() => {}); sub = null; }
     }
-    await fbAuth.signInWithPopup(fbProvider);
+    if (!sub) sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
+    const res = await syncFetch('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON(), label: deviceLabel() }) });
+    if (!res.ok) throw new Error('Server ' + res.status);
+    const j = await res.json();
+    S.device.pushDeviceId = j.deviceId; S.settings.pushEnabled = true; touch(S.settings); saveAll();
+    renderSettings();
+    toast('🔔', 'Erinnerungen sind eingerichtet. Der Server meldet sich, auch wenn die App zu ist.');
+    syncNow();
+    return true;
   } catch (e) {
-    const code = e && e.code || '';
-    if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(code)) {
-      try { S.device.authRedirectAt = Date.now(); saveAll({ silent: true }); await fbAuth.signInWithRedirect(fbProvider); return; } catch (e2) { e = e2; }
-    }
-    syncStatusText = code === 'auth/popup-closed-by-user' ? '' : 'Anmeldung fehlgeschlagen: ' + (e && (e.message || e.code) || e);
-    refreshSyncUI();
-    if (code !== 'auth/popup-closed-by-user') toast('⚠️', 'Anmeldung fehlgeschlagen.');
+    console.warn('Push:', e);
+    toast('⚠️', 'Erinnerungen konnten nicht eingerichtet werden: ' + (e.message || e));
+    return false;
   }
 }
-// Kam die Anmeldung nach der Weiterleitung nicht zurück, sagt die App das – statt einfach
-// wieder «Nicht angemeldet» anzuzeigen, als wäre nie etwas passiert.
-function noteAuthRedirectOutcome(err) {
-  const started = S.device.authRedirectAt;
-  if (!started) return;
-  S.device.authRedirectAt = null; saveAll({ silent: true });
-  if (currentUser || (fbAuth && fbAuth.currentUser)) return; // hat geklappt
-  if (Date.now() - started > 15 * 60 * 1000) return; // zu lange her, um es dieser Anmeldung zuzuschreiben
-  syncStatusText = 'Anmeldung kam nicht zurück.';
-  refreshSyncUI();
-  setTimeout(() => actionSheet({
-    title: 'Anmeldung kam nicht zurück',
-    message: err && err.message ? String(err.message).slice(0, 160)
-      : 'Vom Home-Bildschirm aus blockiert Safari den Anmelde-Speicher fremder Domains – die Anmeldung kommt an, aber nicht bei der App zurück. Deine Daten liegen unverändert auf diesem Gerät.',
-    items: [{ label: 'Backup exportieren', fn: exportData }, { label: 'Einstellungen öffnen', fn: openSettings }],
-  }), 700);
+
+async function disablePush() {
+  try {
+    const sub = swReg && await swReg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe().catch(() => {});
+    await syncFetch('/push/subscribe', { method: 'DELETE', body: JSON.stringify({ deviceId: S.device.pushDeviceId || null, endpoint: sub ? sub.endpoint : null }) }).catch(() => {});
+  } catch (e) { console.warn(e); }
+  S.settings.pushEnabled = false; touch(S.settings); S.device.pushDeviceId = null; saveAll();
+  renderSettings();
 }
-async function signOutCloud() {
-  if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
-  initialSyncDone = false; lastPushedHash = null;
-  S.settings.cloudEnabled = false; touch(S.settings); saveAll({ silent: true });
-  try { await fbAuth.signOut(); } catch (e) {}
-  refreshSyncUI();
+
+// Ein Abo kann jederzeit ungültig werden, ohne dass jemand Bescheid sagt.
+// Darum bei jedem Start prüfen und still erneuern.
+async function refreshPushSubscription() {
+  if (!S.settings.pushEnabled || !syncConfigured() || !pushSupported()) return;
+  if (Notification.permission !== 'granted') { S.settings.pushEnabled = false; saveAll({ silent: true }); return; }
+  try {
+    const sub = await swReg.pushManager.getSubscription();
+    if (!sub) { await enablePush(); return; }
+    await syncFetch('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON(), label: deviceLabel(), deviceId: S.device.pushDeviceId || undefined }) }).catch(() => {});
+  } catch (e) { console.warn('Push-Auffrischung:', e); }
 }
-function handleSyncBtn() {
-  if (currentUser) confirmSheet('Von der Cloud abmelden?', 'Die Daten bleiben auf diesem Gerät und in der Cloud erhalten, werden aber nicht mehr abgeglichen.', 'Abmelden', signOutCloud);
-  else signInWithGoogle();
+
+// ---- Einrichtung ----
+function openSyncSetup() {
+  $('syncUrlInput').value = S.device.syncUrl || (location.origin + '/api');
+  $('syncTokenInput').value = S.device.syncToken || '';
+  openSheet('syncSheet');
+  setTimeout(() => $('syncUrlInput').focus(), 120);
 }
-function handleAuthChange(user) {
-  currentUser = user || null;
-  if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
-  initialSyncDone = false;
-  if (user) syncStatusText = ''; // eine alte Fehlermeldung soll nicht neben «Live-Sync aktiv» stehen bleiben
-  refreshSyncUI();
-  if (user) startCloudSync(user);
+async function saveSyncSetup() {
+  // «https://…/api|SCHLUESSEL» in einem Feld ist bequemer als zweimal tippen
+  const roh = $('syncUrlInput').value.trim();
+  if (roh.includes('|')) {
+    const [a, b] = roh.split('|');
+    $('syncUrlInput').value = a.trim();
+    if (b && b.trim()) $('syncTokenInput').value = b.trim();
+  }
+  const url = $('syncUrlInput').value.trim().replace(/\/+$/, '');
+  const token = $('syncTokenInput').value.trim();
+  if (!/^https:\/\/.+/.test(url) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(url)) { toast('⚠️', 'Die Adresse muss mit https:// beginnen.'); return; }
+  if (token.length < 16) { toast('⚠️', 'Der Schlüssel ist zu kurz – nimm den langen aus deploy/.env.'); return; }
+  S.device.syncUrl = url; S.device.syncToken = token; saveAll({ silent: true });
+  setSyncStatus('Prüfe …'); renderSettings();
+  const ok = await syncNow({ loud: true });
+  if (ok) { closeSheet('syncSheet'); toast('☁️', 'Verbunden. Ab jetzt wird abgeglichen.'); startSyncPolling(); }
+  else toast('⚠️', 'Verbindung nicht möglich: ' + (syncStatusText || 'unbekannter Fehler'));
+  renderSettings();
 }
+function disconnectSync() {
+  confirmSheet('Verbindung trennen?', 'Die Daten bleiben auf diesem Gerät und auf dem Server. Nur der Abgleich hört auf.', 'Trennen', () => {
+    disablePush();
+    S.device.syncUrl = null; S.device.syncToken = null; S.device.pushDeviceId = null; saveAll({ silent: true });
+    lastRev = 0; lastPushedHash = null; setSyncStatus(''); renderSettings();
+  });
+}
+// Ein Gerät, das schon verbunden ist, gibt beides in einer Zeile weiter.
+function copyPairingCode() {
+  const code = syncBase() + '|' + S.device.syncToken;
+  const fertig = () => toast('📋', 'Kopplungscode kopiert. Auf dem anderen Gerät in die Adresszeile der Einrichtung einfügen.');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(fertig, () => prompt('Kopplungscode:', code));
+  else prompt('Kopplungscode:', code);
+}
+
+function startSyncPolling() {
+  if (syncPoll) clearInterval(syncPoll);
+  if (!syncConfigured()) return;
+  syncPoll = setInterval(() => { if (document.visibilityState === 'visible') syncNow(); }, 5 * 60000);
+}
+
 function refreshSyncUI() {
-  const title = $('syncTitle'), sub = $('syncSub'), btn = $('syncBtnLabel'), hint = $('syncHint');
+  const title = $('syncTitle'), sub = $('syncSub'), btn = $('syncBtnLabel');
   if (!title) return;
-  if (currentUser) {
-    title.textContent = 'Live-Sync aktiv';
-    sub.textContent = (currentUser.email || currentUser.displayName || 'angemeldet') + (syncStatusText ? ' · ' + syncStatusText : '');
-    btn.textContent = 'Abmelden'; btn.style.color = 'var(--red)';
+  if (syncConfigured()) {
+    title.textContent = 'Verbunden';
+    const wann = lastSyncAt ? 'zuletzt ' + new Date(lastSyncAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : 'noch nicht abgeglichen';
+    sub.textContent = syncStatusText || (syncBase().replace(/^https?:\/\//, '') + ' · ' + wann);
+    btn.textContent = 'Verbindung trennen'; btn.style.color = 'var(--red)';
   } else {
-    title.textContent = syncStatusText ? 'Cloud' : 'Nicht angemeldet';
+    title.textContent = 'Nicht verbunden';
     sub.textContent = syncStatusText || 'Daten liegen nur auf diesem Gerät.';
-    btn.textContent = 'Mit Google anmelden'; btn.style.color = '';
+    btn.textContent = 'Server einrichten'; btn.style.color = '';
   }
-  if (hint && isStandalone() && !currentUser) hint.textContent = 'Hinweis: In der installierten App kann die Google-Anmeldung auf dem iPhone scheitern (Safari blockiert Anmelde-Speicher fremder Domains). Klappt es nicht, melde dich in Safari an und exportiere/importiere ein Backup – oder nutze die Anleitung im README für die eigene Domain.';
 }
+function handleSyncBtn() { if (syncConfigured()) disconnectSync(); else openSyncSetup(); }
+$('syncSaveBtn').addEventListener('click', saveSyncSetup);
+$('syncTokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveSyncSetup(); } });
 
 // ---------- 14. Start ----------
 function boot() {
@@ -4303,9 +4411,12 @@ function boot() {
   saveAll({ silent: true });
 
   // Cloud nur laden, wenn sie schon einmal aktiv war (spart Daten und Startzeit)
-  if (S.settings.cloudEnabled && navigator.onLine !== false) setTimeout(loadFirebase, 800);
-  window.addEventListener('online', () => { if (S.settings.cloudEnabled) loadFirebase().then(() => { if (currentUser && !initialSyncDone) startCloudSync(currentUser); }); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && currentUser && !initialSyncDone && fbDb) startCloudSync(currentUser); });
+  if (syncConfigured()) {
+    setTimeout(() => { syncNow(); refreshPushSubscription(); }, 600);
+    startSyncPolling();
+    window.addEventListener('online', () => syncNow());
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow(); });
+  }
 }
 try { boot(); }
 catch (err) {

@@ -1,0 +1,12 @@
+{
+  "name": "high-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Abgleich und Erinnerungen fuer die HIGH-App auf dem eigenen Server",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

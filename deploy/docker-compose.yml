@@ -26,12 +26,49 @@ services:
       - ${DATEN:-../../daten}:/srv/web/daten:ro
     environment:
       - TZ=Europe/Zurich
+    depends_on:
+      - high-sync
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/schlaf/"]
       interval: 60s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # ----------------------------------------------------------------
+  # HIGH: hält den Zustand der App und verschickt die Erinnerungen.
+  # Nur über nginx erreichbar (kein ports:-Eintrag), damit App und
+  # Schnittstelle auf derselben Adresse liegen.
+  #
+  # In deploy/.env gehören:
+  #   SYNC_TOKEN=<langer Zufallsschlüssel>
+  #   VAPID_PUBLIC_KEY=…
+  #   VAPID_PRIVATE_KEY=…
+  #   VAPID_SUBJECT=mailto:du@example.ch
+  # Erzeugen: siehe deploy/high-sync/README.md
+  # ----------------------------------------------------------------
+  high-sync:
+    build: ./high-sync
+    container_name: high-sync
+    restart: unless-stopped
+    expose:
+      - "8090"
+    volumes:
+      - ${HIGH_DATA:-../../high-daten}:/data
+    environment:
+      - TZ=Europe/Zurich
+      - DATA_DIR=/data
+      - SYNC_TOKEN=${SYNC_TOKEN:-}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
+      - APP_URL=${APP_URL:-/}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # ----------------------------------------------------------------
   # Cloudflare Tunnel – erst einkommentieren, wenn der Tunnel im
