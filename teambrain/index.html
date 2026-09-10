@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeamBrain – AI-Wissensassistent</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-soft: #161b22;
+    --bg-card: #1c2129;
+    --border: #2d333b;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #4f8cff;
+    --accent-soft: rgba(79, 140, 255, 0.15);
+    --green: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); height: 100vh; overflow: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; }
+
+  /* ---------- Generic ---------- */
+  .btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: 14px; font-weight: 600;
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.secondary { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); }
+  .btn.small { padding: 6px 12px; font-size: 13px; }
+  .btn.danger { background: var(--red); }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; color: var(--text); font-size: 14px;
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+  .tag {
+    display: inline-block; background: var(--accent-soft); color: var(--accent);
+    border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight: 600;
+  }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+  }
+  .muted { color: var(--text-dim); font-size: 13px; }
+  .hidden { display: none !important; }
+
+  /* ---------- Auth / Onboarding ---------- */
+  .auth-wrap {
+    height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .auth-box { width: 100%; max-width: 440px; }
+  .logo { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 8px; }
+  .logo-mark {
+    width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-size: 22px;
+    background: linear-gradient(135deg, #4f8cff, #9b5cff);
+  }
+  .logo h1 { font-size: 26px; }
+  .auth-sub { text-align: center; color: var(--text-dim); margin-bottom: 26px; font-size: 14px; }
+  .role-option {
+    display: flex; gap: 12px; align-items: flex-start; padding: 12px;
+    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; cursor: pointer;
+  }
+  .role-option:hover, .role-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .role-option .role-icon { font-size: 20px; }
+  .role-option strong { display: block; font-size: 14px; }
+  .role-option span { font-size: 12px; color: var(--text-dim); }
+
+  /* ---------- App layout ---------- */
+  .app { display: none; height: 100vh; }
+  .app.active { display: flex; }
+  .sidebar {
+    width: 240px; background: var(--bg-soft); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 16px 12px; flex-shrink: 0;
+  }
+  .sidebar .logo { justify-content: flex-start; margin-bottom: 24px; padding: 0 8px; }
+  .sidebar .logo h1 { font-size: 18px; }
+  .sidebar .logo-mark { width: 30px; height: 30px; font-size: 16px; border-radius: 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px;
+    color: var(--text-dim); font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 2px;
+    background: none; border: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--bg-card); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+  .sidebar-footer { margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px; }
+  .user-chip { display: flex; align-items: center; gap: 10px; padding: 8px; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #9b5cff, #4f8cff);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .user-chip .uname { font-size: 13px; font-weight: 600; }
+  .user-chip .urole { font-size: 11px; color: var(--text-dim); }
+
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .view { flex: 1; overflow-y: auto; padding: 28px; display: none; }
+  .view.active { display: block; }
+  .view-header { margin-bottom: 20px; }
+  .view-header h2 { font-size: 22px; margin-bottom: 4px; }
+
+  /* ---------- Chat ---------- */
+  #view-chat { display: none; flex-direction: column; padding: 0; }
+  #view-chat.active { display: flex; }
+  .chat-scroll { flex: 1; overflow-y: auto; padding: 28px; }
+  .chat-inner { max-width: 780px; margin: 0 auto; }
+  .msg { display: flex; gap: 12px; margin-bottom: 22px; }
+  .msg .avatar { width: 32px; height: 32px; font-size: 13px; }
+  .msg.ai .avatar { background: linear-gradient(135deg, #4f8cff, #35d0ba); }
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .msg-text { font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
+  .msg-text ul { margin: 6px 0 6px 20px; }
+  .msg-text li { margin-bottom: 3px; }
+  .source {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: 12px;
+    color: var(--text-dim); margin: 6px 6px 0 0; cursor: pointer;
+  }
+  .source:hover { border-color: var(--accent); color: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+  .chip {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 7px 14px; font-size: 13px; color: var(--text); cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chat-input-bar { border-top: 1px solid var(--border); padding: 14px 28px 20px; background: var(--bg); }
+  .chat-input-wrap {
+    max-width: 780px; margin: 0 auto; display: flex; gap: 10px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 14px; padding: 8px 8px 8px 16px;
+  }
+  .chat-input-wrap:focus-within { border-color: var(--accent); }
+  #chat-input { flex: 1; background: none; border: none; color: var(--text); font-size: 14px; outline: none; }
+  .chat-hint { max-width: 780px; margin: 8px auto 0; font-size: 11px; color: var(--text-dim); text-align: center; }
+  .typing { color: var(--text-dim); font-style: italic; font-size: 13px; }
+
+  /* ---------- Knowledge base ---------- */
+  .kb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .kb-page { cursor: pointer; }
+  .kb-page:hover { border-color: var(--accent); }
+  .kb-page h4 { font-size: 15px; margin: 8px 0 6px; }
+  .kb-page p { font-size: 13px; color: var(--text-dim); line-height: 1.5; max-height: 60px; overflow: hidden; }
+  .kb-space { font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ---------- Meetings ---------- */
+  .meeting-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .meeting-date {
+    background: var(--accent-soft); color: var(--accent); border-radius: 10px; padding: 8px 12px;
+    text-align: center; min-width: 64px; flex-shrink: 0;
+  }
+  .meeting-date .d { font-size: 18px; font-weight: 800; }
+  .meeting-date .m { font-size: 11px; text-transform: uppercase; }
+  .meeting-info { flex: 1; min-width: 0; }
+  .meeting-info h4 { font-size: 15px; }
+  .checklist-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .checklist-item input[type=checkbox] { margin-top: 3px; accent-color: var(--accent); }
+  .checklist-item.done label { text-decoration: line-through; color: var(--text-dim); }
+  .attendee { display: inline-flex; align-items: center; gap: 6px; margin: 4px 8px 4px 0; font-size: 13px; }
+  .protocol { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+
+  /* ---------- Integrations ---------- */
+  .int-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .int-card { display: flex; gap: 14px; align-items: flex-start; }
+  .int-icon { font-size: 26px; }
+  .int-card h4 { font-size: 15px; margin-bottom: 4px; }
+  .int-card p { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; margin-bottom: 10px; }
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .status-dot.on { background: var(--green); }
+  .status-dot.off { background: var(--text-dim); }
+
+  /* ---------- Roles table ---------- */
+  table.roles { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.roles th, table.roles td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  table.roles th { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ---------- Modal ---------- */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none;
+    align-items: center; justify-content: center; z-index: 50; padding: 20px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; }
+  .modal h3 { margin-bottom: 16px; }
+  .modal-close { float: right; background: none; border: none; color: var(--text-dim); font-size: 18px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--green); color: #06130a; padding: 12px 22px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; z-index: 100; display: none;
+  }
+
+  @media (max-width: 760px) {
+    .sidebar { width: 66px; }
+    .sidebar .logo h1, .nav-item span.lbl, .user-chip div { display: none; }
+    .view, .chat-scroll { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="screen-login" class="auth-wrap">
+  <div class="auth-box">
+    <div class="logo"><div class="logo-mark">🧠</div><h1>TeamBrain</h1></div>
+    <p class="auth-sub">Dein AI-Wissensassistent – alles Projektwissen, eine Frage entfernt.</p>
+    <div class="card">
+      <div class="field"><label>Name</label><input id="login-name" placeholder="z.B. Colin Renggli"></div>
+      <div class="field"><label>E-Mail (Firmenadresse)</label><input id="login-email" type="email" placeholder="vorname.name@firma.ch"></div>
+      <div class="field"><label>Passwort</label><input id="login-pass" type="password" placeholder="••••••••"></div>
+      <button class="btn" style="width:100%" onclick="doLogin()">Anmelden / Registrieren</button>
+      <p class="muted" style="margin-top:12px; text-align:center">Prototyp – Login wird lokal simuliert, kein Backend nötig.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ONBOARDING (Rollenerkennung) ============ -->
+<div id="screen-onboarding" class="auth-wrap hidden">
+  <div class="auth-box" style="max-width: 520px">
+    <div class="logo"><div class="logo-mark">🧠</div><h1>Willkommen!</h1></div>
+    <p class="auth-sub">Damit TeamBrain dir die richtigen Antworten gibt: <br><strong>Was beschreibt deine Rolle am besten?</strong><br><span class="muted">Im Zielsystem wird die Rolle automatisch aus dem Firmenverzeichnis (AD/SSO) erkannt und hier nur bestätigt.</span></p>
+    <div class="card" style="max-height: 55vh; overflow-y: auto" id="role-list"></div>
+    <button class="btn" style="width:100%; margin-top:14px" onclick="finishOnboarding()">Los geht's →</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="app">
+  <nav class="sidebar">
+    <div class="logo"><div class="logo-mark">🧠</div><h1>TeamBrain</h1></div>
+    <button class="nav-item active" data-view="chat" onclick="showView('chat')">💬 <span class="lbl">Assistent</span></button>
+    <button class="nav-item" data-view="kb" onclick="showView('kb')">📚 <span class="lbl">Wissensbasis</span></button>
+    <button class="nav-item" data-view="meetings" onclick="showView('meetings')">📅 <span class="lbl">Meetings</span></button>
+    <button class="nav-item" data-view="integrations" onclick="showView('integrations')">🧩 <span class="lbl">Integrationen</span></button>
+    <button class="nav-item" data-view="roles" onclick="showView('roles')">👥 <span class="lbl">Team &amp; Rollen</span></button>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="side-avatar">?</div>
+        <div><div class="uname" id="side-name">–</div><div class="urole" id="side-role">–</div></div>
+      </div>
+      <button class="nav-item" onclick="logout()">🚪 <span class="lbl">Abmelden</span></button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- Chat -->
+    <section id="view-chat" class="view active">
+      <div class="chat-scroll" id="chat-scroll"><div class="chat-inner" id="chat-inner"></div></div>
+      <div class="chat-input-bar">
+        <div class="chat-input-wrap">
+          <input id="chat-input" placeholder="Frag mich etwas zum Projekt … z.B. «Welche Umsysteme haben wir?»"
+                 onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn" onclick="sendChat()">Senden</button>
+        </div>
+        <p class="chat-hint">TeamBrain antwortet nur mit Quellenangabe aus der verbundenen Wissensbasis (Prototyp: simuliertes Confluence). Antworten respektieren deine Rollen-Berechtigungen.</p>
+      </div>
+    </section>
+
+    <!-- Knowledge base -->
+    <section id="view-kb" class="view">
+      <div class="view-header">
+        <h2>📚 Wissensbasis</h2>
+        <p class="muted">Simulierter Confluence-Space «Projekt Phoenix». Im Zielsystem live via Confluence-Konnektor (z.B. Onyx / Rovo API).</p>
+      </div>
+      <div class="field"><input id="kb-search" placeholder="🔍 Seiten durchsuchen …" oninput="renderKB()"></div>
+      <div class="kb-grid" id="kb-grid"></div>
+    </section>
+
+    <!-- Meetings -->
+    <section id="view-meetings" class="view">
+      <div class="view-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
+        <div>
+          <h2>📅 Meetings</h2>
+          <p class="muted">Kalender-Integration (simuliert). Beim Erstellen sagst du der AI, was dir wichtig ist – sie bereitet Agenda, Checkliste und Protokoll vor.</p>
+        </div>
+        <button class="btn" onclick="openMeetingModal()">+ Meeting erstellen</button>
+      </div>
+      <div id="meeting-list"></div>
+      <div class="card" style="margin-top:20px">
+        <h4 style="margin-bottom:6px">🤖 Sprint-Report-Automatik</h4>
+        <p class="muted" style="margin-bottom:12px">Nach jedem Sprint fasst TeamBrain alle Protokolle &amp; Entscheidungen zusammen und verschickt den Report automatisch an Manager &amp; Stakeholder.</p>
+        <button class="btn secondary small" onclick="sendSprintReport()">Sprint-Report jetzt generieren &amp; senden</button>
+      </div>
+    </section>
+
+    <!-- Integrations -->
+    <section id="view-integrations" class="view">
+      <div class="view-header">
+        <h2>🧩 Integrationen &amp; Module</h2>
+        <p class="muted">TeamBrain ist modular: Bestehende Best-of-Breed-Services werden als Module angedockt statt alles selbst zu bauen.</p>
+      </div>
+      <div class="int-grid" id="int-grid"></div>
+    </section>
+
+    <!-- Roles -->
+    <section id="view-roles" class="view">
+      <div class="view-header">
+        <h2>👥 Team &amp; Rollen</h2>
+        <p class="muted">Jede Rolle bekommt zugeschnittene Antworten, Vorschläge und Berechtigungen. Rollenerkennung im Zielsystem via SSO/Firmenverzeichnis.</p>
+      </div>
+      <div class="card" style="overflow-x:auto">
+        <table class="roles">
+          <thead><tr><th>Rolle</th><th>Fokus der Antworten</th><th>Beispiel-Berechtigung</th></tr></thead>
+          <tbody id="roles-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ Meeting-Modal ============ -->
+<div class="modal-bg" id="modal-meeting">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-meeting')">✕</button>
+    <h3>Meeting erstellen</h3>
+    <div class="field"><label>Titel</label><input id="m-title" placeholder="z.B. Sprint Review 14"></div>
+    <div style="display:flex; gap:10px">
+      <div class="field" style="flex:1"><label>Datum</label><input id="m-date" type="date"></div>
+      <div class="field" style="flex:1"><label>Zeit</label><input id="m-time" type="time" value="10:00"></div>
+    </div>
+    <div class="field"><label>Teilnehmende (kommagetrennt)</label><input id="m-people" placeholder="Anna, Marc, Lea"></div>
+    <div class="field">
+      <label>💡 Was ist dir in diesem Meeting wichtig? (eine Zeile = ein Punkt)<br><span class="muted">Die AI macht daraus die Agenda-Checkliste und prüft am Ende, ob alles geklärt wurde.</span></label>
+      <textarea id="m-goals" rows="4" placeholder="Schnittstelle zum SAP klären&#10;Budget-Freigabe für Phase 2 besprechen&#10;Testkonzept abnehmen"></textarea>
+    </div>
+    <button class="btn" style="width:100%" onclick="createMeeting()">Meeting erstellen</button>
+  </div>
+</div>
+
+<!-- ============ Meeting-Detail-Modal ============ -->
+<div class="modal-bg" id="modal-meeting-detail">
+  <div class="modal" id="meeting-detail-body"></div>
+</div>
+
+<!-- ============ KB-Seiten-Modal ============ -->
+<div class="modal-bg" id="modal-kb">
+  <div class="modal" id="kb-page-body"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================
+   TeamBrain – Prototyp
+   Alles lokal (localStorage), keine Server nötig.
+   Die "AI" ist ein regelbasierter Mock, der zeigt, wie
+   Antworten mit Quellen & Rollenlogik aussehen würden.
+   ===================================================== */
+
+// ---------- Rollen ----------
+const ROLES = [
+  { id: "admin",     icon: "🗂️", name: "Administrative Mitarbeiter:in", focus: "Prozesse, Vorlagen, Zuständigkeiten, Termine", perm: "Kein Zugriff auf Finanzdetails & Quellcode-Doku" },
+  { id: "dev",       icon: "💻", name: "Softwareentwickler:in", focus: "Architektur, Schnittstellen, Umsysteme, Deployment", perm: "Technische Doku voll, Finanzen nur Summen" },
+  { id: "pm",        icon: "📊", name: "Projektmanager:in", focus: "Status, Risiken, Budget, Meilensteine, Ressourcen", perm: "Vollzugriff inkl. Finanz-Reports" },
+  { id: "po",        icon: "🎯", name: "Product Owner", focus: "Backlog, Priorisierung, Business Value, Roadmap", perm: "Vollzugriff ausser HR-Daten" },
+  { id: "sm",        icon: "🔄", name: "Scrum Master / Agile Coach", focus: "Sprint-Metriken, Impediments, Prozessverbesserung", perm: "Team- & Prozessdaten, keine Finanzdetails" },
+  { id: "ba",        icon: "📝", name: "Business Analyst", focus: "Anforderungen, Prozesse, Datenflüsse", perm: "Fachliche Doku voll" },
+  { id: "ux",        icon: "🎨", name: "UX/UI Designer", focus: "Styleguide, Personas, Research, Prototypen", perm: "Design- & Research-Doku voll" },
+  { id: "qa",        icon: "🧪", name: "QA / Tester:in", focus: "Testkonzepte, Testdaten, bekannte Bugs", perm: "Test- & technische Doku voll" },
+  { id: "ops",       icon: "⚙️", name: "Betrieb / Support (Ops)", focus: "Runbooks, Incidents, Deployments, Monitoring", perm: "Betriebs-Doku voll, Produktivdaten-Zugriffe geloggt" },
+  { id: "arch",      icon: "🏛️", name: "IT-Architekt:in", focus: "Systemlandschaft, Umsysteme, Schnittstellen, Standards", perm: "Technische Doku voll" },
+  { id: "dpo",       icon: "🛡️", name: "Compliance / Datenschutz", focus: "Datenflüsse, AVV, Löschkonzepte, Audits", perm: "Datenschutzrelevante Doku voll, inkl. Audit-Log" },
+  { id: "hr",        icon: "🤝", name: "HR / Onboarding", focus: "Team, Zuständigkeiten, Einarbeitungspfade", perm: "Organisations-Doku, keine technischen Details" },
+  { id: "sales",     icon: "💼", name: "Sales / Kundenberatung", focus: "Produktstand, Roadmap, Referenzen, Termine", perm: "Freigegebene Produkt-Doku" },
+  { id: "extern",    icon: "🌐", name: "Externe:r Partner:in / Lieferant", focus: "Nur explizit freigegebene Bereiche", perm: "Stark eingeschränkt, Wasserzeichen auf Exporten" },
+  { id: "mgmt",      icon: "🏢", name: "Management / Stakeholder (Finanz)", focus: "Finanz-Updates, Statusberichte, Risiken, Entscheide", perm: "Reports & Finanzen voll, technische Details aggregiert" },
+];
+
+// Rollen mit Zugriff auf Finanzdetails
+const FINANCE_ROLES = ["pm", "po", "mgmt", "dpo"];
+
+// ---------- Simulierte Confluence-Wissensbasis ----------
+const KB = [
+  {
+    id: "umsysteme", space: "Systemarchitektur", title: "Umsysteme & Systemlandschaft",
+    tags: ["umsystem", "umsysteme", "system", "landschaft", "architektur", "sap", "crm", "salesforce", "dwh"],
+    content: `Projekt Phoenix ist mit folgenden Umsystemen verbunden:
+
+• SAP ERP (FI/CO) – Stammdaten & Buchhaltung, Anbindung via REST-Gateway
+• Salesforce CRM – Kundendaten, bidirektionale Synchronisation (nachts, 02:00)
+• Data Warehouse (Snowflake) – Reporting-Daten, täglicher Export
+• E-Mail-Gateway (Exchange Online) – Versand von Kundenbenachrichtigungen
+• Dokumenten-Management (M-Files) – Vertragsablage, Abruf via API
+• Identity Provider (Azure AD) – SSO & Berechtigungen
+
+Ansprechperson Architektur: M. Steiner`
+  },
+  {
+    id: "datenfluesse", space: "Systemarchitektur", title: "Schnittstellen & Datenflüsse",
+    tags: ["daten", "datenfluss", "datenflüsse", "schnittstelle", "schnittstellen", "senden", "wohin", "export", "import", "api"],
+    content: `Welche Daten senden wir wohin?
+
+→ an SAP ERP: Rechnungspositionen (täglich 18:00, IDoc), Debitoren-Stammdaten (bei Änderung, REST)
+→ an Salesforce: Kundenstatus-Updates (Event-basiert, Kafka-Topic phoenix.customer)
+→ an Snowflake DWH: Transaktionsdaten anonymisiert (täglich 03:00, S3-Export)
+→ an Exchange: Benachrichtigungs-Mails (Event-basiert)
+← von Azure AD: Benutzer & Gruppen (SCIM-Sync, stündlich)
+
+Alle personenbezogenen Flüsse sind im Verarbeitungsverzeichnis (Datenschutz-Space) dokumentiert.`
+  },
+  {
+    id: "zustaendigkeiten", space: "Projektorganisation", title: "Team & Zuständigkeiten",
+    tags: ["wer", "team", "zuständig", "verantwortlich", "ansprechperson", "kontakt", "rolle"],
+    content: `• Projektleitung: S. Huber
+• Product Owner: C. Renggli
+• Architektur & Umsysteme: M. Steiner
+• Backend-Entwicklung: A. Keller, J. Brunner
+• Frontend-Entwicklung: L. Meier
+• QA & Testing: P. Gerber
+• Datenschutz / Compliance: R. Frei
+• Betrieb / Ops: T. Widmer`
+  },
+  {
+    id: "budget", space: "Finanzen", title: "Budget & Forecast Q3", restricted: true,
+    tags: ["budget", "finanz", "finanzen", "kosten", "forecast", "geld", "ausgaben"],
+    content: `Gesamtbudget Projekt Phoenix: CHF 1'450'000
+Verbraucht per Ende Juli: CHF 812'000 (56 %)
+Forecast Q3: CHF 310'000 (Personal 240k, Lizenzen 45k, Extern 25k)
+Status: 🟡 leicht über Plan (+4 %), Massnahme: externes Mandat reduziert.
+Nächstes Finanz-Update: Steering Committee, 28.08.`
+  },
+  {
+    id: "sprintstatus", space: "Delivery", title: "Sprint 13 – Status & Velocity",
+    tags: ["sprint", "status", "velocity", "fortschritt", "backlog", "jira"],
+    content: `Sprint 13 (21.07.–01.08.) – abgeschlossen
+• Velocity: 42 Story Points (Ø letzte 3 Sprints: 39)
+• Fertig: SAP-Schnittstelle Rechnungsexport, Login-Redesign
+• Nicht fertig: DWH-Anonymisierung (blockiert durch offene Datenschutzfrage → R. Frei)
+• Nächster Sprint-Start: 04.08., Planning 09:00`
+  },
+  {
+    id: "testkonzept", space: "Qualität", title: "Testkonzept & Testdaten",
+    tags: ["test", "testkonzept", "testdaten", "qa", "bug", "qualität"],
+    content: `Teststufen: Unit (CI, min. 80 % Coverage) → Integration (nightly gegen SAP-Sandbox) → E2E (Playwright, vor Release).
+Testdaten: synthetisch generiert, keine Produktivdaten (Datenschutz-Vorgabe).
+Bekannte offene Bugs: PHX-231 (Umlaute im PDF-Export), PHX-244 (Timeout Salesforce-Sync > 5k Datensätze).`
+  },
+  {
+    id: "datenschutz", space: "Datenschutz", title: "Verarbeitungsverzeichnis & Löschkonzept",
+    tags: ["datenschutz", "dsgvo", "avv", "löschen", "löschkonzept", "personenbezogen", "compliance"],
+    content: `Personenbezogene Daten: Kundenstammdaten (Zweck: Vertragsabwicklung), Nutzungsdaten (Zweck: Support).
+Aufbewahrung: 10 Jahre (OR), Nutzungsdaten 24 Monate.
+Löschkonzept: automatisierter Job monatlich, Protokoll im Ops-Runbook.
+AVV mit: Salesforce, Snowflake, Microsoft. Verantwortlich: R. Frei (DPO).`
+  },
+  {
+    id: "onboarding", space: "Projektorganisation", title: "Onboarding neuer Teammitglieder",
+    tags: ["onboarding", "neu", "einarbeitung", "start", "zugang", "zugänge"],
+    content: `Tag 1: Zugänge (Azure AD-Gruppe PHX-TEAM), Confluence-Space, Jira-Board.
+Woche 1: Architektur-Walkthrough mit M. Steiner, Dev-Setup (Repo phoenix-core).
+Woche 2–4: Rollen-spezifischer Lernpfad in TeamBrain (automatisch zugewiesen).`
+  },
+];
+
+// ---------- Integrationen ----------
+const INTEGRATIONS = [
+  { icon: "🌀", name: "Confluence", desc: "Primäre Wissensquelle. Live-Indexierung aller Spaces, Berechtigungen werden gespiegelt (permission-aware Retrieval).", on: true },
+  { icon: "🔷", name: "Jira", desc: "Sprint-Daten, Backlog & Bug-Status für Statusfragen und den automatischen Sprint-Report.", on: true },
+  { icon: "📅", name: "Kalender (Google / Outlook)", desc: "Meetings lesen & erstellen, Agenda-Punkte («was ist mir wichtig») direkt am Termin speichern.", on: true },
+  { icon: "🎙️", name: "Meeting-Bot (Transkription)", desc: "Modul à la Fathom/Fireflies: nimmt teil, transkribiert, extrahiert Entscheidungen & Action Items ins Protokoll.", on: false },
+  { icon: "🔎", name: "RAG-Engine (Onyx, self-hosted)", desc: "Open-Source-Such-/RAG-Modul mit Confluence-Konnektor & RBAC – das «Gehirn» hinter den Antworten.", on: true },
+  { icon: "💬", name: "Slack / MS Teams", desc: "TeamBrain als Bot im Chat: Fragen direkt im Team-Channel stellen.", on: false },
+  { icon: "🧾", name: "SAP ERP", desc: "Finanz-Istdaten für Budget-Antworten (nur für berechtigte Rollen).", on: false },
+  { icon: "🔐", name: "SSO / Azure AD", desc: "Login & automatische Rollenerkennung aus dem Firmenverzeichnis.", on: true },
+];
+
+// ---------- State ----------
+let state = JSON.parse(localStorage.getItem("teambrain") || "null") || {
+  user: null,
+  meetings: [
+    { id: 1, title: "Sprint 14 Planning", date: nextDate(1), time: "09:00", people: ["S. Huber", "A. Keller", "L. Meier", "P. Gerber"],
+      goals: ["Sprint-Ziel definieren", "DWH-Anonymisierung: Datenschutzfrage klären", "Kapazität Ferien August prüfen"],
+      checklist: null, attendance: null, protocol: null },
+  ],
+  chat: [],
+};
+function save() { localStorage.setItem("teambrain", JSON.stringify(state)); }
+function nextDate(days) { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); }
+
+// ---------- Auth & Onboarding ----------
+let selectedRole = null;
+
+function doLogin() {
+  const name = document.getElementById("login-name").value.trim();
+  const email = document.getElementById("login-email").value.trim();
+  if (!name || !email) { toast("Bitte Name und E-Mail eingeben."); return; }
+  state.user = { name, email, role: null };
+  save();
+  document.getElementById("screen-login").classList.add("hidden");
+  renderRoleList();
+  document.getElementById("screen-onboarding").classList.remove("hidden");
+}
+
+function renderRoleList() {
+  document.getElementById("role-list").innerHTML = ROLES.map(r => `
+    <div class="role-option" id="ro-${r.id}" onclick="pickRole('${r.id}')">
+      <div class="role-icon">${r.icon}</div>
+      <div><strong>${r.name}</strong><span>${r.focus}</span></div>
+    </div>`).join("");
+}
+function pickRole(id) {
+  selectedRole = id;
+  document.querySelectorAll(".role-option").forEach(el => el.classList.remove("selected"));
+  document.getElementById("ro-" + id).classList.add("selected");
+}
+function finishOnboarding() {
+  if (!selectedRole) { toast("Bitte wähle deine Rolle."); return; }
+  state.user.role = selectedRole;
+  save();
+  enterApp();
+}
+function logout() {
+  localStorage.removeItem("teambrain");
+  location.reload();
+}
+
+function roleOf(id) { return ROLES.find(r => r.id === id); }
+
+function enterApp() {
+  document.getElementById("screen-login").classList.add("hidden");
+  document.getElementById("screen-onboarding").classList.add("hidden");
+  document.getElementById("app").classList.add("active");
+  const u = state.user, r = roleOf(u.role);
+  document.getElementById("side-avatar").textContent = u.name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+  document.getElementById("side-name").textContent = u.name;
+  document.getElementById("side-role").textContent = r.icon + " " + r.name;
+  renderKB(); renderMeetings(); renderIntegrations(); renderRoles();
+  if (state.chat.length === 0) aiGreeting(); else renderChat();
+}
+
+// ---------- Navigation ----------
+function showView(v) {
+  document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
+  document.getElementById("view-" + v).classList.add("active");
+  document.querySelectorAll(".nav-item[data-view]").forEach(el =>
+    el.classList.toggle("active", el.dataset.view === v));
+}
+
+// ---------- Chat ----------
+const ROLE_CHIPS = {
+  admin:  ["Wer ist wofür zuständig?", "Wie läuft das Onboarding?", "Wann ist das nächste Meeting?"],
+  dev:    ["Welche Umsysteme haben wir?", "Welche Daten senden wir wohin?", "Welche Bugs sind offen?"],
+  pm:     ["Wie ist der Sprint-Status?", "Wie steht das Budget?", "Welche Risiken sind offen?"],
+  po:     ["Wie ist der Sprint-Status?", "Wie steht das Budget?", "Welche Umsysteme haben wir?"],
+  sm:     ["Wie ist der Sprint-Status?", "Was blockiert das Team?", "Wer ist wofür zuständig?"],
+  ba:     ["Welche Daten senden wir wohin?", "Welche Umsysteme haben wir?", "Wo ist das Verarbeitungsverzeichnis?"],
+  ux:     ["Wer ist wofür zuständig?", "Wie ist der Sprint-Status?", "Wie läuft das Onboarding?"],
+  qa:     ["Wie sieht das Testkonzept aus?", "Welche Bugs sind offen?", "Wie ist der Sprint-Status?"],
+  ops:    ["Welche Umsysteme haben wir?", "Welche Daten senden wir wohin?", "Wie sieht das Löschkonzept aus?"],
+  arch:   ["Welche Umsysteme haben wir?", "Welche Daten senden wir wohin?", "Wer ist wofür zuständig?"],
+  dpo:    ["Welche Daten senden wir wohin?", "Wie sieht das Löschkonzept aus?", "Mit wem haben wir AVV?"],
+  hr:     ["Wie läuft das Onboarding?", "Wer ist wofür zuständig?", "Wann ist das nächste Meeting?"],
+  sales:  ["Wie ist der Sprint-Status?", "Wer ist wofür zuständig?", "Wann ist das nächste Meeting?"],
+  extern: ["Welche Umsysteme haben wir?", "Wer ist meine Ansprechperson?", "Wann ist das nächste Meeting?"],
+  mgmt:   ["Wie steht das Budget?", "Wie ist der Sprint-Status?", "Welche Risiken sind offen?"],
+};
+
+function aiGreeting() {
+  const r = roleOf(state.user.role);
+  addMsg("ai", `Hallo ${state.user.name.split(" ")[0]}! 👋\nIch bin TeamBrain und habe Zugriff auf die gesamte Projekt-Wissensbasis (Confluence «Projekt Phoenix», Jira, Kalender).\n\nIch weiss, dass du als **${r.name}** arbeitest – meine Antworten fokussieren auf: ${r.focus}.`, [], ROLE_CHIPS[state.user.role]);
+}
+
+function addMsg(who, text, sources = [], chips = []) {
+  state.chat.push({ who, text, sources, chips });
+  save();
+  renderChat();
+}
+
+function renderChat() {
+  const u = state.user;
+  const inner = document.getElementById("chat-inner");
+  inner.innerHTML = state.chat.map((m, i) => {
+    const isAI = m.who === "ai";
+    const name = isAI ? "TeamBrain" : u.name;
+    const av = isAI ? "🧠" : u.name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+    const srcs = (m.sources || []).map(s =>
+      `<span class="source" onclick="openKBPage('${s}')">📄 Confluence › ${escapeHtml(KB.find(k => k.id === s)?.space || "")} › ${escapeHtml(KB.find(k => k.id === s)?.title || "")}</span>`).join("");
+    const chips = (i === state.chat.length - 1 && m.chips && m.chips.length)
+      ? `<div class="chips">${m.chips.map(c => `<button class="chip" onclick="askChip(this)">${escapeHtml(c)}</button>`).join("")}</div>` : "";
+    return `<div class="msg ${isAI ? "ai" : ""}">
+      <div class="avatar">${av}</div>
+      <div class="msg-body"><div class="msg-name">${name}</div>
+      <div class="msg-text">${formatText(m.text)}</div>${srcs}${chips}</div></div>`;
+  }).join("");
+  const sc = document.getElementById("chat-scroll");
+  sc.scrollTop = sc.scrollHeight;
+}
+
+function formatText(t) {
+  return escapeHtml(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+function escapeHtml(t) {
+  return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function askChip(btn) {
+  document.getElementById("chat-input").value = btn.textContent;
+  sendChat();
+}
+
+function sendChat() {
+  const input = document.getElementById("chat-input");
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = "";
+  addMsg("user", q);
+  // Simulierte Denkzeit
+  const inner = document.getElementById("chat-inner");
+  inner.insertAdjacentHTML("beforeend", `<div class="msg ai" id="typing"><div class="avatar">🧠</div><div class="msg-body"><div class="typing">TeamBrain durchsucht die Wissensbasis …</div></div></div>`);
+  document.getElementById("chat-scroll").scrollTop = 1e9;
+  setTimeout(() => {
+    document.getElementById("typing")?.remove();
+    const a = answer(q);
+    addMsg("ai", a.text, a.sources, a.chips || []);
+  }, 700);
+}
+
+// ---------- Mock-AI (im Zielsystem: RAG-Engine wie Onyx) ----------
+function answer(q) {
+  const lq = q.toLowerCase();
+  const role = state.user.role;
+  const has = (...ws) => ws.some(w => lq.includes(w));
+
+  // Finanzen – rollenbasiert geschützt
+  if (has("budget", "finanz", "kosten", "forecast", "geld")) {
+    if (FINANCE_ROLES.includes(role)) {
+      const p = KB.find(k => k.id === "budget");
+      return { text: `Hier das aktuelle Finanz-Update zu Projekt Phoenix:\n\n${p.content}`, sources: ["budget"] };
+    }
+    return { text: `Finanzdetails sind für deine Rolle (**${roleOf(role).name}**) nicht freigegeben. 🛡️\n\nWas ich dir sagen darf: Das Projekt liegt aktuell **leicht über Budgetplan (🟡)**, Gegenmassnahmen sind eingeleitet.\n\nFür Details wende dich an S. Huber (Projektleitung) – oder bitte um eine Freigabe.`, sources: [] };
+  }
+
+  if (has("umsystem", "systemlandschaft", "landschaft", "welche systeme")) {
+    const p = KB.find(k => k.id === "umsysteme");
+    let extra = "";
+    if (role === "dev" || role === "arch") extra = "\n\n💡 Für dich als Techniker:in: Die Anbindungsdetails (REST-Gateway, Kafka-Topics) stehen auf der Seite «Schnittstellen & Datenflüsse».";
+    if (role === "mgmt") extra = "\n\n💡 Kurzfassung fürs Management: 6 Umsysteme, alle Anbindungen produktiv ausser DWH-Anonymisierung (in Arbeit).";
+    return { text: `${p.content}${extra}`, sources: ["umsysteme", "datenfluesse"] };
+  }
+
+  if (has("daten") && has("senden", "wohin", "fliess", "fluss", "schicken") || has("schnittstell", "datenfluss", "datenflüsse")) {
+    const p = KB.find(k => k.id === "datenfluesse");
+    let extra = role === "dpo" ? "\n\n💡 Datenschutz-Hinweis: Die personenbezogenen Flüsse (Salesforce, SAP) sind im Verarbeitungsverzeichnis erfasst, AVV liegen vor." : "";
+    return { text: `${p.content}${extra}`, sources: ["datenfluesse", "datenschutz"] };
+  }
+
+  if (has("wer", "zuständig", "verantwortlich", "ansprechperson", "ansprechpartner", "kontakt", "team")) {
+    const p = KB.find(k => k.id === "zustaendigkeiten");
+    return { text: `Das sind die Zuständigkeiten im Projekt Phoenix:\n\n${p.content}`, sources: ["zustaendigkeiten"] };
+  }
+
+  if (has("sprint", "status", "velocity", "fortschritt", "blockiert", "impediment", "risiken", "risiko")) {
+    const p = KB.find(k => k.id === "sprintstatus");
+    let extra = "";
+    if (role === "sm") extra = "\n\n💡 Impediment für dich: Die DWH-Anonymisierung ist seit 6 Tagen blockiert – Eskalation an R. Frei empfohlen.";
+    if (role === "mgmt" || role === "pm") extra = "\n\n💡 Risiko-Sicht: 1 Blocker (Datenschutzfrage DWH), Budget 🟡 (+4 %). Sonst auf Kurs.";
+    return { text: `${p.content}${extra}`, sources: ["sprintstatus"] };
+  }
+
+  if (has("test", "bug", "qualität", "qa")) {
+    const p = KB.find(k => k.id === "testkonzept");
+    return { text: p.content, sources: ["testkonzept"] };
+  }
+
+  if (has("datenschutz", "dsgvo", "avv", "lösch", "personenbezogen", "compliance")) {
+    const p = KB.find(k => k.id === "datenschutz");
+    return { text: p.content, sources: ["datenschutz"] };
+  }
+
+  if (has("onboarding", "einarbeitung", "neu hier", "zugänge", "zugang")) {
+    const p = KB.find(k => k.id === "onboarding");
+    return { text: p.content, sources: ["onboarding"] };
+  }
+
+  if (has("meeting", "termin", "kalender", "protokoll")) {
+    const next = state.meetings.filter(m => !m.protocol)[0];
+    const prot = state.meetings.filter(m => m.protocol);
+    let t = next
+      ? `Dein nächstes Meeting: **${next.title}** am ${fmtDate(next.date)} um ${next.time} Uhr mit ${next.people.join(", ")}.\n\nDeine gemerkten Punkte dafür:\n${next.goals.map(g => "• " + g).join("\n")}`
+      : "Aktuell steht kein Meeting an.";
+    if (prot.length) t += `\n\nEs liegen ${prot.length} automatische Protokoll(e) vor – siehe Tab «Meetings».`;
+    return { text: t, sources: [], chips: ["Wie ist der Sprint-Status?"] };
+  }
+
+  // Fallback: Volltextsuche über die Wissensbasis
+  const hits = KB.filter(k => (!k.restricted || FINANCE_ROLES.includes(role)) &&
+    (k.tags.some(t => lq.includes(t)) || k.title.toLowerCase().split(" ").some(w => w.length > 3 && lq.includes(w))));
+  if (hits.length) {
+    return { text: `Dazu habe ich Folgendes gefunden:\n\n${hits[0].content}`, sources: hits.slice(0, 2).map(h => h.id) };
+  }
+  return {
+    text: `Dazu finde ich in der Wissensbasis **keine dokumentierte Antwort**. 🔍\n\nZwei Vorschläge:\n• Ich leite die Frage an die vermutlich richtige Ansprechperson weiter (aus der Zuständigkeits-Doku).\n• Ich merke sie im **Wissenslücken-Radar** – wird eine Frage mehrfach gestellt, schlage ich dem Team vor, eine Confluence-Seite dazu anzulegen.\n\nProbiere es sonst mit einer der Beispielfragen unten.`,
+    sources: [], chips: ROLE_CHIPS[role]
+  };
+}
+
+// ---------- Wissensbasis ----------
+function renderKB() {
+  const q = (document.getElementById("kb-search").value || "").toLowerCase();
+  const role = state.user?.role;
+  document.getElementById("kb-grid").innerHTML = KB
+    .filter(k => !q || k.title.toLowerCase().includes(q) || k.content.toLowerCase().includes(q) || k.space.toLowerCase().includes(q))
+    .map(k => {
+      const locked = k.restricted && !FINANCE_ROLES.includes(role);
+      return `<div class="card kb-page" onclick="openKBPage('${k.id}')">
+        <span class="kb-space">${k.space}</span>
+        <h4>${locked ? "🔒 " : ""}${k.title}</h4>
+        <p>${locked ? "Für deine Rolle nicht freigegeben." : escapeHtml(k.content.slice(0, 120))}…</p>
+      </div>`;
+    }).join("");
+}
+
+function openKBPage(id) {
+  const k = KB.find(p => p.id === id);
+  if (!k) return;
+  const locked = k.restricted && !FINANCE_ROLES.includes(state.user.role);
+  document.getElementById("kb-page-body").innerHTML = `
+    <button class="modal-close" onclick="closeModal('modal-kb')">✕</button>
+    <span class="kb-space">Confluence › ${k.space}</span>
+    <h3 style="margin:6px 0 14px">${locked ? "🔒 " : ""}${k.title}</h3>
+    ${locked
+      ? `<p class="muted">Diese Seite enthält Finanzdetails und ist für deine Rolle nicht freigegeben. Du kannst eine Freigabe bei der Projektleitung anfragen.</p>
+         <button class="btn secondary small" style="margin-top:12px" onclick="toast('Freigabe-Anfrage an S. Huber gesendet (simuliert)')">Freigabe anfragen</button>`
+      : `<div class="protocol">${escapeHtml(k.content)}</div>`}
+  `;
+  document.getElementById("modal-kb").classList.add("open");
+}
+
+// ---------- Meetings ----------
+function fmtDate(iso) {
+  return new Date(iso + "T00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function renderMeetings() {
+  const list = document.getElementById("meeting-list");
+  if (!state.meetings.length) { list.innerHTML = `<p class="muted">Noch keine Meetings.</p>`; return; }
+  list.innerHTML = state.meetings.slice().sort((a, b) => a.date.localeCompare(b.date)).map(m => {
+    const d = new Date(m.date + "T00:00");
+    const done = !!m.protocol;
+    return `<div class="card meeting-row">
+      <div class="meeting-date"><div class="d">${d.getDate()}</div><div class="m">${d.toLocaleDateString("de-CH", { month: "short" })}</div></div>
+      <div class="meeting-info">
+        <h4>${done ? "✅ " : ""}${escapeHtml(m.title)}</h4>
+        <p class="muted">${m.time} Uhr · ${m.people.map(escapeHtml).join(", ")} · ${m.goals.length} Agenda-Punkte</p>
+      </div>
+      <button class="btn ${done ? "secondary" : ""} small" onclick="openMeetingDetail(${m.id})">${done ? "Protokoll" : "Öffnen"}</button>
+    </div>`;
+  }).join("");
+}
+
+function openMeetingModal() {
+  document.getElementById("m-date").value = nextDate(2);
+  document.getElementById("modal-meeting").classList.add("open");
+}
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+function createMeeting() {
+  const title = document.getElementById("m-title").value.trim();
+  const date = document.getElementById("m-date").value;
+  const time = document.getElementById("m-time").value;
+  const people = document.getElementById("m-people").value.split(",").map(s => s.trim()).filter(Boolean);
+  const goals = document.getElementById("m-goals").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!title || !date) { toast("Bitte mindestens Titel und Datum angeben."); return; }
+  state.meetings.push({ id: Date.now(), title, date, time, people, goals, checklist: null, attendance: null, protocol: null });
+  save();
+  closeModal("modal-meeting");
+  renderMeetings();
+  toast("Meeting erstellt – im Zielsystem würde es jetzt im Kalender aller Teilnehmenden stehen. 📅");
+  ["m-title", "m-people", "m-goals"].forEach(id => document.getElementById(id).value = "");
+}
+
+function openMeetingDetail(id) {
+  const m = state.meetings.find(x => x.id === id);
+  if (!m) return;
+  if (!m.checklist) m.checklist = m.goals.map(g => ({ text: g, done: false }));
+  if (!m.attendance) m.attendance = m.people.map(p => ({ name: p, present: true }));
+  save();
+  renderMeetingDetail(m);
+  document.getElementById("modal-meeting-detail").classList.add("open");
+}
+
+function renderMeetingDetail(m) {
+  const body = document.getElementById("meeting-detail-body");
+  if (m.protocol) {
+    body.innerHTML = `
+      <button class="modal-close" onclick="closeModal('modal-meeting-detail')">✕</button>
+      <h3>📄 Protokoll: ${escapeHtml(m.title)}</h3>
+      <div class="protocol">${escapeHtml(m.protocol)}</div>
+      <button class="btn secondary small" style="margin-top:14px" onclick="toast('Protokoll an alle Teilnehmenden gesendet (simuliert) ✉️')">An Teilnehmende senden</button>`;
+    return;
+  }
+  body.innerHTML = `
+    <button class="modal-close" onclick="closeModal('modal-meeting-detail')">✕</button>
+    <h3>${escapeHtml(m.title)}</h3>
+    <p class="muted" style="margin-bottom:16px">${fmtDate(m.date)} · ${m.time} Uhr</p>
+
+    <h4 style="margin-bottom:6px">✅ Agenda-Checkliste <span class="muted">(deine «wichtigen Punkte»)</span></h4>
+    <div style="margin-bottom:18px">
+      ${m.checklist.map((c, i) => `
+        <div class="checklist-item ${c.done ? "done" : ""}">
+          <input type="checkbox" id="cl-${i}" ${c.done ? "checked" : ""} onchange="toggleCheck(${m.id},${i})">
+          <label for="cl-${i}">${escapeHtml(c.text)}</label>
+        </div>`).join("") || '<p class="muted">Keine Punkte hinterlegt.</p>'}
+    </div>
+
+    <h4 style="margin-bottom:6px">👥 Anwesenheit</h4>
+    <div style="margin-bottom:18px">
+      ${m.attendance.map((a, i) => `
+        <label class="attendee"><input type="checkbox" ${a.present ? "checked" : ""} onchange="toggleAttend(${m.id},${i})"> ${escapeHtml(a.name)}</label>`).join("")}
+    </div>
+
+    <button class="btn" style="width:100%" onclick="endMeeting(${m.id})">Meeting beenden → Protokoll automatisch erstellen</button>
+    <p class="muted" style="margin-top:8px">Mit aktiviertem Meeting-Bot-Modul würde zusätzlich das ganze Gespräch transkribiert und Entscheidungen/Action Items automatisch extrahiert.</p>`;
+}
+
+function toggleCheck(mid, i) {
+  const m = state.meetings.find(x => x.id === mid);
+  m.checklist[i].done = !m.checklist[i].done;
+  save(); renderMeetingDetail(m);
+}
+function toggleAttend(mid, i) {
+  const m = state.meetings.find(x => x.id === mid);
+  m.attendance[i].present = !m.attendance[i].present;
+  save(); renderMeetingDetail(m);
+}
+
+function endMeeting(mid) {
+  const m = state.meetings.find(x => x.id === mid);
+  const open = m.checklist.filter(c => !c.done);
+  const done = m.checklist.filter(c => c.done);
+  m.protocol =
+`PROTOKOLL – ${m.title}
+Datum: ${fmtDate(m.date)}, ${m.time} Uhr
+Anwesend: ${m.attendance.filter(a => a.present).map(a => a.name).join(", ") || "–"}
+Entschuldigt: ${m.attendance.filter(a => !a.present).map(a => a.name).join(", ") || "–"}
+
+BESPROCHEN / GEKLÄRT:
+${done.map(c => "✔ " + c.text).join("\n") || "– (keine Punkte abgehakt)"}
+
+OFFEN GEBLIEBEN (wird ins nächste Meeting übernommen):
+${open.map(c => "○ " + c.text).join("\n") || "– alles geklärt 🎉"}
+
+— automatisch erstellt von TeamBrain, abgelegt in Confluence › Meeting-Protokolle —`;
+  save();
+  renderMeetings();
+  renderMeetingDetail(m);
+  toast("Protokoll erstellt und in der Wissensbasis abgelegt. 📄");
+}
+
+function sendSprintReport() {
+  const prots = state.meetings.filter(m => m.protocol).length;
+  toast(`Sprint-Report generiert (aus ${prots} Protokoll(en) + Jira-Daten) und an Management & Stakeholder gesendet. ✉️`);
+}
+
+// ---------- Integrationen ----------
+function renderIntegrations() {
+  document.getElementById("int-grid").innerHTML = INTEGRATIONS.map((x, i) => `
+    <div class="card int-card">
+      <div class="int-icon">${x.icon}</div>
+      <div style="flex:1">
+        <h4>${x.name}</h4>
+        <p>${x.desc}</p>
+        <span class="muted"><span class="status-dot ${x.on ? "on" : "off"}"></span>${x.on ? "Verbunden" : "Nicht verbunden"}</span>
+        <button class="btn secondary small" style="float:right" onclick="toggleInt(${i})">${x.on ? "Trennen" : "Verbinden"}</button>
+      </div>
+    </div>`).join("");
+}
+function toggleInt(i) {
+  INTEGRATIONS[i].on = !INTEGRATIONS[i].on;
+  renderIntegrations();
+  toast(INTEGRATIONS[i].on ? `${INTEGRATIONS[i].name} verbunden (simuliert) ✅` : `${INTEGRATIONS[i].name} getrennt.`);
+}
+
+// ---------- Rollen-Tabelle ----------
+function renderRoles() {
+  document.getElementById("roles-tbody").innerHTML = ROLES.map(r => `
+    <tr ${r.id === state.user.role ? 'style="background:var(--accent-soft)"' : ""}>
+      <td>${r.icon} <strong>${r.name}</strong>${r.id === state.user.role ? ' <span class="tag">du</span>' : ""}</td>
+      <td>${r.focus}</td><td class="muted">${r.perm}</td>
+    </tr>`).join("");
+}
+
+// ---------- Toast ----------
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.style.display = "none", 3200);
+}
+
+// ---------- Init ----------
+if (state.user && state.user.role) {
+  enterApp();
+} else if (state.user) {
+  document.getElementById("screen-login").classList.add("hidden");
+  renderRoleList();
+  document.getElementById("screen-onboarding").classList.remove("hidden");
+}
+</script>
+</body>
+</html>
