@@ -2434,7 +2434,7 @@ let openTaskId = null;      // aufgeklappte Routine
 let reorderMode = false;
 let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
 function resetCalToToday() { const d = keyToDate(todayKey()); calMonth = d.getMonth(); calYear = d.getFullYear(); }
-let showDoneTodos = false;
+let showDoneTodos = false, showAllBadges = false;
 
 function setRing(svgEl, pct) {
   const val = svgEl && svgEl.querySelector('.val');
@@ -2706,7 +2706,7 @@ function renderTodos() {
   // Fokus heute
   const dots = Array.from({ length: GAME.focusMax }, (_, i) => `<span class="focus-dot${i < focusDoneToday ? ' on' : ''}"></span>`).join('');
   if (focus.length || open.length || focusDoneToday) html += `<section class="card focus-card">
-    <div class="focus-head"><span class="focus-title">${ICON.star} Fokus heute</span><span class="focus-dots" aria-label="${focusDoneToday} von ${GAME.focusMax} erledigt">${dots}</span></div>
+    <div class="focus-head"><span class="focus-title">${ICON.star} Fokus heute</span>${focusDoneToday ? `<span class="focus-dots" aria-label="${focusDoneToday} von ${GAME.focusMax} erledigt">${dots}</span>` : ''}</div>
     ${focus.length ? `<div class="list-card" style="box-shadow:none;border:0;background:transparent">${focus.map((t, i) => renderTodoRow(t, today, { rank: i + 1, showCarry: true })).join('')}</div>` : `<div class="focus-hint">${focusDoneToday >= 1 ? `${focusDoneToday} Fokus-To-Do${focusDoneToday > 1 ? 's' : ''} erledigt. ${focusDoneToday >= GAME.focusMax ? 'Volltreffer – das Wichtigste ist durch.' : 'Das Wichtigste zuerst.'}` : `Noch kein Fokus gesetzt. Wähle mit ★ bis zu ${GAME.focusMax} To-Dos, die heute zählen – in der Reihenfolge, in der du sie angehst.`}</div>`}
   </section>`;
 
@@ -2832,8 +2832,11 @@ function renderProgress() {
 
   // Abzeichen
   const unlocked = BADGES.filter(b => S.game.badges[b.id]), locked = BADGES.filter(b => !S.game.badges[b.id]);
-  html += `<div class="section-head q"><span class="section-title">Abzeichen</span><span class="section-meta">${unlocked.length}/${BADGES.length}</span></div>
-    <div class="badge-grid q">${unlocked.concat(locked).map(b => { const on = !!S.game.badges[b.id]; const isNew = on && !S.game.badgesSeen[b.id]; return `<button class="badge${on ? '' : ' locked'}${isNew ? ' new' : ''}" type="button" data-act="badge" data-id="${b.id}" aria-label="${escAttr(b.name)}${on ? '' : ' (gesperrt)'}"><span class="badge-ico">${b.emoji}</span><span class="badge-name">${escHtml(b.name)}</span></button>`; }).join('')}</div>`;
+  // Nur die verdienten und die nächsten erreichbaren zeigen – die volle Wand ist einen Tipp entfernt
+  const nextUp = locked.slice(0, Math.max(3, 6 - unlocked.length % 3));
+  const list = showAllBadges ? unlocked.concat(locked) : unlocked.concat(nextUp);
+  html += `<div class="section-head q"><span class="section-title">Abzeichen</span>${locked.length > nextUp.length ? `<button class="section-link" type="button" data-act="allBadges">${showAllBadges ? `Nur die nächsten` : `Alle ${BADGES.length}`}</button>` : `<span class="section-meta">${unlocked.length}/${BADGES.length}</span>`}</div>
+    <div class="badge-grid q">${list.map(b => { const on = !!S.game.badges[b.id]; const isNew = on && !S.game.badgesSeen[b.id]; return `<button class="badge${on ? '' : ' locked'}${isNew ? ' new' : ''}" type="button" data-act="badge" data-id="${b.id}" aria-label="${escAttr(b.name)}${on ? '' : ' (gesperrt)'}"><span class="badge-ico">${b.emoji}</span><span class="badge-name">${escHtml(b.name)}</span></button>`; }).join('')}</div>`;
 
   v.innerHTML = html;
   bindView(v);
@@ -2841,11 +2844,12 @@ function renderProgress() {
 }
 
 // ---- Token-Scoreboard ----
-// «Erreicht heute» / «Erreicht gestern» / «Erreicht am Mo., 9. Sep.»
-function reachedLabel(ts) {
+// «Erreicht heute» statt «Erreicht am Heute» – «am» passt nur zu einem Datum
+function onDayLabel(verb, ts) {
   const l = dayLabel(appDay(ts));
-  return /^(Heute|Gestern)$/.test(l) ? 'Erreicht ' + l.toLowerCase() : 'Erreicht am ' + l;
+  return /^(Heute|Gestern)$/.test(l) ? `${verb} ${l.toLowerCase()}` : `${verb} am ${l}`;
 }
+function reachedLabel(ts) { return onDayLabel('Erreicht', ts); }
 function renderTokens() {
   const v = $('viewTokens');
   const total = tokenTotal();
@@ -3351,6 +3355,7 @@ function bindView(v) {
       case 'todoUnfocus': { const t = todoById(id); if (t) { t.focus = false; t.focusDate = null; t.carryCount = 0; touch(t); saveAll(); renderAll(); toast('🍃', 'Losgelassen. Es bleibt in der Liste, ohne zu drängen.'); } break; }
       case 'review': openReview(); break;
       case 'toggleDone': showDoneTodos = !showDoneTodos; renderAll(); break;
+      case 'allBadges': showAllBadges = !showAllBadges; renderAll(); break;
       case 'clearDone': confirmSheet('Erledigte To-Dos aufräumen?', 'Erledigte To-Dos, die älter als 7 Tage sind, werden entfernt. XP bleiben.', 'Aufräumen', () => { const cutoff = Date.now() - 7 * 864e5; let n = 0; S.todos.forEach(t => { if (t.completed && !t.deleted && t.completedAt && new Date(t.completedAt).getTime() < cutoff) { t.deleted = Date.now(); n++; } }); saveAll(); renderAll(); toast('🧹', `${n} To-Do${n === 1 ? '' : 's'} aufgeräumt.`); }); break;
       case 'rescheduleOverdue': { const today = todayKey(); let n = 0; S.todos.forEach(t => { if (!t.completed && !t.deleted && t.dueDate && t.dueDate < today) { t.dueDate = today; touch(t); n++; } }); saveAll(); renderAll(); toast('📅', `${n} To-Do${n === 1 ? '' : 's'} auf heute gelegt. Frischer Start.`); break; }
       case 'calPrev': calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderAll(); break;
@@ -3623,7 +3628,7 @@ function openBadge(id) {
   const b = BADGES.find(x => x.id === id); if (!b) return;
   const on = S.game.badges[id];
   $('badgeSheetTitle').textContent = on ? 'Abzeichen' : 'Noch gesperrt';
-  $('badgeBody').innerHTML = `<div class="empty" style="padding-top:8px"><div class="badge-ico" style="width:88px;height:88px;font-size:2.6rem;${on ? '' : 'filter:grayscale(1);opacity:.5'}">${b.emoji}</div><div class="empty-title">${escHtml(b.name)}</div><div class="empty-text">${escHtml(b.desc)}</div>${on ? `<div class="pill gold" style="margin-top:6px">Freigeschaltet am ${escHtml(dayLabel(dateKey(new Date(on))))}</div>` : ''}</div>`;
+  $('badgeBody').innerHTML = `<div class="empty" style="padding-top:8px"><div class="badge-ico" style="width:88px;height:88px;font-size:2.6rem;${on ? '' : 'filter:grayscale(1);opacity:.5'}">${b.emoji}</div><div class="empty-title">${escHtml(b.name)}</div><div class="empty-text">${escHtml(b.desc)}</div>${on ? `<div class="pill gold" style="margin-top:6px">${escHtml(onDayLabel('Freigeschaltet', on))}</div>` : ''}</div>`;
   if (on && !S.game.badgesSeen[id]) { S.game.badgesSeen[id] = Date.now(); saveAll({ silent: true }); }
   openSheet('badgeSheet');
 }
