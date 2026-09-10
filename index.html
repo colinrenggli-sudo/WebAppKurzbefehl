@@ -4200,7 +4200,7 @@ async function signInWithGoogle() {
   } catch (e) {
     const code = e && e.code || '';
     if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(code)) {
-      try { await fbAuth.signInWithRedirect(fbProvider); return; } catch (e2) { e = e2; }
+      try { S.device.authRedirectAt = Date.now(); saveAll({ silent: true }); await fbAuth.signInWithRedirect(fbProvider); return; } catch (e2) { e = e2; }
     }
     syncStatusText = code === 'auth/popup-closed-by-user' ? '' : 'Anmeldung fehlgeschlagen: ' + (e && (e.message || e.code) || e);
     refreshSyncUI();
