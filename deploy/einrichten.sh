@@ -135,19 +135,51 @@ case "$GESUND" in
   *) rot "  Erinnerungen sind AUS: die VAPID-Schlüssel in .env stimmen nicht." ;;
 esac
 
-# ---------- 5. Link ----------
-schritt "5/5  Fertig"
+# ---------- 5. Von aussen erreichbar? ----------
 TOKEN="$(hole SYNC_TOKEN)"
 ADRESSE="${ADRESSE:-$(hole APP_ADRESSE)}"
+VONAUSSEN=""
+if [ -n "$ADRESSE" ]; then
+  schritt "5/6  Öffentliche Adresse prüfen"
+  # Die Anfrage geht auch aus dem Heimnetz zu Cloudflare und von dort durch
+  # den Tunnel zurück. Klappt sie hier, klappt sie auch vom Handy aus.
+  if curl -fsS -m 15 "${ADRESSE%/}/api/health" >/dev/null 2>&1; then
+    VONAUSSEN="ja"
+    gruen "  $ADRESSE ist erreichbar."
+  else
+    rot "  $ADRESSE antwortet nicht."
+    info "Der Dienst läuft (siehe oben) – es fehlt der Weg von aussen."
+    info "In Cloudflare → Zero Trust → Networks → Tunnels → dein Tunnel →"
+    info "Public Hostnames → Add:"
+    info "    Subdomain: $(printf '%s' "$ADRESSE" | sed -E 's|^https?://||; s|\..*$||')"
+    info "    Domain:    $(printf '%s' "$ADRESSE" | sed -E 's|^https?://[^.]*\.||; s|/.*$||')"
+    info "    Service:   HTTP → webapps:8080"
+    info "Taucht die Domain dort nicht auf, liegt sie nicht in diesem"
+    info "Cloudflare-Konto. Läuft cloudflared noch nicht:"
+    info "    cd $PWD && $DC --profile tunnel up -d"
+  fi
+fi
+
+# ---------- 6. Link ----------
+schritt "6/6  Fertig"
 if [ -n "$ADRESSE" ]; then
   echo
-  gruen "Diesen Link am iPhone in Safari öffnen:"
+  if [ -n "$VONAUSSEN" ]; then gruen "Diesen Link am iPhone in Safari öffnen:"
+  else gruen "Diesen Link am iPhone in Safari öffnen, sobald der Eintrag oben steht:"; fi
   echo
   echo "    ${ADRESSE%/}/#s=$TOKEN"
   echo
+  echo
   info "Die App verbindet sich damit von selbst. Danach: Teilen → Zum"
-  info "Home-Bildschirm, dann Einstellungen → «Erinnerungen aufs Gerät»."
-  info "Den Link nicht weitergeben – er enthält den Schlüssel."
+  info "Home-Bildschirm, App von dort starten, dann Einstellungen →"
+  info "«Erinnerungen aufs Gerät» einschalten."
+  echo
+  info "iOS trennt Safari und die installierte App manchmal. Fragt die App"
+  info "vom Home-Bildschirm noch nach dem Schlüssel, ist es dieser:"
+  echo
+  echo "    $TOKEN"
+  echo
+  info "Weder Link noch Schlüssel weitergeben – wer sie hat, kommt an deine Daten."
 else
   echo
   info "Noch ohne öffentliche Adresse. Sobald der Cloudflare-Eintrag steht:"
