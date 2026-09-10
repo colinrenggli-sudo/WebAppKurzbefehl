@@ -188,7 +188,7 @@ svg { display: block; }
 .navbar.scrolled { box-shadow: 0 0.5px 0 var(--sep); }
 .navbar-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; min-height: 48px; }
 .navbar-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.navbar-eyebrow { font-size: 0.765rem; font-weight: 600; letter-spacing: 0.02em; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.navbar-eyebrow { font-size: 0.765rem; font-weight: 600; letter-spacing: 0.02em; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; min-height: 1.3em; }
 .navbar-title { font-size: 2rem; line-height: 1.15; font-weight: 800; letter-spacing: -0.025em; overflow-wrap: anywhere; }
 .navbar-actions { display: flex; align-items: center; gap: 8px; padding-bottom: 4px; }
 .icon-btn {
@@ -610,7 +610,7 @@ button.week-day { color: inherit; font: inherit; }
 }
 .scrim.show { opacity: 1; pointer-events: auto; }
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: var(--kb); z-index: 50;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
   max-width: var(--content-max); margin: 0 auto;
   background: var(--bg-elev); border-radius: 14px 14px 0 0;
   box-shadow: var(--shadow-sheet);
@@ -621,7 +621,7 @@ button.week-day { color: inherit; font: inherit; }
 .input.invalid { border-color: var(--red); animation: shake 0.4s ease both; }
 @keyframes shake { 0%,100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 .field-error { font-size: 0.765rem; color: var(--red-text); padding: 6px 4px 0; font-weight: 600; }
-.sheet.show { transform: translateY(0); transition-duration: 0.5s, 0.2s; }
+.sheet.show { transform: translateY(0); bottom: var(--kb); transition-duration: 0.5s, 0.2s; }
 .sheet.dragging { transition: none; }
 .sheet-grab { width: 100%; padding: 8px 0 4px; display: flex; justify-content: center; touch-action: none; cursor: grab; }
 .sheet-grab i { width: 36px; height: 5px; border-radius: 3px; background: var(--label-4); display: block; }
@@ -631,7 +631,13 @@ button.week-day { color: inherit; font: inherit; }
 .sheet-close svg { width: 14px; height: 14px; }
 .sheet-close-hit { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
 .sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px calc(var(--safe-b) + 20px); display: flex; flex-direction: column; gap: 14px; }
-.sheet-actions { display: flex; gap: 10px; padding-top: 6px; }
+.sheet-actions {
+  display: flex; gap: 10px; margin-top: auto;
+  /* Bleibt am unteren Rand stehen, statt unter einem langen Formular zu verschwinden */
+  position: sticky; bottom: 0; z-index: 1;
+  padding: 10px 0 calc(var(--safe-b) + 10px); background: var(--bg-elev);
+  box-shadow: 0 -10px 14px -10px rgba(0,0,0,0.4);
+}
 
 .field-label { font-size: 0.765rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label-2); padding: 0 4px; margin-bottom: 8px; }
 .field { display: flex; flex-direction: column; }
@@ -2130,7 +2136,7 @@ function todayProgress() {
   const req = shown.filter(t => isRequiredOn(t, today));
   const doneReq = req.filter(t => t.completed).length;
   const doneAll = shown.filter(t => t.completed).length;
-  const total = req.length || shown.length;
+  const total = req.length || (isPausedOn(today) ? 0 : shown.length); // in der Pause ist ehrlich 0 von 0
   const done = req.length ? doneReq : doneAll;
   return { total, done, pct: total ? Math.round(done / total * 100) : 0, perfect: !!(e && e.completed), shown: shown.length, doneAll };
 }
@@ -2464,7 +2470,8 @@ function setRing(svgEl, pct) {
 function motivation(p, streak) {
   const h = new Date().getHours();
   const today = todayKey(), d = keyToDate(today);
-  if (p.total === 0) return { title: 'Heute ist frei', msg: 'Deine Routinen sind für andere Tage geplant. Ein To-Do gefällig?' };
+  if (isPausedOn(today)) return { title: 'Pause', msg: `Serien ruhen bis ${dayLabel(S.game.pause.until)} · erledigen darfst du trotzdem, es zählt als Bonus.` };
+  if (p.total === 0) return { title: 'Heute ist frei', msg: activeTasks().length ? 'Deine Routinen sind für andere Tage geplant. Ein To-Do gefällig?' : 'Ein To-Do gefällig?' };
   if (p.perfect) return { title: 'Alles erledigt.', msg: streak > 1 ? `Tag ${streak} in Folge. Der Rest des Tages gehört dir.` : 'Ring voll. Morgen darf wieder normal sein.' };
   const left = p.total - p.done;
   if (left <= 0) return { title: 'Alles erledigt', msg: 'Neue Routinen zählen ab morgen für die Serie. Der Rest des Tages gehört dir.' };
@@ -2617,7 +2624,7 @@ function renderToday() {
       <div class="hero-title">${escHtml(mot.title)}</div>
       <div class="hero-msg">${escHtml(mot.msg)}</div>
       <div class="hero-badges">
-        <span class="pill flame${isDoneStatus(dayStatus(today)) || p.total === 0 ? '' : ' cold'}" title="${isDoneStatus(dayStatus(today)) ? 'Serie heute gesichert' : 'Eine Routine sichert die Serie für heute'}">${ICON.flame}${streak} ${streak === 1 ? 'Tag' : 'Tage'}</span>
+        <span class="pill flame${isDoneStatus(dayStatus(today)) || p.total === 0 ? '' : ' cold'}">${ICON.flame}${streak} ${streak === 1 ? 'Tag' : 'Tage'}</span>
         ${dayXp && !quiet ? `<span class="pill xp q">+${dayXp} XP heute</span>` : ''}
         ${(S.game.jokers || 0) > 0 ? `<span class="pill freeze" title="Ein Joker hält die Serie an einem Tag ohne Haken">${ICON.snow}${S.game.jokers} Joker</span>` : ''}
       </div>
@@ -2651,13 +2658,13 @@ function renderToday() {
   }
   if (!reorderMode) html += `<button class="add-row" type="button" data-act="newTask">${ICON.plus} Neue Routine</button>`;
 
-  // Heute im Fokus: To-Dos für heute (Fokus zuerst, nummeriert)
-  const focusTodos = S.todos.filter(t => !t.deleted && !t.completed && (t.focus || (t.dueDate && t.dueDate <= today)));
+  // To-Dos heute: mit Stern gesetzte zuerst (nummeriert), dann heute fällige
+  const focusTodos = S.todos.filter(t => !t.deleted && !t.completed && ((t.focus && (!t.focusDate || t.focusDate <= today)) || (t.dueDate && t.dueDate <= today)));
   focusTodos.sort((a, b) => (b.focus - a.focus) || ((a.focusRank || 0) - (b.focusRank || 0)) || String(a.dueDate || '9').localeCompare(String(b.dueDate || '9')) || (todRank(a.timeOfDay) - todRank(b.timeOfDay)));
   const doneFocusToday = S.todos.filter(t => !t.deleted && t.completed && t.completedAt && appDay(t.completedAt) === today && (t.focus || (t.dueDate && t.dueDate <= today)));
   if (focusTodos.length || doneFocusToday.length) {
     let rank = 0;
-    html += `<div class="section-head"><span class="section-title">Heute im Fokus</span><button class="section-link" type="button" data-act="gotoTodos">Alle To-Dos</button></div>
+    html += `<div class="section-head"><span class="section-title">To-Dos heute</span><button class="section-link" type="button" data-act="gotoTodos">Alle To-Dos</button></div>
       <div class="list-card">${focusTodos.map(t => renderTodoRow(t, today, { rank: t.focus ? ++rank : 0 })).join('')}${doneFocusToday.slice(0, 3).map(t => renderTodoRow(t, today)).join('')}</div>`;
   }
 
@@ -2704,7 +2711,7 @@ function renderTodos() {
   const today = todayKey();
   const all = S.todos.filter(t => !t.deleted);
   const open = all.filter(t => !t.completed);
-  const focus = open.filter(t => t.focus).sort((a, b) => (a.focusRank || 0) - (b.focusRank || 0));
+  const focus = open.filter(t => t.focus && (!t.focusDate || t.focusDate <= today)).sort((a, b) => (a.focusRank || 0) - (b.focusRank || 0));
   const overdue = open.filter(t => !t.focus && t.dueDate && t.dueDate < today);
   const dueToday = open.filter(t => !t.focus && t.dueDate === today);
   const noDate = open.filter(t => !t.focus && !t.dueDate);
