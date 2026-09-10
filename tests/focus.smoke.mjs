@@ -31,7 +31,7 @@ async function newPage(opts = {}) {
   const page = await ctx.newPage();
   await page.clock.install({ time: NOON });
   page.on('pageerror', e => note('pageerror: ' + e.message));
-  page.on('console', m => { if (m.type() === 'error' && !/favicon|gstatic|firebase|net::ERR/i.test(m.text())) note('console.error: ' + m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/favicon|net::ERR/i.test(m.text())) note('console.error: ' + m.text()); });
   return { ctx, page };
 }
 
@@ -374,14 +374,32 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     const jokers = AB.game.jokers;
     // Beide Seiten normalisiert (settings-Defaults) müssen gleich hashen
     const symmetric = hashState(stateFromRaw(JSON.parse(JSON.stringify({ tasks: AB.tasks, todos: AB.todos, settings: AB.settings, taskHistory: AB.history, game: AB.game })))) === hAB;
-    return { commutative: hAB === hBA, idem, tomb, jokers, symmetric, doneToday: AB.history[today].tasks.a };
+
+    // Joker sind erarbeitet: ein frisch eingerichtetes zweites Gerät hat den
+    // jüngeren Zeitstempel, darf aber nicht seinen Anfangsstand mitbringen.
+    const leer = { tasks: [], todos: [], settings: Object.assign({}, DEFAULT_SETTINGS), history: {}, game: Object.assign({}, DEFAULT_GAME), tokens: { entries: [], rewards: [] } };
+    const kopie = (o) => JSON.parse(JSON.stringify(o));
+    const altesGeraet = kopie(leer); altesGeraet.game.jokers = 2; altesGeraet.game.jokersEarned = 1; altesGeraet.game.updatedAt = 1000;
+    const neuesGeraet = kopie(leer); neuesGeraet.game.updatedAt = 9999;
+    const jokerNachKoppeln = mergeStates(altesGeraet, neuesGeraet).game.jokers;
+    const jokerVertauscht = mergeStates(neuesGeraet, altesGeraet).game.jokers;
+    // ... und ein eingesetzter Joker darf nicht wieder auftauchen
+    const vorEinsatz = kopie(altesGeraet);
+    const nachEinsatz = kopie(altesGeraet); nachEinsatz.game.jokers = 1; nachEinsatz.game.updatedAt = 2000;
+    nachEinsatz.history['2026-01-05'] = normalizeEntry({ tasks: {}, todos: {}, bonus: {}, jokerUsed: true, frozen: true });
+    const jokerNachEinsatz = mergeStates(vorEinsatz, nachEinsatz).game.jokers;
+
+    return { commutative: hAB === hBA, idem, tomb, jokers, symmetric, doneToday: AB.history[today].tasks.a,
+             jokerNachKoppeln, jokerVertauscht, jokerNachEinsatz };
   });
   if (!r.commutative) note('D: merge not commutative');
   if (!r.idem) note('D: merge not idempotent');
   if (!r.tomb) note('D: tombstone lost in merge: ' + JSON.stringify(r.doneToday));
   if (r.jokers !== 1) note('D: joker tie-break should take min (1), got ' + r.jokers);
   if (!r.symmetric) note('D: hash of round-tripped cloud doc differs from local hash (sync would ping-pong)');
-  ok('D: merge commutative=' + r.commutative + ' idem=' + r.idem + ' tomb=' + r.tomb + ' symmetric=' + r.symmetric);
+  if (r.jokerNachKoppeln !== 2 || r.jokerVertauscht !== 2) note('D: verdiente Joker gehen beim Koppeln eines neuen Geräts verloren: ' + r.jokerNachKoppeln + '/' + r.jokerVertauscht);
+  if (r.jokerNachEinsatz !== 1) note('D: eingesetzter Joker taucht beim Zusammenführen wieder auf: ' + r.jokerNachEinsatz);
+  ok('D: merge commutative=' + r.commutative + ' idem=' + r.idem + ' tomb=' + r.tomb + ' symmetric=' + r.symmetric + ' joker=' + r.jokerNachKoppeln + '/' + r.jokerNachEinsatz);
   await ctx.close();
 }
 

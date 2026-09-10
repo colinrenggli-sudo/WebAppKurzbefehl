@@ -20,9 +20,21 @@ er nur für dein iPhone, und dafür sorgt der Cloudflare Tunnel.
 
 ---
 
-## Schritt 1 · Schlüssel erzeugen
+## Schritt 1 · Datenordner und Schlüssel
 
-Im Unraid-Terminal, im Verzeichnis `deploy`:
+Der Dienst läuft im Container nicht als root. Gehört der Datenordner
+root, kann er nichts schreiben – darum einmal anlegen und übergeben:
+
+```bash
+mkdir -p /mnt/user/appdata/webapps/high-daten
+chown -R 1000:1000 /mnt/user/appdata/webapps/high-daten
+```
+
+Stimmt das nicht, startet der Dienst gar nicht erst und schreibt ins
+Log, was zu tun ist. Ein Container, der scheinbar läuft und still nichts
+speichert, wäre schlimmer.
+
+Dann die Schlüssel, im Unraid-Terminal im Verzeichnis `deploy`:
 
 ```bash
 # Zufallsschlüssel für den Abgleich
@@ -39,8 +51,7 @@ Dazu noch von Hand in `.env`:
 
 ```
 VAPID_SUBJECT=mailto:deine@adresse.ch
-APP_URL=https://routine.colin-renggli.ch/
-HIGH_DATA=/mnt/user/appdata/high-daten
+HIGH_DATA=/mnt/user/appdata/webapps/high-daten
 ```
 
 `VAPID_SUBJECT` muss eine echte Adresse sein. Apple lehnt `localhost`
@@ -117,15 +128,20 @@ verbundenen Gerät **Kopplungscode kopieren**, auf dem neuen in das Feld
 ## Was wo liegt
 
 ```
-/mnt/user/appdata/high-daten/
+/mnt/user/appdata/webapps/high-daten/
 ├── state.json           aktueller Zustand (das Wichtigste)
 ├── subscriptions.json   welche Geräte Erinnerungen bekommen
-├── sent.json            was heute schon verschickt wurde
+├── sent.json            was heute schon an welches Gerät ging
 └── backup/2026-09-11.json  eine Kopie pro Tag, 60 Tage lang
 ```
 
 `state.json` ist lesbares JSON. Ein Backup ist ein `cp`, eine
 Wiederherstellung auch. Nimm den Ordner in die Unraid-Sicherung auf.
+
+Beide Dateiarten lassen sich auch direkt in die App zurückholen:
+**Einstellungen → Datei importieren**, dann `state.json` oder eine Kopie
+aus `backup/` auswählen. Importiert wird zusammenführend, nichts wird
+dabei überschrieben.
 
 ## Schnittstelle
 
@@ -133,7 +149,7 @@ Alles unter `/api`, alles mit `Authorization: Bearer <SYNC_TOKEN>`.
 
 | Weg | Zweck |
 | --- | --- |
-| `GET /state` | aktuelle Fassung holen, `rev` ist die Fassungsnummer |
+| `GET /state` | aktuelle Fassung holen, `rev` ist die Fassungsnummer; mit `?device=<id>` kommt dazu, welche Erinnerungen dieses Gerät heute schon bekommen hat |
 | `PUT /state` | Fassung ablegen, mit `If-Match: "<rev>"`; bei `409` hat ein anderes Gerät zuerst geschrieben, die Antwort enthält dessen Fassung |
 | `POST /push/subscribe` | Gerät für Erinnerungen anmelden |
 | `DELETE /push/subscribe` | Gerät abmelden |
@@ -151,7 +167,9 @@ Bedeutung der Daten nicht und entscheidet nichts über sie.
 | `"push":false` unter `/api/health` | VAPID-Schlüssel fehlen in `.env` |
 | Probe-Erinnerung kommt nicht an | App nicht vom Home-Bildschirm gestartet, oder Mitteilungen für HIGH in den iPhone-Einstellungen aus |
 | Erinnerung kommt zur falschen Zeit | Zeitzone des Containers, siehe Log beim Start |
-| Erinnerung kommt gar nicht mehr | Abo abgelaufen. Die App erneuert es bei jedem Start; einmal öffnen genügt |
+| Erinnerung kommt gar nicht mehr | Abo abgelaufen oder der Server hat neue VAPID-Schlüssel. Die App prüft beides bei jedem Start und meldet sich neu an; einmal öffnen genügt |
+| Dienst startet nicht, Log sagt «lässt sich nicht schreiben» | Der Datenordner gehört root, siehe Schritt 1 |
+| `/api/health` liefert 502 | Der Container `high-sync` läuft nicht: `docker compose up -d --build` |
 | «Schlüssel wird abgelehnt» in der App | `SYNC_TOKEN` in `.env` und in der App stimmen nicht überein |
 | Abgleich hängt bei «Nicht verbunden» | Tunnel oder Container aus; die App arbeitet lokal weiter und holt es nach |
 

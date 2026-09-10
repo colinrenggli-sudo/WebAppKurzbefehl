@@ -6,6 +6,7 @@ daten/
 deploy/.env
 deploy/fitbit-sync/token.json
 
-# Screenshots des Playwright-Smoke-Tests
+# Ergebnisse des Playwright-Smoke-Tests
 tests/shots/
+tests/issues.json
 node_modules/

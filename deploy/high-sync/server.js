@@ -34,6 +34,11 @@ const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || '';
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || '';
 const MAX_BODY = 8 * 1024 * 1024; // 8 MB – der Zustand ist ein Bruchteil davon
 const BACKUP_KEEP = parseInt(process.env.BACKUP_KEEP || '60', 10);
+// Wie lange Apple eine Meldung für ein ausgeschaltetes Handy zurückhält.
+// Eine Stunde ist zu knapp – ein Flug, ein Funkloch, und die Erinnerung ist
+// weg. Sechs Stunden reichen über den halben Tag, ohne dass eine
+// Morgen-Erinnerung nachts noch aufpoppt.
+const PUSH_TTL = parseInt(process.env.PUSH_TTL || '21600', 10);
 // Normalerweise leer: hinter nginx liegen App und Dienst auf derselben Herkunft,
 // dann braucht es kein CORS. Nur für Tests oder eine App auf fremder Adresse setzen.
 const ALLOW_ORIGIN = (process.env.ALLOW_ORIGIN || '').split(',').map(x => x.trim()).filter(Boolean);
@@ -49,6 +54,28 @@ const log = (...a) => console.log(new Date().toISOString(), '[high-sync]', ...a)
 function pad2(n) { return String(n).padStart(2, '0'); }
 function localDayKey(d = new Date()) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 function localHM(d = new Date()) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+
+// Der Tag der App endet nicht um Mitternacht, sondern um «dayEnd» (Vorgabe
+// 03:00): was um 01:00 abgehakt wird, zählt noch zum Vortag. Ohne dieselbe
+// Rechnung hier hielte der Dienst zwischen 00:00 und 03:00 jeden Stand für
+// veraltet und würde vorsichtshalber erinnern, obwohl alles erledigt ist.
+function dayEndOf(plan) {
+  const h = plan && Number(plan.dayEnd);
+  return Number.isFinite(h) ? Math.min(5, Math.max(0, Math.round(h))) : 0;
+}
+function appDayKey(now, dayEnd) {
+  const d = new Date(now.getTime());
+  d.setHours(d.getHours() - dayEnd);
+  return localDayKey(d);
+}
+// Minuten seit Beginn des App-Tages. Damit liegt 00:30 nach 20:00 und nicht
+// davor – sonst gälte ein Wecker um 00:30 schon am Nachmittag als überfällig.
+function appMinutes(hm, dayEnd) {
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(hm || ''));
+  if (!m) return null;
+  return ((parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) - dayEnd * 60 + 1440) % 1440;
+}
+function planDayKey(plan, now = new Date()) { return appDayKey(now, dayEndOf(plan)); }
 
 // Zeitgleicher Vergleich, damit sich das Token nicht Zeichen für Zeichen erraten lässt
 function safeEqual(a, b) {
@@ -195,7 +222,21 @@ const server = http.createServer(async (req, res) => {
     if (route === '/state' && req.method === 'GET') {
       const env = await readJson(STATE_FILE, null);
       if (!env) return antwort(404, { error: 'Noch nichts abgelegt' });
-      return antwort(200, env, { ETag: '"' + env.rev + '"' });
+      // Fragt ein Gerät mit ?device=… , bekommt es dazu die Liste der
+      // Erinnerungen, die es heute schon vom Server erhalten hat. Damit zeigt
+      // die App sie nicht ein zweites Mal selbst an.
+      const wer = url.searchParams.get('device');
+      let sent = null;
+      if (wer) {
+        const v = await readJsonSoft(SENT_FILE, {});
+        const tag = planDayKey(env.push || (env.state && env.state.push), new Date());
+        const keys = (v.day === tag && v.an && typeof v.an === 'object')
+          ? Object.keys(v.an).filter(k => Array.isArray(v.an[k]) && v.an[k].includes(wer))
+          : [];
+        sent = { day: tag, keys };
+      }
+      const antw = sent ? Object.assign({}, env, { sent }) : env;
+      return antwort(200, antw, { ETag: '"' + env.rev + '"' });
     }
 
     // --- Zustand ablegen ---
@@ -242,6 +283,12 @@ const server = http.createServer(async (req, res) => {
       const id = String((body && body.deviceId) || crypto.createHash('sha256').update(sub.endpoint).digest('hex').slice(0, 16));
       return await serialize(async () => {
         const subs = await readJsonSoft(SUBS_FILE, {});
+        // Dasselbe Gerät darf nur einmal in der Liste stehen. Sonst bekäme es
+        // jede Erinnerung doppelt – etwa wenn ein Abo ohne Geräte-Nummer neu
+        // angelegt und später mit einer wieder gemeldet wird.
+        for (const k of Object.keys(subs)) {
+          if (k !== id && subs[k] && subs[k].subscription && subs[k].subscription.endpoint === sub.endpoint) delete subs[k];
+        }
         subs[id] = { subscription: sub, label: String((body && body.label) || '').slice(0, 60), updatedAt: Date.now() };
         await writeJsonAtomic(SUBS_FILE, subs);
         log('Abo gespeichert:', id, subs[id].label);
@@ -264,8 +311,8 @@ const server = http.createServer(async (req, res) => {
 
     // --- Probe-Erinnerung ---
     if (route === '/push/test' && req.method === 'POST') {
-      const n = await sendToAll({ title: 'HIGH', body: 'Probe-Erinnerung vom eigenen Server.', tag: 'high-test' });
-      return antwort(200, { sent: n });
+      const r = await sendToAll({ title: 'HIGH', body: 'Probe-Erinnerung vom eigenen Server.', tag: 'high-test' });
+      return antwort(200, { sent: r.delivered.length, offen: r.offen });
     }
 
     return antwort(404, { error: 'Unbekannter Pfad' });
@@ -285,22 +332,29 @@ if (webpush && VAPID_PUBLIC && VAPID_PRIVATE) {
   } catch (e) { log('VAPID-Schlüssel unbrauchbar:', e.message); }
 }
 
-async function sendToAll(payload) {
-  if (!webpush || !VAPID_PUBLIC || !VAPID_PRIVATE) { log('Push nicht eingerichtet – nichts gesendet.'); return 0; }
+// Schickt an alle angemeldeten Geräte ausser denen in «schon». Zurück kommt,
+// welche Geräte die Meldung wirklich angenommen haben – nicht bloss eine Zahl.
+// Der Unterschied zählt: bei zwei Geräten darf ein Erfolg nicht dafür sorgen,
+// dass das zweite die Erinnerung nie bekommt.
+async function sendToAll(payload, schon) {
+  if (!webpush || !VAPID_PUBLIC || !VAPID_PRIVATE) { log('Push nicht eingerichtet – nichts gesendet.'); return { delivered: [], offen: 0 }; }
   const subs = await readJsonSoft(SUBS_FILE, {});
-  const ids = Object.keys(subs);
-  if (!ids.length) return 0;
-  let ok = 0;
+  const uebersprungen = Array.isArray(schon) ? schon : [];
+  const ids = Object.keys(subs).filter(id => !uebersprungen.includes(id));
+  if (!ids.length) return { delivered: [], offen: 0 };
+  const delivered = [];
   const tot = [];
+  let offen = 0;
   for (const id of ids) {
     try {
-      await webpush.sendNotification(subs[id].subscription, JSON.stringify(payload), { TTL: 3600, urgency: 'high' });
-      ok++;
+      await webpush.sendNotification(subs[id].subscription, JSON.stringify(payload), { TTL: PUSH_TTL, urgency: 'high' });
+      delivered.push(id);
     } catch (e) {
       const code = e && e.statusCode;
       log('Push fehlgeschlagen für', id, code || e.message);
-      // 404/410: das Abo gibt es nicht mehr (App gelöscht, Erlaubnis entzogen)
-      if (code === 404 || code === 410) tot.push(id);
+      // 404/410: das Abo gibt es nicht mehr (App gelöscht, Erlaubnis entzogen).
+      // Alles andere ist vorübergehend – beim nächsten Lauf wird es erneut versucht.
+      if (code === 404 || code === 410) tot.push(id); else offen++;
     }
   }
   if (tot.length) {
@@ -311,13 +365,15 @@ async function sendToAll(payload) {
       log('Abgelaufene Abos entfernt:', tot.join(', '));
     });
   }
-  return ok;
+  return { delivered, offen };
 }
 
 // Der Plan kommt aus der App. Aufbau (alles optional):
 // state.push = {
-//   version: 1,
-//   morning: { at: '07:30', enabled: true },
+//   version: 2,
+//   dayEnd: 3,                                      // Uhrzeit, zu der der Tag der App wechselt
+//   pause: { from: '2026-09-20', until: '2026-09-27' } | null,
+//   morning: { at: '09:00', enabled: true },
 //   evening: { at: '20:00', enabled: true },
 //   tasks: [ { id, label, emoji, at: '18:30' } ],   // Erinnerungen einzelner Routinen für heute
 //   today: { day: '2026-09-11', openRoutines: 2, openLabels: ['Meditieren'], openTodos: 1, doneTaskIds: ['t1'] },
@@ -325,22 +381,35 @@ async function sendToAll(payload) {
 function duePayloads(plan, now) {
   const out = [];
   if (!plan || typeof plan !== 'object') return out;
-  const hm = localHM(now), day = localDayKey(now);
+  const dayEnd = dayEndOf(plan);
+  const day = appDayKey(now, dayEnd);
+  const jetzt = appMinutes(localHM(now), dayEnd);
+
+  // Ferien: in dieser Zeit ruht in der App alles. Dann hier auch.
+  const p = plan.pause;
+  if (p && typeof p.from === 'string' && typeof p.until === 'string' && day >= p.from && day <= p.until) return out;
+
   const today = plan.today && plan.today.day === day ? plan.today : null;
-  // Kein Abgleich seit gestern? Dann kann heute nichts erledigt sein – erinnern ist richtig.
+  // Kein Abgleich seit gestern? Dann weiss der Dienst nicht, was erledigt ist –
+  // erinnern ist richtig. Lieber einmal zu viel als eine verpasste Routine.
   const stale = !today;
   const openRoutines = today ? (today.openRoutines | 0) : null;
   const openTodos = today ? (today.openTodos | 0) : null;
   const doneIds = today && Array.isArray(today.doneTaskIds) ? today.doneTaskIds : [];
 
-  const passed = (at) => typeof at === 'string' && /^\d{2}:\d{2}$/.test(at) && hm >= at;
+  const passed = (at) => { const m = appMinutes(at, dayEnd); return m !== null && jetzt >= m; };
 
   if (plan.morning && plan.morning.enabled !== false && passed(plan.morning.at)) {
-    if (stale || openRoutines > 0) {
+    if (stale || openRoutines > 0 || openTodos > 0) {
+      const teile = [];
+      if (!stale && today.openLabels && today.openLabels.length) teile.push(today.openLabels.slice(0, 4).join(' · '));
+      if (!stale && openTodos > 0) teile.push(openTodos === 1 ? '1 To-Do fällig' : openTodos + ' To-Dos fällig');
       out.push({
         key: 'morning', day,
-        title: stale ? 'Zeit für deine Routinen' : (openRoutines === 1 ? 'Eine Routine wartet' : `${openRoutines} Routinen warten`),
-        body: !stale && today.openLabels && today.openLabels.length ? today.openLabels.slice(0, 4).join(' · ') : 'Eine reicht, um die Serie zu halten.',
+        title: stale ? 'Zeit für deine Routinen'
+          : openRoutines > 0 ? (openRoutines === 1 ? 'Eine Routine wartet' : openRoutines + ' Routinen warten')
+          : 'To-Dos für heute',
+        body: teile.length ? teile.join(' · ') : 'Eine reicht, um die Serie zu halten.',
         tag: 'high-morning',
       });
     }
@@ -350,8 +419,8 @@ function duePayloads(plan, now) {
     const offen = [];
     if (stale) offen.push('Heute noch nichts abgehakt');
     else {
-      if (openRoutines > 0) offen.push(openRoutines === 1 ? '1 Routine offen' : `${openRoutines} Routinen offen`);
-      if (openTodos > 0) offen.push(openTodos === 1 ? '1 To-Do offen' : `${openTodos} To-Dos offen`);
+      if (openRoutines > 0) offen.push(openRoutines === 1 ? '1 Routine offen' : openRoutines + ' Routinen offen');
+      if (openTodos > 0) offen.push(openTodos === 1 ? '1 To-Do offen' : openTodos + ' To-Dos offen');
     }
     if (offen.length) {
       out.push({
@@ -371,7 +440,7 @@ function duePayloads(plan, now) {
       out.push({
         key: 'task:' + t.id, day,
         title: (t.emoji ? t.emoji + ' ' : '') + (t.label || 'Routine'),
-        body: `Seit ${t.at} offen – jetzt ist ein guter Moment.`,
+        body: 'Seit ' + t.at + ' offen – jetzt ist ein guter Moment.',
         tag: 'high-task-' + t.id,
       });
     }
@@ -380,28 +449,71 @@ function duePayloads(plan, now) {
 }
 
 let ticking = false;
+let tzGewarnt = '';
 async function tick() {
   if (ticking) return;
   ticking = true;
   try {
-    const env = await readJson(STATE_FILE, null);
-    if (!env) return;
-    const due = duePayloads(env.push || (env.state && env.state.push), new Date());
-    if (!due.length) return;
-    const sent = await readJsonSoft(SENT_FILE, {});
-    const day = localDayKey();
-    if (sent.day !== day) { sent.day = day; sent.keys = []; }
-    const fresh = due.filter(d => !sent.keys.includes(d.key));
-    if (!fresh.length) return;
-    for (const p of fresh) {
-      const n = await sendToAll({ title: p.title, body: p.body, tag: p.tag, url: process.env.APP_URL || '/' });
-      log('gesendet:', p.key, '→', n, 'Gerät(e)');
-      if (n > 0) sent.keys.push(p.key);
+    let env = null;
+    try {
+      env = await readJson(STATE_FILE, null);
+    } catch (e) {
+      if (e.code !== 'CORRUPT') throw e;
+      // Der Zustand ist unlesbar. Ohne Rückfallebene kämen ab jetzt gar keine
+      // Erinnerungen mehr, und zwar still. Also die neueste Tageskopie nehmen:
+      // die Zeiten darin stimmen fast immer noch.
+      env = await letzteSicherung();
+      log(env ? 'ACHTUNG: state.json unlesbar – Erinnerungen laufen aus der letzten Sicherung.'
+              : 'ACHTUNG: state.json unlesbar und keine Sicherung da – es kommen keine Erinnerungen.');
+      if (!env) return;
     }
-    await serialize(() => writeJsonAtomic(SENT_FILE, sent));
+    if (!env) return;
+    const plan = env.push || (env.state && env.state.push);
+    if (!plan) return;
+
+    // Rechnet der Dienst in einer anderen Zeitzone als das Handy, liegen alle
+    // Zeiten daneben. Das einmal sichtbar machen statt still falsch erinnern.
+    const hier = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (plan.tz && hier && plan.tz !== hier && tzGewarnt !== plan.tz) {
+      tzGewarnt = plan.tz;
+      log('ACHTUNG: Zeitzone der App (' + plan.tz + ') weicht von der des Dienstes (' + hier + ') ab – TZ im Container setzen.');
+    }
+
+    const now = new Date();
+    const due = duePayloads(plan, now);
+    const day = planDayKey(plan, now);
+    const sent = await readJsonSoft(SENT_FILE, {});
+    if (sent.day !== day || !sent.an || typeof sent.an !== 'object') { sent.day = day; sent.an = {}; }
+    if (!due.length) return;
+
+    let geaendert = false;
+    for (const p of due) {
+      const schon = Array.isArray(sent.an[p.key]) ? sent.an[p.key] : [];
+      const res = await sendToAll({ title: p.title, body: p.body, tag: p.tag }, schon);
+      if (res.delivered.length) {
+        sent.an[p.key] = schon.concat(res.delivered);
+        geaendert = true;
+        log('gesendet:', p.key, '→', res.delivered.length, 'Gerät(e)');
+      }
+      // Geräte, bei denen es gerade nicht klappte, bleiben ungemerkt: der
+      // nächste Lauf in 30 Sekunden versucht es bei genau diesen erneut.
+      if (res.offen) log('offen geblieben:', p.key, '·', res.offen, 'Gerät(e) – wird wiederholt');
+    }
+    if (geaendert) await serialize(() => writeJsonAtomic(SENT_FILE, sent));
   } catch (e) {
     log('Erinnerungslauf fehlgeschlagen:', e.stack || e.message);
   } finally { ticking = false; }
+}
+
+// Neueste Tageskopie aus backup/ – nur als Notnagel, wenn state.json hin ist.
+async function letzteSicherung() {
+  try {
+    const files = (await fsp.readdir(BACKUP_DIR)).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
+    for (let i = files.length - 1; i >= 0; i--) {
+      try { return JSON.parse(await fsp.readFile(path.join(BACKUP_DIR, files[i]), 'utf8')); } catch (e) {}
+    }
+  } catch (e) {}
+  return null;
 }
 
 // ---------- Absturzschutz ----------
@@ -412,10 +524,26 @@ process.on('unhandledRejection', (e) => log('unbehandelt:', (e && e.stack) || e)
 process.on('uncaughtException', (e) => log('Ausnahme:', (e && e.stack) || e));
 
 // ---------- Start ----------
+// Nur starten, wenn die Datei wirklich der Dienst ist. Wird sie aus einem Test
+// heraus geladen, soll sie kein Port belegen und keine Erinnerungen verschicken.
+const alsDienst = require.main === module;
 (async () => {
+  if (!alsDienst) return;
   await fsp.mkdir(DATA_DIR, { recursive: true }).catch(() => {});
   if (!TOKEN) {
     console.error('[high-sync] SYNC_TOKEN fehlt. Ohne Token startet der Dienst nicht.');
+    process.exit(1);
+  }
+  // Gehört der Datenordner root, darf der Container (läuft als «node») nicht
+  // hineinschreiben. Ohne diese Probe liefe der Dienst scheinbar sauber, und
+  // erst der erste Abgleich am Handy fiele auf die Nase. Lieber gleich laut.
+  try {
+    const probe = path.join(DATA_DIR, '.schreibprobe');
+    await fsp.writeFile(probe, 'ok', 'utf8');
+    await fsp.unlink(probe);
+  } catch (e) {
+    console.error('[high-sync] In', DATA_DIR, 'lässt sich nicht schreiben (' + e.code + ').');
+    console.error('[high-sync] Auf dem Server einmal: mkdir -p <Datenordner> && chown -R 1000:1000 <Datenordner>');
     process.exit(1);
   }
   if (!(webpush && VAPID_PUBLIC && VAPID_PRIVATE)) log('Hinweis: ohne VAPID-Schlüssel läuft der Abgleich, aber es kommen keine Erinnerungen.');
@@ -425,4 +553,4 @@ process.on('uncaughtException', (e) => log('Ausnahme:', (e && e.stack) || e));
 })();
 
 // Für den Test importierbar
-module.exports = { duePayloads, localDayKey, localHM };
+module.exports = { duePayloads, localDayKey, localHM, appDayKey, appMinutes, planDayKey, dayEndOf };

@@ -62,7 +62,6 @@ services:
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-}
-      - APP_URL=${APP_URL:-/}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8090/health"]
       interval: 60s
@@ -71,21 +70,28 @@ services:
       start_period: 15s
 
   # ----------------------------------------------------------------
-  # Cloudflare Tunnel – erst einkommentieren, wenn der Tunnel im
-  # Cloudflare-Dashboard angelegt ist (Zero Trust → Networks →
-  # Tunnels → Create → Docker). Das Token gehört in deploy/.env:
-  #     TUNNEL_TOKEN=eyJhIjoi...
-  # Diese Datei ist per .gitignore ausgenommen – Token nie einchecken.
+  # Cloudflare Tunnel. Läuft nur mit --profile tunnel, damit diese
+  # Datei nicht bearbeitet werden muss: eine geänderte, versionierte
+  # Datei bringt sonst jedes spätere «git pull» zum Stehen – und damit
+  # kämen stillschweigend keine Updates mehr an.
+  #
+  #   Tunnel anlegen: Cloudflare → Zero Trust → Networks → Tunnels →
+  #                   Create → Docker. Das Token in deploy/.env:
+  #                       TUNNEL_TOKEN=eyJhIjoi...
+  #   Starten:        docker compose --profile tunnel up -d
+  #
+  # deploy/.env ist per .gitignore ausgenommen – Token nie einchecken.
   # ----------------------------------------------------------------
-  # cloudflared:
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: cloudflared-webapps
-  #   restart: unless-stopped
-  #   command: tunnel --no-autoupdate run
-  #   environment:
-  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-  #   depends_on:
-  #     - web
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-webapps
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-}
+    depends_on:
+      - web
 
   # ----------------------------------------------------------------
   # Holt die Fitbit-Schlafdaten von selbst und legt sie unter

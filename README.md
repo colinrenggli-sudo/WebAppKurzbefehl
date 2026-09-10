@@ -92,13 +92,17 @@ braucht es weder CORS noch eine Anmeldung über eine fremde Domain.
 
 ### Testen
 
-`tests/focus.smoke.mjs` fährt die App mit Playwright in Chromium durch:
-Erststart, Routinen und To-Dos anlegen und erledigen, Tagesabschluss,
-Migration alter Daten, Tageswechsel mit Joker über eine gestellte Uhr,
-Merge-Konvergenz, Token-Scoreboard mit Belohnungen, den Modus «Bewegung
-reduzieren» (nichts Unsichtbares darf Knöpfe blockieren) und die
-Erinnerungen (ohne Systemberechtigung, keine Überlagerung, Ruhe in der
-Pause). Voraussetzungen und Aufruf stehen im Kopf der Datei.
+Vier Testläufe, alle ohne Netz und ohne Konto:
+
+| Datei | Was sie prüft | Dauer |
+| --- | --- | --- |
+| `tests/focus.smoke.mjs` | die App im Browser: Erststart, Routinen und To-Dos anlegen und erledigen, Tagesabschluss, Migration alter Daten, Tageswechsel mit Joker über eine gestellte Uhr, Merge-Konvergenz (auch: verdiente Joker gehen beim Koppeln nicht verloren), Token-Scoreboard, «Bewegung reduzieren», Erinnerungen, helles Thema bei 320 pt, Abgleich zwischen zwei Geräten | ~2 min |
+| `tests/high-sync.plan.test.mjs` | die Erinnerungslogik des Dienstes als reine Rechnung: Tagesende um 03:00, Wecker nach Mitternacht, Ferien, erledigte Routinen | Sekunden |
+| `tests/high-sync.haerte.test.mjs` | dass der Dienst nichts still verliert: kein Überschreiben ohne Bedingung, unlesbare Dateien gelten nie als leer, unsinnige Anfragen werfen ihn nicht um | Sekunden |
+| `tests/high-sync.versand.test.mjs` | dass keine Erinnerung verlorengeht: ein gescheitertes Gerät wird wiederholt, kein anderes doppelt, abgelaufene Abos fliegen raus, und bei kaputtem Zustand läuft es aus der Tageskopie weiter | ~1 min |
+
+Playwright braucht der erste, die anderen drei laufen mit blossem Node.
+Voraussetzungen und Aufruf stehen jeweils im Kopf der Datei.
 
 ## Selbst hosten
 

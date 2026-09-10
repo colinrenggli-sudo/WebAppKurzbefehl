@@ -1411,7 +1411,6 @@ const DEFAULT_SETTINGS = {
   sound: true, confetti: true, theme: 'system',
   quiet: false,        // Ruhiger Modus: XP, Level und Abzeichen ausblenden
   dayEnd: 3,           // Tagesende (Uhr): bis dahin zählt Erledigtes noch zum Vortag
-  pushEnabled: false,  // Erinnerungen vom eigenen Server aufs Gerät
   onboardingDone: false, tipsSeen: {}, updatedAt: 0,
 };
 const DEFAULT_GAME = {
@@ -1421,7 +1420,15 @@ const DEFAULT_GAME = {
   schema: 3, updatedAt: 0,
 };
 
-const DEFAULT_DEVICE = { lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {}, syncUrl: null, syncToken: null, pushDeviceId: null };
+// Alles hier bleibt auf diesem Gerät und wird nie abgeglichen. «pushEnabled»
+// gehört genau darum hierhin: ob Erinnerungen ankommen, entscheidet sich pro
+// Gerät – ein zweites Gerät hat ein eigenes Abo oder gar keins.
+const DEFAULT_DEVICE = {
+  lastNotifiedDate: null, lastEveningDate: null, alarmNotified: {},
+  syncUrl: null, syncToken: null,
+  pushEnabled: false, pushDeviceId: null,
+  serverSent: null,   // { day, keys: [] } – was der Server heute schon verschickt hat
+};
 
 const S = { tasks: [], todos: [], settings: {}, history: {}, game: {}, device: {}, tokens: { entries: [], rewards: [] } };
 
@@ -1624,6 +1631,11 @@ function loadState() {
   const dev = lsGet(KEYS.device, null);
   S.device = Object.assign({}, DEFAULT_DEVICE, dev || {});
   if (!S.device.alarmNotified || typeof S.device.alarmNotified !== 'object') S.device.alarmNotified = {};
+  // Früher stand der Push-Schalter in den Einstellungen und wurde damit
+  // abgeglichen – das zweite Gerät hätte dem ersten die Erinnerungen
+  // abgestellt. Einmal hierher übernehmen, dann ist er Gerätesache.
+  if (dev && dev.pushEnabled === undefined && S.settings.pushEnabled) S.device.pushEnabled = true;
+  delete S.settings.pushEnabled;
   if (!dev) {
     // Migration: bisherige Marker übernehmen
     S.device.lastNotifiedDate = S.settings.lastNotifiedDate || null;
@@ -3727,9 +3739,9 @@ function renderSettings() {
       <div class="group">
         <div class="row"><span class="row-ico" style="background:var(--blue)">🏠</span><span class="row-text"><span class="row-title" id="syncTitle">Nicht verbunden</span><span class="row-sub" id="syncSub">Daten liegen nur auf diesem Gerät.</span></span></div>
         ${syncConfigured() ? `
-        <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">Erinnerungen aufs Gerät</span><span class="row-sub">Kommen auch, wenn die App zu ist</span></span><button class="switch${s.pushEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!s.pushEnabled}" data-act="togglePush" aria-label="Erinnerungen aufs Gerät"></button></div>
+        <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">Erinnerungen aufs Gerät</span><span class="row-sub">Kommen auch, wenn die App zu ist</span></span><button class="switch${S.device.pushEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!S.device.pushEnabled}" data-act="togglePush" aria-label="Erinnerungen aufs Gerät"></button></div>
         <button class="row link" type="button" data-act="syncNow"><span class="row-text"><span class="row-title">Jetzt abgleichen</span></span></button>
-        ${s.pushEnabled ? `<button class="row link" type="button" data-act="pushTest"><span class="row-text"><span class="row-title">Probe-Erinnerung vom Server</span><span class="row-sub">Kommt auch bei gesperrtem Bildschirm</span></span></button>` : ''}
+        ${S.device.pushEnabled ? `<button class="row link" type="button" data-act="pushTest"><span class="row-text"><span class="row-title">Probe-Erinnerung vom Server</span><span class="row-sub">Kommt auch bei gesperrtem Bildschirm</span></span></button>` : ''}
         <button class="row link" type="button" data-act="pairCode"><span class="row-text"><span class="row-title">Kopplungscode kopieren</span><span class="row-sub">Für ein zweites Gerät</span></span></button>` : ''}
         <button class="row link" type="button" id="syncBtn"><span class="row-text"><span class="row-title" id="syncBtnLabel">Server einrichten</span></span></button>
       </div>
@@ -3790,7 +3802,7 @@ function renderSettings() {
   body.querySelector('[data-act="resetAll"]').addEventListener('click', () => confirmSheet('Wirklich alles zurücksetzen?', 'Alle Routinen, To-Dos, der Verlauf und die XP auf diesem Gerät werden gelöscht. Auf dem Server bleibt die letzte Fassung, bis du sie dort löschst.', 'Alles löschen', () => { Object.values(KEYS).forEach(k => localStorage.removeItem(k)); location.reload(); }));
   $('syncBtn').addEventListener('click', handleSyncBtn);
   const bind = (act, fn) => { const el = body.querySelector('[data-act="' + act + '"]'); if (el) el.addEventListener('click', fn); };
-  bind('togglePush', () => { if (S.settings.pushEnabled) disablePush(); else enablePush(); });
+  bind('togglePush', () => { if (S.device.pushEnabled) disablePush(); else enablePush(); });
   bind('syncNow', async () => { const ok = await syncNow({ loud: true }); toast(ok ? '☁️' : '⚠️', ok ? 'Abgeglichen.' : (syncStatusText || 'Abgleich nicht möglich.')); renderSettings(); });
   bind('pairCode', copyPairingCode);
   bind('pushTest', async () => {
@@ -3813,9 +3825,9 @@ if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEven
 </script>
 <script>
 // ---------- 11. Benachrichtigungen ----------
-let swReg = null;
+let swReg = null, swReady = null;
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(() => {});
+  swReady = navigator.serviceWorker.register('sw.js').then(r => { swReg = r; return r; }).catch(() => null);
 }
 function isStandalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
 function notifPermLabel() {
@@ -3866,6 +3878,16 @@ function nextReminderText() {
   return later.length ? `Nächste Erinnerung morgen ${later[0].t} (${later[0].what})` : '';
 }
 
+// Hat der Server diese Erinnerung heute schon an genau dieses Gerät geschickt,
+// muss die App sie nicht noch einmal zeigen. Antwortet der Server nicht mehr,
+// bleibt der Eintrag alt – dann erinnert die App wieder selbst. Lieber doppelt
+// als gar nicht.
+function vomServerErledigt(key) {
+  if (!S.device.pushEnabled) return false;
+  const v = S.device.serverSent;
+  return !!(v && v.day === todayKey() && Array.isArray(v.keys) && v.keys.includes(key));
+}
+
 let tickInterval = null, tickTimer = null, lastTickMinute = null, ticking = false;
 async function tick() {
   if (ticking) return; ticking = true;
@@ -3877,19 +3899,22 @@ async function tick() {
     const now = nowHM();
     const clock = clockDay();
     {
-      // To-Do-Erinnerung
-      if (s.notifyEnabled && now >= (s.notifyTime || '09:00') && d.lastNotifiedDate !== clock) {
-        const open = S.todos.filter(t => !t.completed && !t.deleted);
-        const overdue = open.filter(t => t.dueDate && t.dueDate < today).length, due = open.filter(t => t.dueDate === today).length;
+      // Morgen-Erinnerung: offene Routinen und fällige To-Dos
+      if (s.notifyEnabled && now >= (s.notifyTime || '09:00') && d.lastNotifiedDate !== clock && !vomServerErledigt('morning')) {
+        const offen = requiredTasksFor(today).filter(t => !t.completed);
+        const todos = S.todos.filter(t => !t.completed && !t.deleted && ((t.dueDate && t.dueDate <= today) || isFocusToday(t)));
         let shown = true;
-        if (open.length) {
-          const parts = []; if (overdue) parts.push(`${overdue} überfällig`); if (due) parts.push(`${due} heute fällig`); if (!parts.length) parts.push(`${open.length} offen`);
-          shown = await notify('📝', 'To-Dos', parts.join(' · '), 'focus-todo-daily', () => switchTab('todos'));
+        if (offen.length || todos.length) {
+          const teile = [];
+          if (offen.length) teile.push(offen.slice(0, 3).map(t => (t.emoji ? t.emoji + ' ' : '') + t.label).join(' · '));
+          if (todos.length) teile.push(todos.length === 1 ? '1 To-Do fällig' : `${todos.length} To-Dos fällig`);
+          const titel = offen.length ? (offen.length === 1 ? 'Eine Routine wartet' : `${offen.length} Routinen warten`) : 'To-Dos für heute';
+          shown = await notify(offen.length ? '🔔' : '📝', titel, teile.join(' · '), 'focus-morning', () => switchTab(offen.length ? 'today' : 'todos'));
         }
         if (shown) { d.lastNotifiedDate = clock; saveAll({ silent: true }); }
       }
       // Abend-Check für offene Routinen
-      if (s.eveningEnabled && now >= (s.eveningTime || '20:00') && d.lastEveningDate !== clock) {
+      if (s.eveningEnabled && now >= (s.eveningTime || '20:00') && d.lastEveningDate !== clock && !vomServerErledigt('evening')) {
         const open = requiredTasksFor(today).filter(t => !t.completed);
         let shown = true;
         if (open.length) shown = await notify('🌙', open.length === 1 ? 'Eine Routine ist noch offen' : `${open.length} Routinen sind noch offen`, open.map(t => t.emoji + ' ' + t.label).join(', ') + (open.length === 1 ? ' – kurz erledigen, Streak halten.' : ' – Mini-Version zählt auch.'), 'focus-evening', () => switchTab('today'));
@@ -3900,6 +3925,7 @@ async function tick() {
       for (const t of S.tasks) {
         if (t.deleted || !t.alarmTime || t.completed || !isRequiredOn(t, today)) continue; // deckt Pause, Ruhetag und den Anlegetag mit ab
         if (d.alarmNotified[t.id] === clock || now < t.alarmTime) continue;
+        if (vomServerErledigt('task:' + t.id)) { d.alarmNotified[t.id] = clock; changed = true; continue; }
         const shown = await notify(t.emoji, t.label, `Bis ${t.alarmTime} noch nicht erledigt – jetzt ist ein guter Moment.`, 'focus-task-' + t.id, () => switchTab('today'));
         if (shown) { d.alarmNotified[t.id] = clock; changed = true; }
       }
@@ -3945,9 +3971,20 @@ function importDataFromInput(input) {
     input.value = '';
     try {
       const payload = JSON.parse(String(e.target.result));
-      if (!payload || typeof payload !== 'object' || !payload.data) throw new Error('Datei hat ein unbekanntes Format');
-      const d = payload.data;
-      const incoming = stateFromRaw({ tasks: d[KEYS.tasks], todos: d[KEYS.todos], settings: Object.assign({}, d[KEYS.todoSettings] || {}, d[KEYS.settings] || {}), history: d[KEYS.history], game: d[KEYS.game], tokens: d[KEYS.tokens] });
+      if (!payload || typeof payload !== 'object') throw new Error('Datei hat ein unbekanntes Format');
+      let incoming;
+      if (payload.data && typeof payload.data === 'object') {
+        // Backup aus der App
+        const d = payload.data;
+        incoming = stateFromRaw({ tasks: d[KEYS.tasks], todos: d[KEYS.todos], settings: Object.assign({}, d[KEYS.todoSettings] || {}, d[KEYS.settings] || {}), history: d[KEYS.history], game: d[KEYS.game], tokens: d[KEYS.tokens] });
+      } else if (payload.state && typeof payload.state === 'object') {
+        // Datei vom eigenen Server: state.json oder eine Kopie aus backup/.
+        // Ohne diesen Zweig wäre die Serversicherung nur mit Handarbeit
+        // zurückzuspielen – genau dann, wenn es eilt.
+        incoming = stateFromRaw(payload.state);
+      } else if (payload.tasks || payload.todos || payload.taskHistory || payload.history) {
+        incoming = stateFromRaw(payload);
+      } else throw new Error('Datei hat ein unbekanntes Format');
       if (!incoming.tasks.length && !incoming.todos.length && !Object.keys(incoming.history).length && !incoming.tokens.entries.length) throw new Error('Keine bekannten Daten gefunden');
       confirmSheet('Backup importieren?', 'Die Daten aus der Datei werden mit den Daten auf diesem Gerät zusammengeführt. Nichts geht verloren.', 'Zusammenführen', () => {
         applyState(mergeStates(currentState(), incoming));
@@ -3970,7 +4007,7 @@ function importDataFromInput(input) {
 
 // Zustand als reines Datenobjekt
 function currentState() {
-  const settings = Object.assign({}, S.settings); delete settings.lastNotifiedDate; delete settings.lastEveningDate;
+  const settings = Object.assign({}, S.settings); delete settings.lastNotifiedDate; delete settings.lastEveningDate; delete settings.pushEnabled;
   return { tasks: S.tasks, todos: S.todos, settings, history: S.history, game: S.game, tokens: S.tokens };
 }
 function stateFromRaw(raw) {
@@ -3978,6 +4015,7 @@ function stateFromRaw(raw) {
   const tasks = Array.isArray(raw.tasks) ? raw.tasks.map(normalizeTask).filter(Boolean) : [];
   const todos = Array.isArray(raw.todos) ? raw.todos.map(normalizeTodo).filter(Boolean) : [];
   const settings = Object.assign({}, DEFAULT_SETTINGS, (raw.todoSettings && typeof raw.todoSettings === 'object') ? raw.todoSettings : {}, (raw.settings && typeof raw.settings === 'object') ? raw.settings : {});
+  delete settings.pushEnabled; // gerätelokal, gehört nie in den Abgleich
   const history = {};
   const h = raw.history || raw.taskHistory;
   if (h && typeof h === 'object') for (const k in h) if (isValidKey(k)) history[k] = normalizeEntry(h[k]);
@@ -4033,7 +4071,7 @@ function mergeStates(a, b) {
   const sa = a.settings, sb = b.settings;
   const settingsWinner = (sb.updatedAt || 0) > (sa.updatedAt || 0) ? sb : (sa.updatedAt || 0) > (sb.updatedAt || 0) ? sa : pickDeterministic(sa, sb);
   const settings = Object.assign({}, DEFAULT_SETTINGS, settingsWinner === sa ? sb : sa, settingsWinner);
-  delete settings.lastNotifiedDate; delete settings.lastEveningDate; // gerätelokal
+  delete settings.lastNotifiedDate; delete settings.lastEveningDate; delete settings.pushEnabled; // gerätelokal
   settings.tipsSeen = Object.assign({}, sa.tipsSeen || {}, sb.tipsSeen || {});
   settings.onboardingDone = !!(a.settings.onboardingDone || b.settings.onboardingDone || tasks.length);
   const history = {};
@@ -4041,8 +4079,19 @@ function mergeStates(a, b) {
   keys.forEach(k => { if (a.history[k] && b.history[k]) history[k] = mergeEntry(a.history[k], b.history[k]); else history[k] = normalizeEntry(a.history[k] || b.history[k]); });
   const ga = a.game, gb = b.game;
   const newer = (gb.updatedAt || 0) > (ga.updatedAt || 0) ? gb : (ga.updatedAt || 0) > (gb.updatedAt || 0) ? ga : null;
+  // Joker sind erarbeitet, nicht bloss eine Einstellung. Wer den jüngeren
+  // Zeitstempel hat, darf seinen Zählerstand darum nicht einfach mitbringen:
+  // ein frisch eingerichtetes zweites Gerät hätte sonst die Joker des ersten
+  // gelöscht. Math.max hilft nicht (ein Verbrauch ginge verloren), Math.min
+  // auch nicht (ein Gewinn ginge verloren). Also aus dem eben zusammengeführten
+  // Verlauf ableiten: einer zu Beginn, plus verdiente, minus eingesetzte.
+  // Sind sich beide Seiten einig, bleibt ihr Wert – für ältere Stände, in
+  // denen die Rechnung nicht aufgeht, ist die Einigkeit der bessere Beleg.
+  const jokerVerbraucht = Object.keys(history).filter(k => history[k] && history[k].jokerUsed).length;
+  const jokerVerdient = Math.max(ga.jokersEarned || 0, gb.jokersEarned || 0);
+  const jokerAusVerlauf = clamp(1 + jokerVerdient - jokerVerbraucht, 0, GAME.jokerMax);
   const game = Object.assign({}, DEFAULT_GAME, newer || ga, {
-    jokers: newer ? (newer.jokers || 0) : Math.min(ga.jokers || 0, gb.jokers || 0),
+    jokers: (ga.jokers || 0) === (gb.jokers || 0) ? (ga.jokers || 0) : jokerAusVerlauf,
     badges: Object.assign({}, gb.badges || {}, ga.badges || {}),
     badgesSeen: Object.assign({}, gb.badgesSeen || {}, ga.badgesSeen || {}),
     lastLevelSeen: Math.max(ga.lastLevelSeen || 1, gb.lastLevelSeen || 1),
@@ -4098,9 +4147,10 @@ function hashState(st) {
 }
 function gatherCloudDoc() {
   const s = S.settings;
+  const settings = Object.assign({}, s); delete settings.pushEnabled; // gerätelokal
   return {
     schema: 3, updatedAt: Date.now(),
-    tasks: S.tasks, todos: S.todos, settings: s,
+    tasks: S.tasks, todos: S.todos, settings,
     todoSettings: { notifyEnabled: s.notifyEnabled, notifyTime: s.notifyTime, lastNotifiedDate: null }, // ältere App-Versionen
     taskHistory: S.history, game: S.game, tokens: S.tokens,
   };
@@ -4148,10 +4198,16 @@ async function syncNow(opts) {
   if (opts.loud) setSyncStatus('Gleiche ab …');
   try {
     for (let versuch = 0; versuch < 3; versuch++) {
-      const res = await syncFetch('/state');
+      const res = await syncFetch('/state' + (S.device.pushDeviceId ? '?device=' + encodeURIComponent(S.device.pushDeviceId) : ''));
       if (res.status === 401) { setSyncStatus('Schlüssel wird abgelehnt'); return false; }
       let remote = null, rev = 0;
-      if (res.status === 200) { const env = await res.json(); remote = stateFromRaw(env.state); rev = env.rev | 0; }
+      if (res.status === 200) {
+        const env = await res.json();
+        remote = stateFromRaw(env.state); rev = env.rev | 0;
+        // Was der Server heute schon verschickt hat. Damit weiss dieses Gerät,
+        // welche Erinnerung es selbst nicht noch einmal zeigen muss.
+        if (env.sent && typeof env.sent === 'object') { S.device.serverSent = { day: String(env.sent.day || ''), keys: Array.isArray(env.sent.keys) ? env.sent.keys.slice(0, 200) : [] }; }
+      }
       else if (res.status !== 404) throw new Error('Antwort ' + res.status);
 
       const vorher = hashState(currentState());
@@ -4251,9 +4307,15 @@ function buildPushPlan() {
   const offen = requiredTasksFor(today).filter(t => !t.completed);
   const offeneTodos = S.todos.filter(t => !t.deleted && !t.completed && ((t.dueDate && t.dueDate <= today) || isFocusToday(t))).length;
   return {
-    version: 1,
+    version: 2,
     tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'Europe/Zurich',
-    morning: { at: s.notifyTime || '07:30', enabled: !!s.notifyEnabled },
+    // Der Tag der App endet um dayEnd (Vorgabe 03:00), nicht um Mitternacht.
+    // Ohne diese Zahl hielte der Server jeden Stand zwischen 00:00 und 03:00
+    // für veraltet und würde vorsichtshalber erinnern, obwohl alles erledigt ist.
+    dayEnd: dayEndHour(),
+    // Ferien: in dieser Zeit ruht alles, auch die Erinnerungen.
+    pause: S.game.pause && S.game.pause.from && S.game.pause.until ? { from: S.game.pause.from, until: S.game.pause.until } : null,
+    morning: { at: s.notifyTime || '09:00', enabled: !!s.notifyEnabled },
     evening: { at: s.eveningTime || '20:00', enabled: !!s.eveningEnabled },
     tasks: todaysTasks().filter(t => t.alarmTime && isRequiredOn(t, today) && !t.completed).map(t => ({ id: t.id, label: t.label, emoji: t.emoji, at: t.alarmTime })),
     today: {
@@ -4275,61 +4337,97 @@ function urlBase64ToUint8Array(base64String) {
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
 }
-function pushSupported() { return !!(swReg && 'PushManager' in window && 'Notification' in window); }
+// Fähig ist das Gerät, sobald der Browser mitmacht; bereit erst, wenn auch die
+// Registrierung des Service Workers steht. Beim ersten Öffnen dauert das einen
+// Moment – ohne dieses Warten hiesse es fälschlich «geht hier nicht».
+function pushCapable() { return !!(('serviceWorker' in navigator) && 'PushManager' in window && 'Notification' in window); }
+async function ensureSwReg() {
+  if (swReg) return swReg;
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const warte = new Promise(r => setTimeout(() => r(null), 8000));
+    swReg = (await Promise.race([swReady || Promise.resolve(null), warte]))
+      || (await Promise.race([navigator.serviceWorker.ready, warte]));
+  } catch (e) { swReg = null; }
+  return swReg;
+}
+async function pushReady() { return pushCapable() ? !!(await ensureSwReg()) : false; }
+
+// Holt den öffentlichen Schlüssel des Servers und meldet das Gerät an. Wechselt
+// der Server seine Schlüssel (neu aufgesetzt, .env neu erzeugt), passt das alte
+// Abo nicht mehr: Apple lehnt dann jede Zustellung ab, ohne dass es jemand
+// merkt. Darum wird der Schlüssel jedes Mal verglichen.
+async function subscribeMitServerschluessel() {
+  const keyRes = await fetch(syncBase() + '/push/key', { cache: 'no-store' });
+  if (!keyRes.ok) throw new Error('Server ' + keyRes.status);
+  const { key } = await keyRes.json();
+  if (!key) { const e = new Error('kein Schlüssel'); e.code = 'NOKEY'; throw e; }
+  let sub = await swReg.pushManager.getSubscription();
+  if (sub) {
+    const alt = sub.options && sub.options.applicationServerKey ? new Uint8Array(sub.options.applicationServerKey) : null;
+    const neu = urlBase64ToUint8Array(key);
+    if (!alt || alt.length !== neu.length || !alt.every((v, i) => v === neu[i])) {
+      await sub.unsubscribe().catch(() => {});
+      sub = null;
+    }
+  }
+  if (!sub) sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
+  return sub;
+}
 
 async function enablePush() {
   if (!syncConfigured()) { toast('☁️', 'Erst den Server einrichten.'); return false; }
-  if (!pushSupported()) {
+  if (!(await pushReady())) {
     toast('🔔', isStandalone() ? 'Dieses Gerät kann keine Erinnerungen empfangen.' : 'Erst zum Home-Bildschirm hinzufügen – nur dort erlaubt iOS Erinnerungen.');
     return false;
   }
   const erlaubt = await ensureNotifPermission();
   if (!erlaubt) { toast('🔔', 'Ohne Erlaubnis für Mitteilungen geht es nicht. In den iPhone-Einstellungen unter HIGH freigeben.'); renderSettings(); return false; }
   try {
-    const keyRes = await fetch(syncBase() + '/push/key', { cache: 'no-store' });
-    const { key } = await keyRes.json();
-    if (!key) { toast('🔔', 'Der Server hat noch keinen Schlüssel für Erinnerungen.'); return false; }
-    let sub = await swReg.pushManager.getSubscription();
-    if (sub && sub.options && sub.options.applicationServerKey) {
-      const alt = new Uint8Array(sub.options.applicationServerKey);
-      const neu = urlBase64ToUint8Array(key);
-      if (alt.length !== neu.length || !alt.every((v, i) => v === neu[i])) { await sub.unsubscribe().catch(() => {}); sub = null; }
-    }
-    if (!sub) sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
-    const res = await syncFetch('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON(), label: deviceLabel() }) });
+    const sub = await subscribeMitServerschluessel();
+    const res = await syncFetch('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON(), label: deviceLabel(), deviceId: S.device.pushDeviceId || undefined }) });
     if (!res.ok) throw new Error('Server ' + res.status);
     const j = await res.json();
-    S.device.pushDeviceId = j.deviceId; S.settings.pushEnabled = true; touch(S.settings); saveAll();
+    S.device.pushDeviceId = j.deviceId; S.device.pushEnabled = true;
+    // Ein Schalter, der nichts auslöst, ist eine Falle: sind beide Erinnerungen
+    // aus, kämen trotz Abo nie welche an. Also gleich mit einschalten.
+    if (!S.settings.notifyEnabled && !S.settings.eveningEnabled) {
+      S.settings.notifyEnabled = true; S.settings.eveningEnabled = true; touch(S.settings);
+    }
+    saveAll();
     renderSettings();
     toast('🔔', 'Erinnerungen sind eingerichtet. Der Server meldet sich, auch wenn die App zu ist.');
     syncNow();
     return true;
   } catch (e) {
     console.warn('Push:', e);
-    toast('⚠️', 'Erinnerungen konnten nicht eingerichtet werden: ' + (e.message || e));
+    toast('⚠️', e.code === 'NOKEY' ? 'Der Server hat noch keinen Schlüssel für Erinnerungen. In deploy/.env fehlen die VAPID-Schlüssel.' : 'Erinnerungen konnten nicht eingerichtet werden: ' + (e.message || e));
     return false;
   }
 }
 
 async function disablePush() {
   try {
-    const sub = swReg && await swReg.pushManager.getSubscription();
+    const reg = await ensureSwReg();
+    const sub = reg && await reg.pushManager.getSubscription();
     if (sub) await sub.unsubscribe().catch(() => {});
     await syncFetch('/push/subscribe', { method: 'DELETE', body: JSON.stringify({ deviceId: S.device.pushDeviceId || null, endpoint: sub ? sub.endpoint : null }) }).catch(() => {});
   } catch (e) { console.warn(e); }
-  S.settings.pushEnabled = false; touch(S.settings); S.device.pushDeviceId = null; saveAll();
+  S.device.pushEnabled = false; S.device.pushDeviceId = null; saveAll();
   renderSettings();
 }
 
-// Ein Abo kann jederzeit ungültig werden, ohne dass jemand Bescheid sagt.
-// Darum bei jedem Start prüfen und still erneuern.
+// Ein Abo kann jederzeit ungültig werden, ohne dass jemand Bescheid sagt: Apple
+// tauscht die Adresse, oder der Server bekam neue Schlüssel. Darum bei jedem
+// Start prüfen, notfalls neu anlegen – still, ohne Nachfrage.
 async function refreshPushSubscription() {
-  if (!S.settings.pushEnabled || !syncConfigured() || !pushSupported()) return;
-  if (Notification.permission !== 'granted') { S.settings.pushEnabled = false; saveAll({ silent: true }); return; }
+  if (!S.device.pushEnabled || !syncConfigured()) return;
+  if (!(await pushReady())) return;
+  if (Notification.permission !== 'granted') { S.device.pushEnabled = false; saveAll({ silent: true }); renderSettings(); return; }
   try {
-    const sub = await swReg.pushManager.getSubscription();
-    if (!sub) { await enablePush(); return; }
-    await syncFetch('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON(), label: deviceLabel(), deviceId: S.device.pushDeviceId || undefined }) }).catch(() => {});
+    const sub = await subscribeMitServerschluessel();
+    const res = await syncFetch('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON(), label: deviceLabel(), deviceId: S.device.pushDeviceId || undefined }) });
+    if (res && res.ok) { const j = await res.json().catch(() => null); if (j && j.deviceId) { S.device.pushDeviceId = j.deviceId; saveAll({ silent: true }); } }
   } catch (e) { console.warn('Push-Auffrischung:', e); }
 }
 

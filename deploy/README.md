@@ -39,7 +39,10 @@ docker compose ps
 ```
 
 Braucht das Plugin **Docker Compose Manager** (Apps → Compose). Ohne
-Plugin geht es genauso mit einem einzelnen Befehl:
+Plugin startet dieser Befehl **nur den Webserver** – die Apps laufen
+damit, HIGHs Abgleich und Erinnerungen aber nicht: die brauchen den
+zweiten Container aus `docker compose` (siehe
+[high-sync/README.md](high-sync/README.md)).
 
 ```bash
 docker run -d --name webapps --restart unless-stopped \
@@ -71,8 +74,14 @@ liefern ein gültiges Zertifikat.
    echo 'TUNNEL_TOKEN=eyJhIjoi…' > .env
    chmod 600 .env
    ```
-   In `docker-compose.yml` den `cloudflared`-Block einkommentieren, dann
-   `docker compose up -d`.
+   Dann starten mit:
+   ```bash
+   docker compose --profile tunnel up -d
+   ```
+   Das Profil gibt es, damit keine versionierte Datei bearbeitet werden
+   muss – eine von Hand geänderte Datei bringt sonst das nächste
+   `git pull` zum Stehen, und dann kämen stillschweigend keine Updates
+   mehr an.
 4. Im Tunnel unter **Public Hostnames** anlegen:
 
    | Feld | Wert |
@@ -203,6 +212,18 @@ Automatisch per **Settings → User Scripts** (Plugin *User Scripts*),
 Zeitplan „stündlich“ oder „täglich“. Der Webserver liest die Dateien
 direkt aus dem Verzeichnis – nach dem `git pull` ist die neue Version
 sofort da, ohne Neustart.
+
+Für die **Apps** gilt das. Ändert sich etwas unter `deploy/` (der
+Dienst hinter HIGH, nginx, compose), steckt das in einem Image und
+muss gebaut werden. `update.sh` sagt in dem Fall Bescheid; auf dem
+Server dann einmal:
+
+```bash
+cd /mnt/user/appdata/webapps/repo/deploy && docker compose up -d --build
+```
+
+Das macht das Skript bewusst nicht selbst: ein stündlicher Cron soll
+nicht unbeaufsichtigt alle Container neu starten.
 
 Der Server zieht nur, er schiebt nie: Änderungen macht man in GitHub,
 nicht auf dem Server. Sonst kollidiert das nächste `git pull`.
