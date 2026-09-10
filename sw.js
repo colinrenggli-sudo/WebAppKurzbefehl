@@ -10,7 +10,7 @@
 // Die Versionsnummer unten bei jeder Änderung an index.html hochzählen,
 // damit alte Caches sicher weggeräumt werden.
 
-const VERSION = 'focus-v3.2.0';
+const VERSION = 'focus-v3.3.0';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
