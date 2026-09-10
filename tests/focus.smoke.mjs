@@ -536,6 +536,65 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario H: Darstellungsvarianten ----------
+// Hell, erhöhter Kontrast und ein schmales Gerät: nichts darf herausragen,
+// jedes Sheet muss sich schliessen lassen, keine Fehler in der Konsole.
+{
+  for (const [name, opts] of [
+    ['hell', { colorScheme: 'light' }],
+    ['kontrast', { colorScheme: 'dark', contrast: 'more' }],
+    ['schmal', { colorScheme: 'dark', viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
+  ]) {
+    const ctx = await browser.newContext({ ...iphone, locale: 'de-CH', timezoneId: 'Europe/Zurich', ...opts });
+    const page = await ctx.newPage();
+    await page.clock.install({ time: NOON });
+    page.on('pageerror', e => note(`H (${name}): pageerror: ` + e.message));
+    await page.goto(BASE, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => {
+      S.settings.onboardingDone = true;
+      S.tasks = [normalizeTask({ label: 'Meditieren', emoji: '🧘' }), normalizeTask({ label: 'Bewegung', emoji: '🏃', subtasks: [{ name: 'Aufwärmen' }, { name: 'Laufen' }] })];
+      S.todos = [normalizeTodo({ title: 'Steuererklärung fertig machen', focus: true, focusRank: 1 })];
+      addTokenEntry(12, 'Keller aufgeräumt');
+      saveAll(); renderAll();
+    });
+    await page.waitForTimeout(500);
+    for (let i = 0; i < 6; i++) { if (await page.locator('#celebrate.show').count()) { await page.click('#celebrateBtn'); await page.waitForTimeout(400); } else break; }
+    await page.evaluate(() => { closeAllSheets(); hideBanner(); });
+    for (const tab of ['today', 'todos', 'tokens', 'progress']) {
+      await page.evaluate(t => switchTab(t), tab); await page.waitForTimeout(350);
+      const bad = await page.evaluate((tab) => {
+        const out = [];
+        if (document.documentElement.scrollWidth > innerWidth + 1) out.push(`${tab}: horizontaler Überlauf`);
+        document.querySelectorAll('.view.active *').forEach(el => {
+          const r = el.getBoundingClientRect();
+          if (r.width && (r.left < -1 || r.right > innerWidth + 1)) {
+            const cls = (el.className && String(el.className).split(' ')[0]) || el.tagName;
+            if (!/dots|cal-|badge-grid/.test(cls)) out.push(`${tab}: «${cls}» ragt heraus`);
+          }
+        });
+        return out;
+      }, tab);
+      bad.forEach(b => note(`H (${name}): ${b}`));
+    }
+    for (const [sheet, fn] of [['taskSheet', () => openTaskEditor(null)], ['settings', () => openSettings()], ['review', () => openReview()]]) {
+      await page.evaluate(fn); await page.waitForTimeout(450);
+      if (!(await page.locator('.sheet.show').count())) { note(`H (${name}): ${sheet} öffnet nicht`); continue; }
+      const state = await page.evaluate(() => {
+        const s = document.querySelector('.sheet.show'); const b = s.querySelector('[data-close]');
+        if (!b) return 'kein Schliessknopf';
+        const r = b.getBoundingClientRect();
+        const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+        return (b.contains(hit) || hit === b) ? 'ok' : 'verdeckt';
+      });
+      if (state !== 'ok') note(`H (${name}): ${sheet} Schliessknopf ${state}`);
+      await page.evaluate(() => closeAllSheets()); await page.waitForTimeout(350);
+    }
+    await ctx.close();
+  }
+  ok('H: hell, Kontrast und 320 pt – nichts ragt heraus, alle Sheets schliessbar');
+}
+
 await browser.close();
 console.log('\n==== SUMMARY ====');
 console.log(issues.length ? issues.join('\n') : 'no issues');
