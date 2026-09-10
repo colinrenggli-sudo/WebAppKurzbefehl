@@ -6,11 +6,11 @@
 //  · index.html / manifest: Netz zuerst, Cache als Rückfallebene – neue Versionen
 //    kommen sofort an, offline startet trotzdem die letzte bekannte Version.
 //  · Icons: Cache zuerst (ändern sich praktisch nie).
-//  · Firebase-SDK (gstatic): Cache zuerst, im Hintergrund auffrischen.
+//  · /api/: nie zwischenspeichern – Abgleich und Erinnerungen müssen ans Netz.
 // Die Versionsnummer unten bei jeder Änderung an index.html hochzählen,
 // damit alte Caches sicher weggeräumt werden.
 
-const VERSION = 'focus-v3.4.0';
+const VERSION = 'focus-v4.1.0';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -32,9 +32,9 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // Firebase legt seinen Anmelde-Handler unter /__/auth/ ab. Der darf nie aus dem Cache
-  // beantwortet werden, sonst bricht die Google-Anmeldung unter eigener Domain stumm ab.
-  if (url.pathname.startsWith('/__/')) return;
+  // Abgleich und Erinnerungen laufen über /api/ und dürfen nie aus dem Cache
+  // kommen – ein alter Stand von dort wäre schlimmer als gar keine Antwort.
+  if (url.pathname.startsWith('/api/')) return;
 
   // App-Hülle: Netz zuerst, dann Cache
   // Nur die eigene Ebene bedienen – die Schwester-Apps (dach/, schlaf/, shop/, raumdesign/)
@@ -59,15 +59,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Firebase-SDK: Cache zuerst, im Hintergrund erneuern
-  if (url.hostname === 'www.gstatic.com') {
-    event.respondWith(
-      caches.match(req).then((hit) => {
-        const network = fetch(req).then((res) => { if (res && res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)).catch(() => {}); } return res; }).catch(() => hit);
-        return hit || network;
-      })
-    );
-  }
+  // Alles Fremde geht unangetastet ans Netz: die App lädt nichts von aussen.
+});
+
+self.addEventListener('push', (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
+  const titel = d.title || 'HIGH';
+  const opts = {
+    body: d.body || 'Zeit für deine Routinen.',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: d.tag || 'high',
+    renotify: true,
+  };
+  // Ohne showNotification entzieht iOS der App die Erlaubnis – darum immer etwas zeigen.
+  event.waitUntil(self.registration.showNotification(titel, opts));
 });
 
 self.addEventListener('notificationclick', (event) => {

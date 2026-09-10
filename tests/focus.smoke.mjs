@@ -31,7 +31,7 @@ async function newPage(opts = {}) {
   const page = await ctx.newPage();
   await page.clock.install({ time: NOON });
   page.on('pageerror', e => note('pageerror: ' + e.message));
-  page.on('console', m => { if (m.type() === 'error' && !/favicon|gstatic|firebase|net::ERR/i.test(m.text())) note('console.error: ' + m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/favicon|net::ERR/i.test(m.text())) note('console.error: ' + m.text()); });
   return { ctx, page };
 }
 
@@ -374,14 +374,32 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     const jokers = AB.game.jokers;
     // Beide Seiten normalisiert (settings-Defaults) müssen gleich hashen
     const symmetric = hashState(stateFromRaw(JSON.parse(JSON.stringify({ tasks: AB.tasks, todos: AB.todos, settings: AB.settings, taskHistory: AB.history, game: AB.game })))) === hAB;
-    return { commutative: hAB === hBA, idem, tomb, jokers, symmetric, doneToday: AB.history[today].tasks.a };
+
+    // Joker sind erarbeitet: ein frisch eingerichtetes zweites Gerät hat den
+    // jüngeren Zeitstempel, darf aber nicht seinen Anfangsstand mitbringen.
+    const leer = { tasks: [], todos: [], settings: Object.assign({}, DEFAULT_SETTINGS), history: {}, game: Object.assign({}, DEFAULT_GAME), tokens: { entries: [], rewards: [] } };
+    const kopie = (o) => JSON.parse(JSON.stringify(o));
+    const altesGeraet = kopie(leer); altesGeraet.game.jokers = 2; altesGeraet.game.jokersEarned = 1; altesGeraet.game.updatedAt = 1000;
+    const neuesGeraet = kopie(leer); neuesGeraet.game.updatedAt = 9999;
+    const jokerNachKoppeln = mergeStates(altesGeraet, neuesGeraet).game.jokers;
+    const jokerVertauscht = mergeStates(neuesGeraet, altesGeraet).game.jokers;
+    // ... und ein eingesetzter Joker darf nicht wieder auftauchen
+    const vorEinsatz = kopie(altesGeraet);
+    const nachEinsatz = kopie(altesGeraet); nachEinsatz.game.jokers = 1; nachEinsatz.game.updatedAt = 2000;
+    nachEinsatz.history['2026-01-05'] = normalizeEntry({ tasks: {}, todos: {}, bonus: {}, jokerUsed: true, frozen: true });
+    const jokerNachEinsatz = mergeStates(vorEinsatz, nachEinsatz).game.jokers;
+
+    return { commutative: hAB === hBA, idem, tomb, jokers, symmetric, doneToday: AB.history[today].tasks.a,
+             jokerNachKoppeln, jokerVertauscht, jokerNachEinsatz };
   });
   if (!r.commutative) note('D: merge not commutative');
   if (!r.idem) note('D: merge not idempotent');
   if (!r.tomb) note('D: tombstone lost in merge: ' + JSON.stringify(r.doneToday));
   if (r.jokers !== 1) note('D: joker tie-break should take min (1), got ' + r.jokers);
   if (!r.symmetric) note('D: hash of round-tripped cloud doc differs from local hash (sync would ping-pong)');
-  ok('D: merge commutative=' + r.commutative + ' idem=' + r.idem + ' tomb=' + r.tomb + ' symmetric=' + r.symmetric);
+  if (r.jokerNachKoppeln !== 2 || r.jokerVertauscht !== 2) note('D: verdiente Joker gehen beim Koppeln eines neuen Geräts verloren: ' + r.jokerNachKoppeln + '/' + r.jokerVertauscht);
+  if (r.jokerNachEinsatz !== 1) note('D: eingesetzter Joker taucht beim Zusammenführen wieder auf: ' + r.jokerNachEinsatz);
+  ok('D: merge commutative=' + r.commutative + ' idem=' + r.idem + ' tomb=' + r.tomb + ' symmetric=' + r.symmetric + ' joker=' + r.jokerNachKoppeln + '/' + r.jokerNachEinsatz);
   await ctx.close();
 }
 
@@ -622,6 +640,65 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     await ctx.close();
   }
   ok('H: hell, Kontrast und 320 pt – nichts ragt heraus, alle Sheets schliessbar');
+}
+
+// ---------- Szenario I: Abgleich mit dem eigenen Server ----------
+// Braucht den Dienst aus deploy/high-sync. Ohne ihn wird das Szenario übersprungen.
+//   SYNC_API=http://127.0.0.1:8099 SYNC_TOKEN=… node tests/focus.smoke.mjs
+{
+  const API = process.env.SYNC_API || '';
+  const TOKEN = process.env.SYNC_TOKEN || '';
+  let erreichbar = false;
+  if (API && TOKEN) {
+    try { erreichbar = (await fetch(API + '/health')).ok; } catch (e) { erreichbar = false; }
+  }
+  if (!erreichbar) {
+    ok('I: übersprungen (kein Sync-Dienst – SYNC_API und SYNC_TOKEN setzen)');
+  } else {
+    const mach = async () => {
+      const ctx = await browser.newContext({ ...iphone, colorScheme: 'dark', locale: 'de-CH', timezoneId: 'Europe/Zurich' });
+      const page = await ctx.newPage();
+      await page.clock.install({ time: NOON });
+      page.on('pageerror', e => note('I: pageerror: ' + e.message));
+      await page.goto(BASE, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(400);
+      await page.evaluate(([u, t]) => { S.settings.onboardingDone = true; S.device.syncUrl = u; S.device.syncToken = t; saveAll({ silent: true }); }, [API, TOKEN]);
+      return { ctx, page };
+    };
+    const A = await mach();
+    let r = await A.page.evaluate(async () => {
+      S.tasks = [normalizeTask({ id: 'sync-a', label: 'Meditieren', emoji: '🧘' })];
+      saveAll({ silent: true });
+      return { ok: await syncNow({ loud: true }), status: syncStatusText };
+    });
+    if (!r.ok) note('I: erster Abgleich fehlgeschlagen: ' + r.status);
+    const B = await mach();
+    r = await B.page.evaluate(async () => ({ ok: await syncNow(), labels: S.tasks.filter(t => !t.deleted).map(t => t.label) }));
+    if (!r.labels.includes('Meditieren')) note('I: zweites Gerät bekommt die Routine nicht');
+    // Beide ändern gleichzeitig – nichts darf verlorengehen
+    await A.page.evaluate(() => { S.todos.push(normalizeTodo({ id: 'sync-ta', title: 'Von A' })); saveAll({ silent: true }); });
+    await B.page.evaluate(() => { S.todos.push(normalizeTodo({ id: 'sync-tb', title: 'Von B' })); saveAll({ silent: true }); });
+    await Promise.all([A.page.evaluate(() => syncNow()), B.page.evaluate(() => syncNow())]);
+    await A.page.evaluate(() => syncNow()); await B.page.evaluate(() => syncNow());
+    const meine = (page) => page.evaluate(() => S.todos.filter(t => !t.deleted && /^sync-t/.test(t.id)).map(t => t.id).sort());
+    const aT = await meine(A.page), bT = await meine(B.page);
+    if (aT.length !== 2 || JSON.stringify(aT) !== JSON.stringify(bT)) note('I: gleichzeitige Änderungen gingen verloren: ' + JSON.stringify({ aT, bT }));
+    // Der Erinnerungsplan muss beim Server liegen
+    const env = await (await fetch(API + '/state', { headers: { Authorization: 'Bearer ' + TOKEN } })).json();
+    if (!(env.push && env.push.today && env.push.today.day)) note('I: kein Erinnerungsplan auf dem Server');
+    // Falscher Schlüssel muss auffallen
+    r = await A.page.evaluate(async () => { const alt = S.device.syncToken; S.device.syncToken = 'falsch'; const ok = await syncNow(); const st = syncStatusText; S.device.syncToken = alt; return { ok, st }; });
+    if (r.ok !== false || !/abgelehnt/i.test(r.st)) note('I: falscher Schlüssel wird nicht gemeldet');
+    // Server weg: die App muss weiterlaufen und es sagen
+    // Nicht erreichbar: die App muss weiterlaufen und es sagen. Ein anderer Port ist
+    // für den Browser eine andere Herkunft, darum die entsprechende Meldung.
+    r = await A.page.evaluate(async () => { const alt = S.device.syncUrl; S.device.syncUrl = 'http://127.0.0.1:9099'; const ok = await syncNow(); const st = syncStatusText; S.device.syncUrl = alt; return { ok, st }; });
+    if (r.ok !== false || !r.st) note('I: fehlender Server wird nicht gemeldet');
+    const weiter = await A.page.evaluate(() => { S.tasks.push(normalizeTask({ id: 'sync-offline', label: 'Ohne Server', emoji: '🧱' })); saveAll({ silent: true }); return S.tasks.some(t => t.id === 'sync-offline'); });
+    if (!weiter) note('I: die App arbeitet ohne Server nicht weiter');
+    ok('I: Abgleich über den eigenen Server – zwei Geräte, nichts verloren');
+    await A.ctx.close(); await B.ctx.close();
+  }
 }
 
 await browser.close();
