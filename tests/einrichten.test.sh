@@ -209,9 +209,22 @@ cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
 exit 1
 ATTRAPPE
 chmod +x "$WURZEL/bin/docker"
+# curl darf den Download nicht liefern, sonst würde das Skript hier wirklich
+# etwas herunterladen. Also scheitern lassen.
+cat > "$WURZEL/bin/curl" <<'ATTRAPPE'
+#!/bin/bash
+echo "curl $*" >> "$ATTRAPPEN_LOG"
+case "$*" in *docker/compose/releases*) exit 22 ;; esac
+case "$*" in
+  *localhost*) cat "$ATTRAPPEN_GESUNDHEIT"; [ -s "$ATTRAPPEN_GESUNDHEIT" ] || exit 7; exit 0 ;;
+  *) [ -n "${ATTRAPPEN_OEFFENTLICH:-}" ] || exit 7; echo '{"ok":true,"push":true,"subject":true}'; exit 0 ;;
+esac
+ATTRAPPE
+chmod +x "$WURZEL/bin/curl"
 AUS5="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
 pruefe "ohne docker compose bricht es ab" "$([ $? -ne 0 ] && echo ja)" "ja"
-enthaelt "und sagt, was zu installieren ist" "$AUS5" "Docker Compose Manager"
+enthaelt "es versucht zuerst, es selbst zu holen" "$AUS5" "wird einmalig geholt"
+enthaelt "und nennt sonst den Weg von Hand" "$AUS5" "Docker Compose Manager"
 
 echo
 if [ "$FEHLER" -gt 0 ]; then echo "$FEHLER von $ANZAHL Prüfungen fehlgeschlagen"; exit 1; fi
