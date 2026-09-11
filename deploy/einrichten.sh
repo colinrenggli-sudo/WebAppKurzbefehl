@@ -283,26 +283,55 @@ if [ -n "$ADRESSE" ]; then
     VONAUSSEN="ja"
     gruen "  $ADRESSE ist erreichbar."
   else
-    SERVERIP="$(hostname -I 2>/dev/null | awk '{print $1}')"
     rot "  $ADRESSE antwortet nicht."
     info "Der Dienst hier läuft (siehe oben) – es fehlt der Weg von aussen."
-    info "Dafür gibt es genau zwei Möglichkeiten:"
     echo
-    info "A) In Cloudflare fehlt der Eintrag. Zero Trust → Networks → Tunnels"
-    info "   → dein Tunnel → Published application routes → Add:"
-    info "       Subdomain: $(printf '%s' "$ADRESSE" | sed -E 's|^https?://||; s|\..*$||')"
-    info "       Domain:    $(printf '%s' "$ADRESSE" | sed -E 's|^https?://[^.]*\.||; s|/.*$||')"
-    info "       Service:   HTTP → webapps:8080"
+    info "In Cloudflare → Zero Trust → Networks → Tunnels → dein Tunnel →"
+    info "Published application routes muss dieser Eintrag stehen:"
+    info "    Subdomain: $(printf '%s' "$ADRESSE" | sed -E 's|^https?://||; s|\..*$||')"
+    info "    Domain:    $(printf '%s' "$ADRESSE" | sed -E 's|^https?://[^.]*\.||; s|/.*$||')"
+    info "    Type:      HTTP"
     echo
-    info "B) Der Eintrag ist da, aber «webapps:8080» ist für cloudflared nicht"
-    info "   erreichbar (dann meldet der Browser 502). Das ist so, wenn"
-    info "   cloudflared in einem eigenen Container ohne dieses Netz läuft."
-    info "   Dann den Eintrag bearbeiten und als Service eintragen:"
-    info "       HTTP → ${SERVERIP:-<server-ip>}:8088"
+    # Welche Adresse als Service gehört, hängt einzig daran, WIE cloudflared
+    # läuft – nicht daran, ob es ein Container ist. Im Host-Netz sieht es
+    # keine Container-Namen, wohl aber die Ports des Servers; im selben
+    # Docker-Netz ist es umgekehrt. Raten muss man das nicht.
+    CFS="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -iE 'cloudflare|tunnel' || true)"
+    if [ -z "$CFS" ]; then
+      info "    URL:       127.0.0.1:8088"
+      echo
+      info "(cloudflared läuft gerade nicht. Starten:"
+      info "  cd $PWD && $DC --profile tunnel up -d )"
+    else
+      for c in $CFS; do
+        MODUS="$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$c" 2>/dev/null || echo '?')"
+        NETZE="$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$c" 2>/dev/null || true)"
+        case "$MODUS" in
+          host)
+            info "    URL:       127.0.0.1:8088"
+            info "               (cloudflared «$c» läuft im Netzmodus host:"
+            info "                Container-Namen kennt es dort nicht, die"
+            info "                Ports des Servers aber schon)" ;;
+          *)
+            case "$NETZE" in
+              *webapps_default*)
+                info "    URL:       webapps:8080"
+                info "               (cloudflared «$c» ist im selben Docker-Netz)" ;;
+              *)
+                info "    URL:       webapps:8080"
+                info "               (cloudflared «$c» war noch nicht im Netz des"
+                info "                Webservers – das hole ich jetzt nach)"
+                docker network connect webapps_default "$c" >/dev/null 2>&1 \
+                  && docker restart "$c" >/dev/null 2>&1 \
+                  && info "               → erledigt, «$c» neu gestartet" \
+                  || info "               → ging nicht; dann stattdessen: 127.0.0.1:8088" ;;
+            esac ;;
+        esac
+      done
+    fi
     echo
     info "Taucht die Domain im Auswahlfeld gar nicht auf, liegt sie nicht in"
-    info "diesem Cloudflare-Konto. Läuft cloudflared noch nicht:"
-    info "    cd $PWD && $DC --profile tunnel up -d"
+    info "diesem Cloudflare-Konto."
   fi
 fi
 

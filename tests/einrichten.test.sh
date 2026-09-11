@@ -95,8 +95,57 @@ pruefe "unerreichbare Adresse ist kein Abbruch" "$?" "0"
 enthaelt "sie wird als solche gemeldet" "$AUS_ZU" "antwortet nicht"
 enthaelt "mit der genauen Subdomain" "$AUS_ZU" "Subdomain: routine"
 enthaelt "und der genauen Domain" "$AUS_ZU" "Domain:    colin-renggli.ch"
-enthaelt "und nennt auch den 502-Fall mit der Server-IP" "$AUS_ZU" ":8088"
+enthaelt "und nennt eine URL für den Dienst" "$AUS_ZU" "URL:"
 enthaelt "der Link kommt trotzdem" "$AUS_ZU" "#s=$TOKEN1"
+
+# ---- cloudflared im Host-Netz: dann gilt 127.0.0.1, nicht der Containername ----
+# Genau der Fall, der auf dem echten Server Stunden gekostet hat.
+cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
+#!/bin/bash
+echo "docker $*" >> "$ATTRAPPEN_LOG"
+case "$1 ${2:-}" in "info "|"compose version") exit 0 ;; esac
+case "$*" in
+  *generateVAPIDKeys*) echo "OEFFENTLICH-1 PRIVAT-2"; exit 0 ;;
+esac
+if [ "$1" = "ps" ]; then echo "CloudflaredTunnel"; exit 0; fi
+if [ "$1" = "inspect" ]; then
+  case "$*" in *NetworkMode*) echo "host"; exit 0 ;; *) echo "host "; exit 0 ;; esac
+fi
+exit 0
+ATTRAPPE
+chmod +x "$WURZEL/bin/docker"
+AUS_HOST="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
+enthaelt "im Host-Netz wird 127.0.0.1:8088 genannt" "$AUS_HOST" "URL:       127.0.0.1:8088"
+ANZAHL=$((ANZAHL+1))
+if printf '%s' "$AUS_HOST" | grep -q "URL:       webapps:8080"; then
+  FEHLER=$((FEHLER+1)); echo "FEHLT: im Host-Netz wird fälschlich der Containername genannt"
+else echo "ok: im Host-Netz kein Containername"; fi
+
+# ---- cloudflared im Docker-Netz: dann gilt der Containername ----
+cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
+#!/bin/bash
+echo "docker $*" >> "$ATTRAPPEN_LOG"
+case "$1 ${2:-}" in "info "|"compose version") exit 0 ;; esac
+case "$*" in *generateVAPIDKeys*) echo "OEFFENTLICH-1 PRIVAT-2"; exit 0 ;; esac
+if [ "$1" = "ps" ]; then echo "cloudflared-webapps"; exit 0; fi
+if [ "$1" = "inspect" ]; then
+  case "$*" in *NetworkMode*) echo "webapps_default"; exit 0 ;; *) echo "webapps_default "; exit 0 ;; esac
+fi
+exit 0
+ATTRAPPE
+chmod +x "$WURZEL/bin/docker"
+AUS_NETZ="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
+enthaelt "im Docker-Netz wird der Containername genannt" "$AUS_NETZ" "URL:       webapps:8080"
+
+# Attrappe wieder normal
+cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
+#!/bin/bash
+echo "docker $*" >> "$ATTRAPPEN_LOG"
+case "$1 ${2:-}" in "info "|"compose version") exit 0 ;; esac
+case "$*" in *generateVAPIDKeys*) echo "OEFFENTLICH-1 PRIVAT-2"; exit 0 ;; esac
+exit 0
+ATTRAPPE
+chmod +x "$WURZEL/bin/docker"
 
 # ---- Öffentliche Adresse: erreichbar ----
 AUS_AUF="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
