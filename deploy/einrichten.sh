@@ -41,12 +41,53 @@ if ! command -v docker >/dev/null 2>&1; then
   rot "docker fehlt. Auf Unraid ist Docker unter Settings → Docker einzuschalten."
   exit 1
 fi
+# Docker Compose ist ein Zusatzteil von Docker und fehlt auf Unraid oft. Es
+# ist eine einzelne Datei – die holen wir selbst, statt den Besitzer im
+# App-Store danach suchen zu lassen. Sie liegt auf dem USB-Stick, damit sie
+# einen Neustart übersteht; /root ist bei Unraid eine RAM-Disk.
+# Auf Unraid liegt /boot auf dem USB-Stick und übersteht den Neustart. Gibt es
+# das nicht (anderes System), tut es auch /usr/local/lib.
+if [ -d /boot/config ] && [ -w /boot/config ]; then
+  COMPOSE_ABLAGE="/boot/config/docker-compose/docker-compose"
+else
+  COMPOSE_ABLAGE="/usr/local/lib/docker/cli-plugins/docker-compose"
+fi
+COMPOSE_LINK="/root/.docker/cli-plugins/docker-compose"
+
+if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1 && [ -x "$COMPOSE_ABLAGE" ]; then
+  mkdir -p "$(dirname "$COMPOSE_LINK")"
+  ln -sf "$COMPOSE_ABLAGE" "$COMPOSE_LINK"
+fi
+
+if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
+  info "docker compose fehlt – wird einmalig geholt (rund 60 MB) …"
+  mkdir -p "$(dirname "$COMPOSE_ABLAGE")" "$(dirname "$COMPOSE_LINK")"
+  if curl -fL --retry 3 -o "$COMPOSE_ABLAGE.tmp" \
+       "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)"; then
+    chmod +x "$COMPOSE_ABLAGE.tmp" && mv "$COMPOSE_ABLAGE.tmp" "$COMPOSE_ABLAGE"
+    ln -sf "$COMPOSE_ABLAGE" "$COMPOSE_LINK"
+    # Nach einem Neustart ist /root wieder leer – die Verknüpfung neu setzen.
+    if [ -f /boot/config/go ] && ! grep -q 'cli-plugins/docker-compose' /boot/config/go; then
+      printf '\n# Docker Compose nach dem Neustart wieder verfügbar machen\nmkdir -p %s\nln -sf %s %s\n' \
+        "$(dirname "$COMPOSE_LINK")" "$COMPOSE_ABLAGE" "$COMPOSE_LINK" >> /boot/config/go
+      info "und so eingetragen, dass es einen Neustart übersteht"
+    fi
+  else
+    rm -f "$COMPOSE_ABLAGE.tmp"
+    rot "docker compose fehlt und liess sich nicht holen."
+    info "Entweder hat der Server gerade kein Netz, oder von Hand:"
+    info "  Unraid → Apps → «Docker Compose Manager» installieren"
+    exit 1
+  fi
+fi
+
 if docker compose version >/dev/null 2>&1; then
   DC="docker compose"
 elif command -v docker-compose >/dev/null 2>&1; then
   DC="docker-compose"
 else
-  rot "docker compose fehlt. Auf Unraid: Apps → «Docker Compose Manager» installieren."
+  rot "docker compose ist da, lässt sich aber nicht aufrufen."
+  info "Prüfen mit:  $COMPOSE_ABLAGE version"
   exit 1
 fi
 info "docker und $DC sind da"
