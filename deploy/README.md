@@ -36,7 +36,7 @@ Aktualisieren per `update.sh`.
 Ein Befehl, der alles erledigt – Ordner, Schlüssel, Container, Prüfung:
 
 ```bash
-bash /mnt/user/appdata/webapps/repo/deploy/einrichten.sh https://routine.gymlinkapp.ch
+bash /mnt/user/appdata/webapps/repo/deploy/einrichten.sh https://routine.colin-renggli.ch
 ```
 
 Der volle Pfad steht hier, damit es aus jedem Verzeichnis geht. Was das

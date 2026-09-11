@@ -25,7 +25,7 @@ er nur für dein iPhone, und dafür sorgt der Cloudflare Tunnel.
 ```bash
 cd /mnt/user/appdata/webapps/repo
 git pull
-bash deploy/einrichten.sh https://routine.gymlinkapp.ch
+bash deploy/einrichten.sh https://routine.colin-renggli.ch
 ```
 
 Das legt den Datenordner an und übergibt ihn dem Container, erzeugt den
@@ -34,7 +34,7 @@ alles, prüft ob der Dienst antwortet – und ob die öffentliche Adresse
 schon erreichbar ist. Am Ende steht dort ein Link:
 
 ```
-https://routine.gymlinkapp.ch/#s=<dein Schlüssel>
+https://routine.colin-renggli.ch/#s=<dein Schlüssel>
 ```
 
 Ein zweites Ausführen ist ungefährlich – vorhandene Schlüssel bleiben, wie
@@ -54,11 +54,11 @@ Cloudflare-Dashboard → Zero Trust → Networks → Tunnels → dein Tunnel →
 | Feld | Wert |
 | --- | --- |
 | Subdomain | `routine` |
-| Domain | `gymlinkapp.ch` |
+| Domain | `colin-renggli.ch` |
 | Service | `HTTP` → `webapps:8080` |
 
 Den DNS-Eintrag legt Cloudflare selbst an. Danach `bash
-deploy/einrichten.sh https://routine.gymlinkapp.ch` noch einmal laufen
+deploy/einrichten.sh https://routine.colin-renggli.ch` noch einmal laufen
 lassen – es muss «ist erreichbar» sagen.
 
 Zwei Gründe, warum die Domain im Auswahlfeld fehlt:
@@ -83,7 +83,7 @@ wieder ohne Verbindung da.
    Als Datei exportieren** und die Datei behalten. Der Speicher hängt an
    der Adresse, beim Wechsel bleibt sonst nichts erhalten. Das alte Symbol
    **noch nicht löschen** – erst in Schritt 7.
-2. `https://routine.gymlinkapp.ch/` in **Safari** öffnen.
+2. `https://routine.colin-renggli.ch/` in **Safari** öffnen.
 3. **Teilen → Zum Home-Bildschirm.** Ohne diesen Schritt gibt es keine
    Erinnerungen: iOS erlaubt sie nur der installierten App.
 4. Die App **vom Home-Bildschirm** starten und **Einstellungen** öffnen:
@@ -175,7 +175,7 @@ Bedeutung der Daten nicht und entscheidet nichts über sie.
 | Dienst startet nicht, Log sagt «lässt sich nicht schreiben» | Der Datenordner gehört root: `chown -R 1000:1000 /mnt/user/appdata/webapps/high-daten` |
 | `/api/health` liefert 502 | Der Container `high-sync` läuft nicht: `docker compose up -d --build` |
 | «Schlüssel wird abgelehnt» in der App | `SYNC_TOKEN` in `.env` und in der App stimmen nicht überein |
-| «Andere Adresse als die App – das blockiert der Browser» | Die App wurde von einer anderen Adresse geöffnet als der Server, z. B. noch von GitHub Pages. Richtig ist der Weg über Schritt 3: den Link von `routine.gymlinkapp.ch` öffnen und von dort zum Home-Bildschirm hinzufügen. Nur für einen Übergang lässt sich in `.env` `ALLOW_ORIGIN=https://…` setzen |
+| «Andere Adresse als die App – das blockiert der Browser» | Die App wurde von einer anderen Adresse geöffnet als der Server, z. B. noch von GitHub Pages. Richtig ist der Weg über Schritt 3: den Link von `routine.colin-renggli.ch` öffnen und von dort zum Home-Bildschirm hinzufügen. Nur für einen Übergang lässt sich in `.env` `ALLOW_ORIGIN=https://…` setzen |
 | «Eingerichtet – noch keine Verbindung» | Adresse ist gespeichert, der Server antwortet noch nicht. Tunnel oder Container aus; die App arbeitet lokal weiter und verbindet sich von selbst, sobald es geht |
 | Der Link tut nichts | Er wurde nicht in **Safari** geöffnet, sondern in einer anderen App. Adresse kopieren und in Safari einfügen |
 

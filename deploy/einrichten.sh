@@ -2,7 +2,7 @@
 # ==================================================================
 # einrichten.sh – richtet HIGH auf dem eigenen Server in einem Zug ein
 #
-#   bash deploy/einrichten.sh https://routine.gymlinkapp.ch
+#   bash deploy/einrichten.sh https://routine.colin-renggli.ch
 #
 # Legt den Datenordner an, erzeugt die Schlüssel, startet die Container
 # und druckt am Ende einen Link. Diesen Link am iPhone öffnen – mehr
@@ -120,7 +120,7 @@ fi
 if ! hat VAPID_SUBJECT; then
   if [ -n "$ADRESSE" ]; then
     HOST="$(printf '%s' "$ADRESSE" | sed -E 's|^https?://||; s|[:/].*$||')"
-    # «routine.gymlinkapp.ch» → «gymlinkapp.ch», «gymlinkapp.ch» bleibt stehen.
+    # «routine.colin-renggli.ch» → «colin-renggli.ch», «colin-renggli.ch» bleibt stehen.
     # Bei einer blossen IP käme Unsinn heraus – dann lieber gar nichts.
     case "$HOST" in
       *[a-zA-Z]*.*)
@@ -227,7 +227,7 @@ if [ -n "$ADRESSE" ]; then
     rot "  Über http gibt es KEINE Erinnerungen und keine Installation auf"
     rot "  dem Home-Bildschirm. iOS verlangt dafür https."
     info "Das hier ist also zum Ausprobieren. Für Erinnerungen:"
-    info "  bash $0 https://routine.gymlinkapp.ch"
+    info "  bash $0 https://routine.colin-renggli.ch"
   else
     info "Die App verbindet sich damit von selbst. Danach: Teilen → Zum"
     info "Home-Bildschirm, App von dort starten, dann Einstellungen →"
@@ -243,7 +243,7 @@ if [ -n "$ADRESSE" ]; then
 else
   echo
   info "Noch ohne öffentliche Adresse. Sobald der Cloudflare-Eintrag steht:"
-  info "  bash $0 https://routine.gymlinkapp.ch"
+  info "  bash $0 https://routine.colin-renggli.ch"
   info "Zum Ausprobieren im eigenen Netz geht auch schon jetzt:"
   info "  http://$(hostname -I 2>/dev/null | awk '{print $1}'):8088/  ·  Schlüssel: $TOKEN"
   info "  (über http laufen Abgleich und App, Erinnerungen aber nicht)"
