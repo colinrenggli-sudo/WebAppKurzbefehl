@@ -457,6 +457,7 @@ button.week-day { color: inherit; font: inherit; }
 .due.today { color: var(--orange-text); background: rgba(255,149,0,0.14); }
 .due.future { color: var(--indigo-text); background: rgba(88,86,214,0.12); }
 .due.tod { color: var(--purple-text); background: rgba(175,82,222,0.12); }
+.due.token { color: var(--gold-text); background: rgba(255,214,10,0.18); font-weight: 700; }
 .note-preview { font-size: 0.765rem; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .todo-actions { display: flex; align-items: center; }
 .star-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--label-4); border-radius: 50%; transition: transform var(--dur-fast), color var(--dur-fast); }
@@ -869,6 +870,8 @@ body.quiet .q { display: none !important; }
 .token-total small { font-size: 1rem; color: var(--label-2); font-weight: 700; margin-left: 6px; }
 .reward-row { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; min-height: 68px; padding: 8px 0; border-bottom: 0.5px solid var(--sep); width: 100%; text-align: left; color: inherit; }
 .reward-row:last-child { border-bottom: 0; }
+.reward-chev { display: inline-flex; width: 20px; height: 20px; color: var(--label-3); }
+.reward-chev svg { width: 20px; height: 20px; }
 .reward-emoji { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; background: var(--fill-4); }
 .reward-row.reached .reward-emoji { background: linear-gradient(135deg, rgba(255,214,10,0.35), rgba(255,149,0,0.25)); }
 .reward-text { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -1081,6 +1084,18 @@ body.quiet .q { display: none !important; }
           <span class="switch" id="dFocusSwitch" aria-hidden="true"></span>
         </button>
       </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Token wert</div>
+      <div class="chips" id="dTokens">
+        <button class="chip" type="button" data-tk="0">Ohne</button>
+        <button class="chip" type="button" data-tk="1">🪙 1</button>
+        <button class="chip" type="button" data-tk="2">🪙 2</button>
+        <button class="chip" type="button" data-tk="3">🪙 3</button>
+        <button class="chip" type="button" data-tk="5">🪙 5</button>
+        <button class="chip" type="button" data-tk="custom" id="dTokensCustom"><span id="dTokensCustomLabel">Andere</span><input type="number" id="dTokensInput" min="1" max="999" inputmode="numeric" aria-label="Anzahl Token"></button>
+      </div>
+      <div class="field-hint">Für die harten Brocken. Beim Abhaken werden die Token gutgeschrieben – nimmst du den Haken zurück, sind sie wieder weg.</div>
     </div>
     <div class="field">
       <div class="field-label">Notiz</div>
@@ -1566,6 +1581,11 @@ function normalizeTodo(t) {
   out.focusDate = isValidKey(out.focusDate) ? out.focusDate : null;
   out.focusRank = typeof out.focusRank === 'number' ? out.focusRank : (out.focus ? Date.now() : 0);
   out.carryCount = Math.max(0, parseInt(out.carryCount, 10) || 0);
+  // Token, die dieses To-Do wert ist (0 = keine). «tokenEntryId» ist die Spur
+  // zum gutgeschriebenen Eintrag: nur so lässt er sich beim Widerrufen wieder
+  // zurücknehmen, statt dass sich durch Ab- und Anhaken Token vermehren.
+  out.tokens = clamp(parseInt(out.tokens, 10) || 0, 0, 999);
+  out.tokenEntryId = out.tokenEntryId ? String(out.tokenEntryId) : null;
   out.deleted = typeof out.deleted === 'number' ? out.deleted : null;
   return out;
 }
@@ -1972,17 +1992,29 @@ function completeTodo(td) {
   const base = counted < GAME.todoDailyCap ? GAME.xpTodo : 0;
   const bonus = (td.focus && focusCounted < GAME.focusBonusMax) ? GAME.xpFocusTodo : 0;
   const xp = base + bonus;
-  td.completed = true; td.completedAt = new Date().toISOString(); touch(td);
+  td.completed = true; td.completedAt = new Date().toISOString();
   e.todos[td.id] = { at: Date.now(), xp, focus: !!td.focus, base: base > 0, bonus: bonus > 0 };
   e.xp = entryXp(e);
+  // Hängen Token an diesem To-Do, werden sie jetzt gutgeschrieben – genau
+  // einmal. Die Nummer des Eintrags bleibt am To-Do, damit ein Widerruf ihn
+  // wieder wegnimmt und sich durch Ab- und Anhaken nichts vermehrt.
+  let tokenRes = null;
+  if ((td.tokens | 0) > 0 && !td.tokenEntryId) {
+    tokenRes = addTokenEntry(td.tokens, td.title, today);
+    td.tokenEntryId = tokenRes.entry.id;
+  }
+  touch(td);
   saveAll();
-  return { xp, focus: !!td.focus };
+  return { xp, focus: !!td.focus, tokens: tokenRes ? (td.tokens | 0) : 0, reached: (tokenRes && tokenRes.reached) || [] };
 }
 function uncompleteTodo(td) {
   if (!td.completed) return;
   const k = td.completedAt ? (appDay(td.completedAt) || todayKey()) : todayKey();
   const e = S.history[k];
   if (e && recDone(e.todos[td.id])) { e.todos[td.id] = { undone: Date.now() }; e.xp = entryXp(e); stateVersion++; }
+  // Die beim Abhaken gutgeschriebenen Token wieder zurücknehmen. Ohne das
+  // liesse sich durch mehrfaches Ab- und Anhaken beliebig viel sammeln.
+  if (td.tokenEntryId) { deleteTokenEntry(td.tokenEntryId); td.tokenEntryId = null; }
   td.completed = false; td.completedAt = null; touch(td);
   saveAll();
 }
@@ -2737,6 +2769,7 @@ function renderTodoRow(t, today, opts) {
   }
   const tod = todInfo(t.timeOfDay);
   if (!t.completed && tod) chips.push(`<span class="due tod">${tod.emoji} ${escHtml(tod.label)}</span>`);
+  if ((t.tokens | 0) > 0) chips.push(`<span class="due token">🪙 ${t.tokens}</span>`);
   const note = t.note ? `<span class="note-preview">${escHtml(t.note.replace(/\s+/g, ' ').slice(0, 70))}</span>` : '';
   const meta = (chips.length || note) ? `<span class="todo-meta">${chips.join('')}${note}</span>` : '';
   const rank = opts.rank ? `<span class="rank" aria-label="Fokus ${opts.rank}">${opts.rank}</span>` : '';
@@ -2939,6 +2972,7 @@ function renderTokens() {
   </section>`;
 
   html += `<div class="section-head"><span class="section-title">Belohnungen</span><button class="section-link" type="button" data-act="rewardAdd">Neu</button></div>`;
+  if (rewards.length) html += `<div class="hint" style="margin:-2px 4px 8px">Antippen zum Bearbeiten oder Löschen.</div>`;
   if (!rewards.length) html += `<div class="card empty"><div class="empty-emoji">🎁</div><div class="empty-title">Noch keine Belohnung</div><div class="empty-text">Lege fest, was du dir bei 30, 100 oder 500 Token gönnst.</div></div>`;
   else html += `<section class="card" style="padding:4px 16px">${rewards.map(r => {
     const pct = clamp(total / r.points * 100, 0, 100);
@@ -2946,7 +2980,7 @@ function renderTokens() {
     return `<button class="reward-row${reached ? ' reached' : ''}" type="button" data-act="rewardEdit" data-id="${escAttr(r.id)}" aria-label="${escAttr(r.name)}, ${reached ? 'erreicht' : `noch ${r.points - total} Token`}">
       <span class="reward-emoji" aria-hidden="true">${escHtml(r.emoji)}</span>
       <span class="reward-text"><span class="reward-name">${escHtml(r.name)}</span><span class="reward-bar"><i style="width:${pct}%"></i></span><span class="reward-meta">${reached ? escHtml(reachedLabel(r.reachedAt)) : `${fmtNum(Math.min(total, r.points))} von ${fmtNum(r.points)} Token`}</span></span>
-      ${reached ? `<span class="reward-right">${ICON.check.replace('<svg ', '<svg style="width:22px;height:22px" ')}</span>` : ''}
+      <span class="reward-right">${reached ? ICON.check.replace('<svg ', '<svg style="width:22px;height:22px" ') : `<span class="reward-chev">${ICON.chevR}</span>`}</span>
     </button>`; }).join('')}</section>`;
 
   html += `<div class="section-head"><span class="section-title">Protokoll</span><span class="section-meta">${entries.length ? `${entries.length} Eintr${entries.length === 1 ? 'ag' : 'äge'}` : ''}</span></div>`;
@@ -3197,7 +3231,7 @@ function deleteTask(t) {
 }
 
 // ---- To-Do-Editor ----
-let editTodoId = null, dDue = null, dTod = null, dFocus = false;
+let editTodoId = null, dDue = null, dTod = null, dFocus = false, dTokens = 0;
 function openTodoEditor(id) {
   const t = id ? todoById(id) : null;
   editTodoId = t ? t.id : null;
@@ -3205,9 +3239,10 @@ function openTodoEditor(id) {
   $('dTitle').value = t ? t.title : '';
   $('dNote').value = t ? t.note : '';
   dDue = t ? t.dueDate : null; dTod = t ? t.timeOfDay : null; dFocus = t ? !!t.focus : false;
+  dTokens = t ? (t.tokens | 0) : 0;
   $('dDate').value = dDue || '';
   $('dDelete').hidden = !t;
-  refreshDueChips(); refreshTodChips(); refreshFocusSwitch();
+  refreshDueChips(); refreshTodChips(); refreshFocusSwitch(); refreshTokenChips();
   openSheet('todoSheet');
   if (!t) setTimeout(() => $('dTitle').focus(), 420);
 }
@@ -3226,6 +3261,17 @@ function refreshDueChips() {
   $('dTodField').hidden = !dDue;
 }
 function refreshTodChips() { $('dTod').querySelectorAll('.chip').forEach(c => { const on = (c.dataset.tod || '') === (dTod || ''); c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); }); }
+const TOKEN_CHIPS = [0, 1, 2, 3, 5];
+function refreshTokenChips() {
+  const eigen = dTokens > 0 && !TOKEN_CHIPS.includes(dTokens);
+  $('dTokens').querySelectorAll('.chip').forEach(c => {
+    const k = c.dataset.tk;
+    const on = k === 'custom' ? eigen : (parseInt(k, 10) === dTokens);
+    c.classList.toggle('on', on); c.setAttribute('aria-pressed', on);
+  });
+  $('dTokensCustomLabel').textContent = eigen ? '🪙 ' + dTokens : 'Andere';
+  $('dTokensInput').value = eigen ? String(dTokens) : '';
+}
 function refreshFocusSwitch() { $('dFocusSwitch').classList.toggle('on', dFocus); $('dFocusRow').setAttribute('aria-checked', dFocus); }
 $('dDue').querySelectorAll('.chip').forEach(c => c.addEventListener('click', e => {
   const k = c.dataset.due; if (k === 'custom') return; // Datumsfeld übernimmt
@@ -3236,6 +3282,13 @@ $('dDue').querySelectorAll('.chip').forEach(c => c.addEventListener('click', e =
 }));
 $('dDate').addEventListener('change', () => { dDue = isValidKey($('dDate').value) ? $('dDate').value : null; if (!dDue) dTod = null; refreshDueChips(); refreshTodChips(); });
 $('dTod').querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => { dTod = c.dataset.tod || null; refreshTodChips(); }));
+$('dTokens').querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+  if (c.dataset.tk === 'custom') return;   // das Zahlenfeld übernimmt
+  dTokens = parseInt(c.dataset.tk, 10) || 0; refreshTokenChips();
+}));
+$('dTokensInput').addEventListener('input', () => { dTokens = clamp(parseInt($('dTokensInput').value, 10) || 0, 0, 999); });
+$('dTokensInput').addEventListener('change', refreshTokenChips);
+$('dTokensInput').addEventListener('blur', refreshTokenChips);
 $('dFocusRow').addEventListener('click', () => {
   if (!dFocus) { const n = S.todos.filter(t => !t.deleted && !t.completed && t.focus && t.id !== editTodoId).length; if (n >= GAME.focusMax) { toast('★', `Höchstens ${GAME.focusMax} Fokus-To-Dos – so bleibt es ein Fokus.`); return; } }
   dFocus = !dFocus; refreshFocusSwitch();
@@ -3252,9 +3305,17 @@ function saveTodoEditor() {
   if (!t) { t = normalizeTodo({ id: uid('t'), title, createdAt: new Date().toISOString() }); S.todos.unshift(t); }
   t.title = title.slice(0, 120); t.note = $('dNote').value.trim().slice(0, 500);
   t.dueDate = dDue; t.timeOfDay = dDue ? dTod : null;
+  t.tokens = clamp(dTokens | 0, 0, 999);
   if (dFocus && !t.focus) { t.focus = true; t.focusDate = todayKey(); t.focusRank = Date.now(); t.carryCount = 0; } else if (!dFocus) { t.focus = false; t.focusDate = null; t.carryCount = 0; }
+  // Ist das To-Do schon abgehakt, muss eine Änderung am Wert die Gutschrift
+  // mitziehen – sonst stünde am To-Do etwas anderes als im Protokoll.
+  if (t.completed) {
+    if (t.tokenEntryId && t.tokens === 0) { deleteTokenEntry(t.tokenEntryId); t.tokenEntryId = null; }
+    else if (t.tokenEntryId) updateTokenEntry(t.tokenEntryId, { amount: t.tokens, note: t.title });
+    else if (t.tokens > 0) { const r = addTokenEntry(t.tokens, t.title, todayKey()); t.tokenEntryId = r.entry.id; }
+  }
   touch(t); saveAll(); closeSheet('todoSheet'); renderAll();
-  if (isNew) toast('📝', 'To-Do angelegt.');
+  if (isNew) toast('📝', t.tokens > 0 ? `To-Do angelegt – 🪙 ${t.tokens} beim Abhaken.` : 'To-Do angelegt.');
 }
 function quickAdd() {
   const inp = $('quickInput'); if (!inp) return;
@@ -3359,7 +3420,12 @@ function onTodoToggle(id) {
   const row = document.querySelector(`.todo-row[data-id="${CSS.escape(id)}"] .check`);
   if (row) { row.classList.add('on', 'pop'); if (res.focus) confettiAt(row, 16, Math.PI * 1.2); xpFloat(row, `+${res.xp} XP`); }
   playSound(res.focus ? 'medium' : 'small'); haptic(10);
-  toast('✅', escHtml(res.focus ? `Fokus Nr. ${rank || 1} erledigt. Das Wichtigste zuerst.` : pickToast(['To-Do erledigt. Eines weniger im Kopf.', 'Abgehakt.', 'Erledigt.'])));
+  if (res.tokens > 0) {
+    toast('🪙', `<b>+${res.tokens} Token</b> für «${escHtml(t.title)}».`, { label: 'Token', fn: () => switchTab('tokens') });
+  } else {
+    toast('✅', escHtml(res.focus ? `Fokus Nr. ${rank || 1} erledigt. Das Wichtigste zuerst.` : pickToast(['To-Do erledigt. Eines weniger im Kopf.', 'Abgehakt.', 'Erledigt.'])));
+  }
+  (res.reached || []).forEach(r => setTimeout(() => celebrate({ emoji: r.emoji, eyebrow: 'Belohnung erreicht', title: r.name, text: `${fmtNum(r.points)} Token hast du beisammen.`, rain: true }), 700));
   setTimeout(() => { renderAll(); updateAppBadge(); afterChangeChecks(); }, 380);
 }
 function taskContextMenu(t) {

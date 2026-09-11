@@ -480,6 +480,95 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario K: Token an einem To-Do ----------
+// Ein «heftiges» To-Do kann Token wert sein. Beim Abhaken werden sie
+// gutgeschrieben, beim Widerrufen wieder genommen – und durch Hin und Her
+// darf sich nichts vermehren.
+{
+  const { ctx, page } = await newPage();
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => { S.settings.onboardingDone = true; S.todos = []; S.tokens = { entries: [], rewards: [] }; saveAll({ silent: true }); renderAll(); });
+
+  // über die echte Oberfläche anlegen
+  await page.evaluate(() => { switchTab('todos'); openTodoEditor(null); });
+  await page.waitForTimeout(450);
+  await page.fill('#dTitle', 'Steuererklärung');
+  await page.click('#dTokens .chip[data-tk="3"]');
+  await page.click('#dSave');
+  await page.waitForTimeout(450);
+  const angelegt = await page.evaluate(() => { const t = S.todos.find(x => x.title === 'Steuererklärung'); return t ? t.tokens : null; });
+  if (angelegt !== 3) note('K: der Token-Wert wurde nicht gespeichert: ' + angelegt);
+  if (!(await page.locator('.todo-row .due.token').count())) note('K: der Token-Wert steht nicht an der To-Do-Zeile');
+
+  const id = await page.evaluate(() => S.todos.find(x => x.title === 'Steuererklärung').id);
+  await page.click(`.todo-row[data-id="${id}"] [data-act="todoToggle"]`);
+  await page.waitForTimeout(800);
+  const nachHaken = await page.evaluate(() => ({ total: tokenTotal(), n: tokenEntries().length, note: (tokenEntries()[0] || {}).note }));
+  if (nachHaken.total !== 3 || nachHaken.n !== 1) note('K: Abhaken schreibt nicht genau einmal gut: ' + JSON.stringify(nachHaken));
+  if (nachHaken.note !== 'Steuererklärung') note('K: die Gutschrift trägt nicht den Titel des To-Dos: ' + nachHaken.note);
+
+  const r = await page.evaluate((i) => {
+    const t = todoById(i);
+    onTodoToggle(i);                      // widerrufen
+    const nachWiderruf = { total: tokenTotal(), n: tokenEntries().length, spur: t.tokenEntryId };
+    for (let k = 0; k < 10; k++) { completeTodo(t); uncompleteTodo(t); }
+    completeTodo(t);
+    const nachRunden = { total: tokenTotal(), n: tokenEntries().length };
+    const vorDoppel = tokenTotal();
+    completeTodo(t);                      // schon erledigt – darf nichts tun
+    const doppelt = tokenTotal() !== vorDoppel;
+    // Wert am erledigten To-Do ändern zieht die Gutschrift mit
+    t.tokens = 8; updateTokenEntry(t.tokenEntryId, { amount: 8, note: t.title });
+    const nachAenderung = tokenTotal();
+    // Zusammenführen darf nichts verdoppeln
+    const st = currentState();
+    const rt = stateFromRaw(JSON.parse(JSON.stringify(gatherCloudDoc())));
+    const zus = mergeStates(st, rt).tokens.entries.filter(x => !x.deleted);
+    return { nachWiderruf, nachRunden, doppelt, nachAenderung, zusN: zus.length, zusSumme: zus.reduce((a, x) => a + x.amount, 0) };
+  }, id);
+  if (r.nachWiderruf.total !== 0 || r.nachWiderruf.n !== 0 || r.nachWiderruf.spur) note('K: Widerrufen nimmt die Token nicht zurück: ' + JSON.stringify(r.nachWiderruf));
+  if (r.nachRunden.total !== 3 || r.nachRunden.n !== 1) note('K: zehnmal ab und an vermehrt die Token: ' + JSON.stringify(r.nachRunden));
+  if (r.doppelt) note('K: ein zweites Abhaken schreibt nochmals gut');
+  if (r.nachAenderung !== 8) note('K: eine Wertänderung zieht die Gutschrift nicht mit: ' + r.nachAenderung);
+  if (r.zusN !== 1 || r.zusSumme !== 8) note('K: der Abgleich verdoppelt die Gutschrift: ' + r.zusN + '/' + r.zusSumme);
+
+  // Unsinn im Feld darf nichts anrichten
+  const sauber = await page.evaluate(() => [normalizeTodo({ id: 'a', title: 'x', tokens: 'abc' }).tokens, normalizeTodo({ id: 'b', title: 'x', tokens: -5 }).tokens, normalizeTodo({ id: 'c', title: 'x', tokens: 99999 }).tokens]);
+  if (sauber.join(',') !== '0,0,999') note('K: unsinnige Werte werden nicht abgefangen: ' + sauber.join(','));
+
+  ok('K: Token am To-Do – einmal gutgeschrieben, sauber zurückgenommen, nichts verdoppelt');
+  await ctx.close();
+}
+
+// ---------- Szenario L: Belohnung bearbeiten ----------
+// Das ging schon immer, war aber nicht zu sehen. Es muss erkennbar und
+// erreichbar bleiben.
+{
+  const { ctx, page } = await newPage();
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => { S.settings.onboardingDone = true; S.tokens = { entries: [], rewards: seedRewards() }; saveAll({ silent: true }); switchTab('tokens'); renderAll(); });
+  await page.waitForTimeout(400);
+  if (!(await page.locator('#viewTokens .hint', { hasText: 'Antippen' }).count())) note('L: kein Hinweis, dass Belohnungen antippbar sind');
+  if (!(await page.locator('#viewTokens .reward-chev').count())) note('L: keine sichtbare Andeutung an der Belohnungszeile');
+  await page.locator('#viewTokens .reward-row').first().click();
+  await page.waitForTimeout(450);
+  if (!(await page.locator('#rewardSheet.show').count())) { note('L: Antippen öffnet den Editor nicht'); }
+  else {
+    const titel = (await page.locator('#rewardSheetTitle').textContent() || '').trim();
+    if (titel !== 'Belohnung bearbeiten') note('L: falscher Titel im Editor: ' + titel);
+    if (!(await page.inputValue('#rName')).length) note('L: der Name ist nicht vorausgefüllt');
+    if (!(await page.locator('#rDelete:visible').count())) note('L: Löschen fehlt beim Bearbeiten');
+    await page.fill('#rName', 'Kokosnuss XXL');
+    await page.fill('#rPoints', '42');
+    await page.click('#rSave');
+    await page.waitForTimeout(500);
+    const geaendert = await page.evaluate(() => { const x = activeRewards().find(y => y.name === 'Kokosnuss XXL'); return x ? x.points : null; });
+    if (geaendert !== 42) note('L: die Änderung wurde nicht übernommen: ' + geaendert);
+  }
+  ok('L: Belohnung bearbeiten – sichtbar, vorausgefüllt, änderbar');
+  await ctx.close();
+}
+
 // ---------- Szenario F: Reduzierte Bewegung – nichts Unsichtbares darf im Weg stehen ----------
 // Hintergrund: «Bewegung reduzieren» (iOS-Einstellung) hatte den ausgeblendeten
 // In-App-Hinweis sichtbar und tastbar gemacht. Er klebte über der obersten Leiste
