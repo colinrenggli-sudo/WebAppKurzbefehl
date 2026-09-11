@@ -271,15 +271,25 @@ if [ -n "$ADRESSE" ]; then
     VONAUSSEN="ja"
     gruen "  $ADRESSE ist erreichbar."
   else
+    SERVERIP="$(hostname -I 2>/dev/null | awk '{print $1}')"
     rot "  $ADRESSE antwortet nicht."
-    info "Der Dienst läuft (siehe oben) – es fehlt der Weg von aussen."
-    info "In Cloudflare → Zero Trust → Networks → Tunnels → dein Tunnel →"
-    info "Public Hostnames → Add:"
-    info "    Subdomain: $(printf '%s' "$ADRESSE" | sed -E 's|^https?://||; s|\..*$||')"
-    info "    Domain:    $(printf '%s' "$ADRESSE" | sed -E 's|^https?://[^.]*\.||; s|/.*$||')"
-    info "    Service:   HTTP → webapps:8080"
-    info "Taucht die Domain dort nicht auf, liegt sie nicht in diesem"
-    info "Cloudflare-Konto. Läuft cloudflared noch nicht:"
+    info "Der Dienst hier läuft (siehe oben) – es fehlt der Weg von aussen."
+    info "Dafür gibt es genau zwei Möglichkeiten:"
+    echo
+    info "A) In Cloudflare fehlt der Eintrag. Zero Trust → Networks → Tunnels"
+    info "   → dein Tunnel → Published application routes → Add:"
+    info "       Subdomain: $(printf '%s' "$ADRESSE" | sed -E 's|^https?://||; s|\..*$||')"
+    info "       Domain:    $(printf '%s' "$ADRESSE" | sed -E 's|^https?://[^.]*\.||; s|/.*$||')"
+    info "       Service:   HTTP → webapps:8080"
+    echo
+    info "B) Der Eintrag ist da, aber «webapps:8080» ist für cloudflared nicht"
+    info "   erreichbar (dann meldet der Browser 502). Das ist so, wenn"
+    info "   cloudflared in einem eigenen Container ohne dieses Netz läuft."
+    info "   Dann den Eintrag bearbeiten und als Service eintragen:"
+    info "       HTTP → ${SERVERIP:-<server-ip>}:8088"
+    echo
+    info "Taucht die Domain im Auswahlfeld gar nicht auf, liegt sie nicht in"
+    info "diesem Cloudflare-Konto. Läuft cloudflared noch nicht:"
     info "    cd $PWD && $DC --profile tunnel up -d"
   fi
 fi

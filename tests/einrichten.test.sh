@@ -94,6 +94,7 @@ pruefe "unerreichbare Adresse ist kein Abbruch" "$?" "0"
 enthaelt "sie wird als solche gemeldet" "$AUS_ZU" "antwortet nicht"
 enthaelt "mit der genauen Subdomain" "$AUS_ZU" "Subdomain: routine"
 enthaelt "und der genauen Domain" "$AUS_ZU" "Domain:    colin-renggli.ch"
+enthaelt "und nennt auch den 502-Fall mit der Server-IP" "$AUS_ZU" ":8088"
 enthaelt "der Link kommt trotzdem" "$AUS_ZU" "#s=$TOKEN1"
 
 # ---- Öffentliche Adresse: erreichbar ----
