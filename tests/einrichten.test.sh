@@ -246,9 +246,22 @@ ATTRAPPE
 chmod +x "$WURZEL/bin/curl"
 AUS_HOL="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
 pruefe "fehlendes Compose wird geholt und das Skript läuft weiter" "$?" "0"
+# Der Fall vom echten Server: die Ablage liegt auf FAT und lässt sich nicht
+# ausführbar machen. Dann muss trotzdem eine lauffähige Kopie entstehen.
+chmod -x "$COMPOSE_ABLAGE" 2>/dev/null || true
+rm -f /usr/local/lib/docker/cli-plugins/docker-compose /usr/lib/docker/cli-plugins/docker-compose /root/.docker/cli-plugins/docker-compose 2>/dev/null || true
+rm -f "$ENVD"
+AUS_FAT="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
+pruefe "nicht ausführbare Ablage bricht das Skript nicht ab" "$?" "0"
+enthaelt "es kommt bis zum Schluss" "$AUS_FAT" "6/6  Fertig"
+ANZAHL=$((ANZAHL+1))
+if printf '%s' "$AUS_FAT" | grep -q "liess sich nicht einrichten"; then
+  FEHLER=$((FEHLER+1)); echo "FEHLT: es gibt bei nicht ausführbarer Ablage auf"
+else echo "ok: es richtet sich trotzdem ein"; fi
 enthaelt "es sagt, dass es geholt wird" "$AUS_HOL" "wird einmalig geholt"
 enthaelt "und kommt bis zum Schluss" "$AUS_HOL" "6/6  Fertig"
-pruefe "die Datei liegt am vorgegebenen Ort" "$([ -x "$COMPOSE_ABLAGE" ] && echo ja)" "ja"
+# Ausführbar muss die Ablage NICHT sein – nur vorhanden. Genau darum ging es.
+pruefe "die Datei liegt am vorgegebenen Ort" "$([ -s "$COMPOSE_ABLAGE" ] && echo ja)" "ja"
 unset COMPOSE_ABLAGE
 
 # curl darf den Download nicht liefern, sonst würde das Skript hier wirklich
