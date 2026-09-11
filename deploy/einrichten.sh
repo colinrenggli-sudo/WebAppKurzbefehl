@@ -43,35 +43,48 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 # Docker Compose ist ein Zusatzteil von Docker und fehlt auf Unraid oft. Es
 # ist eine einzelne Datei – die holen wir selbst, statt den Besitzer im
-# App-Store danach suchen zu lassen. Sie liegt auf dem USB-Stick, damit sie
-# einen Neustart übersteht; /root ist bei Unraid eine RAM-Disk.
+# App-Store danach suchen zu lassen.
 # Auf Unraid liegt /boot auf dem USB-Stick und übersteht den Neustart. Gibt es
 # das nicht (anderes System), tut es auch /usr/local/lib.
-if [ -d /boot/config ] && [ -w /boot/config ]; then
+if [ -n "${COMPOSE_ABLAGE:-}" ]; then
+  : # von aussen vorgegeben (Tests)
+elif [ -d /boot/config ] && [ -w /boot/config ]; then
   COMPOSE_ABLAGE="/boot/config/docker-compose/docker-compose"
 else
   COMPOSE_ABLAGE="/usr/local/lib/docker/cli-plugins/docker-compose"
 fi
-COMPOSE_LINK="/root/.docker/cli-plugins/docker-compose"
 
-if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1 && [ -x "$COMPOSE_ABLAGE" ]; then
-  mkdir -p "$(dirname "$COMPOSE_LINK")"
-  ln -sf "$COMPOSE_ABLAGE" "$COMPOSE_LINK"
-fi
+# Docker findet Erweiterungen in mehreren Ordnern. Wir nehmen den ersten, der
+# sich beschreiben lässt – und verknüpfen dort, oder kopieren, wenn das
+# Dateisystem keine Verknüpfungen kann (der USB-Stick kann keine).
+compose_verdrahten() {
+  [ -s "$COMPOSE_ABLAGE" ] || return 1
+  for ziel in /usr/local/lib/docker/cli-plugins /usr/lib/docker/cli-plugins /root/.docker/cli-plugins; do
+    mkdir -p "$ziel" 2>/dev/null || continue
+    if ln -sf "$COMPOSE_ABLAGE" "$ziel/docker-compose" 2>/dev/null \
+       || cp -f "$COMPOSE_ABLAGE" "$ziel/docker-compose" 2>/dev/null; then
+      chmod +x "$ziel/docker-compose" 2>/dev/null || true
+      COMPOSE_ZIEL="$ziel/docker-compose"
+      return 0
+    fi
+  done
+  return 1
+}
 
-if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
+COMPOSE_ZIEL=""
+compose_da() { docker compose version >/dev/null 2>&1 || command -v docker-compose >/dev/null 2>&1; }
+
+# Schon einmal geholt? Dann nur noch verdrahten.
+compose_da || compose_verdrahten || true
+
+if ! compose_da; then
   info "docker compose fehlt – wird einmalig geholt (rund 60 MB) …"
-  mkdir -p "$(dirname "$COMPOSE_ABLAGE")" "$(dirname "$COMPOSE_LINK")"
+  mkdir -p "$(dirname "$COMPOSE_ABLAGE")" 2>/dev/null || true
   if curl -fL --retry 3 -o "$COMPOSE_ABLAGE.tmp" \
        "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)"; then
-    chmod +x "$COMPOSE_ABLAGE.tmp" && mv "$COMPOSE_ABLAGE.tmp" "$COMPOSE_ABLAGE"
-    ln -sf "$COMPOSE_ABLAGE" "$COMPOSE_LINK"
-    # Nach einem Neustart ist /root wieder leer – die Verknüpfung neu setzen.
-    if [ -f /boot/config/go ] && ! grep -q 'cli-plugins/docker-compose' /boot/config/go; then
-      printf '\n# Docker Compose nach dem Neustart wieder verfügbar machen\nmkdir -p %s\nln -sf %s %s\n' \
-        "$(dirname "$COMPOSE_LINK")" "$COMPOSE_ABLAGE" "$COMPOSE_LINK" >> /boot/config/go
-      info "und so eingetragen, dass es einen Neustart übersteht"
-    fi
+    chmod +x "$COMPOSE_ABLAGE.tmp" 2>/dev/null || true
+    mv -f "$COMPOSE_ABLAGE.tmp" "$COMPOSE_ABLAGE"
+    compose_verdrahten || true
   else
     rm -f "$COMPOSE_ABLAGE.tmp"
     rot "docker compose fehlt und liess sich nicht holen."
@@ -85,11 +98,31 @@ if docker compose version >/dev/null 2>&1; then
   DC="docker compose"
 elif command -v docker-compose >/dev/null 2>&1; then
   DC="docker-compose"
+elif [ -x "$COMPOSE_ABLAGE" ] && "$COMPOSE_ABLAGE" version >/dev/null 2>&1; then
+  # Weder als Erweiterung noch im Pfad – die Datei tut es auch direkt.
+  DC="$COMPOSE_ABLAGE"
 else
-  rot "docker compose ist da, lässt sich aber nicht aufrufen."
-  info "Prüfen mit:  $COMPOSE_ABLAGE version"
+  rot "docker compose liess sich nicht einrichten."
+  info "Von Hand prüfen:  $COMPOSE_ABLAGE version"
+  info "Oder: Unraid → Apps → «Docker Compose Manager» installieren"
   exit 1
 fi
+
+# Nach einem Neustart ist /usr/local wieder leer (RAM-Disk). Einmal eintragen,
+# damit die Verknüpfung von selbst wieder entsteht.
+case "$COMPOSE_ABLAGE" in
+  /boot/*)
+    if [ -f /boot/config/go ] && ! grep -q 'cli-plugins/docker-compose' /boot/config/go 2>/dev/null; then
+      {
+        printf '\n# Docker Compose nach dem Neustart wieder verfügbar machen\n'
+        printf 'mkdir -p /usr/local/lib/docker/cli-plugins\n'
+        printf 'cp -f %s /usr/local/lib/docker/cli-plugins/docker-compose 2>/dev/null\n' "$COMPOSE_ABLAGE"
+        printf 'chmod +x /usr/local/lib/docker/cli-plugins/docker-compose 2>/dev/null\n'
+      } >> /boot/config/go && info "und so eingetragen, dass es einen Neustart übersteht"
+    fi
+    ;;
+esac
+
 info "docker und $DC sind da"
 
 # ---------- 1. Datenordner ----------

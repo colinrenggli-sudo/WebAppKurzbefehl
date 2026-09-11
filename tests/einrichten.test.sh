@@ -209,6 +209,47 @@ cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
 exit 1
 ATTRAPPE
 chmod +x "$WURZEL/bin/docker"
+# ---- Compose fehlt, lässt sich aber holen: das Skript muss weiterlaufen ----
+# Genau der Fall vom Unraid-Server: die Datei kommt an, das Verknüpfen als
+# Docker-Erweiterung scheitert (FAT kann keine Symlinks) – dann muss das
+# Skript die Datei einfach direkt benutzen statt aufzugeben.
+rm -f "$ENVD"
+export COMPOSE_ABLAGE="$WURZEL/compose/docker-compose"
+cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
+#!/bin/bash
+echo "docker $*" >> "$ATTRAPPEN_LOG"
+[ "$1" = "info" ] && exit 0
+# «docker compose» gibt es hier nie – wie auf einem Unraid ohne Plugin
+[ "$1" = "compose" ] && exit 1
+exit 0
+ATTRAPPE
+chmod +x "$WURZEL/bin/docker"
+cat > "$WURZEL/bin/curl" <<'ATTRAPPE'
+#!/bin/bash
+echo "curl $*" >> "$ATTRAPPEN_LOG"
+case "$*" in *docker/compose/releases*)
+  ZIEL=""; for a in "$@"; do [ "$MERK" = "o" ] && ZIEL="$a"; MERK=""; [ "$a" = "-o" ] && MERK="o"; done
+  {
+    echo '#!/bin/bash'
+    echo 'case "$1" in version) echo "Docker Compose version v2.99.0";; esac'
+    echo 'case "$*" in *generateVAPIDKeys*) echo "GEHOLT-OEFF-1 GEHOLT-PRIV-2";; esac'
+    echo 'exit 0'
+  } > "$ZIEL"
+  exit 0 ;;
+esac
+case "$*" in
+  *localhost*) cat "$ATTRAPPEN_GESUNDHEIT"; [ -s "$ATTRAPPEN_GESUNDHEIT" ] || exit 7; exit 0 ;;
+  *) [ -n "${ATTRAPPEN_OEFFENTLICH:-}" ] || exit 7; echo '{"ok":true,"push":true,"subject":true}'; exit 0 ;;
+esac
+ATTRAPPE
+chmod +x "$WURZEL/bin/curl"
+AUS_HOL="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
+pruefe "fehlendes Compose wird geholt und das Skript läuft weiter" "$?" "0"
+enthaelt "es sagt, dass es geholt wird" "$AUS_HOL" "wird einmalig geholt"
+enthaelt "und kommt bis zum Schluss" "$AUS_HOL" "6/6  Fertig"
+pruefe "die Datei liegt am vorgegebenen Ort" "$([ -x "$COMPOSE_ABLAGE" ] && echo ja)" "ja"
+unset COMPOSE_ABLAGE
+
 # curl darf den Download nicht liefern, sonst würde das Skript hier wirklich
 # etwas herunterladen. Also scheitern lassen.
 cat > "$WURZEL/bin/curl" <<'ATTRAPPE'
