@@ -396,8 +396,24 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     nachEinsatz.history['2026-01-05'] = normalizeEntry({ tasks: {}, todos: {}, bonus: {}, jokerUsed: true, frozen: true });
     const jokerNachEinsatz = mergeStates(vorEinsatz, nachEinsatz).game.jokers;
 
+    // Erinnerungen: ein Abgleich darf sie nie ausschalten – aber ein
+    // bewusstes Ausschalten muss trotzdem ankommen.
+    const mitErinnerung = (over) => { const x = kopie(leer); Object.assign(x.settings, over); return x; };
+    const langBenutzt = mitErinnerung({ notifyEnabled: true, notifyTime: '07:30', notifyChangedAt: 1000,
+                                        eveningEnabled: true, eveningTime: '21:00', eveningChangedAt: 1000, updatedAt: 1000 });
+    const frisch = mitErinnerung({ updatedAt: 999999 });   // Vorgaben, aber jünger
+    const e1 = mergeStates(langBenutzt, frisch).settings;
+    const e1b = mergeStates(frisch, langBenutzt).settings;
+    const ausgeschaltet = mitErinnerung({ notifyEnabled: false, notifyTime: '07:30', notifyChangedAt: 5000,
+                                          eveningEnabled: true, eveningTime: '21:00', eveningChangedAt: 1000, updatedAt: 5000 });
+    const e2 = mergeStates(ausgeschaltet, langBenutzt).settings;
+    const e2b = mergeStates(langBenutzt, ausgeschaltet).settings;
+
     return { commutative: hAB === hBA, idem, tomb, jokers, symmetric, doneToday: AB.history[today].tasks.a,
-             jokerNachKoppeln, jokerVertauscht, jokerNachEinsatz };
+             jokerNachKoppeln, jokerVertauscht, jokerNachEinsatz,
+             erinnerungBleibt: !!(e1.notifyEnabled && e1.eveningEnabled && e1b.notifyEnabled && e1b.eveningEnabled),
+             erinnerungZeit: e1.notifyTime + '/' + e1.eveningTime,
+             ausschaltenGilt: e2.notifyEnabled === false && e2b.notifyEnabled === false };
   });
   if (!r.commutative) note('D: merge not commutative');
   if (!r.idem) note('D: merge not idempotent');
@@ -406,7 +422,11 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   if (!r.symmetric) note('D: hash of round-tripped cloud doc differs from local hash (sync would ping-pong)');
   if (r.jokerNachKoppeln !== 2 || r.jokerVertauscht !== 2) note('D: verdiente Joker gehen beim Koppeln eines neuen Geräts verloren: ' + r.jokerNachKoppeln + '/' + r.jokerVertauscht);
   if (r.jokerNachEinsatz !== 1) note('D: eingesetzter Joker taucht beim Zusammenführen wieder auf: ' + r.jokerNachEinsatz);
-  ok('D: merge commutative=' + r.commutative + ' idem=' + r.idem + ' tomb=' + r.tomb + ' symmetric=' + r.symmetric + ' joker=' + r.jokerNachKoppeln + '/' + r.jokerNachEinsatz);
+  if (!r.erinnerungBleibt) note('D: ein frisch eingerichtetes Gerät schaltet beim Abgleich die Erinnerungen aus');
+  if (r.erinnerungZeit !== '07:30/21:00') note('D: die eingestellten Erinnerungszeiten überleben den Abgleich nicht: ' + r.erinnerungZeit);
+  if (!r.ausschaltenGilt) note('D: eine bewusst ausgeschaltete Erinnerung wird beim Abgleich wieder eingeschaltet');
+  ok('D: merge commutative=' + r.commutative + ' idem=' + r.idem + ' tomb=' + r.tomb + ' symmetric=' + r.symmetric
+     + ' joker=' + r.jokerNachKoppeln + '/' + r.jokerNachEinsatz + ' erinnerungen=' + r.erinnerungZeit);
   await ctx.close();
 }
 
@@ -660,7 +680,8 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     try { erreichbar = (await fetch(API + '/health')).ok; } catch (e) { erreichbar = false; }
   }
   if (!erreichbar) {
-    ok('I: übersprungen (kein Sync-Dienst – SYNC_API und SYNC_TOKEN setzen)');
+    if (API || TOKEN) note('I: SYNC_API/SYNC_TOKEN gesetzt, aber der Dienst antwortet nicht – Szenario NICHT geprüft');
+    else ok('I: übersprungen (kein Sync-Dienst – SYNC_API und SYNC_TOKEN setzen)');
   } else {
     const mach = async () => {
       const ctx = await browser.newContext({ ...iphone, colorScheme: 'dark', locale: 'de-CH', timezoneId: 'Europe/Zurich' });
@@ -718,14 +739,28 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   let erreichbar = false;
   if (API && TOKEN) { try { erreichbar = (await fetch(API + '/health')).ok; } catch (e) {} }
   if (!erreichbar) {
-    ok('J: übersprungen (kein Sync-Dienst)');
+    if (API || TOKEN) note('J: SYNC_API/SYNC_TOKEN gesetzt, aber der Dienst antwortet nicht – Szenario NICHT geprüft');
+    else ok('J: übersprungen (kein Sync-Dienst)');
   } else {
+    const TOKEN_ERWARTET = TOKEN;
     const linkFuer = (wert) => BASE + '#s=' + encodeURIComponent(wert);
-    // a) Ein Öffnen genügt
+    // Der Dienst liegt im Test auf einer anderen Adresse als die App, darum
+    // fragt die App jedes Mal nach – genau so soll es sein.
+    const bestaetigen = async (page) => {
+      const knopf = page.locator('#actionSheet button', { hasText: 'Verbinden' }).first();
+      if (await knopf.count()) { await knopf.click(); await page.waitForTimeout(2500); return true; }
+      return false;
+    };
+    // a) Ein Öffnen plus eine Bestätigung genügt
     {
       const { ctx, page } = await newPage();
       await page.goto(linkFuer(API + '|' + TOKEN), { waitUntil: 'networkidle' });
-      await page.waitForTimeout(2500);
+      await page.waitForTimeout(1500);
+      const gefragt = await page.locator('#actionSheet.show').count() > 0;
+      if (!gefragt) note('J: eine fremde Adresse im Link wurde ohne Rückfrage übernommen');
+      const vorher = await page.evaluate(() => S.device.syncUrl);
+      if (vorher) note('J: schon vor der Bestätigung gespeichert: ' + vorher);
+      await bestaetigen(page);
       const r = await page.evaluate(() => ({ url: S.device.syncUrl, token: !!S.device.syncToken, hash: location.hash, sync: lastSyncAt > 0 }));
       if (r.url !== API) note('J: Adresse aus dem Link nicht übernommen: ' + r.url);
       if (!r.token) note('J: Schlüssel aus dem Link nicht übernommen');
@@ -737,7 +772,8 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
     {
       const { ctx, page } = await newPage();
       await page.goto(linkFuer(API + '|' + TOKEN), { waitUntil: 'networkidle' });
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1200);
+      await bestaetigen(page);
       await page.goto('about:blank');
       await page.goto(linkFuer('https://fremd.example.ch/api|' + TOKEN), { waitUntil: 'networkidle' });
       await page.waitForTimeout(1500);
@@ -745,6 +781,38 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
       const url = await page.evaluate(() => S.device.syncUrl);
       if (!gefragt) note('J: Wechsel auf einen fremden Server wurde nicht nachgefragt');
       if (url !== API) note('J: Server wurde ohne Nachfrage gewechselt: ' + url);
+      await ctx.close();
+    }
+    // b2) Gleiche Adresse, anderer Schlüssel: auch das braucht eine Rückfrage,
+    //     sonst macht ein untergeschobener Link den Abgleich still kaputt.
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(linkFuer(API + '|' + TOKEN), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1200);
+      await bestaetigen(page);
+      await page.goto('about:blank');
+      await page.goto(linkFuer(API + '|' + 'falscherSchluessel1234567890'), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1500);
+      const gefragt = await page.locator('#actionSheet.show').count() > 0;
+      if (!gefragt) note('J: ein anderer Schlüssel auf derselben Adresse wurde ohne Rückfrage übernommen');
+      const tok = await page.evaluate(() => S.device.syncToken);
+      if (tok !== TOKEN_ERWARTET) note('J: der Schlüssel wurde ohne Rückfrage ersetzt');
+      await ctx.close();
+    }
+    // b3) Und selbst mit Bestätigung darf ein abgelehnter Schlüssel den
+    //     funktionierenden nicht ersetzen.
+    {
+      const { ctx, page } = await newPage();
+      await page.goto(linkFuer(API + '|' + TOKEN), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1200);
+      await bestaetigen(page);
+      await page.goto('about:blank');
+      await page.goto(linkFuer(API + '|' + 'falscherSchluessel1234567890'), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1200);
+      const ersetzen = page.locator('#actionSheet button', { hasText: 'Ersetzen' }).first();
+      if (await ersetzen.count()) { await ersetzen.click(); await page.waitForTimeout(2500); }
+      const r = await page.evaluate(() => ({ tok: S.device.syncToken, status: syncStatusText }));
+      if (r.tok !== TOKEN_ERWARTET) note('J: ein abgelehnter Schlüssel hat den funktionierenden überschrieben: ' + r.status);
       await ctx.close();
     }
     // c) Unbrauchbarer Schlüssel richtet nichts an
@@ -757,7 +825,57 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
       if (r.hash) note('J: unbrauchbarer Schlüssel bleibt in der Adresszeile');
       await ctx.close();
     }
-    ok('J: Einrichten über den Link – ein Öffnen genügt, kein stiller Serverwechsel');
+    // d) Ein Gerät, das schon läuft: nichts darf verschwinden, und vor allem
+    //    dürfen die Erinnerungen nicht ausgehen. Genau das ist der Moment, in
+    //    dem der Besitzer den Link antippt.
+    {
+      // Erst ein «frisches» Gerät seinen Stand auf den Server legen lassen –
+      // mit den Vorgaben, also beide Erinnerungen aus.
+      const frisch = await newPage();
+      await frisch.page.goto(BASE, { waitUntil: 'networkidle' });
+      await frisch.page.evaluate(async ([u, t]) => {
+        S.settings.onboardingDone = true; touch(S.settings);
+        S.tasks = [normalizeTask({ id: 'link-neu', label: 'Vom Rechner', emoji: '💻' })];
+        S.device.syncUrl = u; S.device.syncToken = t; saveAll({ silent: true });
+        await syncNow({ loud: true });
+      }, [API, TOKEN]);
+      await frisch.ctx.close();
+
+      // Jetzt das lang benutzte Gerät: eigene Routine, Erinnerungen an.
+      const { ctx, page } = await newPage();
+      await page.goto(BASE, { waitUntil: 'networkidle' });
+      await page.evaluate(() => {
+        S.settings.onboardingDone = true;
+        S.settings.notifyEnabled = true; S.settings.notifyTime = '07:30'; S.settings.notifyChangedAt = Date.now();
+        S.settings.eveningEnabled = true; S.settings.eveningTime = '21:00'; S.settings.eveningChangedAt = Date.now();
+        touch(S.settings);
+        S.tasks = [normalizeTask({ id: 'link-alt', label: 'Vom Handy', emoji: '📱' })];
+        S.todos = [normalizeTodo({ id: 'link-todo', title: 'Wichtig' })];
+        saveAll({ silent: true });
+      });
+      await page.goto(linkFuer(API + '|' + TOKEN), { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1200);
+      // Fremde Adresse → Rückfrage; hier bestätigen, das ist der eigene Server
+      const knopf = page.locator('#actionSheet button', { hasText: 'Verbinden' }).first();
+      if (await knopf.count()) await knopf.click();
+      await page.waitForTimeout(3000);
+      const r = await page.evaluate(() => ({
+        eigene: S.tasks.some(t => t.id === 'link-alt' && !t.deleted),
+        fremde: S.tasks.some(t => t.id === 'link-neu' && !t.deleted),
+        todo: S.todos.some(t => t.id === 'link-todo' && !t.deleted),
+        morgen: !!S.settings.notifyEnabled, morgenZeit: S.settings.notifyTime,
+        abend: !!S.settings.eveningEnabled, abendZeit: S.settings.eveningTime,
+        plan: buildPushPlan(),
+      }));
+      if (!r.eigene) note('J: die eigene Routine ging beim Verbinden verloren');
+      if (!r.fremde) note('J: die Routine vom Server kam nicht an');
+      if (!r.todo) note('J: das To-Do ging beim Verbinden verloren');
+      if (!r.morgen || r.morgenZeit !== '07:30') note('J: der Link hat die Morgen-Erinnerung abgeschaltet oder verstellt: ' + r.morgen + '/' + r.morgenZeit);
+      if (!r.abend || r.abendZeit !== '21:00') note('J: der Link hat den Abend-Check abgeschaltet oder verstellt: ' + r.abend + '/' + r.abendZeit);
+      if (!r.plan.morning.enabled || !r.plan.evening.enabled) note('J: der Plan für den Server hat die Erinnerungen aus');
+      await ctx.close();
+    }
+    ok('J: Einrichten über den Link – ein Öffnen genügt, kein stiller Serverwechsel, Erinnerungen bleiben an');
   }
 }
 

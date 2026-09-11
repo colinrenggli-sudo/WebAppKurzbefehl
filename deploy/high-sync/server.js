@@ -207,7 +207,12 @@ const server = http.createServer(async (req, res) => {
 
   const antwort = (code, body, extra) => send(res, code, body, Object.assign({}, cors, extra || {}));
 
-  if (route === '/health') return antwort(200, { ok: true, push: !!(webpush && VAPID_PUBLIC && VAPID_PRIVATE) });
+  if (route === '/health') {
+    return antwort(200, Object.assign(
+      { ok: true, push: pushBereit, subject: !!VAPID_SUBJECT },
+      pushBereit ? {} : { pushFehler: pushFehler || 'unbekannt' },
+    ));
+  }
 
   // Der öffentliche Schlüssel ist keine Geheimsache: das Handy braucht ihn zum Anmelden.
   if (route === '/push/key' && req.method === 'GET') return antwort(200, { key: VAPID_PUBLIC || null });
@@ -326,18 +331,32 @@ const server = http.createServer(async (req, res) => {
 });
 
 // ---------- Erinnerungen ----------
+// «Bereit» heisst: web-push hat Schlüssel UND Absenderadresse angenommen.
+// Nur zu prüfen, ob die Zeichenketten nicht leer sind, wäre eine Lüge – und
+// zwar die eine, auf die beim Einrichten geschaut wird.
+let pushBereit = false;
+let pushFehler = '';
 if (webpush && VAPID_PUBLIC && VAPID_PRIVATE) {
   try {
     webpush.setVapidDetails(VAPID_SUBJECT || 'mailto:hallo@example.com', VAPID_PUBLIC, VAPID_PRIVATE);
-  } catch (e) { log('VAPID-Schlüssel unbrauchbar:', e.message); }
+    pushBereit = true;
+  } catch (e) {
+    pushFehler = e.message || String(e);
+    log('VAPID-Schlüssel unbrauchbar:', pushFehler);
+  }
+} else if (webpush) {
+  pushFehler = 'VAPID_PUBLIC_KEY oder VAPID_PRIVATE_KEY fehlt';
+} else {
+  pushFehler = 'web-push ist nicht installiert';
 }
+if (!VAPID_SUBJECT) log('Hinweis: VAPID_SUBJECT fehlt – Apple lehnt Platzhalter ab. In .env eine echte Adresse eintragen.');
 
 // Schickt an alle angemeldeten Geräte ausser denen in «schon». Zurück kommt,
 // welche Geräte die Meldung wirklich angenommen haben – nicht bloss eine Zahl.
 // Der Unterschied zählt: bei zwei Geräten darf ein Erfolg nicht dafür sorgen,
 // dass das zweite die Erinnerung nie bekommt.
 async function sendToAll(payload, schon) {
-  if (!webpush || !VAPID_PUBLIC || !VAPID_PRIVATE) { log('Push nicht eingerichtet – nichts gesendet.'); return { delivered: [], offen: 0 }; }
+  if (!pushBereit) { log('Push nicht eingerichtet (' + pushFehler + ') – nichts gesendet.'); return { delivered: [], offen: 0 }; }
   const subs = await readJsonSoft(SUBS_FILE, {});
   const uebersprungen = Array.isArray(schon) ? schon : [];
   const ids = Object.keys(subs).filter(id => !uebersprungen.includes(id));
@@ -546,7 +565,7 @@ const alsDienst = require.main === module;
     console.error('[high-sync] Auf dem Server einmal: mkdir -p <Datenordner> && chown -R 1000:1000 <Datenordner>');
     process.exit(1);
   }
-  if (!(webpush && VAPID_PUBLIC && VAPID_PRIVATE)) log('Hinweis: ohne VAPID-Schlüssel läuft der Abgleich, aber es kommen keine Erinnerungen.');
+  if (!pushBereit) log('Hinweis: es kommen keine Erinnerungen an (' + pushFehler + ') – der Abgleich läuft trotzdem.');
   server.listen(PORT, () => log('bereit auf Port', PORT, '· Daten in', DATA_DIR, '· Zeitzone', Intl.DateTimeFormat().resolvedOptions().timeZone));
   setInterval(tick, 30 * 1000);
   setTimeout(tick, 3000);
