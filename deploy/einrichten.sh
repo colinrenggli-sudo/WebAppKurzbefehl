@@ -54,40 +54,48 @@ else
   COMPOSE_ABLAGE="/usr/local/lib/docker/cli-plugins/docker-compose"
 fi
 
-# Docker findet Erweiterungen in mehreren Ordnern. Wir nehmen den ersten, der
-# sich beschreiben lässt – und verknüpfen dort, oder kopieren, wenn das
-# Dateisystem keine Verknüpfungen kann (der USB-Stick kann keine).
+# Docker findet Erweiterungen in mehreren Ordnern. Wir legen dort eine Kopie
+# ab – immer kopieren, nie verknüpfen: die dauerhafte Ablage liegt bei Unraid
+# auf dem USB-Stick, und ein FAT-Dateisystem kennt kein Ausführungsrecht. Eine
+# Verknüpfung dorthin wäre da, liesse sich aber nicht starten.
+COMPOSE_LAUF=""
 compose_verdrahten() {
-  [ -s "$COMPOSE_ABLAGE" ] || return 1
+  quelle="$1"
+  [ -s "$quelle" ] || return 1
   for ziel in /usr/local/lib/docker/cli-plugins /usr/lib/docker/cli-plugins /root/.docker/cli-plugins; do
     mkdir -p "$ziel" 2>/dev/null || continue
-    if ln -sf "$COMPOSE_ABLAGE" "$ziel/docker-compose" 2>/dev/null \
-       || cp -f "$COMPOSE_ABLAGE" "$ziel/docker-compose" 2>/dev/null; then
-      chmod +x "$ziel/docker-compose" 2>/dev/null || true
-      COMPOSE_ZIEL="$ziel/docker-compose"
+    cp -f "$quelle" "$ziel/docker-compose" 2>/dev/null || continue
+    chmod +x "$ziel/docker-compose" 2>/dev/null || true
+    # Erst wenn es sich dort wirklich starten lässt, gilt es als eingerichtet.
+    if "$ziel/docker-compose" version >/dev/null 2>&1; then
+      COMPOSE_LAUF="$ziel/docker-compose"
       return 0
     fi
   done
   return 1
 }
 
-COMPOSE_ZIEL=""
 compose_da() { docker compose version >/dev/null 2>&1 || command -v docker-compose >/dev/null 2>&1; }
 
-# Schon einmal geholt? Dann nur noch verdrahten.
-compose_da || compose_verdrahten || true
+# Schon einmal geholt? Dann nur noch eine lauffähige Kopie anlegen.
+if ! compose_da && [ -s "$COMPOSE_ABLAGE" ]; then
+  compose_verdrahten "$COMPOSE_ABLAGE" || true
+fi
 
-if ! compose_da; then
+if ! compose_da && [ -z "$COMPOSE_LAUF" ]; then
   info "docker compose fehlt – wird einmalig geholt (rund 60 MB) …"
-  mkdir -p "$(dirname "$COMPOSE_ABLAGE")" 2>/dev/null || true
-  if curl -fL --retry 3 -o "$COMPOSE_ABLAGE.tmp" \
-       "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)"; then
-    chmod +x "$COMPOSE_ABLAGE.tmp" 2>/dev/null || true
-    mv -f "$COMPOSE_ABLAGE.tmp" "$COMPOSE_ABLAGE"
-    compose_verdrahten || true
+  COMPOSE_TMP="/tmp/docker-compose.$$"
+  if curl -fL --retry 3 -o "$COMPOSE_TMP" \
+       "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)" \
+     && compose_verdrahten "$COMPOSE_TMP"; then
+    # Für das nächste Mal aufheben. Klappt das nicht, ist es nicht schlimm –
+    # dann wird beim nächsten Lauf eben noch einmal geladen.
+    mkdir -p "$(dirname "$COMPOSE_ABLAGE")" 2>/dev/null || true
+    cp -f "$COMPOSE_TMP" "$COMPOSE_ABLAGE" 2>/dev/null || true
+    rm -f "$COMPOSE_TMP"
   else
-    rm -f "$COMPOSE_ABLAGE.tmp"
-    rot "docker compose fehlt und liess sich nicht holen."
+    rm -f "$COMPOSE_TMP"
+    rot "docker compose fehlt und liess sich nicht einrichten."
     info "Entweder hat der Server gerade kein Netz, oder von Hand:"
     info "  Unraid → Apps → «Docker Compose Manager» installieren"
     exit 1
@@ -98,12 +106,11 @@ if docker compose version >/dev/null 2>&1; then
   DC="docker compose"
 elif command -v docker-compose >/dev/null 2>&1; then
   DC="docker-compose"
-elif [ -x "$COMPOSE_ABLAGE" ] && "$COMPOSE_ABLAGE" version >/dev/null 2>&1; then
-  # Weder als Erweiterung noch im Pfad – die Datei tut es auch direkt.
-  DC="$COMPOSE_ABLAGE"
+elif [ -n "$COMPOSE_LAUF" ]; then
+  DC="$COMPOSE_LAUF"
 else
   rot "docker compose liess sich nicht einrichten."
-  info "Von Hand prüfen:  $COMPOSE_ABLAGE version"
+  info "Von Hand prüfen:  /usr/local/lib/docker/cli-plugins/docker-compose version"
   info "Oder: Unraid → Apps → «Docker Compose Manager» installieren"
   exit 1
 fi
