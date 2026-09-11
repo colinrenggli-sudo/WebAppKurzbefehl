@@ -1,0 +1,8 @@
+Dieser Ordner bleibt absichtlich leer.
+
+Der Webserver-Container hängt hier die vom Server geholten Schlafdaten ein
+(deploy/docker-compose.yml → /srv/web/daten). Weil das Repo darüber
+schreibgeschützt eingehängt ist, kann Docker den Ordner nicht selbst
+anlegen – er muss schon da sein, sonst startet der Container nicht.
+
+Die Daten selbst sind per .gitignore ausgenommen.

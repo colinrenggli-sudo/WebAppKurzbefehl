@@ -221,6 +221,11 @@ info "VAPID_SUBJECT = $(hole VAPID_SUBJECT)   (in .env auf die eigene Adresse ä
 
 # ---------- 3. Starten ----------
 schritt "3/6  Container starten"
+# Der Webserver hängt das Repo schreibgeschützt ein und die Schlafdaten in
+# einen Ordner darin. Fehlt dieser Ordner, kann Docker ihn im schreibgeschützten
+# Mount nicht anlegen und der Container startet gar nicht erst.
+mkdir -p "$PWD/../daten" 2>/dev/null || true
+mkdir -p "$(cd "$PWD/.." && pwd)/../daten" 2>/dev/null || true
 if ! $DC up -d --build; then
   rot "Die Container liessen sich nicht starten."
   info "Häufigste Gründe:"

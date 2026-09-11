@@ -1,6 +1,11 @@
 # Vom Server geholte Schlafdaten – persönlich, gehört nicht nach GitHub.
 # Wird von deploy/fitbit-sync geschrieben und nur lokal ausgeliefert.
-daten/
+# Der leere Ordner selbst muss aber mitkommen: der Webserver-Container hängt
+# die Daten genau dort ein, und in einem schreibgeschützten Mount kann Docker
+# den Einhängepunkt nicht selbst anlegen. Darum der Inhalt ignoriert, nicht
+# der Ordner.
+daten/*
+!daten/.gitkeep
 
 # Zugangsdaten der Selbsthosting-Umgebung
 deploy/.env
