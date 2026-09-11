@@ -167,7 +167,8 @@ Bedeutung der Daten nicht und entscheidet nichts über sie.
 
 | Beobachtung | Wahrscheinliche Ursache |
 | --- | --- |
-| Die Seite ist gar nicht erreichbar | Der Cloudflare-Eintrag aus Schritt 1 fehlt, oder cloudflared läuft nicht: `cd deploy && docker compose --profile tunnel up -d`. Prüfen lässt sich beides an einer Adresse, die schon geht |
+| Die Seite ist gar nicht erreichbar | Der Cloudflare-Eintrag fehlt, oder cloudflared läuft nicht: `cd deploy && docker compose --profile tunnel up -d` |
+| **502 Bad Gateway** | Der Eintrag ist da, aber die dort hinterlegte URL stimmt nicht. Welche richtig ist, hängt davon ab, **wie cloudflared läuft** – `einrichten.sh` sagt es dir. Im Netzmodus `host` kennt cloudflared keine Container-Namen, dann gehört dort `127.0.0.1:8088` hinein. Läuft es im selben Docker-Netz, ist es `webapps:8080`. Wörtlich nachlesen lässt es sich immer: `docker logs --tail 20 <cloudflared-container>` – dort steht der Grund im Klartext |
 | `"push":false` unter `/api/health` | VAPID-Schlüssel fehlen in `.env` – `bash deploy/einrichten.sh` noch einmal laufen lassen |
 | Probe-Erinnerung kommt nicht an | App nicht vom Home-Bildschirm gestartet, oder Mitteilungen für HIGH in den iPhone-Einstellungen aus |
 | Erinnerung kommt zur falschen Zeit | Zeitzone des Containers, siehe Log beim Start |

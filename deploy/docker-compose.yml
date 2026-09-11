@@ -29,7 +29,10 @@ services:
     depends_on:
       - high-sync
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/schlaf/"]
+      # 127.0.0.1 statt localhost: nginx lauscht nur auf IPv4, «localhost»
+      # löst im Container aber zuerst auf ::1 auf – die Prüfung schlüge dann
+      # fehl, obwohl der Webserver einwandfrei läuft.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/schlaf/"]
       interval: 60s
       timeout: 5s
       retries: 3
@@ -63,7 +66,7 @@ services:
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8090/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8090/health"]
       interval: 60s
       timeout: 5s
       retries: 3
