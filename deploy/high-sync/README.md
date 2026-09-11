@@ -82,7 +82,7 @@ wieder ohne Verbindung da.
 1. Falls du HIGH schon von GitHub Pages benutzt: dort **Einstellungen →
    Als Datei exportieren** und die Datei behalten. Der Speicher hängt an
    der Adresse, beim Wechsel bleibt sonst nichts erhalten. Das alte Symbol
-   danach vom Home-Bildschirm löschen.
+   **noch nicht löschen** – erst in Schritt 7.
 2. `https://routine.gymlinkapp.ch/` in **Safari** öffnen.
 3. **Teilen → Zum Home-Bildschirm.** Ohne diesen Schritt gibt es keine
    Erinnerungen: iOS erlaubt sie nur der installierten App.
@@ -96,6 +96,10 @@ wieder ohne Verbindung da.
 6. Schalter **Erinnerungen aufs Gerät** an. iOS fragt einmal nach der
    Erlaubnis. Danach **Probe-Erinnerung vom Server** antippen: sie muss
    auch bei gesperrtem Bildschirm ankommen.
+7. Erst jetzt, wenn Routinen, To-Dos und Verlauf nachweislich wieder da
+   sind: das alte Symbol vom Home-Bildschirm löschen. Vorher ist die alte
+   App die einzige verlässliche Kopie – eine Exportdatei, die niemand
+   geöffnet hat, ist noch kein Backup.
 
 Den Einrichtungslink aus Schritt 1 kannst du stattdessen auch direkt
 antippen – dann entfällt 4. Er richtet die App beim Öffnen selbst ein.

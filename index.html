@@ -1406,8 +1406,13 @@ function lsSet(k, v) {
 
 // ---------- 2. Zustand & Migration ----------
 const DEFAULT_SETTINGS = {
-  notifyEnabled: false, notifyTime: '09:00', lastNotifiedDate: null,   // To-Do-Erinnerung (Legacy-Felder bleiben kompatibel)
+  notifyEnabled: false, notifyTime: '09:00', lastNotifiedDate: null,   // Morgen-Erinnerung (Legacy-Felder bleiben kompatibel)
   eveningEnabled: false, eveningTime: '20:00', lastEveningDate: null,  // Abend-Check für offene Routinen
+  // Wann zuletzt bewusst an den Erinnerungen gedreht wurde. Ohne diese zwei
+  // Zahlen könnte ein frisch eingerichtetes Gerät mit seinen Vorgaben («aus»)
+  // die Erinnerungen eines lang benutzten Geräts abschalten – der Abgleich
+  // würde also genau das nehmen, was am wichtigsten ist.
+  notifyChangedAt: 0, eveningChangedAt: 0,
   sound: true, confetti: true, theme: 'system',
   quiet: false,        // Ruhiger Modus: XP, Level und Abzeichen ausblenden
   dayEnd: 3,           // Tagesende (Uhr): bis dahin zählt Erledigtes noch zum Vortag
@@ -3778,6 +3783,8 @@ function renderSettings() {
       if (!ok) { toast('🔔', 'Benachrichtigungen sind nicht erlaubt. Bitte in den System-Einstellungen freigeben.'); renderSettings(); return; }
     }
     s[k] = !s[k]; touch(s);
+    if (k === 'notifyEnabled') s.notifyChangedAt = Date.now();
+    if (k === 'eveningEnabled') s.eveningChangedAt = Date.now();
     // Eben eingeschaltet und die Zeit ist heute schon vorbei: erst morgen erinnern, nicht sofort
     if (s[k] && k === 'notifyEnabled' && nowHM() >= (s.notifyTime || '09:00')) S.device.lastNotifiedDate = clockDay();
     if (s[k] && k === 'eveningEnabled' && nowHM() >= (s.eveningTime || '20:00')) S.device.lastEveningDate = clockDay();
@@ -3785,7 +3792,14 @@ function renderSettings() {
     if (k === 'sound' && s.sound) playSound('small');
     if (k === 'quiet') { document.body.classList.toggle('quiet', !!s.quiet); renderAll(); }
   }));
-  body.querySelectorAll('[data-time]').forEach(inp => inp.addEventListener('change', () => { const k = inp.dataset.time; if (hmValid(inp.value)) { s[k] = inp.value; touch(s); saveAll(); scheduleTick(); } }));
+  body.querySelectorAll('[data-time]').forEach(inp => inp.addEventListener('change', () => {
+    const k = inp.dataset.time;
+    if (!hmValid(inp.value)) return;
+    s[k] = inp.value; touch(s);
+    if (k === 'notifyTime') s.notifyChangedAt = Date.now();
+    if (k === 'eveningTime') s.eveningChangedAt = Date.now();
+    saveAll(); scheduleTick();
+  }));
   body.querySelectorAll('#themeSeg .seg').forEach(b => b.addEventListener('click', () => { s.theme = b.dataset.theme; touch(s); saveAll(); applyTheme(); renderSettings(); }));
   body.querySelectorAll('#dayEndSeg .seg').forEach(b => b.addEventListener('click', () => { s.dayEnd = +b.dataset.dayend; touch(s); saveAll(); processRollover(); recomputeDay(todayKey()); saveAll({ silent: true }); resetCalToToday(); renderSettings(); renderAll(); scheduleTick(); }));
   $('pauseUntil').addEventListener('change', () => {
@@ -3965,6 +3979,13 @@ function scheduleTick() {
 function exportData() {
   const payload = { app: 'focus-blocks', version: 3, exportedAt: new Date().toISOString(), data: {} };
   Object.values(KEYS).forEach(k => { const raw = localStorage.getItem(k); if (raw !== null) { try { payload.data[k] = JSON.parse(raw); } catch (e) { payload.data[k] = raw; } } });
+  // Serveradresse und Schlüssel gehören nicht in eine Datei, die man
+  // weitergibt oder in einer Cloud ablegt. Wer sie hat, kommt an alles.
+  if (payload.data[KEYS.device] && typeof payload.data[KEYS.device] === 'object') {
+    const d = Object.assign({}, payload.data[KEYS.device]);
+    delete d.syncUrl; delete d.syncToken; delete d.pushDeviceId; delete d.serverSent;
+    payload.data[KEYS.device] = d;
+  }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `focus-backup-${todayKey()}.json`;
@@ -4080,6 +4101,19 @@ function mergeStates(a, b) {
   const settingsWinner = (sb.updatedAt || 0) > (sa.updatedAt || 0) ? sb : (sa.updatedAt || 0) > (sb.updatedAt || 0) ? sa : pickDeterministic(sa, sb);
   const settings = Object.assign({}, DEFAULT_SETTINGS, settingsWinner === sa ? sb : sa, settingsWinner);
   delete settings.lastNotifiedDate; delete settings.lastEveningDate; delete settings.pushEnabled; // gerätelokal
+  // Die beiden Erinnerungsschalter folgen nicht dem allgemeinen Zeitstempel,
+  // sondern ihrem eigenen: sonst gewinnt ein Gerät, das gerade erst
+  // eingerichtet wurde, mit seiner Vorgabe «aus» – und der Abgleich nimmt dem
+  // Besitzer genau das weg, worauf er sich verlässt. Nur ein bewusstes
+  // Umschalten zählt; bei Gleichstand bleibt an, was an ist.
+  [['notifyEnabled', 'notifyTime', 'notifyChangedAt'], ['eveningEnabled', 'eveningTime', 'eveningChangedAt']].forEach(([an, zeit, wann]) => {
+    const ta = sa[wann] || 0, tb = sb[wann] || 0;
+    const quelle = ta > tb ? sa : tb > ta ? sb : (sa[an] ? sa : sb[an] ? sb : null);
+    if (!quelle) return;                       // beide aus und nie angefasst
+    settings[an] = !!quelle[an];
+    if (quelle[zeit]) settings[zeit] = quelle[zeit];
+    settings[wann] = Math.max(ta, tb);
+  });
   settings.tipsSeen = Object.assign({}, sa.tipsSeen || {}, sb.tipsSeen || {});
   settings.onboardingDone = !!(a.settings.onboardingDone || b.settings.onboardingDone || tasks.length);
   const history = {};
@@ -4166,6 +4200,7 @@ function gatherCloudDoc() {
 // ---- Verbindung ----
 let syncStatusText = '', syncBusy = false, syncDebounce = null, syncRetryTimer = null, syncPoll = null;
 let lastRev = 0, lastPushedHash = null, syncFails = 0, lastSyncAt = 0;
+let syncAbgelehnt = false;   // letzter Versuch scheiterte am Schlüssel, nicht am Netz
 
 function syncConfigured() { return !!(S.device.syncUrl && S.device.syncToken); }
 function syncBase() { return String(S.device.syncUrl || '').replace(/\/+$/, ''); }
@@ -4202,12 +4237,12 @@ async function syncNow(opts) {
   // Änderung verloren, die währenddessen entstanden ist.
   if (syncBusy) { syncWieder = true; return false; }
   if (navigator.onLine === false) { setSyncStatus('Offline – wird nachgeholt'); return false; }
-  syncBusy = true;
+  syncBusy = true; syncAbgelehnt = false;
   if (opts.loud) setSyncStatus('Gleiche ab …');
   try {
     for (let versuch = 0; versuch < 3; versuch++) {
       const res = await syncFetch('/state' + (S.device.pushDeviceId ? '?device=' + encodeURIComponent(S.device.pushDeviceId) : ''));
-      if (res.status === 401) { setSyncStatus('Schlüssel wird abgelehnt'); return false; }
+      if (res.status === 401) { syncAbgelehnt = true; setSyncStatus('Schlüssel wird abgelehnt'); return false; }
       let remote = null, rev = 0;
       if (res.status === 200) {
         const env = await res.json();
@@ -4461,12 +4496,23 @@ async function verbindeMit(url, token) {
   token = String(token || '').trim();
   if (!/^https:\/\/.+/.test(url) && !istHeimadresse(url)) { toast('⚠️', 'Die Adresse muss mit https:// beginnen.'); return false; }
   if (token.length < 16) { toast('⚠️', 'Der Schlüssel ist zu kurz – nimm den langen aus deploy/.env.'); return false; }
+  const alt = { url: S.device.syncUrl, token: S.device.syncToken };
   S.device.syncUrl = url; S.device.syncToken = token; saveAll({ silent: true });
   setSyncStatus('Prüfe …'); renderSettings();
   const ok = await syncNow({ loud: true });
-  // Auch wenn es nicht klappt, bleibt die Adresse stehen: meistens ist der
-  // Server nur noch nicht so weit, und dann verbindet es sich von selbst.
-  if (ok) startSyncPolling();
+  if (ok) {
+    // Der Server kann ein anderer sein als vorhin – Abo und Abfragetakt
+    // müssen mitkommen, sonst kämen die Erinnerungen weiter vom alten.
+    refreshPushSubscription();
+    startSyncPolling();
+  } else if (syncAbgelehnt) {
+    // Ein abgewiesener Schlüssel ist kein «später nochmal». Ihn stehen zu
+    // lassen hiesse: ab jetzt kein Abgleich und keine Erinnerung mehr, still.
+    S.device.syncUrl = alt.url; S.device.syncToken = alt.token; saveAll({ silent: true });
+    setSyncStatus(alt.url ? 'Schlüssel abgelehnt – der bisherige bleibt' : 'Schlüssel wird abgelehnt');
+  }
+  // Sonst bleibt die Adresse stehen: meistens ist der Server nur noch nicht
+  // so weit, und dann verbindet es sich von selbst.
   renderSettings();
   return ok;
 }
@@ -4521,13 +4567,30 @@ async function verbindeAusLink() {
   else { url = location.origin + '/api'; token = wert.trim(); }
   if (token.length < 16) { toast('⚠️', 'Der Schlüssel in diesem Link ist unbrauchbar.'); return false; }
 
-  const kurz = (x) => String(x).replace(/^https?:\/\//, '').replace(/\/+$/, '');
-  if (syncConfigured() && kurz(S.device.syncUrl) !== kurz(url)) {
-    // Nie stillschweigend den Server wechseln – das wäre der eine Klick, mit
-    // dem jemand die Daten woandershin schickt.
-    confirmSheet('Anderen Server verwenden?',
-      `Dieses Gerät gleicht mit ${kurz(S.device.syncUrl)} ab. Der Link zeigt auf ${kurz(url)}.`,
-      'Wechseln', () => verbindenUndMelden(url, token), false);
+  const kurz = (x) => String(x || '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  const hier = kurz(location.origin + '/api');
+  const ziel = kurz(url);
+
+  // Ohne Rückfrage nur der harmlose Fall: der Link zeigt genau dorthin, wo
+  // diese App selbst herkommt, und es ist noch kein anderer Schlüssel da.
+  // Alles andere könnte ein untergeschobener Link sein – und der würde beim
+  // ersten Abgleich den ganzen Zustand an einen fremden Server schicken.
+  let frage = null;
+  if (ziel !== hier) {
+    frage = {
+      titel: 'Daten an diesen Server schicken?',
+      text: `Der Link verbindet dieses Gerät mit ${ziel}. Dorthin gehen dann alle Routinen, To-Dos und der Verlauf. Nur bestätigen, wenn das dein eigener Server ist.`,
+      knopf: 'Verbinden',
+    };
+  } else if (syncConfigured() && S.device.syncToken !== token) {
+    frage = {
+      titel: 'Schlüssel ersetzen?',
+      text: 'Dieses Gerät ist schon verbunden, der Link bringt einen anderen Schlüssel mit. Passt er nicht, bleibt der bisherige.',
+      knopf: 'Ersetzen',
+    };
+  }
+  if (frage) {
+    confirmSheet(frage.titel, frage.text, frage.knopf, () => verbindenUndMelden(url, token), false);
     return false;
   }
   return await verbindenUndMelden(url, token);
@@ -4652,7 +4715,8 @@ function boot() {
   setTimeout(async () => {
     const ausLink = await verbindeAusLink();
     if (!syncConfigured()) return;
-    if (!ausLink) syncNow();   // beim Einrichten über den Link lief er schon
+    if (ausLink) return;       // verbindeMit hat Abgleich, Abo und Takt schon erledigt
+    syncNow();
     refreshPushSubscription();
     startSyncPolling();
   }, 600);

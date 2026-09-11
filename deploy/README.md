@@ -23,7 +23,7 @@ Im Unraid-Terminal (Symbol oben rechts in der Weboberfläche):
 mkdir -p /mnt/user/appdata/webapps
 cd /mnt/user/appdata/webapps
 git clone https://github.com/colinrenggli-sudo/WebAppKurzbefehl.git repo
-cd repo/deploy
+cd repo
 ```
 
 Kein `git` an Bord? Auf Unraid über die **Nerd Tools** installieren
@@ -33,20 +33,27 @@ Aktualisieren per `update.sh`.
 
 ## Schritt 2 · Starten
 
+Ein Befehl, der alles erledigt – Ordner, Schlüssel, Container, Prüfung:
+
 ```bash
+bash /mnt/user/appdata/webapps/repo/deploy/einrichten.sh https://routine.gymlinkapp.ch
+```
+
+Der volle Pfad steht hier, damit es aus jedem Verzeichnis geht. Was das
+Skript im Einzelnen tut und wie es weitergeht, steht in
+[high-sync/README.md](high-sync/README.md).
+
+Wer nur die statischen Apps will, ohne HIGHs Abgleich und Erinnerungen:
+
+```bash
+cd /mnt/user/appdata/webapps/repo/deploy
 docker compose up -d
 docker compose ps
 ```
 
-Braucht das Plugin **Docker Compose Manager** (Apps → Compose).
-
-> **Für HIGH gibt es einen Weg in einem Zug:**
-> `bash deploy/einrichten.sh https://routine.gymlinkapp.ch` legt Ordner
-> und Schlüssel an, startet alles und druckt am Ende den Link fürs
-> iPhone. Siehe [high-sync/README.md](high-sync/README.md).
-
-Ohne das Plugin startet der Befehl unten **nur den Webserver** – die Apps
-laufen damit, HIGHs Abgleich und Erinnerungen aber nicht: die brauchen den
+Braucht das Plugin **Docker Compose Manager** (Apps → Compose). Ohne das
+Plugin startet der Befehl unten **nur den Webserver** – die Apps laufen
+damit, HIGHs Abgleich und Erinnerungen aber nicht: die brauchen den
 zweiten Container aus `docker compose`.
 
 ```bash

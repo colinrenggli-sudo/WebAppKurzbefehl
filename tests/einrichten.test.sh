@@ -50,13 +50,13 @@ echo "curl $*" >> "$ATTRAPPEN_LOG"
 # Die öffentliche Adresse antwortet nur, wenn ATTRAPPEN_OEFFENTLICH gesetzt ist.
 case "$*" in
   *localhost*) cat "$ATTRAPPEN_GESUNDHEIT"; [ -s "$ATTRAPPEN_GESUNDHEIT" ] || exit 7; exit 0 ;;
-  *) [ -n "${ATTRAPPEN_OEFFENTLICH:-}" ] || exit 7; echo '{"ok":true,"push":true}'; exit 0 ;;
+  *) [ -n "${ATTRAPPEN_OEFFENTLICH:-}" ] || exit 7; echo '{"ok":true,"push":true,"subject":true}'; exit 0 ;;
 esac
 ATTRAPPE
 chmod +x "$WURZEL/bin/docker" "$WURZEL/bin/curl"
 export ATTRAPPEN_LOG="$WURZEL/aufrufe.log"
 export ATTRAPPEN_GESUNDHEIT="$WURZEL/gesundheit.txt"
-printf '{"ok":true,"push":true}' > "$ATTRAPPEN_GESUNDHEIT"
+printf '{"ok":true,"push":true,"subject":true}' > "$ATTRAPPEN_GESUNDHEIT"
 export PATH="$WURZEL/bin:$PATH"
 
 # ---- Lauf 1: alles frisch ----
@@ -115,8 +115,94 @@ RC4=$?
 pruefe "stummer Dienst führt zu einem Fehler" "$([ "$RC4" -ne 0 ] && echo ja)" "ja"
 enthaelt "und sagt, wo das Log steht" "$AUS4" "logs --tail"
 
+# ---- Erinnerungen nicht wirklich bereit: das muss auffallen ----
+printf '{"ok":true,"push":false,"pushFehler":"Vapid public key should be 65 bytes long when decoded."}' > "$ATTRAPPEN_GESUNDHEIT"
+AUS_PUSH="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+enthaelt "kaputte Schlüssel werden gemeldet" "$AUS_PUSH" "Erinnerungen sind AUS"
+ANZAHL=$((ANZAHL+1))
+if printf '%s' "$AUS_PUSH" | grep -q "Erinnerungen sind bereit"; then
+  FEHLER=$((FEHLER+1)); echo "FEHLT: es meldet trotzdem «bereit»"
+else echo "ok: es meldet nicht «bereit»"; fi
+
+printf '{"ok":true,"push":true,"subject":false}' > "$ATTRAPPEN_GESUNDHEIT"
+AUS_SUBJ="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+enthaelt "fehlende Absenderadresse wird gemeldet" "$AUS_SUBJ" "VAPID_SUBJECT fehlt"
+printf '{"ok":true,"push":true,"subject":true}' > "$ATTRAPPEN_GESUNDHEIT"
+
+# ---- Neue Schlüssel auf vorhandene Daten: laute Warnung ----
+printf '{"rev":1}' > "$DATEN/state.json"
+rm -f "$ENVD"
+AUS_NEU="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+enthaelt "neue Schlüssel auf alten Daten werden gemeldet" "$AUS_NEU" "NEUE Schlüssel"
+enthaelt "und was dagegen zu tun ist" "$AUS_NEU" "JEDEM Gerät den Link"
+TOKEN2="$(sed -n 's|^SYNC_TOKEN=||p' "$ENVD")"
+ANZAHL=$((ANZAHL+1))
+if [ "$TOKEN2" = "$TOKEN1" ]; then FEHLER=$((FEHLER+1)); echo "FEHLT: der Schlüssel hätte neu sein müssen"
+else echo "ok: ohne .env entsteht ein neuer Schlüssel"; fi
+rm -f "$DATEN/state.json" "$DATEN/subscriptions.json" "$ENVD"
+AUS_FRISCH="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+ANZAHL=$((ANZAHL+1))
+if printf '%s' "$AUS_FRISCH" | grep -q "NEUE Schlüssel"; then
+  FEHLER=$((FEHLER+1)); echo "FEHLT: Warnung kommt auch ohne alte Daten"
+else echo "ok: ohne alte Daten keine Warnung"; fi
+TOKEN1="$(sed -n 's|^SYNC_TOKEN=||p' "$ENVD")"
+
+# ---- http-Adresse: keine Versprechen über Erinnerungen ----
+AUS_HTTP="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" http://192.168.1.50:8088 "$DATEN" 2>&1)"
+enthaelt "über http wird klar gesagt, dass Erinnerungen fehlen" "$AUS_HTTP" "KEINE Erinnerungen"
+ANZAHL=$((ANZAHL+1))
+if printf '%s' "$AUS_HTTP" | grep -q "«Erinnerungen aufs Gerät» einschalten"; then
+  FEHLER=$((FEHLER+1)); echo "FEHLT: über http wird trotzdem zum Einschalten aufgefordert"
+else echo "ok: über http keine Aufforderung zum Einschalten"; fi
+
+# ---- Adresse ohne Schema wird ergänzt ----
+AUS_OHNE="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" routine.gymlinkapp.ch "$DATEN" 2>&1)"
+enthaelt "fehlendes https:// wird ergänzt" "$AUS_OHNE" "https://routine.gymlinkapp.ch/#s="
+
+# ---- Docker bricht bei der Schlüsselerzeugung ab ----
+rm -f "$ENVD"
+cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
+#!/bin/bash
+case "$1 ${2:-}" in "info "|"compose version") exit 0 ;; esac
+case "$*" in *generateVAPIDKeys*) echo "Error response from daemon: no such image" >&2; exit 125 ;; esac
+exit 0
+ATTRAPPE
+chmod +x "$WURZEL/bin/docker"
+AUS_KEY="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+pruefe "Fehler bei der Schlüsselerzeugung bricht ab" "$([ $? -ne 0 ] && echo ja)" "ja"
+enthaelt "und erklärt es verständlich" "$AUS_KEY" "liessen sich nicht erzeugen"
+
+# ---- Container starten nicht ----
+cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
+#!/bin/bash
+case "$1 ${2:-}" in "info "|"compose version") exit 0 ;; esac
+case "$*" in
+  *generateVAPIDKeys*) echo "OEFFENTLICH-1 PRIVAT-2"; exit 0 ;;
+  *"up -d"*) echo "Bind for 0.0.0.0:8088 failed: port is already allocated" >&2; exit 1 ;;
+esac
+exit 0
+ATTRAPPE
+chmod +x "$WURZEL/bin/docker"
+AUS_UP="$(bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+pruefe "Startfehler bricht ab" "$([ $? -ne 0 ] && echo ja)" "ja"
+enthaelt "und nennt den häufigsten Grund" "$AUS_UP" "schon belegt"
+
+# ---- Schrittnummern laufen durch ----
+cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
+#!/bin/bash
+case "$1 ${2:-}" in "info "|"compose version") exit 0 ;; esac
+case "$*" in *generateVAPIDKeys*) echo "OEFFENTLICH-1 PRIVAT-2"; exit 0 ;; esac
+exit 0
+ATTRAPPE
+chmod +x "$WURZEL/bin/docker"
+AUS_NR="$(ATTRAPPEN_OEFFENTLICH=1 bash "$WURZEL/deploy/einrichten.sh" https://routine.gymlinkapp.ch "$DATEN" 2>&1)"
+ANZAHL=$((ANZAHL+1))
+NENNER="$(printf '%s' "$AUS_NR" | grep -oE '[0-9]/[0-9]' | cut -d/ -f2 | sort -u | tr -d '\n')"
+if [ "$NENNER" = "6" ]; then echo "ok: alle Schritte zählen gegen denselben Nenner"
+else FEHLER=$((FEHLER+1)); echo "FEHLT: Schrittzahlen springen (Nenner: $NENNER)"; fi
+
 # ---- Lauf 5: kein docker compose ----
-printf '{"ok":true,"push":true}' > "$ATTRAPPEN_GESUNDHEIT"
+printf '{"ok":true,"push":true,"subject":true}' > "$ATTRAPPEN_GESUNDHEIT"
 cat > "$WURZEL/bin/docker" <<'ATTRAPPE'
 #!/bin/bash
 [ "$1" = "info" ] && exit 0
