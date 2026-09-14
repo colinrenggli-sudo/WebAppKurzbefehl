@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="de-CH" data-theme="auto">
+<head>
+<!-- ==================================================================
+     FLUSSWERK LEAD-RADAR — Treuhandfirmen mit offenen Stellen
+     ------------------------------------------------------------------
+     Eine einzige, self-contained Datei. Kein Build, kein Server, kein
+     Konto. Doppelklick genuegt.
+
+     Die These: Wer eine Stelle als Sachbearbeiter Treuhand ausschreibt,
+     hat mehr Arbeit als Leute — und findet niemanden. Genau dort
+     verkauft sich Automatisierung statt Kopf.
+
+     Fuenf Ansichten:
+       Radar     -> alle Firmen, gefiltert und nach Muster-Score sortiert
+       Besuchen  -> Luzern und Zentralschweiz, nach Ort gruppiert, druckbar
+       Ansprache -> Mailtext je Firma, drei Tonalitaeten, mailto + Kopie
+       Quellen   -> jede Plattform mit fertiger Such-URL zum Nachladen
+       Muster    -> die Score-Gewichte, live verstellbar
+
+     Daten liegen im Browser (localStorage): Status, Notizen, Gewichte.
+     Die Firmenliste selbst steht unten im Abschnitt DATEN.
+     Recherche, Quellenlage und Rechtliches: treuhand/RECHERCHE.md
+     ================================================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<title>FLUSSWERK Lead-Radar – Treuhandfirmen mit offenen Stellen</title>
+
+<meta name="description" content="Treuhandfirmen in der Schweiz, die aktuell Sachbearbeiter suchen: gefiltert, nach Muster bewertet, mit fertiger Ansprache und Besuchsliste für die Zentralschweiz.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#EEF2F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#080D12" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lead-Radar">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F6E8C'/%3E%3Cpath d='M10 24c7-6 13-6 20 0s13 6 20 0M10 36c7-6 13-6 20 0s13 6 20 0M10 48c7-6 13-6 20 0s13 6 20 0' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E">
+
+<style>
+/* ==================================================================
+   1 · Design-Tokens — Flusswerk: kuehles Wasserblau auf Papiergrau
+   ================================================================== */
+:root{
+  --bg:#EDF1F5; --bg-2:#E2E8EE; --card:#FFFFFF; --card-2:#F6F9FB; --card-3:#EDF2F6;
+  --txt:#0D1620; --txt-2:#48596B; --txt-3:#8494A5;
+  --sep:#E0E7ED; --sep-2:#C8D3DD;
+  --tint:#0F6E8C; --tint-2:#0A5670; --tint-soft:#E0F0F6; --tint-txt:#0A536B;
+  --ok:#15803D; --ok-soft:#DEF7E5; --ok-txt:#116432;
+  --warn:#A65A05; --warn-soft:#FDF0D5; --warn-txt:#8A4B04;
+  --err:#C0261C; --err-soft:#FDE7E5; --err-txt:#962018;
+  --info:#1D4ED8; --info-soft:#E0E9FF; --info-txt:#1741B0;
+  --lila:#6D28D9; --lila-soft:#EDE6FE; --lila-txt:#5B21B6;
+  --gold:#B45309; --gold-soft:#FEF3C7;
+  --shadow-1:0 1px 2px rgba(13,22,32,.06), 0 1px 3px rgba(13,22,32,.05);
+  --shadow-2:0 2px 4px rgba(13,22,32,.05), 0 8px 20px -10px rgba(13,22,32,.22);
+  --shadow-3:0 4px 8px rgba(13,22,32,.06), 0 24px 56px -22px rgba(13,22,32,.32);
+  --ring:0 0 0 3px color-mix(in srgb, var(--tint) 30%, transparent);
+  --r-xs:6px; --r-s:10px; --r-m:14px; --r-l:20px; --r-xl:26px; --r-full:999px;
+  --ff:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --ff-num:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Roboto Mono",monospace;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  --top-h:56px;
+  --ease:cubic-bezier(.32,.72,0,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#070B10; --bg-2:#0D141C; --card:#131C25; --card-2:#19232E; --card-3:#202D3A;
+    --txt:#EDF3F8; --txt-2:#9BAABA; --txt-3:#647587;
+    --sep:#1E2A36; --sep-2:#2B3B4B;
+    --tint:#3EB4D4; --tint-2:#65C9E4; --tint-soft:#0B2A36; --tint-txt:#78D0E8;
+    --ok:#3FBE6B; --ok-soft:#0F2A1A; --ok-txt:#6BD892;
+    --warn:#E0A030; --warn-soft:#2E2210; --warn-txt:#F0BC5C;
+    --err:#F2685C; --err-soft:#331614; --err-txt:#FF8A80;
+    --info:#5B8CFF; --info-soft:#131E38; --info-txt:#8FB0FF;
+    --lila:#A78BFA; --lila-soft:#221A3A; --lila-txt:#C4B0FC;
+    --gold:#E0A030; --gold-soft:#2E2210;
+    --shadow-1:0 1px 2px rgba(0,0,0,.5);
+    --shadow-2:0 2px 4px rgba(0,0,0,.45), 0 10px 24px -12px rgba(0,0,0,.8);
+    --shadow-3:0 4px 8px rgba(0,0,0,.5), 0 28px 64px -24px rgba(0,0,0,.9);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#070B10; --bg-2:#0D141C; --card:#131C25; --card-2:#19232E; --card-3:#202D3A;
+  --txt:#EDF3F8; --txt-2:#9BAABA; --txt-3:#647587;
+  --sep:#1E2A36; --sep-2:#2B3B4B;
+  --tint:#3EB4D4; --tint-2:#65C9E4; --tint-soft:#0B2A36; --tint-txt:#78D0E8;
+  --ok:#3FBE6B; --ok-soft:#0F2A1A; --ok-txt:#6BD892;
+  --warn:#E0A030; --warn-soft:#2E2210; --warn-txt:#F0BC5C;
+  --err:#F2685C; --err-soft:#331614; --err-txt:#FF8A80;
+  --info:#5B8CFF; --info-soft:#131E38; --info-txt:#8FB0FF;
+  --lila:#A78BFA; --lila-soft:#221A3A; --lila-txt:#C4B0FC;
+  --gold:#E0A030; --gold-soft:#2E2210;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow-2:0 2px 4px rgba(0,0,0,.45), 0 10px 24px -12px rgba(0,0,0,.8);
+  --shadow-3:0 4px 8px rgba(0,0,0,.5), 0 28px 64px -24px rgba(0,0,0,.9);
+  color-scheme:dark;
+}
+
+/* ==================================================================
+   2 · Grundlagen
+   ================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--txt); font-family:var(--ff);
+  font-size:15px; line-height:1.45; letter-spacing:-.008em;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  padding-bottom:var(--sab);
+}
+h1,h2,h3{margin:0; font-weight:640; letter-spacing:-.02em}
+p{margin:0}
+button,input,select,textarea{font:inherit; color:inherit}
+button{cursor:pointer; background:none; border:0; padding:0}
+a{color:var(--tint); text-underline-offset:2px}
+.num{font-family:var(--ff-num); font-variant-numeric:tabular-nums}
+:focus-visible{outline:none; box-shadow:var(--ring); border-radius:var(--r-s)}
+[hidden]{display:none!important}
+
+/* ==================================================================
+   3 · Kopf und Reiter
+   ================================================================== */
+.top{
+  position:sticky; top:0; z-index:40; background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--sep); padding-top:var(--sat);
+}
+.top-in{
+  max-width:1560px; margin:0 auto; padding:0 clamp(16px,3vw,28px);
+  height:var(--top-h); display:flex; align-items:center; gap:14px;
+}
+.brand{display:flex; align-items:center; gap:10px; margin-right:auto; min-width:0}
+.brand-mark{
+  width:30px; height:30px; border-radius:9px; background:var(--tint); flex:none;
+  display:grid; place-items:center; box-shadow:var(--shadow-1);
+}
+.brand-mark svg{width:19px; height:19px; display:block}
+.brand-txt{min-width:0}
+.brand-txt b{display:block; font-size:14.5px; font-weight:680; letter-spacing:-.02em; line-height:1.2}
+.brand-txt span{display:block; font-size:11.5px; color:var(--txt-3); line-height:1.3;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tabs{display:flex; gap:2px; background:var(--card-3); padding:3px; border-radius:var(--r-full)}
+.tab{
+  padding:6px 13px; border-radius:var(--r-full); font-size:13px; font-weight:560;
+  color:var(--txt-2); white-space:nowrap; transition:.18s var(--ease);
+}
+.tab[aria-selected="true"]{background:var(--card); color:var(--txt); box-shadow:var(--shadow-1)}
+.icon-btn{
+  width:34px; height:34px; border-radius:var(--r-s); display:grid; place-items:center;
+  color:var(--txt-2); border:1px solid var(--sep); background:var(--card); flex:none;
+}
+.icon-btn:hover{color:var(--txt); border-color:var(--sep-2)}
+.icon-btn svg{width:17px; height:17px}
+
+main{max-width:1560px; margin:0 auto; padding:clamp(16px,3vw,26px) clamp(16px,3vw,28px) 80px}
+
+/* ==================================================================
+   4 · Bausteine
+   ================================================================== */
+.card{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-l); box-shadow:var(--shadow-1)}
+.card-pad{padding:clamp(14px,2.2vw,20px)}
+.sec-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.sec-head h2{font-size:17px}
+.sec-head .hint{font-size:12.5px; color:var(--txt-3)}
+
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:10px; margin-bottom:16px}
+.kpi{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-m); padding:12px 14px; box-shadow:var(--shadow-1)}
+.kpi b{display:block; font-family:var(--ff-num); font-variant-numeric:tabular-nums;
+  font-size:26px; font-weight:640; letter-spacing:-.03em; line-height:1.1}
+.kpi span{display:block; font-size:11.5px; color:var(--txt-3); margin-top:3px; letter-spacing:.01em}
+.kpi.is-hot b{color:var(--tint)}
+
+.chip{
+  display:inline-flex; align-items:center; gap:5px; padding:2px 9px; border-radius:var(--r-full);
+  font-size:11.5px; font-weight:560; background:var(--card-3); color:var(--txt-2); white-space:nowrap;
+}
+.chip.ok{background:var(--ok-soft); color:var(--ok-txt)}
+.chip.warn{background:var(--warn-soft); color:var(--warn-txt)}
+.chip.err{background:var(--err-soft); color:var(--err-txt)}
+.chip.info{background:var(--info-soft); color:var(--info-txt)}
+.chip.tint{background:var(--tint-soft); color:var(--tint-txt)}
+.chip.lila{background:var(--lila-soft); color:var(--lila-txt)}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:8px 15px; border-radius:var(--r-s); font-size:13.5px; font-weight:580;
+  background:var(--card); border:1px solid var(--sep-2); color:var(--txt);
+  transition:.15s var(--ease); white-space:nowrap;
+}
+.btn:hover{background:var(--card-2)}
+.btn svg{width:15px; height:15px; flex:none}
+.btn.primary{background:var(--tint); border-color:var(--tint); color:#fff}
+.btn.primary:hover{background:var(--tint-2); border-color:var(--tint-2)}
+.btn.sm{padding:5px 11px; font-size:12.5px; border-radius:var(--r-xs)}
+.btn.ghost{border-color:transparent; background:transparent; color:var(--txt-2)}
+.btn.ghost:hover{background:var(--card-3); color:var(--txt)}
+
+.field{display:flex; flex-direction:column; gap:5px}
+.field label{font-size:11.5px; font-weight:580; color:var(--txt-3); letter-spacing:.02em}
+input[type=text],input[type=search],select,textarea{
+  width:100%; padding:8px 11px; border-radius:var(--r-s); border:1px solid var(--sep-2);
+  background:var(--card); font-size:13.5px; transition:.15s var(--ease);
+}
+input:focus,select:focus,textarea:focus{outline:none; border-color:var(--tint); box-shadow:var(--ring)}
+textarea{resize:vertical; line-height:1.5; font-size:13.5px}
+
+/* ==================================================================
+   5 · Filterleiste
+   ================================================================== */
+.filters{
+  display:grid; gap:10px; margin-bottom:14px;
+  grid-template-columns:minmax(200px,1.6fr) repeat(auto-fit,minmax(132px,1fr));
+  align-items:end;
+}
+.toggles{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px; align-items:center}
+.toggle{
+  display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--r-full);
+  font-size:12.5px; font-weight:540; border:1px solid var(--sep-2); background:var(--card);
+  color:var(--txt-2); transition:.15s var(--ease);
+}
+.toggle[aria-pressed="true"]{background:var(--tint-soft); border-color:var(--tint); color:var(--tint-txt)}
+.toggle .dot{width:7px; height:7px; border-radius:50%; background:var(--sep-2)}
+.toggle[aria-pressed="true"] .dot{background:var(--tint)}
+
+/* ==================================================================
+   6 · Tabelle
+   ================================================================== */
+.tbl-wrap{overflow-x:auto; border:1px solid var(--sep); border-radius:var(--r-l); background:var(--card); box-shadow:var(--shadow-1)}
+table{border-collapse:collapse; width:100%; min-width:940px}
+thead th{
+  position:sticky; top:0; z-index:5; background:var(--card-2); text-align:left;
+  font-size:11px; font-weight:620; color:var(--txt-3); letter-spacing:.04em; text-transform:uppercase;
+  padding:10px 12px; border-bottom:1px solid var(--sep); white-space:nowrap;
+}
+thead th.sortable{cursor:pointer; user-select:none}
+thead th.sortable:hover{color:var(--txt)}
+thead th .arrow{opacity:.35; margin-left:3px}
+thead th[data-dir] .arrow{opacity:1; color:var(--tint)}
+tbody td{padding:11px 12px; border-bottom:1px solid var(--sep); vertical-align:top; font-size:13.5px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--card-2)}
+tbody tr.is-open{background:var(--tint-soft)}
+.f-name{font-weight:600; letter-spacing:-.012em}
+.f-sub{font-size:11.5px; color:var(--txt-3); margin-top:2px}
+.f-role{font-size:13px}
+.cell-acts{display:flex; gap:5px; flex-wrap:wrap}
+
+.score{display:flex; align-items:center; gap:8px}
+.score-num{font-family:var(--ff-num); font-weight:640; font-size:15px; min-width:26px; text-align:right}
+.score-bar{width:52px; height:5px; border-radius:var(--r-full); background:var(--card-3); overflow:hidden; flex:none}
+.score-bar i{display:block; height:100%; border-radius:var(--r-full); background:var(--tint)}
+.score.s-hi .score-num{color:var(--ok-txt)} .score.s-hi .score-bar i{background:var(--ok)}
+.score.s-mid .score-num{color:var(--tint-txt)}
+.score.s-lo .score-num{color:var(--txt-3)} .score.s-lo .score-bar i{background:var(--sep-2)}
+
+.sel{
+  padding:4px 8px; border-radius:var(--r-xs); border:1px solid var(--sep-2);
+  background:var(--card); font-size:12px; font-weight:540;
+}
+.sel[data-st="mail"]{background:var(--info-soft); color:var(--info-txt); border-color:transparent}
+.sel[data-st="antwort"]{background:var(--lila-soft); color:var(--lila-txt); border-color:transparent}
+.sel[data-st="termin"]{background:var(--ok-soft); color:var(--ok-txt); border-color:transparent}
+.sel[data-st="kunde"]{background:var(--ok); color:#fff; border-color:transparent}
+.sel[data-st="abgesagt"]{background:var(--card-3); color:var(--txt-3); border-color:transparent}
+
+.empty{padding:52px 20px; text-align:center; color:var(--txt-3)}
+.empty b{display:block; font-size:15px; color:var(--txt-2); margin-bottom:5px}
+
+/* Detailzeile */
+.detail td{background:var(--card-2); padding:0}
+.detail-in{padding:16px 14px; display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.dl{display:grid; gap:7px; align-content:start}
+.dl h4{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--txt-3); font-weight:620; margin:0}
+.dl p{font-size:13px; color:var(--txt-2)}
+.scorelist{display:grid; gap:4px}
+.scorerow{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:3px 0; border-bottom:1px dashed var(--sep)}
+.scorerow b{font-family:var(--ff-num); font-weight:600}
+.scorerow.plus b{color:var(--ok-txt)} .scorerow.minus b{color:var(--err-txt)}
+
+/* ==================================================================
+   7 · Besuchsliste
+   ================================================================== */
+.ort-group{margin-bottom:18px}
+.ort-head{display:flex; align-items:baseline; gap:9px; margin-bottom:9px; padding-bottom:6px; border-bottom:1px solid var(--sep)}
+.ort-head h3{font-size:15px}
+.visit-grid{display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.visit{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-m); padding:13px 14px; box-shadow:var(--shadow-1)}
+.visit-top{display:flex; justify-content:space-between; gap:10px; align-items:start; margin-bottom:6px}
+.visit b{font-size:14px; font-weight:620; letter-spacing:-.012em}
+.visit .meta{font-size:12px; color:var(--txt-3); margin-top:3px}
+.visit .role{font-size:12.5px; color:var(--txt-2); margin-top:6px}
+.visit-acts{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap}
+
+/* ==================================================================
+   8 · Ansprache
+   ================================================================== */
+.mail-layout{display:grid; gap:16px; grid-template-columns:minmax(240px,340px) 1fr; align-items:start}
+.pick-list{max-height:70vh; overflow:auto; border:1px solid var(--sep); border-radius:var(--r-m); background:var(--card)}
+.pick{display:block; width:100%; text-align:left; padding:10px 13px; border-bottom:1px solid var(--sep); transition:.12s var(--ease)}
+.pick:last-child{border-bottom:0}
+.pick:hover{background:var(--card-2)}
+.pick[aria-current="true"]{background:var(--tint-soft)}
+.pick b{display:block; font-size:13.5px; font-weight:600}
+.pick span{display:block; font-size:11.5px; color:var(--txt-3); margin-top:2px}
+.tone-row{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px}
+.mail-box{display:grid; gap:10px}
+.mail-meta{display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+#mailBody{min-height:340px; font-family:var(--ff); line-height:1.6}
+.mail-acts{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+
+/* ==================================================================
+   9 · Quellen
+   ================================================================== */
+.src-grid{display:grid; gap:11px; grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.src{background:var(--card); border:1px solid var(--sep); border-radius:var(--r-m); padding:13px 14px; box-shadow:var(--shadow-1)}
+.src-top{display:flex; justify-content:space-between; align-items:start; gap:9px; margin-bottom:5px}
+.src b{font-size:13.5px; font-weight:620}
+.src .typ{font-size:11.5px; color:var(--txt-3)}
+.src .zug{font-size:12px; color:var(--txt-2); margin:7px 0}
+.src .trf{font-size:12px; color:var(--txt-3)}
+.src-acts{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap}
+
+/* ==================================================================
+   10 · Muster / Gewichte
+   ================================================================== */
+.w-list{display:grid; gap:14px}
+.w-row{display:grid; gap:4px; grid-template-columns:1fr auto; align-items:center}
+.w-row .lbl{grid-column:1/-1; display:flex; justify-content:space-between; gap:10px; align-items:baseline}
+.w-row .lbl b{font-size:13.5px; font-weight:580}
+.w-row .lbl .v{font-family:var(--ff-num); font-weight:640; color:var(--tint); font-size:13.5px}
+.w-row .desc{grid-column:1/-1; font-size:12px; color:var(--txt-3); margin-top:-2px}
+input[type=range]{grid-column:1/-1; width:100%; accent-color:var(--tint); margin:2px 0}
+
+.note{
+  background:var(--warn-soft); color:var(--warn-txt); border-radius:var(--r-m);
+  padding:12px 14px; font-size:13px; line-height:1.55; border:1px solid color-mix(in srgb,var(--warn) 22%,transparent);
+}
+.note b{font-weight:640}
+.note.info{background:var(--info-soft); color:var(--info-txt); border-color:color-mix(in srgb,var(--info) 22%,transparent)}
+
+.toast{
+  position:fixed; left:50%; bottom:calc(22px + var(--sab)); transform:translate(-50%,14px);
+  background:var(--txt); color:var(--bg); padding:10px 18px; border-radius:var(--r-full);
+  font-size:13.5px; font-weight:560; box-shadow:var(--shadow-3); opacity:0; pointer-events:none;
+  transition:.25s var(--ease); z-index:90;
+}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+
+@media (max-width:860px){
+  .mail-layout{grid-template-columns:1fr}
+  .pick-list{max-height:250px}
+  .brand-txt span{display:none}
+}
+@media (max-width:620px){
+  .top-in{gap:9px}
+  .tabs{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  .tab{padding:6px 10px; font-size:12.5px}
+}
+@media print{
+  .top,.filters,.toggles,.visit-acts,.btn,.no-print{display:none!important}
+  body{background:#fff}
+  .visit,.card{box-shadow:none; break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M10 24c7-6 13-6 20 0s13 6 20 0M10 36c7-6 13-6 20 0s13 6 20 0M10 48c7-6 13-6 20 0s13 6 20 0" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="brand-txt">
+        <b>Lead-Radar</b>
+        <span>Flusswerk · Treuhandfirmen mit offenen Stellen</span>
+      </div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Ansichten">
+      <button class="tab" role="tab" aria-selected="true"  data-view="radar">Radar</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="besuch">Besuchen</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="mail">Ansprache</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="quellen">Quellen</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="muster">Muster</button>
+    </nav>
+
+    <button class="icon-btn" id="themeBtn" title="Hell / Dunkel umschalten" aria-label="Hell oder Dunkel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ RADAR ============================ -->
+<section id="v-radar" role="tabpanel">
+  <div class="kpis" id="kpis"></div>
+
+  <div class="filters">
+    <div class="field">
+      <label for="q">Suchen</label>
+      <input type="search" id="q" placeholder="Firma, Ort, Stelle, Software …" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="fRegion">Region</label>
+      <select id="fRegion">
+        <option value="">Alle Regionen</option>
+        <option value="1">1 · Luzern Stadt und Agglo</option>
+        <option value="2">2 · übrige Zentralschweiz</option>
+        <option value="12">1 + 2 · ganze Zentralschweiz</option>
+        <option value="3">3 · Nachbarkantone</option>
+        <option value="4">4 · übrige Deutschschweiz</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fKanton">Kanton</label>
+      <select id="fKanton"><option value="">Alle Kantone</option></select>
+    </div>
+    <div class="field">
+      <label for="fStatus">Status</label>
+      <select id="fStatus">
+        <option value="">Alle Status</option>
+        <option value="neu">Neu</option>
+        <option value="geprueft">Geprüft</option>
+        <option value="mail">Mail gesendet</option>
+        <option value="antwort">Antwort erhalten</option>
+        <option value="termin">Termin vereinbart</option>
+        <option value="kunde">Kunde</option>
+        <option value="abgesagt">Abgesagt</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fScore">Score ab</label>
+      <select id="fScore">
+        <option value="0">alle</option>
+        <option value="40">40+</option>
+        <option value="55">55+</option>
+        <option value="70">70+ (heiss)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="toggles">
+    <button class="toggle" id="tOffen"    aria-pressed="true"><i class="dot"></i>nur mit offener Stelle</button>
+    <button class="toggle" id="tDirekt"   aria-pressed="true"><i class="dot"></i>keine Personalvermittler</button>
+    <button class="toggle" id="tBelegt"   aria-pressed="false"><i class="dot"></i>nur verifiziert</button>
+    <button class="toggle" id="tUnbearb"  aria-pressed="false"><i class="dot"></i>noch nicht angeschrieben</button>
+    <span style="flex:1"></span>
+    <button class="btn sm" id="csvBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      CSV
+    </button>
+    <button class="btn sm" id="resetBtn">Zurücksetzen</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th class="sortable" data-sort="score">Score<span class="arrow">↓</span></th>
+          <th class="sortable" data-sort="firma">Firma<span class="arrow">↕</span></th>
+          <th class="sortable" data-sort="ort">Ort<span class="arrow">↕</span></th>
+          <th class="sortable" data-sort="stelle">Ausgeschriebene Stelle<span class="arrow">↕</span></th>
+          <th class="sortable" data-sort="quelle">Quelle<span class="arrow">↕</span></th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <p class="hint" style="margin-top:9px; font-size:12px; color:var(--txt-3)" id="countLine"></p>
+</section>
+
+<!-- ============================ BESUCHEN ============================ -->
+<section id="v-besuch" role="tabpanel" hidden>
+  <div class="sec-head">
+    <h2>Persönlich vorbeigehen</h2>
+    <span class="hint">Zentralschweiz, nach Ort gruppiert. Über den Druckdialog wird daraus eine Tourenliste fürs Auto.</span>
+  </div>
+  <div class="toggles no-print">
+    <button class="toggle" id="bOffen" aria-pressed="true"><i class="dot"></i>nur mit offener Stelle</button>
+    <button class="btn sm" id="printBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4v-6h16v6h-2M8 14h8v7H8z"/></svg>
+      Drucken
+    </button>
+  </div>
+  <div id="visitList"></div>
+</section>
+
+<!-- ============================ ANSPRACHE ============================ -->
+<section id="v-mail" role="tabpanel" hidden>
+  <div class="sec-head">
+    <h2>Ansprache</h2>
+    <span class="hint">Firma links wählen, Tonalität oben, Text unten anpassen. Der Text nennt immer das konkrete Inserat.</span>
+  </div>
+  <div class="mail-layout">
+    <div>
+      <div class="field no-print" style="margin-bottom:9px">
+        <label for="mq">Firma suchen</label>
+        <input type="search" id="mq" placeholder="Name oder Ort …" autocomplete="off">
+      </div>
+      <div class="pick-list" id="pickList"></div>
+    </div>
+
+    <div class="mail-box">
+      <div class="tone-row">
+        <button class="toggle" data-tone="konkret"  aria-pressed="true">Konkret und respektvoll</button>
+        <button class="toggle" data-tone="zugespitzt" aria-pressed="false">Zugespitzt</button>
+        <button class="toggle" data-tone="beratend"  aria-pressed="false">Beratend</button>
+        <button class="toggle" data-tone="kurz"      aria-pressed="false">Sehr kurz</button>
+      </div>
+
+      <div class="mail-meta">
+        <div class="field">
+          <label for="mailAn">An</label>
+          <input type="text" id="mailAn" placeholder="noch keine Adresse hinterlegt">
+        </div>
+        <div class="field">
+          <label for="mailBetreff">Betreff</label>
+          <input type="text" id="mailBetreff">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="mailBody">Text</label>
+        <textarea id="mailBody" spellcheck="true"></textarea>
+      </div>
+
+      <div class="mail-acts">
+        <button class="btn primary" id="mailtoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>
+          Im Mailprogramm öffnen
+        </button>
+        <button class="btn" id="copyBtn">Text kopieren</button>
+        <button class="btn ghost" id="markSentBtn">Als gesendet markieren</button>
+      </div>
+
+      <div class="note info">
+        <b>Vor dem Senden:</b> Absender mit vollem Firmennamen und Adresse, ein Satz woher die
+        Angaben stammen, und ein Satz, dass man sich jederzeit abmelden kann. Lieber zwanzig
+        von Hand angepasste Mails pro Tag als fünfhundert gleiche — rechtlich wie in der
+        Antwortquote. Details in <code>RECHERCHE.md</code>, Abschnitt Recht.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ QUELLEN ============================ -->
+<section id="v-quellen" role="tabpanel" hidden>
+  <div class="sec-head">
+    <h2>Quellen</h2>
+    <span class="hint">Jede Plattform mit fertiger Such-URL. Einmal pro Woche durchklicken hält die Liste aktuell.</span>
+  </div>
+  <div class="filters" style="grid-template-columns:minmax(200px,1fr) minmax(150px,220px)">
+    <div class="field">
+      <label for="sq">Suchen</label>
+      <input type="search" id="sq" placeholder="Plattform, Typ …" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="sTyp">Typ</label>
+      <select id="sTyp"><option value="">Alle Typen</option></select>
+    </div>
+  </div>
+  <div class="src-grid" id="srcGrid"></div>
+</section>
+
+<!-- ============================ MUSTER ============================ -->
+<section id="v-muster" role="tabpanel" hidden>
+  <div class="sec-head">
+    <h2>Das Muster</h2>
+    <span class="hint">Die Gewichte bestimmen den Score. Verstellen wirkt sofort auf Radar und Besuchsliste.</span>
+  </div>
+
+  <div style="display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); align-items:start">
+    <div class="card card-pad">
+      <h3 style="font-size:14px; margin-bottom:4px">Gewichte</h3>
+      <p style="font-size:12.5px; color:var(--txt-3); margin-bottom:14px">
+        Jedes Kriterium vergibt bis zu so viele Punkte. Die Summe wird auf 0–100 normiert.
+      </p>
+      <div class="w-list" id="wList"></div>
+      <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap">
+        <button class="btn sm" id="wReset">Standard wiederherstellen</button>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:14px; margin-bottom:10px">Wen wir suchen</h3>
+      <div id="icpText" style="font-size:13.5px; color:var(--txt-2); line-height:1.6; display:grid; gap:10px"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ==================================================================
+   11 · Absender — einmal hier eintragen, wirkt auf alle Mailtexte
+   ================================================================== */
+const ABSENDER = {
+  name:    'Colin Renggli',
+  firma:   'Flusswerk',
+  rolle:   'Mitgründer',
+  ort:     'Luzern',
+  mail:    'colin.renggli@gmail.com',
+  tel:     '',
+  web:     ''
+};
+
+/* ==================================================================
+   12 · Das Muster — Gewichte und Begründung
+   Jedes Kriterium vergibt bis zu `max` Punkte. Der Score ist die
+   erreichte Summe, normiert auf 0–100. Alles ist verstellbar, weil
+   das Muster eine Hypothese ist und keine Naturkonstante.
+   ================================================================== */
+const KRITERIEN = [
+  { id:'offen',   label:'Offene Stelle ausgeschrieben', max:30,
+    desc:'Das eigentliche Kaufsignal. Mehrere gleichzeitig offene Stellen geben den vollen Wert.' },
+  { id:'kern',    label:'Stelle trifft unseren Kern',   max:12,
+    desc:'Sachbearbeitung, Buchhaltung, Lohn, Mandat — also genau die Arbeit, die sich automatisieren lässt.' },
+  { id:'region',  label:'Nähe zu Luzern',               max:18,
+    desc:'Stadt und Agglo voll, übrige Zentralschweiz gut, weiter weg nur noch per Mail.' },
+  { id:'groesse', label:'Firmengrösse im Zielband',     max:15,
+    desc:'Etwa 4 bis 30 Mitarbeitende: genug Volumen für Automatisierung, keine eigene IT, ein Entscheider am Tisch.' },
+  { id:'direkt',  label:'Arbeitgeber inseriert selbst', max:10,
+    desc:'Ein Personalvermittler dazwischen heisst: wir reden nicht mit dem Entscheider.' },
+  { id:'stack',   label:'Bekannter Software-Stack',     max:8,
+    desc:'Abacus, bexio, Klara, Sage, Topal, Dr. Tax — je bekannter, desto konkreter der erste Vorschlag.' },
+  { id:'kontakt', label:'Ansprechperson bekannt',       max:7,
+    desc:'Name oder Mailadresse vorhanden. Ohne das wird aus dem Lead ein Briefkasten.' },
+  { id:'beleg',   label:'Angaben verifiziert',          max:5,
+    desc:'Inserat selbst gesehen, nicht nur ein Suchtreffer. Schützt vor peinlichen Mails.' }
+];
+
+const STD_GEWICHTE = Object.fromEntries(KRITERIEN.map(k => [k.id, k.max]));
+
+/* Grosse Prüfungs- und Beratungsgruppen: eigene IT, eigene Prozesse,
+   monatelange Beschaffung. Nicht unser erster Kunde. */
+const AUSSCHLUSS = ['bdo','pwc','pricewaterhouse','kpmg','ernst & young','ernst und young',' ey ',
+  'deloitte','grant thornton','mazars','forvis','baker tilly','rsm ','moore ','crowe ',
+  'balmer-etienne'];
+
+/* ==================================================================
+   13 · Ortsraster — bestimmt die Region und damit die Erreichbarkeit
+   ================================================================== */
+const REGION_1 = ['luzern','emmen','emmenbrücke','emmenbruecke','kriens','horw','ebikon','littau',
+  'rothenburg','root','adligenswil','meggen','udligenswil','buchrain','dierikon','malters','schwarzenberg'];
+const REGION_2_KT = ['LU','ZG','SZ','OW','NW','UR'];
+const REGION_3_KT = ['AG','BE','ZH','SO','BS','BL'];
+
+function regionVon(l){
+  const o = (l.ort || '').toLowerCase().trim();
+  if (REGION_1.some(r => o.includes(r))) return 1;
+  if (REGION_2_KT.includes(l.kanton)) return 2;
+  if (REGION_3_KT.includes(l.kanton)) return 3;
+  return 4;
+}
+const REGION_NAME = {1:'Luzern Stadt und Agglo', 2:'übrige Zentralschweiz', 3:'Nachbarkantone', 4:'übrige Deutschschweiz'};
+
+/* ==================================================================
+   14 · Score
+   ================================================================== */
+const KERN_WORTE = ['sachbearbeit','treuhand','buchhalt','rechnungswesen','mandatsleit','mandat',
+  'lohn','payroll','finanzbuchhalt','steuer','abschluss','fachfrau finanz','fachmann finanz'];
+
+function punkte(l, w){
+  const p = {};
+  const stellen = l.stellenAnzahl || (l.stelle ? 1 : 0);
+
+  p.offen = stellen >= 2 ? w.offen : stellen === 1 ? Math.round(w.offen * 0.82) : 0;
+
+  const s = (l.stelle || '').toLowerCase();
+  p.kern = KERN_WORTE.some(k => s.includes(k)) ? w.kern : (stellen ? Math.round(w.kern * 0.4) : 0);
+
+  const r = l.region || regionVon(l);
+  p.region = Math.round(w.region * (r === 1 ? 1 : r === 2 ? 0.7 : r === 3 ? 0.35 : 0.1));
+
+  const ma = l.mitarbeitende;
+  p.groesse = ma == null ? Math.round(w.groesse * 0.45)
+            : (ma >= 4 && ma <= 30) ? w.groesse
+            : (ma >= 2 && ma <= 45) ? Math.round(w.groesse * 0.65)
+            : Math.round(w.groesse * 0.2);
+
+  p.direkt  = l.vermittler ? 0 : w.direkt;
+  p.stack   = (l.software && l.software.length) ? (l.software.length >= 2 ? w.stack : Math.round(w.stack * 0.75)) : 0;
+  p.kontakt = (l.mail ? w.kontakt : l.kontakt ? Math.round(w.kontakt * 0.6) : 0);
+  p.beleg   = l.belegt === 'verifiziert' ? w.beleg : l.belegt === 'indiziert' ? Math.round(w.beleg * 0.5) : 0;
+
+  return p;
+}
+
+function scoreVon(l, w){
+  if (l.ausschluss) return 0;
+  const p = punkte(l, w);
+  const erreicht = Object.values(p).reduce((a, b) => a + b, 0);
+  const moeglich = Object.values(w).reduce((a, b) => a + b, 0) || 1;
+  return Math.round(100 * erreicht / moeglich);
+}
+
+/* ==================================================================
+   15 · Zustand — Status, Notizen und Gewichte bleiben im Browser
+   ================================================================== */
+const KEY = 'flusswerk.leadradar.v1';
+let store = { status:{}, notiz:{}, gewichte:{...STD_GEWICHTE}, theme:null };
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) store = Object.assign(store, JSON.parse(raw));
+} catch (e) { /* privates Fenster, blockierte Site-Daten — egal, wir laufen ohne */ }
+store.gewichte = Object.assign({...STD_GEWICHTE}, store.gewichte || {});
+
+function sichern(){
+  try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
+}
+
+const STATUS = [
+  ['neu','Neu'], ['geprueft','Geprüft'], ['mail','Mail gesendet'],
+  ['antwort','Antwort erhalten'], ['termin','Termin vereinbart'],
+  ['kunde','Kunde'], ['abgesagt','Abgesagt']
+];
+const statusVon = id => store.status[id] || 'neu';
+
+/* ==================================================================
+   16 · Daten aufbereiten
+   ================================================================== */
+let LEADS = [];
+function aufbereiten(){
+  LEADS = ROHDATEN.map((l, i) => {
+    const o = Object.assign({
+      id: 'l' + i, firma:'', ort:'', plz:'', kanton:'', stelle:'', pensum:'', quelle:'',
+      url:'', datum:'', website:'', kontakt:'', mail:'', tel:'', groesse:'',
+      mitarbeitende:null, software:[], vermittler:false, belegt:'unsicher',
+      notiz:'', stellenAnzahl:null
+    }, l);
+    o.id = l.id || ('l' + i);
+    o.region = regionVon(o);
+    const n = o.firma.toLowerCase();
+    o.ausschluss = AUSSCHLUSS.some(a => n.includes(a.trim()));
+    if (o.stellenAnzahl == null) o.stellenAnzahl = o.stelle ? 1 : 0;
+    return o;
+  });
+}
+
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ==================================================================
+   17 · Filter und Sortierung
+   ================================================================== */
+const S = {
+  view:'radar', q:'', region:'', kanton:'', status:'', minScore:0,
+  offen:true, direkt:true, belegt:false, unbearbeitet:false,
+  sort:'score', dir:'desc',
+  besuchOffen:true, sq:'', sTyp:'', mailId:null, tone:'konkret'
+};
+
+function gefiltert(){
+  const w = store.gewichte;
+  const q = S.q.toLowerCase().trim();
+  let out = LEADS.filter(l => {
+    if (S.offen   && !l.stelle) return false;
+    if (S.direkt  && l.vermittler) return false;
+    if (S.belegt  && l.belegt !== 'verifiziert') return false;
+    if (S.unbearbeitet && statusVon(l.id) !== 'neu') return false;
+    if (S.kanton  && l.kanton !== S.kanton) return false;
+    if (S.status  && statusVon(l.id) !== S.status) return false;
+    if (S.region) {
+      if (S.region === '12') { if (l.region > 2) return false; }
+      else if (String(l.region) !== S.region) return false;
+    }
+    if (S.minScore && scoreVon(l, w) < S.minScore) return false;
+    if (q) {
+      const hay = [l.firma, l.ort, l.kanton, l.stelle, l.quelle, l.notiz, l.groesse,
+        (l.software || []).join(' ')].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const f = S.sort, dir = S.dir === 'asc' ? 1 : -1;
+  out.sort((a, b) => {
+    let x, y;
+    if (f === 'score') { x = scoreVon(a, w); y = scoreVon(b, w); }
+    else { x = String(a[f] || '').toLowerCase(); y = String(b[f] || '').toLowerCase(); }
+    if (x < y) return -1 * dir;
+    if (x > y) return  1 * dir;
+    return String(a.firma).localeCompare(String(b.firma), 'de-CH');
+  });
+  return out;
+}
+
+/* ==================================================================
+   18 · Mailtexte
+   Jeder Text nennt das konkrete Inserat, sagt woher die Angaben
+   stammen, macht genau ein Angebot und endet mit einer Abmeldezeile.
+   Das ist nicht nur höflich, es ist in der Schweiz auch die Linie,
+   auf der man bei Kaltakquise sauber bleibt (siehe RECHERCHE.md).
+   ================================================================== */
+const TONE = {
+  konkret: {
+    label: 'Konkret und respektvoll',
+    betreff: l => `Ihre offene Stelle ${l.stelle ? '«' + l.stelle + '»' : 'im Treuhand'} – ein Gedanke dazu`,
+    text: l => `Guten Tag
+
+wir haben gesehen, dass Sie zurzeit ${l.stelle ? `eine Stelle als ${l.stelle}` : 'eine Stelle im Treuhandbereich'} ausgeschrieben haben${l.quelle ? ` (gefunden auf ${l.quelle})` : ''}.
+
+Wir hören von Treuhandbüros in der Region immer dasselbe: Die Arbeit ist da, die Leute sind es nicht. Inserate laufen monatelang, und wer sich meldet, passt oft nicht oder ist teuer.
+
+Wir sind ${ABSENDER.firma}, ein junges Unternehmen aus ${ABSENDER.ort}. Wir automatisieren genau die Arbeit, die heute auf dem Tisch einer Sachbearbeiterin liegt: Belege erfassen und verbuchen, Bankabgleich, Mehrwertsteuerabrechnungen vorbereiten, Lohnläufe, Nachfassen bei Kunden, die ihre Unterlagen nicht schicken. Nicht als fertiges Produkt von der Stange, sondern auf Ihre Abläufe und Ihre Software gebaut.
+
+Die Frage, die uns interessiert: Wie viel von dieser Stelle müssten Sie überhaupt noch besetzen, wenn die Routine wegfällt?
+
+Hätten Sie ${'30 Minuten'} Zeit, uns das einmal zu zeigen? Wir kommen gerne bei Ihnen in ${l.ort || 'Ihrem Büro'} vorbei. Kein Verkaufsgespräch – wir schauen uns Ihre drei zeitaufwendigsten Abläufe an und sagen Ihnen ehrlich, was sich davon lohnt und was nicht.
+
+Freundliche Grüsse
+${ABSENDER.name}`
+  },
+
+  zugespitzt: {
+    label: 'Zugespitzt',
+    betreff: l => `${l.stelle ? l.stelle : 'Ihre offene Treuhand-Stelle'} – müssen Sie die wirklich besetzen?`,
+    text: l => `Guten Tag
+
+Sie suchen ${l.stelle ? `eine${/in\b/i.test(l.stelle) ? '' : 'n'} ${l.stelle}` : 'Verstärkung im Treuhand'}. Wir schreiben Ihnen, weil wir glauben, dass Sie diese Stelle zu einem guten Teil gar nicht besetzen müssten.
+
+Ein Sachbearbeiter im Treuhand verbringt einen erheblichen Teil des Tages mit Arbeit, die keine Fachperson braucht: Belege sortieren und erfassen, Bankbewegungen zuordnen, MWST-Formulare vorbereiten, Lohnläufe abwickeln, Mandanten hinterherlaufen, die ihre Unterlagen nicht liefern. Das ist Arbeit, die eine Maschine sauberer und schneller macht als jeder Mensch – und Ihre Leute machen dafür das, wofür sie eigentlich ausgebildet sind.
+
+Wir sind ${ABSENDER.firma} aus ${ABSENDER.ort} und bauen genau das. Auf Ihre Abläufe, in Ihrer Software.
+
+Der ehrliche Teil: Es gibt Fälle, in denen sich das nicht lohnt. Wenn wir das bei Ihnen sehen, sagen wir es Ihnen in derselben halben Stunde.
+
+Wollen wir schauen? 30 Minuten, bei Ihnen in ${l.ort || 'Ihrem Büro'}, unverbindlich.
+
+Freundliche Grüsse
+${ABSENDER.name}`
+  },
+
+  beratend: {
+    label: 'Beratend',
+    betreff: l => `Personalsuche im Treuhand – wie andere Büros das Problem umgehen`,
+    text: l => `Guten Tag
+
+Ihr Inserat${l.stelle ? ` für ${l.stelle}` : ''} ist uns aufgefallen, und es passt in ein Bild, das wir gerade in der ganzen Branche sehen.
+
+Qualifizierte Treuhandmitarbeitende sind in der Schweiz seit Jahren knapp. Die Bewerberzahlen sinken, die Löhne steigen, und die Suche dauert länger als früher. Gleichzeitig wächst bei den meisten Büros das Mandatsvolumen weiter. Rein über Personal ist diese Lücke kaum noch zu schliessen.
+
+Wir sind ${ABSENDER.firma} aus ${ABSENDER.ort} und beschäftigen uns damit, wie sich die wiederkehrende Arbeit in einem Treuhandbüro automatisieren lässt – Belegerfassung, Bankabgleich, Mehrwertsteuer, Lohn, das Nachfassen bei Mandanten. Nicht als weiteres Tool neben Ihrer Buchhaltungssoftware, sondern als etwas, das sich in Ihre bestehenden Abläufe einfügt.
+
+Wir bauen unser Angebot gerade auf und suchen dafür den Austausch mit Büros, die das Problem aus der Praxis kennen. Deshalb diese Mail.
+
+Hätten Sie Interesse an einem Gespräch von einer halben Stunde? Sie bekommen eine ehrliche Einschätzung, wo bei Ihnen Automatisierung etwas bringt und wo nicht – und wir lernen, wo der Schuh in der Branche wirklich drückt. Gerne bei Ihnen vor Ort in ${l.ort || 'Ihrem Büro'}.
+
+Freundliche Grüsse
+${ABSENDER.name}`
+  },
+
+  kurz: {
+    label: 'Sehr kurz',
+    betreff: l => `Kurz zu Ihrer offenen Stelle${l.stelle ? ` (${l.stelle})` : ''}`,
+    text: l => `Guten Tag
+
+Sie suchen ${l.stelle ? l.stelle : 'Verstärkung im Treuhand'} – wir haben das Inserat${l.quelle ? ` auf ${l.quelle}` : ''} gesehen.
+
+Wir sind ${ABSENDER.firma} aus ${ABSENDER.ort} und automatisieren die Routinearbeit in Treuhandbüros: Belegerfassung, Bankabgleich, MWST, Lohn, Nachfassen bei Mandanten.
+
+Lohnt sich das bei Ihnen? In 30 Minuten wissen wir es beide. Wann passt es Ihnen?
+
+Freundliche Grüsse
+${ABSENDER.name}`
+  }
+};
+
+function signatur(l){
+  const zeilen = [ABSENDER.name];
+  if (ABSENDER.rolle) zeilen.push(`${ABSENDER.rolle}, ${ABSENDER.firma}`);
+  else zeilen.push(ABSENDER.firma);
+  if (ABSENDER.ort)  zeilen.push(ABSENDER.ort);
+  const k = [ABSENDER.mail, ABSENDER.tel, ABSENDER.web].filter(Boolean).join(' · ');
+  if (k) zeilen.push(k);
+  zeilen.push('');
+  zeilen.push(`Wir haben Ihre Angaben aus Ihrem öffentlich ausgeschriebenen Stelleninserat${l.quelle ? ` auf ${l.quelle}` : ''} und Ihrer Website. Wenn Sie von uns keine Nachrichten mehr möchten, genügt eine kurze Antwort mit «keine weiteren Mails» – dann tragen wir Sie aus.`);
+  return zeilen.join('\n');
+}
+
+function mailFor(l, tone){
+  const t = TONE[tone] || TONE.konkret;
+  const kopf = t.text(l).replace(/\n\nFreundliche Grüsse\n.*$/s, '');
+  return { betreff: t.betreff(l), text: `${kopf}\n\nFreundliche Grüsse\n${signatur(l)}` };
+}
+
+/* ==================================================================
+   19 · Anzeige
+   ================================================================== */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+let toastTimer = null;
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2100);
+}
+
+function scoreKlasse(n){ return n >= 70 ? 's-hi' : n >= 45 ? 's-mid' : 's-lo'; }
+
+function belegChip(l){
+  if (l.belegt === 'verifiziert') return '<span class="chip ok">verifiziert</span>';
+  if (l.belegt === 'indiziert')   return '<span class="chip warn">indiziert</span>';
+  return '<span class="chip err">ungeprüft</span>';
+}
+
+function renderKpis(rows){
+  const w = store.gewichte;
+  const heiss   = rows.filter(l => scoreVon(l, w) >= 70).length;
+  const zentral = rows.filter(l => l.region <= 2).length;
+  const offen   = rows.filter(l => l.stelle).length;
+  const kontaktiert = LEADS.filter(l => ['mail','antwort','termin','kunde'].includes(statusVon(l.id))).length;
+  const termine = LEADS.filter(l => ['termin','kunde'].includes(statusVon(l.id))).length;
+  $('#kpis').innerHTML = [
+    ['is-hot', heiss,  'heisse Leads (70+)'],
+    ['', offen,        'mit offener Stelle'],
+    ['', zentral,      'in der Zentralschweiz'],
+    ['', kontaktiert,  'angeschrieben'],
+    ['', termine,      'Termine und Kunden'],
+    ['', rows.length,  'in der Ansicht']
+  ].map(([c, n, t]) => `<div class="kpi ${c}"><b>${n}</b><span>${t}</span></div>`).join('');
+}
+
+function statusSelect(l){
+  return `<select class="sel" data-st="${statusVon(l.id)}" data-id="${l.id}" aria-label="Status ${esc(l.firma)}">` +
+    STATUS.map(([v, t]) => `<option value="${v}"${statusVon(l.id) === v ? ' selected' : ''}>${t}</option>`).join('') +
+    `</select>`;
+}
+
+function renderTabelle(){
+  const rows = gefiltert();
+  const w = store.gewichte;
+  renderKpis(rows);
+
+  const tb = $('#tbody');
+  if (!rows.length){
+    tb.innerHTML = `<tr><td colspan="7"><div class="empty"><b>Nichts gefunden</b>
+      Filter lockern – oder in den Quellen nachladen, was die Plattformen gerade zeigen.</div></td></tr>`;
+    $('#countLine').textContent = '';
+    return;
+  }
+
+  tb.innerHTML = rows.map(l => {
+    const sc = scoreVon(l, w);
+    const mehr = l.stellenAnzahl > 1 ? ` <span class="chip tint">${l.stellenAnzahl} Stellen</span>` : '';
+    return `<tr data-id="${l.id}">
+      <td><div class="score ${scoreKlasse(sc)}">
+        <span class="score-num">${l.ausschluss ? '–' : sc}</span>
+        <span class="score-bar"><i style="width:${l.ausschluss ? 0 : sc}%"></i></span>
+      </div></td>
+      <td>
+        <div class="f-name">${esc(l.firma)}</div>
+        <div class="f-sub">${esc(l.groesse || REGION_NAME[l.region])}${l.vermittler ? ' · über Vermittler' : ''}</div>
+      </td>
+      <td>${esc(l.ort)}<div class="f-sub">${esc(l.kanton)}</div></td>
+      <td class="f-role">${l.stelle ? esc(l.stelle) + mehr : '<span style="color:var(--txt-3)">keine offene Stelle bekannt</span>'}
+        ${l.pensum ? `<div class="f-sub">${esc(l.pensum)}</div>` : ''}</td>
+      <td><div class="f-sub" style="margin:0">${esc(l.quelle)}</div>${belegChip(l)}</td>
+      <td>${statusSelect(l)}</td>
+      <td><div class="cell-acts">
+        <button class="btn sm js-detail" data-id="${l.id}">Details</button>
+        <button class="btn sm js-mail" data-id="${l.id}">Mail</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const verifiziert = rows.filter(l => l.belegt === 'verifiziert').length;
+  $('#countLine').textContent =
+    `${rows.length} von ${LEADS.length} Einträgen · ${verifiziert} davon verifiziert, ` +
+    `${rows.length - verifiziert} noch zu prüfen.`;
+}
+
+function detailZeile(l){
+  const w = store.gewichte;
+  const p = punkte(l, w);
+  const zeilen = KRITERIEN.map(k =>
+    `<div class="scorerow ${p[k.id] > 0 ? 'plus' : 'minus'}">
+       <span>${k.label}</span><b>${p[k.id]}/${w[k.id]}</b></div>`).join('');
+
+  const links = [];
+  if (l.url)     links.push(`<a href="${esc(l.url)}" target="_blank" rel="noopener">Inserat ansehen</a>`);
+  if (l.website) links.push(`<a href="${esc(l.website)}" target="_blank" rel="noopener">Website</a>`);
+  if (l.ort)     links.push(`<a href="https://www.google.com/maps/search/${encodeURIComponent((l.firma || '') + ' ' + (l.ort || ''))}" target="_blank" rel="noopener">Karte</a>`);
+  links.push(`<a href="https://www.zefix.ch/de/search/entity/list?name=${encodeURIComponent(l.firma || '')}" target="_blank" rel="noopener">Handelsregister</a>`);
+
+  return `<tr class="detail" data-detail="${l.id}"><td colspan="7"><div class="detail-in">
+    <div class="dl">
+      <h4>Angaben</h4>
+      <p>${l.website ? esc(l.website) : 'Website nicht erfasst'}</p>
+      <p>${l.kontakt ? esc(l.kontakt) : 'keine Ansprechperson erfasst'}</p>
+      <p>${l.mail ? esc(l.mail) : ''}${l.tel ? ' · ' + esc(l.tel) : ''}</p>
+      <p>${l.datum ? 'Inserat vom ' + esc(l.datum) : ''}</p>
+      <p>${(l.software && l.software.length) ? 'Software: ' + esc(l.software.join(', ')) : 'Software unbekannt'}</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:12.5px; margin-top:4px">${links.join('')}</div>
+    </div>
+    <div class="dl">
+      <h4>Score im Detail</h4>
+      <div class="scorelist">${zeilen}</div>
+      ${l.ausschluss ? '<p style="color:var(--err-txt)">Ausgeschlossen: grosse Prüfungs- oder Beratungsgruppe. Eigene IT, eigene Prozesse, lange Beschaffung – nicht unser erster Kunde.</p>' : ''}
+    </div>
+    <div class="dl">
+      <h4>Was wir wissen</h4>
+      <p>${l.notiz ? esc(l.notiz) : 'nichts Zusätzliches erfasst'}</p>
+      <h4 style="margin-top:8px">Eigene Notiz</h4>
+      <textarea data-note="${l.id}" rows="4" placeholder="Wer abgenommen hat, was gesagt wurde, wann nachfassen …">${esc(store.notiz[l.id] || '')}</textarea>
+    </div>
+  </div></td></tr>`;
+}
+
+/* ---- Besuchsliste: Zentralschweiz, nach Ort gruppiert ---------- */
+function renderBesuch(){
+  const w = store.gewichte;
+  const rows = LEADS
+    .filter(l => l.region <= 2 && !l.ausschluss)
+    .filter(l => !S.besuchOffen || l.stelle)
+    .sort((a, b) => scoreVon(b, w) - scoreVon(a, w));
+
+  if (!rows.length){
+    $('#visitList').innerHTML = `<div class="card"><div class="empty"><b>Keine Firmen in der Zentralschweiz</b>
+      Entweder ist der Filter zu eng oder die Recherche hat hier noch nichts gefunden.</div></div>`;
+    return;
+  }
+
+  const orte = {};
+  rows.forEach(l => { (orte[l.ort || 'ohne Ort'] ||= []).push(l); });
+  const sortiert = Object.keys(orte).sort((a, b) => {
+    const ra = orte[a][0].region, rb = orte[b][0].region;
+    if (ra !== rb) return ra - rb;
+    return orte[b].length - orte[a].length;
+  });
+
+  $('#visitList').innerHTML = sortiert.map(ort => {
+    const items = orte[ort];
+    return `<div class="ort-group">
+      <div class="ort-head">
+        <h3>${esc(ort)}</h3>
+        <span class="chip">${items.length} ${items.length === 1 ? 'Firma' : 'Firmen'}</span>
+        <span class="chip tint">${REGION_NAME[items[0].region]}</span>
+      </div>
+      <div class="visit-grid">${items.map(l => {
+        const sc = scoreVon(l, w);
+        return `<div class="visit">
+          <div class="visit-top">
+            <div><b>${esc(l.firma)}</b>
+              <div class="meta">${esc(l.kanton)}${l.groesse ? ' · ' + esc(l.groesse) : ''}</div></div>
+            <div class="score ${scoreKlasse(sc)}"><span class="score-num">${sc}</span></div>
+          </div>
+          <div class="role">${l.stelle ? esc(l.stelle) : 'keine offene Stelle bekannt'}</div>
+          ${l.kontakt ? `<div class="meta">${esc(l.kontakt)}</div>` : ''}
+          ${l.tel ? `<div class="meta">${esc(l.tel)}</div>` : ''}
+          <div class="visit-acts no-print">
+            ${l.website ? `<a class="btn sm" href="${esc(l.website)}" target="_blank" rel="noopener">Website</a>` : ''}
+            <a class="btn sm" href="https://www.google.com/maps/search/${encodeURIComponent(l.firma + ' ' + l.ort)}" target="_blank" rel="noopener">Karte</a>
+            <button class="btn sm js-mail" data-id="${l.id}">Mail</button>
+          </div>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- Ansprache ------------------------------------------------- */
+function renderPickList(){
+  const w = store.gewichte;
+  const q = S.sq2 ? S.sq2.toLowerCase() : '';
+  const rows = LEADS
+    .filter(l => !l.ausschluss)
+    .filter(l => !q || (l.firma + ' ' + l.ort).toLowerCase().includes(q))
+    .sort((a, b) => scoreVon(b, w) - scoreVon(a, w))
+    .slice(0, 250);
+
+  $('#pickList').innerHTML = rows.map(l => {
+    const st = statusVon(l.id);
+    const chip = st === 'neu' ? '' : `<span class="chip ${st === 'kunde' || st === 'termin' ? 'ok' : 'info'}">${STATUS.find(s => s[0] === st)[1]}</span>`;
+    return `<button class="pick" data-id="${l.id}" aria-current="${S.mailId === l.id}">
+      <b>${esc(l.firma)} ${chip}</b>
+      <span>${esc(l.ort)} · ${l.stelle ? esc(l.stelle) : 'keine offene Stelle'} · ${scoreVon(l, w)}</span>
+    </button>`;
+  }).join('') || `<div class="empty"><b>Nichts gefunden</b></div>`;
+}
+
+function renderMail(){
+  renderPickList();
+  const l = LEADS.find(x => x.id === S.mailId);
+  if (!l){
+    $('#mailBetreff').value = '';
+    $('#mailBody').value = 'Links eine Firma wählen.';
+    $('#mailAn').value = '';
+    return;
+  }
+  const m = mailFor(l, S.tone);
+  $('#mailAn').value = l.mail || '';
+  $('#mailAn').placeholder = l.mail ? '' : 'keine Adresse hinterlegt – auf der Website nachschauen';
+  $('#mailBetreff').value = m.betreff;
+  $('#mailBody').value = m.text;
+}
+
+/* ---- Quellen --------------------------------------------------- */
+function renderQuellen(){
+  const q = S.sq.toLowerCase().trim();
+  const rows = QUELLEN.filter(s => {
+    if (S.sTyp && s.typ !== S.sTyp) return false;
+    if (q && !(s.name + ' ' + s.typ + ' ' + (s.zugang || '')).toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  $('#srcGrid').innerHTML = rows.map(s => {
+    const ampel = /nicht ladbar|bot|403|login|blockiert/i.test(s.zugang || '') ? 'warn'
+                : /api|feed|rss/i.test(s.zugang || '') ? 'ok' : '';
+    return `<div class="src">
+      <div class="src-top">
+        <div><b>${esc(s.name)}</b><div class="typ">${esc(s.typ)}</div></div>
+        ${ampel ? `<span class="chip ${ampel}">${ampel === 'ok' ? 'automatisierbar' : 'nur von Hand'}</span>` : ''}
+      </div>
+      <div class="zug">${esc(s.zugang || '')}</div>
+      ${s.trefferlage ? `<div class="trf">${esc(s.trefferlage)}</div>` : ''}
+      <div class="src-acts">
+        ${s.such_url ? `<a class="btn sm primary" href="${esc(s.such_url)}" target="_blank" rel="noopener">Suche öffnen</a>` : ''}
+        ${s.url ? `<a class="btn sm" href="${esc(s.url)}" target="_blank" rel="noopener">Startseite</a>` : ''}
+      </div>
+    </div>`;
+  }).join('') || `<div class="empty"><b>Nichts gefunden</b></div>`;
+}
+
+/* ---- Muster ---------------------------------------------------- */
+function renderMuster(){
+  $('#wList').innerHTML = KRITERIEN.map(k => `
+    <div class="w-row">
+      <div class="lbl"><b>${k.label}</b><span class="v num" data-v="${k.id}">${store.gewichte[k.id]}</span></div>
+      <div class="desc">${k.desc}</div>
+      <input type="range" min="0" max="40" step="1" value="${store.gewichte[k.id]}" data-w="${k.id}"
+             aria-label="Gewicht ${k.label}">
+    </div>`).join('');
+
+  $('#icpText').innerHTML = ICP_TEXT.map(p => `<p>${p}</p>`).join('');
+}
+
+/* ==================================================================
+   20 · CSV
+   ================================================================== */
+function csvExport(){
+  const w = store.gewichte;
+  const rows = gefiltert();
+  const kopf = ['Score','Firma','Ort','PLZ','Kanton','Region','Stelle','Pensum','Anzahl Stellen',
+    'Quelle','URL','Datum','Website','Kontakt','Mail','Telefon','Groesse','Software',
+    'Vermittler','Beleg','Status','Notiz Recherche','Eigene Notiz'];
+  const zelle = v => {
+    const s = String(v == null ? '' : v);
+    return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const zeilen = rows.map(l => [
+    scoreVon(l, w), l.firma, l.ort, l.plz, l.kanton, REGION_NAME[l.region], l.stelle, l.pensum,
+    l.stellenAnzahl, l.quelle, l.url, l.datum, l.website, l.kontakt, l.mail, l.tel, l.groesse,
+    (l.software || []).join(' / '), l.vermittler ? 'ja' : 'nein', l.belegt,
+    STATUS.find(s => s[0] === statusVon(l.id))[1], l.notiz, store.notiz[l.id] || ''
+  ].map(zelle).join(';'));
+
+  // BOM, damit Excel auf Windows die Umlaute richtig liest
+  const blob = new Blob(['﻿' + [kopf.join(';'), ...zeilen].join('\r\n')],
+    {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'flusswerk-treuhand-leads.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  toast(`${rows.length} Zeilen exportiert`);
+}
+
+/* ==================================================================
+   21 · Ansichten und Ereignisse
+   ================================================================== */
+function zeige(view){
+  S.view = view;
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === view)));
+  ['radar','besuch','mail','quellen','muster'].forEach(v => { $('#v-' + v).hidden = (v !== view); });
+  if (view === 'besuch')  renderBesuch();
+  if (view === 'mail')    renderMail();
+  if (view === 'quellen') renderQuellen();
+  if (view === 'muster')  renderMuster();
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+function bindeEreignisse(){
+  $$('.tab').forEach(t => t.addEventListener('click', () => zeige(t.dataset.view)));
+
+  $('#themeBtn').addEventListener('click', () => {
+    const jetzt = document.documentElement.getAttribute('data-theme');
+    const dunkel = jetzt === 'dark' || (jetzt !== 'light' && matchMedia('(prefers-color-scheme:dark)').matches);
+    const neu = dunkel ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', neu);
+    store.theme = neu; sichern();
+  });
+
+  // Filter
+  const bind = (sel, key, ev = 'input') => $(sel).addEventListener(ev, e => {
+    S[key] = e.target.value; renderTabelle();
+  });
+  bind('#q', 'q');
+  bind('#fRegion', 'region', 'change');
+  bind('#fKanton', 'kanton', 'change');
+  bind('#fStatus', 'status', 'change');
+  $('#fScore').addEventListener('change', e => { S.minScore = +e.target.value; renderTabelle(); });
+
+  const toggle = (sel, key, fn) => $(sel).addEventListener('click', e => {
+    S[key] = !S[key];
+    e.currentTarget.setAttribute('aria-pressed', String(S[key]));
+    (fn || renderTabelle)();
+  });
+  toggle('#tOffen',   'offen');
+  toggle('#tDirekt',  'direkt');
+  toggle('#tBelegt',  'belegt');
+  toggle('#tUnbearb', 'unbearbeitet');
+  toggle('#bOffen',   'besuchOffen', renderBesuch);
+
+  $('#resetBtn').addEventListener('click', () => {
+    Object.assign(S, {q:'', region:'', kanton:'', status:'', minScore:0,
+      offen:true, direkt:true, belegt:false, unbearbeitet:false});
+    $('#q').value = ''; $('#fRegion').value = ''; $('#fKanton').value = '';
+    $('#fStatus').value = ''; $('#fScore').value = '0';
+    [['#tOffen',true],['#tDirekt',true],['#tBelegt',false],['#tUnbearb',false]]
+      .forEach(([s, v]) => $(s).setAttribute('aria-pressed', String(v)));
+    renderTabelle();
+  });
+
+  $('#csvBtn').addEventListener('click', csvExport);
+  $('#printBtn').addEventListener('click', () => window.print());
+
+  // Sortierung
+  $$('#tbl thead th.sortable').forEach(th => th.addEventListener('click', () => {
+    const f = th.dataset.sort;
+    if (S.sort === f) S.dir = S.dir === 'asc' ? 'desc' : 'asc';
+    else { S.sort = f; S.dir = (f === 'score') ? 'desc' : 'asc'; }
+    $$('#tbl thead th').forEach(x => { x.removeAttribute('data-dir'); const a = x.querySelector('.arrow'); if (a) a.textContent = '↕'; });
+    th.setAttribute('data-dir', S.dir);
+    th.querySelector('.arrow').textContent = S.dir === 'asc' ? '↑' : '↓';
+    renderTabelle();
+  }));
+
+  // Tabelle: Status, Details, Mail, Notizen
+  $('#tbody').addEventListener('change', e => {
+    const sel = e.target.closest('.sel');
+    if (sel){
+      store.status[sel.dataset.id] = sel.value; sichern();
+      sel.dataset.st = sel.value;
+      renderKpis(gefiltert());
+      toast('Status gespeichert');
+    }
+  });
+  $('#tbody').addEventListener('input', e => {
+    const ta = e.target.closest('[data-note]');
+    if (ta){ store.notiz[ta.dataset.note] = ta.value; sichern(); }
+  });
+  document.addEventListener('click', e => {
+    const d = e.target.closest('.js-detail');
+    if (d){
+      const tr = d.closest('tr');
+      const vorhanden = document.querySelector(`[data-detail="${d.dataset.id}"]`);
+      if (vorhanden){ vorhanden.remove(); tr.classList.remove('is-open'); return; }
+      const l = LEADS.find(x => x.id === d.dataset.id);
+      tr.classList.add('is-open');
+      tr.insertAdjacentHTML('afterend', detailZeile(l));
+      return;
+    }
+    const m = e.target.closest('.js-mail');
+    if (m){ S.mailId = m.dataset.id; zeige('mail'); }
+  });
+
+  // Ansprache
+  $('#mq').addEventListener('input', e => { S.sq2 = e.target.value; renderPickList(); });
+  $('#pickList').addEventListener('click', e => {
+    const p = e.target.closest('.pick');
+    if (!p) return;
+    S.mailId = p.dataset.id; renderMail();
+  });
+  $$('[data-tone]').forEach(b => b.addEventListener('click', () => {
+    S.tone = b.dataset.tone;
+    $$('[data-tone]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    renderMail();
+  }));
+  $('#mailtoBtn').addEventListener('click', () => {
+    const an = $('#mailAn').value.trim();
+    if (!an){ toast('Keine Adresse – auf der Website nachschauen'); return; }
+    location.href = `mailto:${encodeURIComponent(an)}?subject=${encodeURIComponent($('#mailBetreff').value)}&body=${encodeURIComponent($('#mailBody').value)}`;
+  });
+  $('#copyBtn').addEventListener('click', async () => {
+    const txt = $('#mailBetreff').value + '\n\n' + $('#mailBody').value;
+    try { await navigator.clipboard.writeText(txt); toast('Text kopiert'); }
+    catch (e) { $('#mailBody').select(); toast('Bitte von Hand kopieren'); }
+  });
+  $('#markSentBtn').addEventListener('click', () => {
+    if (!S.mailId) return;
+    store.status[S.mailId] = 'mail'; sichern();
+    renderPickList(); renderTabelle();
+    toast('Als gesendet markiert');
+  });
+
+  // Quellen
+  $('#sq').addEventListener('input', e => { S.sq = e.target.value; renderQuellen(); });
+  $('#sTyp').addEventListener('change', e => { S.sTyp = e.target.value; renderQuellen(); });
+
+  // Gewichte
+  $('#wList').addEventListener('input', e => {
+    const r = e.target.closest('[data-w]');
+    if (!r) return;
+    store.gewichte[r.dataset.w] = +r.value; sichern();
+    const v = document.querySelector(`[data-v="${r.dataset.w}"]`);
+    if (v) v.textContent = r.value;
+    renderTabelle();
+  });
+  $('#wReset').addEventListener('click', () => {
+    store.gewichte = {...STD_GEWICHTE}; sichern();
+    renderMuster(); renderTabelle(); toast('Standard wiederhergestellt');
+  });
+}
+
+/* ==================================================================
+   22 · Start
+   ================================================================== */
+function start(){
+  if (store.theme) document.documentElement.setAttribute('data-theme', store.theme);
+  aufbereiten();
+
+  const kantone = [...new Set(LEADS.map(l => l.kanton).filter(Boolean))].sort();
+  $('#fKanton').innerHTML = '<option value="">Alle Kantone</option>' +
+    kantone.map(k => `<option value="${k}">${k}</option>`).join('');
+
+  const typen = [...new Set(QUELLEN.map(s => s.typ).filter(Boolean))].sort();
+  $('#sTyp').innerHTML = '<option value="">Alle Typen</option>' +
+    typen.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+
+  const erste = LEADS.filter(l => !l.ausschluss).sort((a, b) =>
+    scoreVon(b, store.gewichte) - scoreVon(a, store.gewichte))[0];
+  S.mailId = erste ? erste.id : null;
+
+  bindeEreignisse();
+  renderTabelle();
+  document.querySelector('#tbl thead th[data-sort="score"]').setAttribute('data-dir', 'desc');
+}
+</script>
+</body>
+</html>
