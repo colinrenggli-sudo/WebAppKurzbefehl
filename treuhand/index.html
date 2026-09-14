@@ -24,7 +24,7 @@
      ================================================================== -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
-<title>FLUSSWERK Lead-Radar – Treuhandfirmen mit offenen Stellen</title>
+<title>Flusswerk Lead-Radar</title>
 
 <meta name="description" content="Treuhandfirmen in der Schweiz, die aktuell Sachbearbeiter suchen: gefiltert, nach Muster bewertet, mit fertiger Ansprache und Besuchsliste für die Zentralschweiz.">
 <meta name="robots" content="noindex, nofollow">
@@ -1216,7 +1216,7 @@ function renderMuster(){
 /* ==================================================================
    20 · CSV
    ================================================================== */
-function csvExport(){
+async function csvExport(){
   const w = store.gewichte;
   const rows = gefiltert();
   const kopf = ['Score','Fit','Regionsbonus','Firma','Ort','PLZ','Kanton','Region','Stelle','Pensum','Anzahl Stellen',
@@ -1236,9 +1236,28 @@ function csvExport(){
   // BOM, damit Excel auf Windows die Umlaute richtig liest
   const blob = new Blob(['﻿' + [kopf.join(';'), ...zeilen].join('\r\n')],
     {type:'text/csv;charset=utf-8'});
+  const name = 'flusswerk-treuhand-leads.csv';
+
+  /* Zwei Wege, weil die Seite an zwei Orten läuft. Lokal aus dem Ordner
+     geöffnet genügt ein Ankerklick. Als gehostete Seite ist der Anker
+     wirkungslos — dort reicht der Viewer die Datei durch, nachdem der
+     Betrachter bestätigt hat. */
+  let speichern = null;
+  try { speichern = await (window.claude?.use?.('downloads') ?? null); } catch (e) {}
+
+  if (speichern) {
+    try {
+      await speichern.save({ filename: name, data: blob });
+      toast(`${rows.length} Zeilen gespeichert`);
+    } catch (e) {
+      toast(e && e.code === 'declined' ? 'Abgebrochen' : 'Speichern hier nicht möglich');
+    }
+    return;
+  }
+
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'flusswerk-treuhand-leads.csv';
+  a.download = name;
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   toast(`${rows.length} Zeilen exportiert`);
