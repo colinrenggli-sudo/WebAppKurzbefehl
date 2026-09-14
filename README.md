@@ -11,6 +11,11 @@
   Raumansicht, möbliertem Plan, Moodboard und Möbelliste samt Budget.
   [Live ansehen](https://colinrenggli-sudo.github.io/WebAppKurzbefehl/raumdesign/)
   oder `raumdesign/index.html` im Browser öffnen.
+- **`treuhand/`** – [FLUSSWERK Lead-Radar](treuhand/README.md):
+  Treuhandfirmen, die aktuell Sachbearbeiter suchen – gefiltert, nach Muster
+  bewertet, mit Besuchsliste für die Zentralschweiz und fertiger Ansprache.
+  130 Firmen, 89 mit offener Stelle, 159 Quellen mit Such-URL.
+  `treuhand/index.html` im Browser öffnen.
 - **`dach/`** – [DACHWERK](dach/README.md): Auftragsverwaltung für
   Dachdecker und Spengler. Zwei Oberflächen aus einer Datei – der
   vierstellige Code entscheidet: Büro-Konsole am PC (Disposition,

@@ -25,39 +25,68 @@ die Score-Gewichte bleiben im Browser (localStorage).
 | **Quellen** | Jede Plattform mit fertiger Such-URL. Einmal pro Woche durchklicken hält die Liste aktuell. Grün markiert heisst: hat eine API oder einen Feed, lässt sich also automatisieren. |
 | **Muster** | Die Score-Gewichte als Regler. Verstellen wirkt sofort auf Radar und Besuchsliste. |
 
+## Was drin ist
+
+**130 Firmen**, davon **89 mit einer aktuell ausgeschriebenen Stelle**, und
+**159 Quellen** mit fertiger Such-URL. Schwerpunkt Zentralschweiz: 73 Firmen im
+Kanton Luzern, 32 in Zug, dazu Schwyz, Nidwalden und Obwalden.
+
+Die eigentliche Arbeitsliste sind **36 Firmen**, die alles drei erfüllen: eine
+offene Stelle, kein Personalvermittler dazwischen, Score 70 oder höher. Die
+stehen im Radar zuoberst. Für die Besuchsliste bleiben **45 Treuhandbüros** in
+der Zentralschweiz mit offener Stelle.
+
+> **Kein Eintrag ist verifiziert.** Die Recherche lief über die
+> Suchindexierung, weil der Netzwerk-Proxy die Jobportale blockiert hat.
+> Firmenname und Stelle stehen im Suchtreffer, die Inseratsseite hat niemand
+> geöffnet. **Vor der ersten Mail das Inserat aufrufen und prüfen, ob es noch
+> läuft** – ein besetztes Inserat macht aus einer guten Mail eine peinliche.
+> Warum das so ist und was sonst noch fehlt: [RECHERCHE.md](RECHERCHE.md).
+
 ## Der Score
 
-Acht Kriterien, jedes mit einem Maximalwert, Summe normiert auf 0–100:
+Sieben Kriterien ergeben einen **Fit-Score von 0 bis 100**. Der **Regionsbonus**
+kommt obendrauf und ist bei 100 gedeckelt.
 
 | Kriterium | Standard | Warum |
 |---|---:|---|
-| Offene Stelle ausgeschrieben | 30 | Das eigentliche Kaufsignal. Mehrere gleichzeitig offene Stellen geben den vollen Wert. |
-| Nähe zu Luzern | 18 | Stadt und Agglo voll, übrige Zentralschweiz gut, weiter weg nur noch per Mail. |
-| Firmengrösse im Zielband | 15 | Etwa 4–30 Mitarbeitende: genug Volumen, keine eigene IT, ein Entscheider am Tisch. |
-| Stelle trifft unseren Kern | 12 | Sachbearbeitung, Buchhaltung, Lohn, Mandat – die Arbeit, die sich automatisieren lässt. |
-| Arbeitgeber inseriert selbst | 10 | Ein Personalvermittler dazwischen heisst: wir reden nicht mit dem Entscheider. |
-| Bekannter Software-Stack | 8 | Abacus, bexio, Klara, Sage, Topal – je bekannter, desto konkreter der erste Vorschlag. |
-| Ansprechperson bekannt | 7 | Ohne Namen wird aus dem Lead ein Briefkasten. |
-| Angaben verifiziert | 5 | Inserat selbst gesehen, nicht nur ein Suchtreffer. Schützt vor peinlichen Mails. |
+| Offene Stelle ausgeschrieben | 30 | Das Kaufsignal. Zwei gleichzeitig offene Fachstellen unter 35 Köpfen sind strukturelle Unterbesetzung, nicht eine Kündigung – das gibt den vollen Wert. |
+| Grösse im Zielfenster | 22 | 8 bis 35 Vollzeitstellen, Kern 10 bis 25. Darunter fehlt die Wiederholung, darüber entscheidet ein Gremium statt der Inhaber. |
+| Stelle trifft den Kern | 15 | Sachbearbeitung, Buchhaltung, Lohn, Mandatsleitung. Lehrstelle und Praktikum zählen null – das ist Nachwuchsplanung, kein Kapazitätsschmerz. |
+| Arbeitgeber inseriert selbst | 12 | Ein Personalvermittler dazwischen heisst: wir reden nicht mit dem Entscheider. |
+| Bekannter Software-Stack | 11 | Abacus mit AbaWeb und bexio sind grün: offene Schnittstellen, digitale Belegflüsse. Sage 50 im Keller oder Excel-Buchhaltung ist rot. |
+| Ansprechperson bekannt | 6 | Ohne Namen wird aus dem Lead ein Briefkasten. |
+| Angaben verifiziert | 4 | Inserat selbst gesehen statt nur ein Suchtreffer. |
+| *Regionsbonus* | *+8* | *Luzern und Agglo 8 · übrige Zentralschweiz 5 · Nachbarkantone 2 · Rest 0* |
 
-Grosse Prüfungs- und Beratungsgruppen (BDO, PwC, KPMG, EY, Deloitte und
-ähnliche) werden ausgeschlossen und mit «–» angezeigt: eigene IT, eigene
-Prozesse, monatelange Beschaffung. Nicht der erste Kunde.
+Die Region steckt bewusst **nicht** im Fit-Score. Ein Büro in Zürich mit 90
+Fit-Punkten ist ein hervorragender Kunde – es braucht nur eine andere
+Verkaufsbewegung. Der Bonus steuert die Reihenfolge der Bearbeitung, nicht die
+Qualität des Leads.
 
-**Die Gewichte sind eine Hypothese, keine Naturkonstante.** Sobald die
-ersten zwanzig Gespräche gelaufen sind, gehören sie angepasst – genau
-dafür sind die Regler da.
+**Ausgeschlossen** werden Firmen unter 4 oder über 50 Mitarbeitenden (nur bei
+belegter Zahl, nie bei einer geschätzten) sowie Teile nationaler Gruppen und
+Prüfnetzwerke. Sie erscheinen mit «–» statt einem Score.
+
+**Die Gewichte sind eine Hypothese, keine Naturkonstante.** Nach den ersten
+zwanzig Gesprächen gehören sie angepasst – genau dafür sind die Regler da.
 
 ## Absender eintragen
 
 Ganz oben im `<script>` von `index.html` steht der Block `ABSENDER`. Dort
-Name, Rolle, Mailadresse und Telefon eintragen – alle vier Mailvorlagen
-ziehen mit.
+Name, Rolle, **vollständige Postadresse**, Mailadresse und Telefon eintragen –
+alle vier Mailvorlagen ziehen mit.
+
+Die Adresse ist Pflicht, nicht Kosmetik: Das UWG verlangt in Werbemails eine
+korrekte und vollständige Absenderangabe. Solange sie fehlt, schreibt die
+Signatur sichtbar `[ADRESSE EINTRAGEN]` ins Mail, statt sie stillschweigend
+wegzulassen.
 
 ## Datenstand
 
 Die Firmenliste steht im Abschnitt **DATEN** am Ende von `index.html`
-(`ROHDATEN` und `QUELLEN`). Sie ist eine Momentaufnahme. Stelleninserate
+(`ROHDATEN` und `QUELLEN`) und zusätzlich als **`leads.csv`** – dieselben Daten
+samt Score, direkt in Excel zu öffnen. Sie ist eine Momentaufnahme. Stelleninserate
 laufen aus, neue kommen dazu – wer die Liste zwei Wochen liegen lässt,
 schreibt Firmen an, die schon besetzt haben. Der Reiter **Quellen** ist
 darum wichtiger als die Tabelle: dort steht, wie man in zehn Minuten neu
