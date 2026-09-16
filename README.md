@@ -34,6 +34,10 @@
   Monteur-App am Handy (Sicherheitscheck, Checkliste, Fotos, Material,
   Zeit, Unterschrift). `dach/index.html` im Browser öffnen, Code `1234`
   für das Büro, `3456` für den Monteur.
+- **`akquise/`** – [Kaltakquise KMU](akquise/README.md): zehn Türöffner-Mails
+  für das Lernangebot an Schweizer KMU, mit Jury-Test über drei Personas,
+  Rechtslage (UWG, DSG) und dem Ablauf der Kampagne. Recherche und Quellen in
+  [`akquise/RECHERCHE.md`](akquise/RECHERCHE.md).
 
 ## HIGH – Routinen & To-Dos
 
