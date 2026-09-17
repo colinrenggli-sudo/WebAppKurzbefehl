@@ -1261,7 +1261,7 @@ body.quiet .q { display: none !important; }
 'use strict';
 
 // ---------- 0. Konfiguration ----------
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.2.0';
 
 const EMOJIS = ['🧘','📚','💪','🏃','🧠','💻','🎨','🎵','✍️','🏋️','🚀','☕','🌅','💤','🥗','💧','🚶','🧹','📝','🎯','🔭','🔥','🤸','🌿','🛏️','📵','🧴','🍎','🐕','🦷'];
 
@@ -3831,7 +3831,7 @@ function renderSettings() {
       <div class="group">
         <div class="row"><span class="row-ico" style="background:var(--blue)">🏠</span><span class="row-text"><span class="row-title" id="syncTitle">Nicht verbunden</span><span class="row-sub" id="syncSub">Daten liegen nur auf diesem Gerät.</span></span></div>
         ${syncConfigured() ? `
-        <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">Erinnerungen aufs Gerät</span><span class="row-sub">Kommen auch, wenn die App zu ist</span></span><button class="switch${S.device.pushEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!S.device.pushEnabled}" data-act="togglePush" aria-label="Erinnerungen aufs Gerät"></button></div>
+        <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">Erinnerungen aufs Gerät</span><span class="row-sub">Kommen auch, wenn die App zu ist. Die Zahl am App-Symbol zeigt die heute fälligen To-Dos.</span></span><button class="switch${S.device.pushEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!S.device.pushEnabled}" data-act="togglePush" aria-label="Erinnerungen aufs Gerät"></button></div>
         <button class="row link" type="button" data-act="syncNow"><span class="row-text"><span class="row-title">Jetzt abgleichen</span></span></button>
         ${S.device.pushEnabled ? `<button class="row link" type="button" data-act="pushTest"><span class="row-text"><span class="row-title">Probe-Erinnerung vom Server</span><span class="row-sub">Kommt auch bei gesperrtem Bildschirm</span></span></button>` : ''}
         <button class="row link" type="button" data-act="pairCode"><span class="row-text"><span class="row-title">Kopplungscode kopieren</span><span class="row-sub">Für ein zweites Gerät</span></span></button>` : ''}
