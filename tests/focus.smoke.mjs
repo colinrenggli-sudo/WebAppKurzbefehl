@@ -623,6 +623,48 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario N: Selbstaktualisierung ----------
+// Die App holt ihre eigene Datei und vergleicht die Versionsnummer darin.
+// Der gefährlichste Fehler wäre ein falscher Treffer: dann lädt sie sich in
+// einer Schleife neu. Darum muss die Prüfung gegen die eigene, unveränderte
+// Datei zuverlässig «nichts Neues» ergeben.
+{
+  const { ctx, page } = await newPage();
+  let ladungen = 0;
+  page.on('load', () => ladungen++);
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(2500);   // die Start-Prüfung nach 1.5 s abwarten
+
+  const r = await page.evaluate(async () => {
+    const eigene = APP_VERSION;
+    const gefunden = await pruefeAufUpdate({ sofort: true });
+    // Dasselbe Muster, das die App benutzt, gegen die eigene Datei
+    const text = await (await fetch('./index.html?x=' + Date.now(), { cache: 'no-store' })).text();
+    const treffer = text.match(/const APP_VERSION = '(\d+\.\d+\.\d+)'/g) || [];
+    return { eigene, gefunden, merker: neueVersion, treffer: treffer.length, erster: (/const APP_VERSION = '(\d+\.\d+\.\d+)'/.exec(text) || [])[1] };
+  });
+  if (r.gefunden !== null) note('N: die Prüfung meldet ein Update, obwohl die Datei unverändert ist: ' + r.gefunden);
+  if (r.merker !== null) note('N: es bleibt eine neue Version vermerkt, obwohl es keine gibt: ' + r.merker);
+  if (r.treffer !== 1) note('N: das Suchmuster passt ' + r.treffer + '× – es darf nur die echte Konstante treffen');
+  if (r.erster !== r.eigene) note('N: das Muster findet eine andere Version als die laufende: ' + r.erster + ' statt ' + r.eigene);
+  if (ladungen > 1) note('N: die Seite hat sich ' + ladungen + '× geladen – Verdacht auf Neustart-Schleife');
+
+  // Der Knopf in den Einstellungen muss da sein und «aktuell» melden
+  await page.evaluate(() => openSettings());
+  await page.waitForTimeout(400);
+  if (!(await page.locator('[data-act="checkUpdate"]').count())) note('N: der Knopf «Nach Update suchen» fehlt');
+  else {
+    await page.locator('[data-act="checkUpdate"]').click();
+    await page.waitForTimeout(1500);
+    const meldung = ((await page.locator('#toastWrap .toast').first().textContent().catch(() => '')) || '').replace(/\s+/g, ' ');
+    if (!/aktuell/i.test(meldung)) note('N: der Knopf meldet nicht «aktuell»: ' + meldung);
+  }
+  if (!(await page.locator('#settingsBody', { hasText: 'HIGH ' + r.eigene }).count())) note('N: die Version steht nicht in den Einstellungen');
+
+  ok('N: Selbstaktualisierung – findet die eigene Version, meldet nichts Falsches, keine Schleife');
+  await ctx.close();
+}
+
 // ---------- Szenario F: Reduzierte Bewegung – nichts Unsichtbares darf im Weg stehen ----------
 // Hintergrund: «Bewegung reduzieren» (iOS-Einstellung) hatte den ausgeblendeten
 // In-App-Hinweis sichtbar und tastbar gemacht. Er klebte über der obersten Leiste
