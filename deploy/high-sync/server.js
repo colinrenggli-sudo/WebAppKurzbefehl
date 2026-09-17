@@ -417,6 +417,10 @@ function duePayloads(plan, now) {
   const doneIds = today && Array.isArray(today.doneTaskIds) ? today.doneTaskIds : [];
 
   const passed = (at) => { const m = appMinutes(at, dayEnd); return m !== null && jetzt >= m; };
+  // Die Zahl am App-Symbol soll auch dann stimmen, wenn die App zu ist. Kennt
+  // der Dienst den heutigen Stand, schickt er ihn mit; kennt er ihn nicht,
+  // lässt er die Zahl lieber unangetastet, statt sie zu erfinden.
+  const badge = today ? Math.max(0, openTodos | 0) : null;
 
   if (plan.morning && plan.morning.enabled !== false && passed(plan.morning.at)) {
     if (stale || openRoutines > 0 || openTodos > 0) {
@@ -429,7 +433,7 @@ function duePayloads(plan, now) {
           : openRoutines > 0 ? (openRoutines === 1 ? 'Eine Routine wartet' : openRoutines + ' Routinen warten')
           : 'To-Dos für heute',
         body: teile.length ? teile.join(' · ') : 'Eine reicht, um die Serie zu halten.',
-        tag: 'high-morning',
+        tag: 'high-morning', badge,
       });
     }
   }
@@ -446,7 +450,7 @@ function duePayloads(plan, now) {
         key: 'evening', day,
         title: 'Abend-Check',
         body: offen.join(' · ') + (stale ? '' : ' – die Mini-Version zählt auch.'),
-        tag: 'high-evening',
+        tag: 'high-evening', badge,
       });
     }
   }
@@ -460,7 +464,7 @@ function duePayloads(plan, now) {
         key: 'task:' + t.id, day,
         title: (t.emoji ? t.emoji + ' ' : '') + (t.label || 'Routine'),
         body: 'Seit ' + t.at + ' offen – jetzt ist ein guter Moment.',
-        tag: 'high-task-' + t.id,
+        tag: 'high-task-' + t.id, badge,
       });
     }
   }
@@ -508,7 +512,7 @@ async function tick() {
     let geaendert = false;
     for (const p of due) {
       const schon = Array.isArray(sent.an[p.key]) ? sent.an[p.key] : [];
-      const res = await sendToAll({ title: p.title, body: p.body, tag: p.tag }, schon);
+      const res = await sendToAll({ title: p.title, body: p.body, tag: p.tag, badge: p.badge }, schon);
       if (res.delivered.length) {
         sent.an[p.key] = schon.concat(res.delivered);
         geaendert = true;

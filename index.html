@@ -2586,6 +2586,13 @@ function renderNav() {
 
 // Ein in Zukunft datierter Fokus (aus älteren Daten) zählt erst an seinem Tag.
 function isFocusToday(t) { return !!t.focus && (!t.focusDate || t.focusDate <= todayKey()); }
+// Was heute ansteht: fällig heute oder überfällig, plus die Fokus-To-Dos.
+// Diese eine Stelle bestimmt, was das Abzeichen am Symbol zeigt und was der
+// Server in die Erinnerung schreibt – sonst laufen die beiden auseinander.
+function offeneTodosHeute(today) {
+  const k = today || todayKey();
+  return S.todos.filter(t => !t.deleted && !t.completed && ((t.dueDate && t.dueDate <= k) || isFocusToday(t)));
+}
 function taskMetaHtml(t, today) {
   const parts = [];
   const rec = S.history[today] && S.history[today].tasks[t.id];
@@ -2999,6 +3006,9 @@ function renderAll() {
   else if (currentTab === 'todos') renderTodos();
   else if (currentTab === 'tokens') renderTokens();
   else renderProgress();
+  // An einer Stelle statt an zwanzig: jede Änderung, die die Oberfläche neu
+  // zeichnet, zieht die Zahl am Symbol mit.
+  updateAppBadge();
 }
 
 function switchTab(tab) {
@@ -3666,11 +3676,14 @@ function saveReview() {
   playSound('medium');
   toast('🌙', escHtml(`Gute Nacht. Morgen ${firstTime ? `ab ${firstTime} ` : ''}geht's weiter${reviewPicks.length ? ` – ${reviewPicks.length} Fokus-To-Do${reviewPicks.length === 1 ? '' : 's'} stehen bereit` : ''}.`));
 }
+// Die Zahl am App-Symbol: wie viele To-Dos heute noch offen sind. iOS zeigt
+// sie nur der vom Home-Bildschirm gestarteten App und nur, wenn Mitteilungen
+// erlaubt sind – beides ist hier der Fall, sobald die Erinnerungen laufen.
 function updateAppBadge() {
   try {
     if (!('setAppBadge' in navigator)) return;
-    const n = S.todos.filter(t => !t.deleted && !t.completed && t.focus).length;
-    if (n) navigator.setAppBadge(n); else navigator.clearAppBadge();
+    const n = offeneTodosHeute().length;
+    if (n > 0) navigator.setAppBadge(n); else navigator.clearAppBadge();
   } catch (e) {}
 }
 
@@ -3990,7 +4003,7 @@ async function tick() {
       // Morgen-Erinnerung: offene Routinen und fällige To-Dos
       if (s.notifyEnabled && now >= (s.notifyTime || '09:00') && d.lastNotifiedDate !== clock && !vomServerErledigt('morning')) {
         const offen = requiredTasksFor(today).filter(t => !t.completed);
-        const todos = S.todos.filter(t => !t.completed && !t.deleted && ((t.dueDate && t.dueDate <= today) || isFocusToday(t)));
+        const todos = offeneTodosHeute(today);
         let shown = true;
         if (offen.length || todos.length) {
           const teile = [];
@@ -4417,7 +4430,7 @@ function checkCloudDocSize(koerper) {
 function buildPushPlan() {
   const today = todayKey(), s = S.settings;
   const offen = requiredTasksFor(today).filter(t => !t.completed);
-  const offeneTodos = S.todos.filter(t => !t.deleted && !t.completed && ((t.dueDate && t.dueDate <= today) || isFocusToday(t))).length;
+  const offeneTodos = offeneTodosHeute(today).length;
   return {
     version: 2,
     tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'Europe/Zurich',

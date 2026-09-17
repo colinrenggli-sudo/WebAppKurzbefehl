@@ -569,6 +569,60 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario M: die Zahl am App-Symbol ----------
+// Sie soll zeigen, wie viele To-Dos heute noch offen sind – und sich beim
+// Abhaken sofort mitbewegen. Gezählt wird genau das, was heute ansteht.
+{
+  const { ctx, page } = await newPage();
+  // Die Badging-API gibt es in Chromium hier nicht – nachbilden und mitschreiben.
+  await page.addInitScript(() => {
+    window.__badge = [];
+    navigator.setAppBadge = (n) => { window.__badge.push(n); return Promise.resolve(); };
+    navigator.clearAppBadge = () => { window.__badge.push(0); return Promise.resolve(); };
+  });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  const letzte = () => page.evaluate(() => window.__badge[window.__badge.length - 1]);
+
+  const welche = await page.evaluate(() => {
+    S.settings.onboardingDone = true;
+    const h = todayKey(), g = addDays(h, -1), m = addDays(h, 1);
+    S.todos = [
+      normalizeTodo({ id: 'heute', title: 'heute', dueDate: h }),
+      normalizeTodo({ id: 'ueber', title: 'überfällig', dueDate: g }),
+      normalizeTodo({ id: 'morgen', title: 'morgen', dueDate: m }),
+      normalizeTodo({ id: 'ohne', title: 'ohne Datum' }),
+      normalizeTodo({ id: 'fokus', title: 'Fokus', focus: true, focusDate: h }),
+      normalizeTodo({ id: 'fokusMorgen', title: 'Fokus ab morgen', focus: true, focusDate: m }),
+      normalizeTodo({ id: 'fertig', title: 'fertig', dueDate: h, completed: true }),
+      normalizeTodo({ id: 'weg', title: 'gelöscht', dueDate: h, deleted: Date.now() }),
+    ];
+    saveAll({ silent: true }); renderAll();
+    return { ids: offeneTodosHeute().map(t => t.id).sort().join(','), plan: buildPushPlan().today.openTodos };
+  });
+  if (welche.ids !== 'fokus,heute,ueber') note('M: falsche To-Dos gezählt: ' + welche.ids);
+  if (welche.plan !== 3) note('M: der Plan für den Server zählt anders als das Abzeichen: ' + welche.plan);
+  if (await letzte() !== 3) note('M: die Zahl am Symbol steht nicht auf 3: ' + await letzte());
+
+  await page.evaluate(() => onTodoToggle('heute'));
+  await page.waitForTimeout(700);
+  if (await letzte() !== 2) note('M: nach dem Abhaken steht nicht 2: ' + await letzte());
+
+  await page.evaluate(() => onTodoToggle('heute'));
+  await page.waitForTimeout(500);
+  if (await letzte() !== 3) note('M: nach dem Widerrufen steht nicht wieder 3: ' + await letzte());
+
+  await page.evaluate(() => { ['heute', 'ueber', 'fokus'].forEach(i => { const t = todoById(i); if (!t.completed) completeTodo(t); }); renderAll(); });
+  await page.waitForTimeout(400);
+  if (await letzte() !== 0) note('M: bei nichts Offenem wird die Zahl nicht entfernt: ' + await letzte());
+
+  await page.evaluate(() => { S.todos.unshift(normalizeTodo({ id: 'neu', title: 'frisch', dueDate: todayKey() })); saveAll({ silent: true }); renderAll(); });
+  await page.waitForTimeout(300);
+  if (await letzte() !== 1) note('M: ein neues fälliges To-Do setzt die Zahl nicht auf 1: ' + await letzte());
+
+  ok('M: Zahl am App-Symbol – zählt was heute ansteht und bewegt sich sofort mit');
+  await ctx.close();
+}
+
 // ---------- Szenario F: Reduzierte Bewegung – nichts Unsichtbares darf im Weg stehen ----------
 // Hintergrund: «Bewegung reduzieren» (iOS-Einstellung) hatte den ausgeblendeten
 // In-App-Hinweis sichtbar und tastbar gemacht. Er klebte über der obersten Leiste

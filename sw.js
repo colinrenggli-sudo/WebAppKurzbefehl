@@ -10,7 +10,7 @@
 // Die Versionsnummer unten bei jeder Änderung an index.html hochzählen,
 // damit alte Caches sicher weggeräumt werden.
 
-const VERSION = 'focus-v4.1.0';
+const VERSION = 'focus-v4.2.0';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -73,6 +73,13 @@ self.addEventListener('push', (event) => {
     tag: d.tag || 'high',
     renotify: true,
   };
+  // Die Zahl am App-Symbol mitziehen, solange die App zu ist. Schickt der
+  // Server keine Zahl mit, bleibt die alte stehen – eine erfundene wäre
+  // schlechter als eine leicht veraltete.
+  const zahl = typeof d.badge === 'number' && isFinite(d.badge) ? Math.max(0, Math.round(d.badge)) : null;
+  if (zahl !== null && self.navigator && 'setAppBadge' in self.navigator) {
+    try { zahl > 0 ? self.navigator.setAppBadge(zahl) : self.navigator.clearAppBadge(); } catch (e) {}
+  }
   // Ohne showNotification entzieht iOS der App die Erlaubnis – darum immer etwas zeigen.
   event.waitUntil(self.registration.showNotification(titel, opts));
 });
