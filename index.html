@@ -1261,7 +1261,7 @@ body.quiet .q { display: none !important; }
 'use strict';
 
 // ---------- 0. Konfiguration ----------
-const APP_VERSION = '3.2.0';
+const APP_VERSION = '3.3.0';
 
 const EMOJIS = ['🧘','📚','💪','🏃','🧠','💻','🎨','🎵','✍️','🏋️','🚀','☕','🌅','💤','🥗','💧','🚶','🧹','📝','🎯','🔭','🔥','🤸','🌿','🛏️','📵','🧴','🍎','🐕','🦷'];
 
@@ -3853,6 +3853,11 @@ function renderSettings() {
         <button class="row destructive" type="button" data-act="resetAll"><span class="row-ico" style="background:var(--red)">🗑️</span><span class="row-text"><span class="row-title">Alles zurücksetzen</span><span class="row-sub">Löscht Routinen, To-Dos, Verlauf und XP auf diesem Gerät</span></span></button>
       </div>
     </div>
+    <div>
+      <div class="group">
+        <button class="row link" type="button" data-act="checkUpdate"><span class="row-ico" style="background:var(--blue);opacity:.8">⬆️</span><span class="row-text"><span class="row-title">${neueVersion ? `Version ${escHtml(neueVersion)} laden` : 'Nach Update suchen'}</span><span class="row-sub">${neueVersion ? 'Eine neuere Fassung liegt auf dem Server.' : 'Die App sucht beim Start selbst – hier geht es von Hand.'}</span></span></button>
+      </div>
+    </div>
     <div class="hint" style="text-align:center">HIGH ${APP_VERSION} · ${escHtml(location.host || 'lokal')}</div>`;
   const body = $('settingsBody');
   body.querySelectorAll('[data-set]').forEach(sw => sw.addEventListener('click', async () => {
@@ -3904,6 +3909,13 @@ function renderSettings() {
   $('syncBtn').addEventListener('click', handleSyncBtn);
   const bind = (act, fn) => { const el = body.querySelector('[data-act="' + act + '"]'); if (el) el.addEventListener('click', fn); };
   bind('togglePush', () => { if (S.device.pushEnabled) disablePush(); else enablePush(); });
+  bind('checkUpdate', async () => {
+    if (neueVersion) { updateAnwenden(neueVersion); return; }
+    toast('⬆️', 'Suche …');
+    const v = await pruefeAufUpdate({ sofort: true });
+    if (v) { renderSettings(); toast('⬆️', `Version ${escHtml(v)} ist da.`, { label: 'Jetzt laden', fn: () => updateAnwenden(v) }); }
+    else toast('✅', `Du bist aktuell (${escHtml(APP_VERSION)}).`);
+  });
   bind('syncNow', async () => { const ok = await syncNow({ loud: true }); toast(ok ? '☁️' : '⚠️', ok ? 'Abgeglichen.' : (syncStatusText || 'Abgleich nicht möglich.')); renderSettings(); });
   bind('pairCode', copyPairingCode);
   bind('pushTest', async () => {
@@ -3930,6 +3942,58 @@ let swReg = null, swReady = null;
 if ('serviceWorker' in navigator) {
   swReady = navigator.serviceWorker.register('sw.js').then(r => { swReg = r; return r; }).catch(() => null);
 }
+// ---------- Selbstaktualisierung ----------
+// iOS stellt eine installierte Web-App beim Zurückkehren oft aus einem Abbild
+// wieder her, ohne eine neue Anfrage zu stellen. Dann bleibt eine alte Fassung
+// beliebig lange stehen – auch wenn man die App aus dem Umschalter wirft.
+// Darum fragt die App selbst nach: die eigene Datei holen und die
+// Versionsnummer darin vergleichen. Eine Quelle, keine zweite Datei, die
+// auseinanderlaufen könnte.
+let neueVersion = null, updateGeprueft = 0, updateLaeuft = false;
+const UPDATE_MARKE = 'focusUpdateVersuch';
+
+async function pruefeAufUpdate(opts) {
+  opts = opts || {};
+  if (updateLaeuft) return null;
+  if (navigator.onLine === false) return null;
+  if (!opts.sofort && Date.now() - updateGeprueft < 60000) return null;
+  updateGeprueft = Date.now();
+  try {
+    const res = await fetch('./index.html?stand=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return null;
+    const m = /const APP_VERSION = '(\d+\.\d+\.\d+)'/.exec(await res.text());
+    if (!m || m[1] === APP_VERSION) { neueVersion = null; return null; }
+    neueVersion = m[1];
+    // Nur einmal pro Fassung von selbst neu laden. Sonst drehte es sich im
+    // Kreis, falls doch wieder die alte Datei ausgeliefert wird.
+    let schon = null;
+    try { schon = sessionStorage.getItem(UPDATE_MARKE); } catch (e) {}
+    if (opts.still && schon !== m[1]) { updateAnwenden(m[1]); return m[1]; }
+    if (sheetStack.length === 0) {
+      toast('⬆️', `Version ${escHtml(m[1])} ist da.`, { label: 'Jetzt laden', fn: () => updateAnwenden(m[1]) });
+    }
+    return m[1];
+  } catch (e) { return null; }
+}
+
+async function updateAnwenden(version) {
+  if (updateLaeuft) return;
+  updateLaeuft = true;
+  try { sessionStorage.setItem(UPDATE_MARKE, version || ''); } catch (e) {}
+  // Vorher abgleichen: ein Neuladen darf nichts kosten, was noch nicht draussen ist.
+  try { if (syncConfigured()) await syncNow(); } catch (e) {}
+  try { if (swReg) await swReg.update(); } catch (e) {}
+  // Die alten Zwischenspeicher weg, sonst liefert der Service Worker gleich
+  // wieder die Fassung, die wir loswerden wollen.
+  try {
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter(k => k.startsWith('focus-')).map(k => caches.delete(k)));
+    }
+  } catch (e) {}
+  location.reload();
+}
+
 function isStandalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
 function notifPermLabel() {
   if (!('Notification' in window)) return isStandalone() ? 'Nicht verfügbar' : 'Nur in installierter App';
@@ -4788,6 +4852,13 @@ function boot() {
   // war: eingerichtet wird oft erst danach, über den Link oder von Hand.
   window.addEventListener('online', () => { if (syncConfigured()) syncNow(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && syncConfigured()) syncNow(); });
+
+  // Beim Start still nachladen: da hat noch niemand etwas angefangen, ein
+  // Neuladen fällt nicht auf. Später nur noch anbieten, statt mitten im Tippen
+  // die Seite zu wechseln.
+  setTimeout(() => pruefeAufUpdate({ still: true, sofort: true }), 1500);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pruefeAufUpdate(); });
+  window.addEventListener('online', () => pruefeAufUpdate());
 
   // Einrichtungslink (#s=…) noch vor allem anderen: danach ist der Server
   // eingerichtet, und der Abgleich unten läuft gleich mit dem richtigen Ziel.
