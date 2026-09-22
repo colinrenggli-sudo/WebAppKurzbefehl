@@ -665,6 +665,76 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario O: Schritte einer Routine bearbeiten ----------
+// Schritte liessen sich nur anlegen, verschieben und löschen – nicht ändern.
+// Beim Umbenennen darf weder der Schreibzeiger aus dem Feld fliegen noch ein
+// gesetzter Haken verlorengehen.
+{
+  const { ctx, page } = await newPage();
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    S.settings.onboardingDone = true;
+    S.tasks = [normalizeTask({ id: 'r1', label: 'Morgenroutine', emoji: '🌅', colorId: 'green', days: [0,1,2,3,4,5,6], createdAt: 0,
+      subtasks: [{ name: 'Zähne', completed: true }, { name: 'Dusche', completed: false }, { name: 'Kaffee', completed: false }] })];
+    saveAll({ silent: true }); renderAll(); openTaskEditor('r1');
+  });
+  await page.waitForTimeout(450);
+
+  const felder = page.locator('#tSubList input.sub-edit-name');
+  if (await felder.count() !== 3) note('O: die Schritte sind keine Eingabefelder (' + await felder.count() + ')');
+  const werte = await felder.evaluateAll(els => els.map(e => e.value));
+  if (werte.join(',') !== 'Zähne,Dusche,Kaffee') note('O: die Felder zeigen nicht die Schritte: ' + werte.join(','));
+
+  // Umbenennen – der Schreibzeiger muss im Feld bleiben
+  await felder.first().click();
+  await felder.first().fill('Zähne putzen');
+  await page.waitForTimeout(150);
+  if (!(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('sub-edit-name')))) {
+    note('O: beim Tippen wird neu gezeichnet – der Schreibzeiger fliegt aus dem Feld');
+  }
+  await page.click('#tSave');
+  await page.waitForTimeout(500);
+  const nachher = await page.evaluate(() => taskById('r1').subtasks.map(s => s.name + (s.completed ? '✓' : '')));
+  if (nachher.join(',') !== 'Zähne putzen✓,Dusche,Kaffee') note('O: Umbenennen hat den Haken verloren oder den Namen nicht übernommen: ' + nachher.join(','));
+
+  // Leeren entfernt den Schritt
+  await page.evaluate(() => openTaskEditor('r1'));
+  await page.waitForTimeout(400);
+  await page.locator('#tSubList input.sub-edit-name').nth(2).fill('');
+  await page.locator('#tSubList input.sub-edit-name').nth(2).blur();
+  await page.waitForTimeout(300);
+  if (await page.locator('#tSubList input.sub-edit-name').count() !== 2) note('O: ein leer gelassener Schritt verschwindet nicht');
+  await page.click('#tSave');
+  await page.waitForTimeout(400);
+  if ((await page.evaluate(() => taskById('r1').subtasks.length)) !== 2) note('O: der leere Schritt wurde gespeichert');
+
+  // Verschieben: der Haken muss am Schritt hängen bleiben, nicht am Platz
+  await page.evaluate(() => openTaskEditor('r1'));
+  await page.waitForTimeout(400);
+  const gezogen = await page.evaluate(async () => {
+    const griff = document.querySelector('#tSubList [data-sdrag]');
+    const h = griff.closest('.sub-edit-row').getBoundingClientRect().height;
+    const b = griff.getBoundingClientRect();
+    const x = b.x + b.width / 2, y0 = b.y + b.height / 2;
+    const tev = (typ, y) => {
+      const t = new Touch({ identifier: 1, target: griff, clientX: x, clientY: y });
+      const leer = typ === 'touchend';
+      const o = { touches: leer ? [] : [t], targetTouches: leer ? [] : [t], changedTouches: [t], bubbles: true, cancelable: true };
+      griff.dispatchEvent(new TouchEvent(typ, o));
+      document.dispatchEvent(new TouchEvent(typ, o));
+    };
+    tev('touchstart', y0);
+    for (let i = 1; i <= 10; i++) { tev('touchmove', y0 + h * 1.3 * i / 10); await new Promise(r => requestAnimationFrame(r)); }
+    tev('touchend', y0 + h * 1.3);
+    await new Promise(r => setTimeout(r, 400));
+    return formSubs.map(s => s.name + (s.completed ? '✓' : ''));
+  });
+  if (gezogen.join(',') !== 'Dusche,Zähne putzen✓') note('O: Verschieben ordnet falsch oder verliert den Haken: ' + gezogen.join(','));
+
+  ok('O: Schritte bearbeiten – änderbar, Haken bleibt am Schritt, Verschieben geht weiter');
+  await ctx.close();
+}
+
 // ---------- Szenario F: Reduzierte Bewegung – nichts Unsichtbares darf im Weg stehen ----------
 // Hintergrund: «Bewegung reduzieren» (iOS-Einstellung) hatte den ausgeblendeten
 // In-App-Hinweis sichtbar und tastbar gemacht. Er klebte über der obersten Leiste

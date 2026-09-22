@@ -682,7 +682,14 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 .sub-edit-row { display: flex; align-items: center; gap: 4px; min-height: 48px; border-bottom: 0.5px solid var(--sep); background: var(--bg-elev); transition: transform 0.25s var(--ease-out); }
 .sub-edit-row:last-child { border-bottom: 0; }
 .sub-edit-row.dragging { z-index: 10; position: relative; border-radius: 12px; background: var(--bg-elev-2); box-shadow: var(--shadow-float); }
-.sub-edit-name { flex: 1; font-size: 0.941rem; padding-left: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub-edit-name {
+  flex: 1; min-width: 0; font: inherit; font-size: 0.941rem; color: var(--label);
+  background: transparent; border: 0; border-radius: 8px;
+  padding: 10px 6px; min-height: 44px;   /* volle Trefferfläche zum Antippen */
+  -webkit-appearance: none; appearance: none;
+}
+.sub-edit-name:focus { outline: none; background: var(--fill-4); }
+.sub-edit-name::placeholder { color: var(--label-3); }
 .sub-edit-del { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--label-3); border-radius: 50%; }
 .sub-edit-del:active { color: var(--red); }
 .sub-edit-del svg { width: 18px; height: 18px; }
@@ -1261,7 +1268,7 @@ body.quiet .q { display: none !important; }
 'use strict';
 
 // ---------- 0. Konfiguration ----------
-const APP_VERSION = '3.3.0';
+const APP_VERSION = '3.4.0';
 
 const EMOJIS = ['🧘','📚','💪','🏃','🧠','💻','🎨','🎵','✍️','🏋️','🚀','☕','🌅','💤','🥗','💧','🚶','🧹','📝','🎯','🔭','🔥','🤸','🌿','🛏️','📵','🧴','🍎','🐕','🦷'];
 
@@ -3137,7 +3144,7 @@ function openTaskEditor(id, preset) {
   $('tAlarm').value = t && t.alarmTime ? t.alarmTime : '';
   $('tCueChips').innerHTML = ANCHOR_SUGGESTIONS.map(a => `<button class="chip" type="button" data-anchor="${escAttr(a)}">${escHtml(a)}</button>`).join('');
   $('tCueChips').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { $('tCue').value = b.dataset.anchor; }));
-  formSubs = t ? t.subtasks.map(s => s.name) : [];
+  formSubs = t ? t.subtasks.map(s => ({ name: s.name, completed: !!s.completed })) : [];
   formDays = t ? t.days.slice() : [0, 1, 2, 3, 4, 5, 6];
   formEmoji = t ? t.emoji : (preset && preset.emoji) || EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
   formColor = t ? t.colorId : (preset && preset.colorId) || COLORS[Math.floor(Math.random() * 6)].id;
@@ -3169,7 +3176,17 @@ function renderDayRow() {
   $('tDaysHint').textContent = n === 7 ? 'Täglich. Die Serie zählt jeden Tag.' : n === 5 && !formDays.includes(0) && !formDays.includes(6) ? 'Werktags. Am Wochenende ist frei – die Serie bleibt.' : `${n}× pro Woche. An freien Tagen läuft die Serie einfach weiter.`;
 }
 function renderFormSubs() {
-  $('tSubList').innerHTML = formSubs.map((s, i) => `<div class="sub-edit-row" data-i="${i}"><span class="drag-handle" data-sdrag="${i}" aria-label="Verschieben">${ICON.drag}</span><span class="sub-edit-name">${escHtml(s)}</span><button class="sub-edit-del" type="button" data-del="${i}" aria-label="Schritt entfernen">${ICON.x}</button></div>`).join('');
+  // Der Name ist ein Eingabefeld, kein Text: Schritte lassen sich sonst nur
+  // löschen und neu tippen. Beim Tippen wird NICHT neu gezeichnet – das würde
+  // den Schreibzeiger bei jedem Zeichen aus dem Feld werfen.
+  $('tSubList').innerHTML = formSubs.map((s, i) => `<div class="sub-edit-row" data-i="${i}"><span class="drag-handle" data-sdrag="${i}" aria-label="Verschieben">${ICON.drag}</span><input class="sub-edit-name" data-sub="${i}" value="${escAttr(s.name)}" maxlength="60" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" aria-label="Schritt ${i + 1}" placeholder="Schritt"><button class="sub-edit-del" type="button" data-del="${i}" aria-label="Schritt entfernen">${ICON.x}</button></div>`).join('');
+  $('tSubList').querySelectorAll('[data-sub]').forEach(inp => {
+    const i = +inp.dataset.sub;
+    inp.addEventListener('input', () => { if (formSubs[i]) formSubs[i].name = inp.value.slice(0, 60); });
+    // Leer stehen gelassen heisst: weg damit. Ein namenloser Schritt hilft niemandem.
+    inp.addEventListener('blur', () => { if (!inp.value.trim()) { formSubs.splice(i, 1); renderFormSubs(); } });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+  });
   $('tSubList').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { formSubs.splice(+b.dataset.del, 1); renderFormSubs(); }));
   initListDrag($('tSubList'), '[data-sdrag]', formSubs, () => renderFormSubs());
 }
@@ -3177,7 +3194,7 @@ function addFormSub() {
   const inp = $('tSubInput'); const v = inp.value.trim();
   if (!v) return;
   if (formSubs.length >= 12) { toast('ℹ️', 'Höchstens 12 Schritte – klein halten wirkt besser.'); return; }
-  formSubs.push(v.slice(0, 60)); inp.value = ''; renderFormSubs(); inp.focus();
+  formSubs.push({ name: v.slice(0, 60), completed: false }); inp.value = ''; renderFormSubs(); inp.focus();
 }
 $('tSubAdd').addEventListener('click', addFormSub);
 $('tSubInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addFormSub(); } });
@@ -3215,9 +3232,12 @@ function saveTaskEditor() {
   t.mini = mini.slice(0, 40);
   if (t.alarmTime !== alarm) delete S.device.alarmNotified[t.id];
   t.alarmTime = hmValid(alarm) ? alarm : null;
-  // Schritte: Erledigt-Status nach Name übernehmen
-  const old = t.subtasks;
-  t.subtasks = formSubs.map(n => { const o = old.find(s => s.name === n); return { name: n, completed: o ? o.completed : false }; });
+  // Schritte: «erledigt» hängt am Schritt selbst, nicht am Namen – sonst
+  // verlöre ein umbenannter Schritt seinen Haken mitten am Tag. Namenlose
+  // fallen weg.
+  t.subtasks = formSubs
+    .map(x => ({ name: String(x.name || '').trim().slice(0, 60), completed: !!x.completed }))
+    .filter(x => x.name);
   if (t.subtasks.length && !t.completed && t.subtasks.every(s => s.completed)) t.subtasks.forEach(s => s.completed = false);
   if (t.completed && t.subtasks.length) t.subtasks.forEach(s => s.completed = true);
   touch(t);
