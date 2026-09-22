@@ -735,6 +735,60 @@ const D = (offsetDays) => { const d = new Date(NOON); d.setDate(d.getDate() + of
   await ctx.close();
 }
 
+// ---------- Szenario P: die Reihenfolge der Routinen hält ----------
+// Verschieben hat die Reihenfolge zwar gesetzt, aber nicht als Änderung
+// markiert. Beim nächsten Abgleich gewann darum die alte Reihenfolge vom
+// Server – die Routine sprang zurück, wo sie vorher war.
+{
+  const { ctx, page } = await newPage();
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    S.settings.onboardingDone = true;
+    S.tasks = ['Meditieren', 'Sport', 'Lesen'].map((l, i) => normalizeTask({ id: 'p' + i, label: l, emoji: '🧘', colorId: 'green', days: [0,1,2,3,4,5,6], createdAt: 0, order: i, updatedAt: 1000 }, i));
+    saveAll({ silent: true });
+    window.__server = stateFromRaw(JSON.parse(JSON.stringify(gatherCloudDoc())));  // Serverstand: alte Reihenfolge
+    reorderMode = true; openTaskId = null; renderAll();
+  });
+  await page.waitForTimeout(450);
+
+  const r = await page.evaluate(async () => {
+    const griff = document.querySelector('.routine [data-drag], .routine .drag-handle');
+    if (!griff) return { fehler: 'kein Griff im Sortiermodus' };
+    const zeile = griff.closest('.routine');
+    const h = zeile.getBoundingClientRect().height + 10;
+    const bb = griff.getBoundingClientRect();
+    const x = bb.x + bb.width / 2, y0 = bb.y + bb.height / 2;
+    const tev = (typ, y) => {
+      const t = new Touch({ identifier: 1, target: griff, clientX: x, clientY: y });
+      const leer = typ === 'touchend';
+      const o = { touches: leer ? [] : [t], targetTouches: leer ? [] : [t], changedTouches: [t], bubbles: true, cancelable: true };
+      griff.dispatchEvent(new TouchEvent(typ, o));
+      document.dispatchEvent(new TouchEvent(typ, o));
+    };
+    tev('touchstart', y0);
+    for (let i = 1; i <= 12; i++) { tev('touchmove', y0 + h * 2.2 * i / 12); await new Promise(r => requestAnimationFrame(r)); }
+    tev('touchend', y0 + h * 2.2);
+    await new Promise(r => setTimeout(r, 600));
+    const nachZiehen = activeTasks().map(t => t.label);
+    // Die verschobenen Routinen müssen als geändert gelten
+    const markiert = S.tasks.filter(t => (t.updatedAt || 0) > 1000).length;
+    // Und der Abgleich gegen den alten Serverstand darf sie nicht zurückholen
+    applyState(mergeStates(currentState(), window.__server));
+    return { nachZiehen, markiert, nachAbgleich: activeTasks().map(t => t.label) };
+  });
+
+  if (r.fehler) note('P: ' + r.fehler);
+  else {
+    if (r.nachZiehen.join(',') === 'Meditieren,Sport,Lesen') note('P: das Ziehen hat gar nichts verschoben');
+    if (!r.markiert) note('P: verschobene Routinen werden nicht als geändert markiert – der Abgleich überschreibt sie');
+    if (r.nachAbgleich.join(',') !== r.nachZiehen.join(',')) {
+      note('P: der Abgleich hat die Reihenfolge zurückgesetzt: ' + r.nachZiehen.join(',') + ' → ' + r.nachAbgleich.join(','));
+    }
+  }
+  ok('P: Reihenfolge der Routinen – hält auch nach dem Abgleich');
+  await ctx.close();
+}
+
 // ---------- Szenario F: Reduzierte Bewegung – nichts Unsichtbares darf im Weg stehen ----------
 // Hintergrund: «Bewegung reduzieren» (iOS-Einstellung) hatte den ausgeblendeten
 // In-App-Hinweis sichtbar und tastbar gemacht. Er klebte über der obersten Leiste
