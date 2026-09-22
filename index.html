@@ -1268,7 +1268,7 @@ body.quiet .q { display: none !important; }
 'use strict';
 
 // ---------- 0. Konfiguration ----------
-const APP_VERSION = '3.4.0';
+const APP_VERSION = '3.5.0';
 
 const EMOJIS = ['🧘','📚','💪','🏃','🧠','💻','🎨','🎵','✍️','🏋️','🚀','☕','🌅','💤','🥗','💧','🚶','🧹','📝','🎯','🔭','🔥','🤸','🌿','🛏️','📵','🧴','🍎','🐕','🦷'];
 
@@ -3605,14 +3605,17 @@ function initListDrag(list, handleSel, arr, onDone, isTasks) {
       doneEl.style.transition = '';
       if (isTasks) {
         // Neue Reihenfolge aus der Liste ableiten (robust, auch wenn zwei Routinen dieselbe Nummer hatten)
+        const vorher = new Map(S.tasks.map(t => [t.id, t.order]));
         const shownIds = items().map(n => n.dataset.id).filter(Boolean);
         const sorted = S.tasks.slice().sort((a, b) => a.order - b.order);
-        let si = 0;
-        sorted.forEach(t => { if (shownIds.includes(t.id)) { const rep = taskById(shownIds[si++]); if (rep) rep.order = -1; } });
         // shownIds in DOM-Reihenfolge an die Plätze der bisher gezeigten setzen
         const slots = sorted.map((t, i) => shownIds.includes(t.id) ? i : null).filter(x => x !== null);
         shownIds.forEach((id, i) => { const t = taskById(id); if (t && slots[i] !== undefined) t.order = slots[i]; });
         S.tasks.slice().sort((a, b) => a.order - b.order).forEach((t, i) => { t.order = i; });
+        // Wer verschoben wurde, muss auch als geändert gelten. Ohne das bleibt
+        // updatedAt stehen, beim nächsten Abgleich gewinnt die alte Reihenfolge
+        // vom Server – und die Routine springt zurück, wo sie vorher war.
+        S.tasks.forEach(t => { if (vorher.get(t.id) !== t.order) touch(t); });
         saveAll();
       }
       if (onDone) onDone();
