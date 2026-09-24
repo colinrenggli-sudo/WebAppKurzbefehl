@@ -214,28 +214,48 @@ Der Token liegt in `daten/token.json` mit Rechten 600. Wer ihn hat,
 kommt an deine Fitbit-Daten – bei einem Backup dieses Verzeichnisses
 also mitdenken.
 
-## Schritt 6 · Aktuell halten
+## Schritt 6 · Aktuell halten – das macht der Server selbst
+
+Nichts zu tun. Der Container **`selbstupdate`** holt alle fünf Minuten
+den neuesten Stand aus GitHub. Damit ist eine neue Fassung ohne
+Terminal live:
+
+* **Die App** – nginx liefert `index.html` direkt aus dem Verzeichnis
+  aus. Nach dem `git pull` ist sie da, und die App auf dem Handy holt
+  sie sich beim nächsten Öffnen selbst.
+* **Der Dienst** – `high-sync` liest seine `server.js` aus demselben
+  Verzeichnis (`./high-sync:/src:ro`) und startet von allein neu,
+  sobald sie sich ändert. Kein Neubau, keine Unterbrechung von mehr
+  als einer Sekunde.
+
+Eine kaputte `server.js` wird dabei nicht übernommen: `start.sh` prüft
+sie mit `node --check` und lässt sonst die letzte gute weiterlaufen.
+Eigene Änderungen im Verzeichnis werden nie überfahren – stehen welche
+da, hält die Selbstaktualisierung an und sagt es im Log.
+
+Mitlesen:
+
+```bash
+docker logs -f high-selbstupdate
+```
+
+### Wann es doch einen Befehl braucht
+
+Nur wenn sich etwas ändert, das in einem Docker-Abbild steckt:
+`package.json`, `Dockerfile`, `nginx.conf`, `docker-compose.yml` oder
+`start.sh`. Die Selbstaktualisierung schreibt dann `ACHTUNG` ins Log
+und nennt die Datei. Auf dem Server dann einmal:
 
 ```bash
 bash /mnt/user/appdata/webapps/repo/deploy/update.sh
 ```
 
-Automatisch per **Settings → User Scripts** (Plugin *User Scripts*),
-Zeitplan „stündlich“ oder „täglich“. Der Webserver liest die Dateien
-direkt aus dem Verzeichnis – nach dem `git pull` ist die neue Version
-sofort da, ohne Neustart.
+Das Skript holt, baut und startet in einem Durchgang – vorhandene
+Schlüssel bleiben dabei unangetastet.
 
-Für die **Apps** gilt das. Ändert sich etwas unter `deploy/` (der
-Dienst hinter HIGH, nginx, compose), steckt das in einem Image und
-muss gebaut werden. `update.sh` sagt in dem Fall Bescheid; auf dem
-Server dann einmal:
-
-```bash
-cd /mnt/user/appdata/webapps/repo/deploy && docker compose up -d --build
-```
-
-Das macht das Skript bewusst nicht selbst: ein stündlicher Cron soll
-nicht unbeaufsichtigt alle Container neu starten.
+Absichtlich hat `selbstupdate` **keinen** Zugriff auf den
+Docker-Socket: etwas, das automatisch Code aus dem Netz holt, darf
+nicht auch den Server umbauen können.
 
 Der Server zieht nur, er schiebt nie: Änderungen macht man in GitHub,
 nicht auf dem Server. Sonst kollidiert das nächste `git pull`.

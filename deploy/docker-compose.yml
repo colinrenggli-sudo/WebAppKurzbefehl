@@ -58,6 +58,10 @@ services:
       - "8090"
     volumes:
       - ${HIGH_DATA:-../../high-daten}:/data
+      # Der Dienst liest seinen Code aus dem Repo, nicht nur aus dem
+      # Abbild. Holt die Selbstaktualisierung eine neue server.js,
+      # startet er von allein damit neu – ohne Neubau, ohne Terminal.
+      - ./high-sync:/src:ro
     environment:
       - TZ=Europe/Zurich
       - DATA_DIR=/data
@@ -71,6 +75,28 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  # ----------------------------------------------------------------
+  # Holt neue Stände von selbst aus GitHub. Damit ist für eine neue
+  # Fassung der App kein Terminal mehr nötig: nginx liefert direkt aus
+  # dem Verzeichnis, und high-sync startet bei geänderter server.js
+  # von allein neu.
+  #
+  # Absichtlich ohne Zugriff auf den Docker-Socket: was automatisch
+  # Code aus dem Netz holt, darf den Server nicht umbauen können.
+  # ----------------------------------------------------------------
+  selbstupdate:
+    image: alpine/git:latest
+    container_name: high-selbstupdate
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/repo/deploy/selbstupdate.sh"]
+    volumes:
+      - ..:/repo
+    environment:
+      - TZ=Europe/Zurich
+      - REPO=/repo
+      - ZWEIG=${UPDATE_ZWEIG:-main}
+      - INTERVALL=${UPDATE_INTERVALL:-300}
 
   # ----------------------------------------------------------------
   # Cloudflare Tunnel. Läuft nur mit --profile tunnel, damit diese

@@ -271,6 +271,19 @@ else
   info "dem erzeugten Schlüsselpaar bestehen, ohne Anführungszeichen."
 fi
 
+# Das ist der Teil, der künftig das Terminal erspart – also auch sagen,
+# ob er wirklich läuft. Stillschweigend nicht laufen wäre das Schlimmste:
+# dann käme monatelang nichts Neues an und niemand wüsste warum.
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx 'high-selbstupdate'; then
+  gruen "  Der Server hält sich ab jetzt selbst aktuell."
+  info "Neue Stände kommen von allein an – kein Terminal mehr nötig."
+  info "Mitlesen:  docker logs -f high-selbstupdate"
+else
+  rot "  Die Selbstaktualisierung läuft NICHT."
+  info "Neue Stände kämen damit nicht von selbst an."
+  info "Log ansehen:  cd $PWD && $DC logs --tail=40 selbstupdate"
+fi
+
 # ---------- 5. Von aussen erreichbar? ----------
 TOKEN="$(hole SYNC_TOKEN)"
 ADRESSE="${ADRESSE:-$(hole APP_ADRESSE)}"

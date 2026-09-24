@@ -38,6 +38,12 @@ case "$1 ${2:-}" in
   "info ")            exit 0 ;;
   "compose version")  exit 0 ;;
 esac
+# «docker ps» fragt das Skript, ob die Selbstaktualisierung läuft.
+# ATTRAPPE_LAEUFT steuert, was die Attrappe darauf antwortet.
+if [ "$1" = "ps" ]; then
+  [ "${ATTRAPPE_LAEUFT:-ja}" = "ja" ] && printf 'webapps\nhigh-sync\nhigh-selbstupdate\n'
+  exit 0
+fi
 # Die Schlüsselerzeugung ist der einzige Aufruf, dessen Ausgabe zählt.
 case "$*" in
   *"generateVAPIDKeys"*) echo "OEFFENTLICH-${RANDOM}${RANDOM} PRIVAT-${RANDOM}${RANDOM}"; exit 0 ;;
@@ -77,6 +83,14 @@ pruefe "der Einhängepunkt für die Schlafdaten wird angelegt" "$([ -d "$WURZEL/
 enthaelt "der Link wird gedruckt" "$AUS1" "https://routine.colin-renggli.ch/#s=$TOKEN1"
 enthaelt "und der Hinweis, ihn nicht weiterzugeben" "$AUS1" "weitergeben"
 enthaelt "der Schlüssel steht auch einzeln da" "$AUS1" "^    $TOKEN1$"
+enthaelt "die Selbstaktualisierung wird bestätigt" "$AUS1" "hält sich ab jetzt selbst aktuell"
+
+# ---- Selbstaktualisierung läuft nicht: das muss auffallen ----
+# Stillschweigend nicht laufen wäre das Schlimmste – dann käme monatelang
+# nichts Neues an, und niemand wüsste warum.
+AUS_SELBST="$(ATTRAPPE_LAEUFT=nein bash "$WURZEL/deploy/einrichten.sh" https://routine.colin-renggli.ch "$DATEN" 2>&1)"
+enthaelt "fehlende Selbstaktualisierung wird gemeldet" "$AUS_SELBST" "Selbstaktualisierung läuft NICHT"
+enthaelt "und sagt, wo das Log steht" "$AUS_SELBST" "logs --tail=40 selbstupdate"
 
 # ---- Lauf 2: darf nichts Wichtiges anfassen ----
 : > "$ATTRAPPEN_LOG"
