@@ -214,6 +214,22 @@ Der Token liegt in `daten/token.json` mit Rechten 600. Wer ihn hat,
 kommt an deine Fitbit-Daten – bei einem Backup dieses Verzeichnisses
 also mitdenken.
 
+## Der eine Befehl, wenn etwas hakt
+
+Im Terminal der Unraid-Oberfläche (Symbol `>_` oben rechts – dort ist
+man ohne Anmeldung schon `root`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/colinrenggli-sudo/WebAppKurzbefehl/main/deploy/losgehts.sh | bash
+```
+
+Das sucht das Verzeichnis selbst, holt den neuesten Stand, baut und
+startet, prüft nach, ob der Webserver die neue Fassung wirklich
+ausliefert, und druckt am Schluss den Schlüssel und den Link fürs
+iPhone. Mehrfach ausführen ist ungefährlich – vorhandene Schlüssel
+bleiben, Daten werden nicht angefasst, und stehen im Verzeichnis
+eigene Änderungen, hält es an, statt sie zu überfahren.
+
 ## Schritt 6 · Aktuell halten – das macht der Server selbst
 
 Nichts zu tun. Der Container **`selbstupdate`** holt alle fünf Minuten
