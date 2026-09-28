@@ -74,17 +74,14 @@ r = await a.req('/state');
 pruefe('und kein Zugriff auf die Daten', r.status, 401);
 
 // ---------------------------------------------------------------- 2  Registrieren
-r = await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'geheim12345', code: 'falsch' }) });
-pruefe('ohne richtigen Code kein Konto', r.status, 403);
-
-r = await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'keine-mail', passwort: 'geheim12345', code: TOK }) });
+r = await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'keine-mail', passwort: 'geheim12345' }) });
 pruefe('unsinnige E-Mail wird abgelehnt', r.status, 400);
 
-r = await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'kurz', code: TOK }) });
+r = await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'kurz' }) });
 pruefe('zu kurzes Passwort wird abgelehnt', r.status, 400);
-pruefe('und sagt warum', /8 Zeichen/.test((await json(await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'kurz', code: TOK }) }))).error), true);
+pruefe('und sagt warum', /8 Zeichen/.test((await json(await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'kurz' }) }))).error), true);
 
-r = await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'Ich@Example.ch', passwort: 'geheim12345', code: TOK, tz: 'Europe/Zurich' }) });
+r = await a.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'Ich@Example.ch', passwort: 'geheim12345', tz: 'Europe/Zurich' }) });
 const reg = await json(r);
 pruefe('mit Code wird das Konto angelegt', [r.status, reg.ok, reg.erster], [200, true, true]);
 pruefe('und man ist danach sofort angemeldet', !!a.keks, true);
@@ -120,22 +117,11 @@ pruefe('und die Daten sind wieder da', (await json(await a.req('/state'))).rev, 
 
 // ---------------------------------------------------------------- 7  Zweite Person
 const b = browser();
-r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123', code: TOK }) });
-pruefe('mit dem alten Schlüssel legt niemand mehr ein Konto an', r.status, 403);
-
-r = await a.req('/konto/einladung', { method: 'POST' });
-const einladung = (await json(r)).code;
-pruefe('ein angemeldetes Konto darf einladen', [r.status, typeof einladung], [200, 'string']);
-
-r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'anderes123', code: einladung }) });
+r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'anderes123' }) });
 pruefe('dieselbe E-Mail zweimal geht nicht', r.status, 409);
 
-r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123', code: einladung }) });
-pruefe('mit Einladung darf sich eine zweite Person anlegen', [r.status, (await json(await b.req('/konto'))).email], [200, 'zweite@example.ch']);
-
-const x = browser();
-r = await x.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'dritte@example.ch', passwort: 'nochwas123', code: einladung }) });
-pruefe('dieselbe Einladung ein zweites Mal nicht', r.status, 403);
+r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }) });
+pruefe('eine zweite Person legt sich einfach ein Konto an', [r.status, (await json(await b.req('/konto'))).email], [200, 'zweite@example.ch']);
 
 r = await b.req('/state');
 pruefe('sie sieht NICHT die Daten der ersten', r.status, 404);

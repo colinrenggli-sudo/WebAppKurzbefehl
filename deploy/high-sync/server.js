@@ -54,17 +54,16 @@ const BACKUP_DIR = path.join(DATA_DIR, 'backup');
 // Datenordner – ein Server ohne Konten verhält sich also unverändert.
 const KONTEN_FILE = path.join(DATA_DIR, 'konten.json');
 const SITZUNGEN_FILE = path.join(DATA_DIR, 'sitzungen.json');
-const EINLADUNGEN_FILE = path.join(DATA_DIR, 'einladungen.json');
 const KONTEN_DIR = path.join(DATA_DIR, 'k');
 // Ein Jahr. Eine Anmeldung, die nach Tagen abläuft, wäre auf dem Handy die
 // häufigste Ursache für einen still stehenden Abgleich.
 const SITZUNG_TAGE = parseInt(process.env.SITZUNG_TAGE || '365', 10);
 const COOKIE_NAME = 'high_sitzung';
-// Registrieren geht nur mit Code. Ohne diesen Riegel könnte sich jeder, der
-// die Adresse kennt, auf einem fremden Heimserver ein Konto anlegen.
-// Vorgabe ist der SYNC_TOKEN: den hat der Besitzer bereits, es muss also
-// kein zweites Geheimnis verteilt werden.
-const EINLADUNGSCODE = process.env.EINLADUNGSCODE || '';
+// Registrieren steht offen, wie bei jeder App: wer die Adresse kennt, legt
+// sich ein Konto an und sieht seine eigenen Daten – nie die von jemand
+// anderem. Wird es doch einmal missbraucht, schliesst REGISTRIERUNG=zu in
+// .env die Anmeldung, ohne dass ein bestehendes Konto etwas merkt.
+const REGISTRIERUNG_OFFEN = String(process.env.REGISTRIERUNG || 'offen').toLowerCase() !== 'zu';
 
 function kontenPfade(uid) {
   if (!uid) return { state: STATE_FILE, subs: SUBS_FILE, sent: SENT_FILE, backup: BACKUP_DIR };
@@ -317,42 +316,6 @@ function keksSetzen(req, token, tage) {
   return teile.join('; ');
 }
 
-// ---------- Einladungen ----------
-// Damit der Besitzer jemanden dazunehmen kann, ohne seinen eigenen Schlüssel
-// weiterzugeben – der wäre ein Generalschlüssel zu seinen Daten. Eine
-// Einladung gilt genau einmal.
-async function einladungAnlegen(vonUid) {
-  const code = crypto.randomBytes(9).toString('base64url');
-  await serialize(async () => {
-    const e = await readJsonSoft(EINLADUNGEN_FILE, {});
-    const jetzt = Date.now();
-    // Nach 30 Tagen unbenutzte Einladungen wegräumen.
-    for (const k of Object.keys(e)) if (!e[k] || (jetzt - (e[k].erstellt || 0)) > 30 * 86400000) delete e[k];
-    e[sitzungsKennung(code)] = { von: vonUid, erstellt: jetzt };
-    await writeJsonAtomic(EINLADUNGEN_FILE, e);
-  });
-  return code;
-}
-
-// Prüfen und Verbrauchen sind bewusst getrennt: sonst wäre die Einladung
-// schon weg, wenn die Registrierung danach an der E-Mail scheitert – und die
-// eingeladene Person stünde ohne Code da, nur weil sie sich vertippt hat.
-async function einladungGueltig(code) {
-  if (!code) return false;
-  const e = await readJsonSoft(EINLADUNGEN_FILE, {});
-  const k = sitzungsKennung(code);
-  return !!(e[k] && (Date.now() - (e[k].erstellt || 0)) <= 30 * 86400000);
-}
-
-async function einladungVerbrauchen(code) {
-  if (!code) return;
-  await serialize(async () => {
-    const e = await readJsonSoft(EINLADUNGEN_FILE, {});
-    delete e[sitzungsKennung(code)];
-    await writeJsonAtomic(EINLADUNGEN_FILE, e);
-  });
-}
-
 // ---------- Bremse gegen das Durchprobieren von Passwörtern ----------
 const versuche = new Map();
 function versuchErlaubt(schluessel) {
@@ -528,35 +491,20 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req) || {};
       const email = String(body.email || '').trim();
       const passwort = String(body.passwort || '');
-      const code = String(body.code || '');
       if (!emailOk(email)) return antwort(400, { error: 'Diese E-Mail-Adresse sieht nicht richtig aus.' });
       if (passwort.length < 8) return antwort(400, { error: 'Das Passwort braucht mindestens 8 Zeichen.' });
-      // Ohne Riegel könnte sich jeder, der die Adresse kennt, hier ein Konto
-      // anlegen. Zwei Fälle, bewusst getrennt:
-      //
-      //   · Noch kein Konto da: der Besitzer legt seines an. Dafür taugt der
-      //     SYNC_TOKEN, den er schon hat – kein zweites Geheimnis nötig.
-      //   · Es gibt schon Konten: jetzt braucht es eine Einladung, die ein
-      //     angemeldetes Konto ausgestellt hat. Der SYNC_TOKEN darf es NICHT
-      //     mehr sein, sonst kennte jede eingeladene Person den Schlüssel zu
-      //     den Daten des Besitzers.
-      const nochLeer = Object.keys((await ladeKonten()).benutzer).length === 0;
-      let codeGut = false;
-      if (!code) codeGut = false;
-      else if (nochLeer && TOKEN && safeEqual(code, TOKEN)) codeGut = true;
-      else if (EINLADUNGSCODE && safeEqual(code, EINLADUNGSCODE)) codeGut = true;
-      else codeGut = await einladungGueltig(code);
-      if (!codeGut) {
-        log('Registrierung abgelehnt (Code falsch) von', herkunft);
-        return antwort(403, { error: nochLeer
-          ? 'Der Einladungscode stimmt nicht.'
-          : 'Dieser Einladungscode stimmt nicht oder wurde schon benutzt.' });
+      if (!REGISTRIERUNG_OFFEN) {
+        log('Registrierung abgelehnt (geschlossen) von', herkunft);
+        return antwort(403, { error: 'Auf diesem Server sind zurzeit keine neuen Konten möglich.' });
       }
+      // Eine Bremse gegen das massenhafte Anlegen. Sie trifft niemanden, der
+      // sich ein Konto anlegt – nur ein Skript, das es tausendfach versucht.
+      if (!versuchErlaubt('neu|' + herkunft)) {
+        log('zu viele Registrierungen von', herkunft);
+        return antwort(429, { error: 'Zu viele Versuche. Bitte in 15 Minuten noch einmal.' });
+      }
+      versuchGezaehlt('neu|' + herkunft);
       if (await findeBenutzer(email)) return antwort(409, { error: 'Für diese E-Mail-Adresse gibt es schon ein Konto.' });
-
-      // Jetzt steht fest, dass das Konto entsteht – erst hier ist die
-      // Einladung aufgebraucht.
-      await einladungVerbrauchen(code);
 
       const salz = crypto.randomBytes(16).toString('hex');
       const hash = await hashe(passwort, salz);
@@ -608,14 +556,6 @@ const server = http.createServer(async (req, res) => {
     if (route === '/konto/abmelden' && req.method === 'POST') {
       await sitzungLoeschen(keksLesen(req, COOKIE_NAME));
       return antwort(200, { ok: true }, { 'Set-Cookie': keksSetzen(req, '', 0) });
-    }
-
-    if (route === '/konto/einladung' && req.method === 'POST') {
-      const ich = await werIstDas(req);
-      if (!ich || !ich.uid) return antwort(401, { error: 'Nicht angemeldet' });
-      const code = await einladungAnlegen(ich.uid);
-      log('Einladung ausgestellt von', ich.uid.slice(0, 8));
-      return antwort(200, { ok: true, code });
     }
 
     if (route === '/konto/abmelden-ueberall' && req.method === 'POST') {
