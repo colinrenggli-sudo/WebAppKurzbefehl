@@ -1149,6 +1149,39 @@ body.quiet .q { display: none !important; }
   </div>
 </div>
 
+<div class="sheet" id="kontoSheet" role="dialog" aria-modal="true" aria-labelledby="kontoSheetTitle">
+  <div class="sheet-grab" data-grab><i></i></div>
+  <div class="sheet-head">
+    <span class="sheet-title" id="kontoSheetTitle">Anmelden</span>
+    <button class="sheet-close-hit" type="button" data-close aria-label="Schliessen"><span class="sheet-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <div class="segmented" id="kontoSeg" role="radiogroup" aria-label="Anmelden oder Konto erstellen">
+        <button type="button" role="radio" aria-checked="true" class="active" data-modus="anmelden">Anmelden</button>
+        <button type="button" role="radio" aria-checked="false" data-modus="neu">Konto erstellen</button>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">E-Mail</div>
+      <input class="input" id="kontoEmail" type="email" inputmode="email" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="du@example.ch">
+    </div>
+    <div class="field">
+      <div class="field-label">Passwort</div>
+      <input class="input" id="kontoPass" type="password" autocomplete="current-password" placeholder="mindestens 8 Zeichen">
+    </div>
+    <div class="field" id="kontoCodeFeld" hidden>
+      <div class="field-label">Einladungscode</div>
+      <input class="input" id="kontoCode" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Code">
+      <div class="field-hint" id="kontoCodeHinweis">Beim allerersten Konto ist das der <b>SYNC_TOKEN</b> aus deploy/.env. Danach stellt ein angemeldetes Konto Einladungen aus.</div>
+    </div>
+    <div class="field-hint" id="kontoFehler" style="color:var(--red);display:none"></div>
+    <div class="sheet-actions">
+      <button class="btn primary" type="button" id="kontoSendBtn">Anmelden</button>
+    </div>
+  </div>
+</div>
+
 <!-- Abzeichen-Detail -->
 <div class="sheet" id="badgeSheet" role="dialog" aria-modal="true" aria-labelledby="badgeSheetTitle">
   <div class="sheet-grab" data-grab><i></i></div>
@@ -1268,7 +1301,7 @@ body.quiet .q { display: none !important; }
 'use strict';
 
 // ---------- 0. Konfiguration ----------
-const APP_VERSION = '3.5.0';
+const APP_VERSION = '3.6.0';
 
 const EMOJIS = ['🧘','📚','💪','🏃','🧠','💻','🎨','🎵','✍️','🏋️','🚀','☕','🌅','💤','🥗','💧','🚶','🧹','📝','🎯','🔭','🔥','🤸','🌿','🛏️','📵','🧴','🍎','🐕','🦷'];
 
@@ -1455,6 +1488,10 @@ const DEFAULT_DEVICE = {
   syncUrl: null, syncToken: null, lastSyncAt: 0,
   pushEnabled: false, pushDeviceId: null,
   serverSent: null,   // { day, keys: [] } – was der Server heute schon verschickt hat
+  // Mit welchem Konto dieses Gerät angemeldet ist. Die Anmeldung selbst steckt
+  // in einem Keks, den nur der Browser kennt – hier steht nur, wem sie gehört,
+  // damit die App weiss, was sie anzeigen soll.
+  angemeldetAls: null,
 };
 
 const S = { tasks: [], todos: [], settings: {}, history: {}, game: {}, device: {}, tokens: { entries: [], rewards: [] } };
@@ -3850,15 +3887,21 @@ function renderSettings() {
       </div>
     </div>
     <div>
-      <div class="field-label">Eigener Server</div>
+      <div class="field-label">Konto</div>
       <div class="group">
-        <div class="row"><span class="row-ico" style="background:var(--blue)">🏠</span><span class="row-text"><span class="row-title" id="syncTitle">Nicht verbunden</span><span class="row-sub" id="syncSub">Daten liegen nur auf diesem Gerät.</span></span></div>
+        <div class="row"><span class="row-ico" style="background:var(--blue)">${kontoModus() ? '👤' : '🏠'}</span><span class="row-text"><span class="row-title" id="syncTitle">Nicht angemeldet</span><span class="row-sub" id="syncSub">Daten liegen nur auf diesem Gerät.</span></span></div>
         ${syncConfigured() ? `
         <div class="row"><span class="row-ico" style="background:var(--orange)">🔔</span><span class="row-text"><span class="row-title">Erinnerungen aufs Gerät</span><span class="row-sub">Kommen auch, wenn die App zu ist. Die Zahl am App-Symbol zeigt die heute fälligen To-Dos.</span></span><button class="switch${S.device.pushEnabled ? ' on' : ''}" type="button" role="switch" aria-checked="${!!S.device.pushEnabled}" data-act="togglePush" aria-label="Erinnerungen aufs Gerät"></button></div>
         <button class="row link" type="button" data-act="syncNow"><span class="row-text"><span class="row-title">Jetzt abgleichen</span></span></button>
-        ${S.device.pushEnabled ? `<button class="row link" type="button" data-act="pushTest"><span class="row-text"><span class="row-title">Probe-Erinnerung vom Server</span><span class="row-sub">Kommt auch bei gesperrtem Bildschirm</span></span></button>` : ''}
-        <button class="row link" type="button" data-act="pairCode"><span class="row-text"><span class="row-title">Kopplungscode kopieren</span><span class="row-sub">Für ein zweites Gerät</span></span></button>` : ''}
-        <button class="row link" type="button" id="syncBtn"><span class="row-text"><span class="row-title" id="syncBtnLabel">Server einrichten</span></span></button>
+        ${S.device.pushEnabled ? `<button class="row link" type="button" data-act="pushTest"><span class="row-text"><span class="row-title">Probe-Erinnerung vom Server</span><span class="row-sub">Kommt auch bei gesperrtem Bildschirm</span></span></button>` : ''}` : ''}
+        ${kontoModus() ? `
+        <button class="row link" type="button" data-act="kontoEinladen"><span class="row-text"><span class="row-title">Jemanden einladen</span><span class="row-sub">Einmal gültiger Code – dein Passwort bleibt bei dir</span></span></button>
+        <button class="row link" type="button" data-act="kontoPasswort"><span class="row-text"><span class="row-title">Passwort ändern</span><span class="row-sub">Meldet alle anderen Geräte ab</span></span></button>
+        <button class="row link" type="button" data-act="kontoUeberall"><span class="row-text"><span class="row-title">Auf allen Geräten abmelden</span><span class="row-sub">Dieses bleibt angemeldet</span></span></button>
+        <button class="row link" type="button" data-act="kontoAbmelden"><span class="row-text"><span class="row-title" style="color:var(--red)">Abmelden</span></span></button>`
+        : `${S.device.syncToken ? `<button class="row link" type="button" data-act="pairCode"><span class="row-text"><span class="row-title">Kopplungscode kopieren</span><span class="row-sub">Für ein zweites Gerät</span></span></button>` : ''}
+        <button class="row link" type="button" data-act="kontoOeffnen"><span class="row-text"><span class="row-title">Anmelden oder Konto erstellen</span></span></button>
+        <button class="row link" type="button" id="syncBtn"><span class="row-text"><span class="row-title" id="syncBtnLabel">Mit Schlüssel verbinden</span></span></button>`}
       </div>
       <div class="hint" style="margin-top:8px" id="syncHint">Geräte werden zusammengeführt statt überschrieben. Der Server hält eine Kopie und schickt die Erinnerungen – ohne ihn läuft die App normal weiter, nur eben ohne beides.</div>
     </div>
@@ -3929,7 +3972,11 @@ function renderSettings() {
   body.querySelector('[data-act="import"]').addEventListener('click', () => $('importFile').click());
   $('importFile').addEventListener('change', () => importDataFromInput($('importFile')));
   body.querySelector('[data-act="resetAll"]').addEventListener('click', () => confirmSheet('Wirklich alles zurücksetzen?', 'Alle Routinen, To-Dos, der Verlauf und die XP auf diesem Gerät werden gelöscht. Auf dem Server bleibt die letzte Fassung, bis du sie dort löschst.', 'Alles löschen', () => { Object.values(KEYS).forEach(k => localStorage.removeItem(k)); location.reload(); }));
-  $('syncBtn').addEventListener('click', handleSyncBtn);
+  // Den Knopf gibt es nur ohne Konto. Ohne diese Prüfung wirft die Zeile,
+  // sobald jemand angemeldet ist – und dann bleibt der Rest von
+  // renderSettings liegen: kein Knopf verdrahtet, kein Status gesetzt.
+  const sb = $('syncBtn');
+  if (sb) sb.addEventListener('click', handleSyncBtn);
   const bind = (act, fn) => { const el = body.querySelector('[data-act="' + act + '"]'); if (el) el.addEventListener('click', fn); };
   bind('togglePush', () => { if (S.device.pushEnabled) disablePush(); else enablePush(); });
   bind('checkUpdate', async () => {
@@ -3941,6 +3988,11 @@ function renderSettings() {
   });
   bind('syncNow', async () => { const ok = await syncNow({ loud: true }); toast(ok ? '☁️' : '⚠️', ok ? 'Abgeglichen.' : (syncStatusText || 'Abgleich nicht möglich.')); renderSettings(); });
   bind('pairCode', copyPairingCode);
+  bind('kontoOeffnen', () => openKonto(false));
+  bind('kontoAbmelden', kontoAbmelden);
+  bind('kontoPasswort', kontoPasswortAendern);
+  bind('kontoEinladen', kontoEinladen);
+  bind('kontoUeberall', kontoUeberallAbmelden);
   bind('pushTest', async () => {
     try {
       const res = await syncFetch('/push/test', { method: 'POST', body: '{}' });
@@ -4368,8 +4420,11 @@ let syncStatusText = '', syncBusy = false, syncDebounce = null, syncRetryTimer =
 let lastRev = 0, lastPushedHash = null, syncFails = 0, lastSyncAt = 0;
 let syncAbgelehnt = false;   // letzter Versuch scheiterte am Schlüssel, nicht am Netz
 
-function syncConfigured() { return !!(S.device.syncUrl && S.device.syncToken); }
-function syncBase() { return String(S.device.syncUrl || '').replace(/\/+$/, ''); }
+// Zwei Wege hinein: ein Konto (der übliche) oder der alte Schlüssel eines
+// Geräts von früher. Für alles dahinter macht es keinen Unterschied.
+function syncConfigured() { return !!S.device.angemeldetAls || !!(S.device.syncUrl && S.device.syncToken); }
+function syncBase() { return String(S.device.syncUrl || (location.origin + '/api')).replace(/\/+$/, ''); }
+function kontoModus() { return !!S.device.angemeldetAls; }
 function deviceLabel() {
   const ua = navigator.userAgent || '';
   if (/iPhone/.test(ua)) return 'iPhone';
@@ -4386,9 +4441,13 @@ async function syncFetch(pfad, opts) {
   const ctl = new AbortController();
   const frist = setTimeout(() => ctl.abort(), 15000);
   try {
+    const kopf = { 'Content-Type': 'application/json' };
+    // Nur wenn dieses Gerät noch mit dem alten Schlüssel läuft. Beim Konto
+    // trägt der Keks die Anmeldung, und der gehört nur auf die eigene Herkunft.
+    if (S.device.syncToken) kopf.Authorization = 'Bearer ' + S.device.syncToken;
     return await fetch(syncBase() + pfad, Object.assign({}, opts, {
-      signal: ctl.signal, cache: 'no-store', credentials: 'omit',
-      headers: Object.assign({ Authorization: 'Bearer ' + S.device.syncToken, 'Content-Type': 'application/json' }, opts.headers || {}),
+      signal: ctl.signal, cache: 'no-store', credentials: 'same-origin',
+      headers: Object.assign(kopf, opts.headers || {}),
     }));
   } finally { clearTimeout(frist); }
 }
@@ -4408,7 +4467,21 @@ async function syncNow(opts) {
   try {
     for (let versuch = 0; versuch < 3; versuch++) {
       const res = await syncFetch('/state' + (S.device.pushDeviceId ? '?device=' + encodeURIComponent(S.device.pushDeviceId) : ''));
-      if (res.status === 401) { syncAbgelehnt = true; setSyncStatus('Schlüssel wird abgelehnt'); return false; }
+      if (res.status === 401) {
+        syncAbgelehnt = true;
+        if (kontoModus()) {
+          // Der Keks ist abgelaufen oder wurde von einem anderen Gerät
+          // beendet. Das still stehen zu lassen hiesse: ab jetzt kein
+          // Abgleich mehr, und niemand merkt es.
+          S.device.angemeldetAls = null; saveAll({ silent: true });
+          setSyncStatus('Anmeldung abgelaufen');
+          renderSettings();
+          toast('🔐', 'Die Anmeldung ist abgelaufen.', { label: 'Anmelden', fn: () => openKonto(false) });
+        } else {
+          setSyncStatus('Schlüssel wird abgelehnt');
+        }
+        return false;
+      }
       let remote = null, rev = 0;
       if (res.status === 200) {
         const env = await res.json();
@@ -4801,22 +4874,185 @@ function startSyncPolling() {
 function refreshSyncUI() {
   const title = $('syncTitle'), sub = $('syncSub'), btn = $('syncBtnLabel');
   if (!title) return;
-  if (syncConfigured()) {
+  const wann = lastSyncAt ? 'zuletzt ' + new Date(lastSyncAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : 'wartet auf den Server';
+  if (kontoModus()) {
+    title.textContent = lastSyncAt ? 'Angemeldet' : 'Angemeldet – noch kein Abgleich';
+    sub.textContent = syncStatusText || (S.device.angemeldetAls + ' · ' + wann);
+  } else if (syncConfigured()) {
     // «Verbunden» erst, wenn wirklich einmal etwas hin und her ging. Sonst
     // stünde da Verbundenheit, wo nur eine Adresse gespeichert ist.
     title.textContent = lastSyncAt ? 'Verbunden' : 'Eingerichtet – noch keine Verbindung';
-    const wann = lastSyncAt ? 'zuletzt ' + new Date(lastSyncAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : 'wartet auf den Server';
     sub.textContent = syncStatusText || (syncBase().replace(/^https?:\/\//, '') + ' · ' + wann);
-    btn.textContent = 'Verbindung trennen'; btn.style.color = 'var(--red)';
   } else {
-    title.textContent = 'Nicht verbunden';
-    sub.textContent = syncStatusText || (serverHier ? 'Auf dieser Adresse läuft ein Server – es fehlt nur der Schlüssel.' : 'Daten liegen nur auf diesem Gerät.');
-    btn.textContent = 'Server einrichten'; btn.style.color = '';
+    title.textContent = 'Nicht angemeldet';
+    sub.textContent = syncStatusText || (serverHier ? 'Auf dieser Adresse läuft ein Server – melde dich an.' : 'Daten liegen nur auf diesem Gerät.');
+  }
+  if (btn) {
+    const verbunden = syncConfigured() && !kontoModus();
+    btn.textContent = verbunden ? 'Verbindung trennen' : 'Mit Schlüssel verbinden';
+    btn.style.color = verbunden ? 'var(--red)' : '';
   }
 }
-function handleSyncBtn() { if (syncConfigured()) disconnectSync(); else openSyncSetup(); }
+function handleSyncBtn() { if (syncConfigured() && !kontoModus()) disconnectSync(); else openSyncSetup(); }
 $('syncSaveBtn').addEventListener('click', saveSyncSetup);
 $('syncTokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveSyncSetup(); } });
+
+// =====================================================================
+// Konto: anmelden, Konto erstellen, abmelden
+//
+// Die Anmeldung selbst steckt in einem Keks, den nur der Browser kennt und
+// weitergibt. Die App merkt sich nur, wem sie gehört – damit sie weiss, was
+// sie anzeigen soll, und damit nach dem Neustart nicht erst eine Anfrage
+// nötig ist, bevor überhaupt etwas dasteht.
+// =====================================================================
+let kontoModusNeu = false;
+
+async function kontoRuf(pfad, koerper) {
+  const ctl = new AbortController();
+  const frist = setTimeout(() => ctl.abort(), 15000);
+  try {
+    const res = await fetch(location.origin + '/api' + pfad, {
+      method: koerper === undefined ? 'GET' : 'POST',
+      cache: 'no-store', credentials: 'same-origin', signal: ctl.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: koerper === undefined ? undefined : JSON.stringify(koerper || {}),
+    });
+    let daten = null;
+    try { daten = await res.json(); } catch (e) {}
+    return { ok: res.ok, status: res.status, daten: daten || {} };
+  } catch (e) {
+    return { ok: false, status: 0, daten: {} };
+  } finally { clearTimeout(frist); }
+}
+
+// Fragt den Server, ob dieses Gerät angemeldet ist. Wird beim Start gerufen:
+// der Keks kann abgelaufen sein, ohne dass die App es wüsste – und dann stünde
+// «Angemeldet», während in Wahrheit nichts mehr abgeglichen wird.
+async function kontoPruefen() {
+  const r = await kontoRuf('/konto');
+  if (!r.ok) return null;
+  const email = r.daten.angemeldet ? (r.daten.email || '') : null;
+  // Im Betrieb mit altem Schlüssel meldet der Server hier «nicht angemeldet» –
+  // das darf den Schlüssel nicht anfassen.
+  if (email !== S.device.angemeldetAls) {
+    S.device.angemeldetAls = email;
+    saveAll({ silent: true });
+    renderSettings();
+  }
+  return r.daten;
+}
+
+function kontoFehlerZeigen(text) {
+  const f = $('kontoFehler');
+  if (!f) return;
+  f.textContent = text || '';
+  f.style.display = text ? '' : 'none';
+}
+
+function openKonto(modusNeu) {
+  kontoModusNeu = !!modusNeu;
+  kontoFehlerZeigen('');
+  $('kontoEmail').value = '';
+  $('kontoPass').value = '';
+  $('kontoCode').value = '';
+  kontoSheetModus();
+  openSheet('kontoSheet');
+  setTimeout(() => $('kontoEmail').focus(), 120);
+}
+
+function kontoSheetModus() {
+  const neu = kontoModusNeu;
+  $('kontoSheetTitle').textContent = neu ? 'Konto erstellen' : 'Anmelden';
+  $('kontoSendBtn').textContent = neu ? 'Konto erstellen' : 'Anmelden';
+  $('kontoCodeFeld').hidden = !neu;
+  $('kontoPass').setAttribute('autocomplete', neu ? 'new-password' : 'current-password');
+  document.querySelectorAll('#kontoSeg button').forEach(b => {
+    const an = (b.dataset.modus === 'neu') === neu;
+    b.classList.toggle('active', an);
+    b.setAttribute('aria-checked', an);
+  });
+}
+
+async function kontoAbschicken() {
+  const email = $('kontoEmail').value.trim();
+  const passwort = $('kontoPass').value;
+  const code = $('kontoCode').value.trim();
+  if (!email || !passwort) { kontoFehlerZeigen('E-Mail und Passwort ausfüllen.'); return; }
+  if (kontoModusNeu && passwort.length < 8) { kontoFehlerZeigen('Das Passwort braucht mindestens 8 Zeichen.'); return; }
+  kontoFehlerZeigen('');
+  const btn = $('kontoSendBtn');
+  btn.disabled = true; btn.textContent = kontoModusNeu ? 'Wird angelegt …' : 'Wird geprüft …';
+  const r = kontoModusNeu
+    ? await kontoRuf('/konto/registrieren', { email, passwort, code, tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || null })
+    : await kontoRuf('/konto/anmelden', { email, passwort });
+  btn.disabled = false; kontoSheetModus();
+  if (!r.ok) {
+    kontoFehlerZeigen(r.status === 0
+      ? 'Der Server antwortet nicht. Später noch einmal versuchen.'
+      : (r.daten.error || 'Das hat nicht geklappt.'));
+    return;
+  }
+  // Ab jetzt trägt der Keks die Anmeldung. Ein alter Schlüssel daneben wäre
+  // nur ein zweiter Weg, der irgendwann anders abbiegt.
+  S.device.angemeldetAls = r.daten.email || email;
+  S.device.syncUrl = null; S.device.syncToken = null;
+  saveAll({ silent: true });
+  closeSheet('kontoSheet');
+  toast('👤', kontoModusNeu ? 'Konto angelegt. Du bist angemeldet.' : 'Angemeldet.');
+  setSyncStatus('Gleiche ab …');
+  renderSettings();
+  const ok = await syncNow({ loud: true });
+  if (ok) { refreshPushSubscription(); startSyncPolling(); }
+  renderSettings();
+}
+
+async function kontoAbmelden() {
+  confirmSheet('Abmelden?', 'Deine Daten bleiben auf diesem Gerät und auf dem Server. Nur der Abgleich hört auf, bis du dich wieder anmeldest.', 'Abmelden', async () => {
+    await disablePush();
+    await kontoRuf('/konto/abmelden', {});
+    S.device.angemeldetAls = null; S.device.pushDeviceId = null;
+    S.device.lastSyncAt = 0; S.device.serverSent = null;
+    saveAll({ silent: true });
+    lastRev = 0; lastPushedHash = null; lastSyncAt = 0; syncFails = 0;
+    if (syncPoll) { clearInterval(syncPoll); syncPoll = null; }
+    if (syncRetryTimer) { clearTimeout(syncRetryTimer); syncRetryTimer = null; }
+    setSyncStatus(''); renderSettings();
+    toast('👋', 'Abgemeldet.');
+  });
+}
+
+async function kontoPasswortAendern() {
+  const alt = prompt('Bisheriges Passwort:');
+  if (alt === null) return;
+  const neu = prompt('Neues Passwort (mindestens 8 Zeichen):');
+  if (neu === null) return;
+  if (String(neu).length < 8) { toast('⚠️', 'Das neue Passwort braucht mindestens 8 Zeichen.'); return; }
+  const r = await kontoRuf('/konto/passwort', { alt, neu });
+  toast(r.ok ? '🔐' : '⚠️', r.ok
+    ? 'Passwort geändert. Alle anderen Geräte sind abgemeldet.'
+    : (r.daten.error || 'Das hat nicht geklappt.'));
+}
+
+async function kontoEinladen() {
+  const r = await kontoRuf('/konto/einladung', {});
+  if (!r.ok) { toast('⚠️', r.daten.error || 'Einladung nicht möglich.'); return; }
+  const code = r.daten.code;
+  const fertig = () => toast('✉️', 'Einladungscode kopiert. Er gilt genau einmal.');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(fertig, () => prompt('Einladungscode (gilt einmal):', code));
+  else prompt('Einladungscode (gilt einmal):', code);
+}
+
+async function kontoUeberallAbmelden() {
+  confirmSheet('Überall abmelden?', 'Alle anderen Geräte werden abgemeldet. Dieses bleibt angemeldet.', 'Abmelden', async () => {
+    const r = await kontoRuf('/konto/abmelden-ueberall', {});
+    toast(r.ok ? '🔐' : '⚠️', r.ok ? 'Alle anderen Geräte sind abgemeldet.' : (r.daten.error || 'Das hat nicht geklappt.'));
+  });
+}
+
+$('kontoSendBtn').addEventListener('click', kontoAbschicken);
+$('kontoPass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kontoAbschicken(); } });
+$('kontoCode').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kontoAbschicken(); } });
+document.querySelectorAll('#kontoSeg button').forEach(b => b.addEventListener('click', () => { kontoModusNeu = b.dataset.modus === 'neu'; kontoFehlerZeigen(''); kontoSheetModus(); }));
 
 // ---------- 14. Start ----------
 function boot() {
@@ -4834,6 +5070,11 @@ function boot() {
   renderAll();
   updateAppBadge();
   setTimeout(flushNotices, 900);
+  // Der Keks kann abgelaufen sein, ohne dass die App etwas davon weiss. Ohne
+  // diese Frage stünde «Angemeldet», während längst nichts mehr abgeglichen wird.
+  kontoPruefen().then(k => {
+    if (k && k.angemeldet) { startSyncPolling(); syncNow(); refreshPushSubscription(); }
+  }).catch(() => {});
 
   // Bildschirmtastatur: Sheets und Toasts über die Tastatur heben (iOS verschiebt fixed-Elemente sonst nicht)
   if (window.visualViewport) {

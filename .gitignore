@@ -15,3 +15,4 @@ deploy/fitbit-sync/token.json
 tests/shots/
 tests/issues.json
 node_modules/
+node_modules
