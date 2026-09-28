@@ -98,10 +98,11 @@ const geerbt = await json(r);
 pruefe('der alte Bestand ist im Konto gelandet', [r.status, geerbt.rev, geerbt.state.tasks[0].label], [200, 7, 'Meditieren']);
 pruefe('und liegt nicht mehr offen im Datenordner', fs.existsSync(path.join(DATA, 'state.json')), false);
 
-// ---------------------------------------------------------------- 4  Altes Gerät
+// ---------------------------------------------------------------- 4  Alter Schlüssel
+// Vor dem ersten Konto war er der Zugang; ab dem ersten Konto wäre er ein
+// Generalschlüssel – jede eingeladene Person kennt ihn. Also muss er zu sein.
 const alt = await fetch(BASE + '/state', { headers: { Authorization: 'Bearer ' + TOK } });
-const altDaten = await json(alt);
-pruefe('ein Gerät mit dem alten Schlüssel sieht denselben Bestand', [alt.status, altDaten.rev], [200, 7]);
+pruefe('der alte Schlüssel öffnet nicht mehr, sobald es ein Konto gibt', alt.status, 401);
 
 // ---------------------------------------------------------------- 5  Abmelden
 r = await a.req('/konto/abmelden', { method: 'POST' });
@@ -119,11 +120,22 @@ pruefe('und die Daten sind wieder da', (await json(await a.req('/state'))).rev, 
 
 // ---------------------------------------------------------------- 7  Zweite Person
 const b = browser();
-r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'anderes123', code: TOK }) });
+r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123', code: TOK }) });
+pruefe('mit dem alten Schlüssel legt niemand mehr ein Konto an', r.status, 403);
+
+r = await a.req('/konto/einladung', { method: 'POST' });
+const einladung = (await json(r)).code;
+pruefe('ein angemeldetes Konto darf einladen', [r.status, typeof einladung], [200, 'string']);
+
+r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'anderes123', code: einladung }) });
 pruefe('dieselbe E-Mail zweimal geht nicht', r.status, 409);
 
-r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123', code: TOK }) });
-pruefe('eine zweite Person darf sich anlegen', [r.status, (await json(await b.req('/konto'))).email], [200, 'zweite@example.ch']);
+r = await b.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123', code: einladung }) });
+pruefe('mit Einladung darf sich eine zweite Person anlegen', [r.status, (await json(await b.req('/konto'))).email], [200, 'zweite@example.ch']);
+
+const x = browser();
+r = await x.req('/konto/registrieren', { method: 'POST', body: JSON.stringify({ email: 'dritte@example.ch', passwort: 'nochwas123', code: einladung }) });
+pruefe('dieselbe Einladung ein zweites Mal nicht', r.status, 403);
 
 r = await b.req('/state');
 pruefe('sie sieht NICHT die Daten der ersten', r.status, 404);
@@ -141,8 +153,17 @@ pruefe('ohne das bisherige Passwort geht nichts', r.status, 403);
 r = await a.req('/konto/passwort', { method: 'POST', body: JSON.stringify({ alt: 'geheim12345', neu: 'kurz' }) });
 pruefe('ein zu kurzes neues Passwort wird abgelehnt', r.status, 400);
 
+// Ein zweites angemeldetes Gerät derselben Person – es muss beim
+// Passwortwechsel hinausfliegen, sonst nützt der Wechsel gegen einen
+// gestohlenen Keks gar nichts.
+const altGeraet = browser();
+await altGeraet.req('/konto/anmelden', { method: 'POST', body: JSON.stringify({ email: 'ich@example.ch', passwort: 'geheim12345' }) });
+pruefe('das zweite Gerät ist angemeldet', (await altGeraet.req('/state')).status, 200);
+
 r = await a.req('/konto/passwort', { method: 'POST', body: JSON.stringify({ alt: 'geheim12345', neu: 'ganzneues123' }) });
 pruefe('mit dem bisherigen geht es', r.status, 200);
+pruefe('das andere Gerät ist danach draussen', (await altGeraet.req('/state')).status, 401);
+pruefe('das Gerät, das geändert hat, bleibt drin', (await a.req('/state')).status, 200);
 
 const c = browser();
 pruefe('das alte Passwort zieht nicht mehr',
@@ -167,15 +188,52 @@ pruefe('kein Sitzungs-Token im Klartext in sitzungen.json',
   fs.readFileSync(path.join(DATA, 'sitzungen.json'), 'utf8').includes((a.keks || '').split('=')[1] || 'xxxxx'), false);
 
 // ---------------------------------------------------------------- 11  Keks-Eigenschaften
-const e = browser();
-const rr = await fetch(BASE + '/konto/anmelden', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }) });
-const setz = rr.headers.get('set-cookie') || '';
+const anmeldung = (kopf = {}) => fetch(BASE + '/konto/anmelden', {
+  method: 'POST', headers: { 'Content-Type': 'application/json', ...kopf },
+  body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }),
+});
+const setz = (await anmeldung()).headers.get('set-cookie') || '';
 pruefe('der Keks ist für Skripte unsichtbar', /HttpOnly/i.test(setz), true);
 pruefe('und wird nicht quer über fremde Seiten mitgeschickt', /SameSite=Lax/i.test(setz), true);
-pruefe('über http ohne «Secure», sonst käme er im Heimnetz nie an', /Secure/i.test(setz), false);
+pruefe('im Heimnetz ohne «Secure», sonst käme er dort nie an', /Secure/i.test(setz), false);
 
-const rs = await fetch(BASE + '/konto/anmelden', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-Proto': 'https' }, body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }) });
-pruefe('über https dagegen mit «Secure»', /Secure/i.test(rs.headers.get('set-cookie') || ''), true);
+// Der Kern des Befunds: nginx schreibt hinter dem Tunnel immer «http» in
+// X-Forwarded-Proto. Hinge «Secure» daran, bekäme die öffentliche Adresse
+// nie eines – und ein einziger http-Aufruf reichte, um den Keks abzugreifen.
+const oeffentlich = await anmeldung({ 'X-Forwarded-Host': 'routine.example.ch', 'X-Forwarded-Proto': 'http' });
+pruefe('auf der öffentlichen Adresse mit «Secure», auch wenn der Proxy «http» meldet',
+  /Secure/i.test(oeffentlich.headers.get('set-cookie') || ''), true);
+pruefe('und über https erst recht',
+  /Secure/i.test((await anmeldung({ 'X-Forwarded-Proto': 'https' })).headers.get('set-cookie') || ''), true);
+
+// ---------------------------------------------------------------- 12  Fremde Seiten
+const fremd = (pfad, kopf) => fetch(BASE + pfad, {
+  method: 'POST', headers: { 'Content-Type': 'application/json', ...kopf },
+  body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }),
+});
+pruefe('ein Formular auf einer fremden Seite wird abgewiesen',
+  (await fremd('/konto/anmelden', { Origin: 'https://boese.example' })).status, 403);
+pruefe('die eigene Herkunft geht durch',
+  (await fremd('/konto/anmelden', { Origin: BASE })).status, 200);
+pruefe('ohne Herkunft (curl, Skript) geht es weiter',
+  (await fremd('/konto/anmelden', {})).status, 200);
+
+// «text/plain» ist der Trick, mit dem ein fremdes Formular JSON schmuggelt.
+const schmuggel = await fetch(BASE + '/konto/anmelden', {
+  method: 'POST', headers: { 'Content-Type': 'text/plain' },
+  body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }),
+});
+pruefe('als text/plain getarntes JSON wird abgelehnt', schmuggel.status, 415);
+
+// ---------------------------------------------------------------- 13  Überall abmelden
+const g1 = browser(); const g2 = browser();
+await g1.req('/konto/anmelden', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }) });
+await g2.req('/konto/anmelden', { method: 'POST', body: JSON.stringify({ email: 'zweite@example.ch', passwort: 'anderes123' }) });
+pruefe('beide Geräte sind drin', [(await g1.req('/state')).status, (await g2.req('/state')).status], [200, 200]);
+r = await g1.req('/konto/abmelden-ueberall', { method: 'POST' });
+pruefe('überall abmelden geht', r.status, 200);
+pruefe('das andere Gerät ist draussen', (await g2.req('/state')).status, 401);
+pruefe('das eigene bleibt drin', (await g1.req('/state')).status, 200);
 
 srv.kill('SIGTERM');
 await warte(200);

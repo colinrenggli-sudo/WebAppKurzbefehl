@@ -54,6 +54,7 @@ const BACKUP_DIR = path.join(DATA_DIR, 'backup');
 // Datenordner – ein Server ohne Konten verhält sich also unverändert.
 const KONTEN_FILE = path.join(DATA_DIR, 'konten.json');
 const SITZUNGEN_FILE = path.join(DATA_DIR, 'sitzungen.json');
+const EINLADUNGEN_FILE = path.join(DATA_DIR, 'einladungen.json');
 const KONTEN_DIR = path.join(DATA_DIR, 'k');
 // Ein Jahr. Eine Anmeldung, die nach Tagen abläuft, wäre auf dem Handy die
 // häufigste Ursache für einen still stehenden Abgleich.
@@ -241,6 +242,20 @@ async function neueSitzung(uid) {
   return token;
 }
 
+// Alle Sitzungen eines Kontos beenden. Nötig beim Passwortwechsel: sonst
+// bliebe ein gestohlener Keks ein Jahr lang gültig, und der Betroffene hätte
+// kein Mittel dagegen – ausser den Server von Hand aufzumachen.
+async function sitzungenLoeschenFuer(uid) {
+  if (!uid) return 0;
+  let weg = 0;
+  await serialize(async () => {
+    const s = await ladeSitzungen();
+    for (const k of Object.keys(s)) if (s[k] && s[k].uid === uid) { delete s[k]; weg++; }
+    await writeJsonAtomic(SITZUNGEN_FILE, s);
+  });
+  return weg;
+}
+
 async function sitzungLoeschen(token) {
   if (!token) return;
   await serialize(async () => {
@@ -270,10 +285,27 @@ function keksLesen(req, name) {
   return null;
 }
 
+// Ein Name im Heimnetz oder eine private Adresse – dort läuft die App auch
+// über http, und ein «Secure»-Keks käme nie an.
+function lokalerHost(host) {
+  const h = String(host || '').split(':')[0].toLowerCase();
+  if (!h) return true;
+  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.lan') || h.endsWith('.internal')) return true;
+  if (/^127\./.test(h) || h === '::1' || /^10\./.test(h) || /^192\.168\./.test(h)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h)) return true;   // Tailscale
+  return false;
+}
+
 function keksSetzen(req, token, tage) {
-  // «Secure» nur, wenn der Browser wirklich über https kommt – im Heimnetz
-  // läuft die App auch über http, und ein Secure-Keks käme dort nie an.
-  const sicher = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
+  // «Secure» nicht davon abhängig machen, was der Proxy in X-Forwarded-Proto
+  // schreibt: nginx setzt dort $scheme, und das ist hinter dem Tunnel immer
+  // «http». Der Keks bekäme dann auf der öffentlichen https-Adresse nie ein
+  // «Secure» – und ein einziger http-Aufruf reichte, um ihn abzugreifen.
+  // Also umgekehrt: sicher, ausser die Adresse ist erkennbar eine im Heimnetz.
+  const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const sicher = proto === 'https' || !lokalerHost(host);
   const teile = [
     COOKIE_NAME + '=' + encodeURIComponent(token || ''),
     'Path=/',
@@ -283,6 +315,42 @@ function keksSetzen(req, token, tage) {
   ];
   if (sicher) teile.push('Secure');
   return teile.join('; ');
+}
+
+// ---------- Einladungen ----------
+// Damit der Besitzer jemanden dazunehmen kann, ohne seinen eigenen Schlüssel
+// weiterzugeben – der wäre ein Generalschlüssel zu seinen Daten. Eine
+// Einladung gilt genau einmal.
+async function einladungAnlegen(vonUid) {
+  const code = crypto.randomBytes(9).toString('base64url');
+  await serialize(async () => {
+    const e = await readJsonSoft(EINLADUNGEN_FILE, {});
+    const jetzt = Date.now();
+    // Nach 30 Tagen unbenutzte Einladungen wegräumen.
+    for (const k of Object.keys(e)) if (!e[k] || (jetzt - (e[k].erstellt || 0)) > 30 * 86400000) delete e[k];
+    e[sitzungsKennung(code)] = { von: vonUid, erstellt: jetzt };
+    await writeJsonAtomic(EINLADUNGEN_FILE, e);
+  });
+  return code;
+}
+
+// Prüfen und Verbrauchen sind bewusst getrennt: sonst wäre die Einladung
+// schon weg, wenn die Registrierung danach an der E-Mail scheitert – und die
+// eingeladene Person stünde ohne Code da, nur weil sie sich vertippt hat.
+async function einladungGueltig(code) {
+  if (!code) return false;
+  const e = await readJsonSoft(EINLADUNGEN_FILE, {});
+  const k = sitzungsKennung(code);
+  return !!(e[k] && (Date.now() - (e[k].erstellt || 0)) <= 30 * 86400000);
+}
+
+async function einladungVerbrauchen(code) {
+  if (!code) return;
+  await serialize(async () => {
+    const e = await readJsonSoft(EINLADUNGEN_FILE, {});
+    delete e[sitzungsKennung(code)];
+    await writeJsonAtomic(EINLADUNGEN_FILE, e);
+  });
 }
 
 // ---------- Bremse gegen das Durchprobieren von Passwörtern ----------
@@ -352,15 +420,23 @@ async function werIstDas(req) {
     const s = await sitzungPruefen(token);
     if (s) return { uid: s.uid, art: 'sitzung' };
   }
+  // Der alte SYNC_TOKEN öffnet nur, solange es noch kein Konto gibt – für den
+  // Betrieb von früher und zum Anlegen des ersten Kontos. Sobald jemand ein
+  // Konto hat, wäre er ein Generalschlüssel: jede eingeladene Person kennt
+  // ihn, und sie käme damit an die Daten des Besitzers. Also ab dann zu.
   if (schluesselOk(req)) {
     const b = await besitzer();
-    return { uid: b ? b.uid : null, art: 'schluessel' };
+    if (!b) return { uid: null, art: 'schluessel' };
   }
   return null;
 }
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
+    const typ = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+    if (typ && typ !== 'application/json') {
+      return reject(Object.assign(new Error('falscher Inhaltstyp'), { code: 'BAD_TYPE' }));
+    }
     let size = 0;
     const chunks = [];
     req.on('data', c => {
@@ -375,6 +451,24 @@ function readBody(req) {
     });
     req.on('error', reject);
   });
+}
+
+// Von wo kommt die Anfrage? Ein Formular auf einer fremden Seite darf hier
+// nichts auslösen. «SameSite=Lax» allein genügt nicht: es verhindert zwar,
+// dass ein fremdes Formular den Keks mitschickt, aber nicht, dass es dem
+// Browser eine fremde Anmeldung unterschiebt – danach liefe der Abgleich in
+// ein fremdes Konto, ohne dass jemand etwas merkt.
+function quelleOk(req) {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return true;
+  const o = req.headers.origin;
+  // Ohne Herkunft ist es kein Browser-Formular (curl, ein Skript, ein Dienst).
+  // Der Browser schickt sie bei POST immer mit, auch bei gleicher Herkunft.
+  if (!o) return true;
+  if (ALLOW_ORIGIN.includes(o)) return true;
+  const eigen = String(req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
+  let fremd = '';
+  try { fremd = new URL(o).host.toLowerCase(); } catch (e) { return false; }
+  return !!eigen && fremd === eigen;
 }
 
 function corsHeaders(req) {
@@ -399,6 +493,11 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
 
   const antwort = (code, body, extra) => send(res, code, body, Object.assign({}, cors, extra || {}));
+
+  if (!quelleOk(req)) {
+    log('fremde Herkunft abgewiesen:', req.headers.origin, '→', req.method, route);
+    return antwort(403, { error: 'Diese Anfrage kommt von einer fremden Seite.' });
+  }
 
   if (route === '/health') {
     return antwort(200, Object.assign(
@@ -433,14 +532,31 @@ const server = http.createServer(async (req, res) => {
       if (!emailOk(email)) return antwort(400, { error: 'Diese E-Mail-Adresse sieht nicht richtig aus.' });
       if (passwort.length < 8) return antwort(400, { error: 'Das Passwort braucht mindestens 8 Zeichen.' });
       // Ohne Riegel könnte sich jeder, der die Adresse kennt, hier ein Konto
-      // anlegen. Der SYNC_TOKEN taugt als Code: der Besitzer hat ihn schon.
-      const erlaubt = EINLADUNGSCODE || TOKEN;
-      if (!erlaubt) return antwort(503, { error: 'Auf diesem Server ist das Registrieren nicht eingerichtet.' });
-      if (!code || !safeEqual(code, erlaubt)) {
+      // anlegen. Zwei Fälle, bewusst getrennt:
+      //
+      //   · Noch kein Konto da: der Besitzer legt seines an. Dafür taugt der
+      //     SYNC_TOKEN, den er schon hat – kein zweites Geheimnis nötig.
+      //   · Es gibt schon Konten: jetzt braucht es eine Einladung, die ein
+      //     angemeldetes Konto ausgestellt hat. Der SYNC_TOKEN darf es NICHT
+      //     mehr sein, sonst kennte jede eingeladene Person den Schlüssel zu
+      //     den Daten des Besitzers.
+      const nochLeer = Object.keys((await ladeKonten()).benutzer).length === 0;
+      let codeGut = false;
+      if (!code) codeGut = false;
+      else if (nochLeer && TOKEN && safeEqual(code, TOKEN)) codeGut = true;
+      else if (EINLADUNGSCODE && safeEqual(code, EINLADUNGSCODE)) codeGut = true;
+      else codeGut = await einladungGueltig(code);
+      if (!codeGut) {
         log('Registrierung abgelehnt (Code falsch) von', herkunft);
-        return antwort(403, { error: 'Der Einladungscode stimmt nicht.' });
+        return antwort(403, { error: nochLeer
+          ? 'Der Einladungscode stimmt nicht.'
+          : 'Dieser Einladungscode stimmt nicht oder wurde schon benutzt.' });
       }
       if (await findeBenutzer(email)) return antwort(409, { error: 'Für diese E-Mail-Adresse gibt es schon ein Konto.' });
+
+      // Jetzt steht fest, dass das Konto entsteht – erst hier ist die
+      // Einladung aufgebraucht.
+      await einladungVerbrauchen(code);
 
       const salz = crypto.randomBytes(16).toString('hex');
       const hash = await hashe(passwort, salz);
@@ -494,6 +610,23 @@ const server = http.createServer(async (req, res) => {
       return antwort(200, { ok: true }, { 'Set-Cookie': keksSetzen(req, '', 0) });
     }
 
+    if (route === '/konto/einladung' && req.method === 'POST') {
+      const ich = await werIstDas(req);
+      if (!ich || !ich.uid) return antwort(401, { error: 'Nicht angemeldet' });
+      const code = await einladungAnlegen(ich.uid);
+      log('Einladung ausgestellt von', ich.uid.slice(0, 8));
+      return antwort(200, { ok: true, code });
+    }
+
+    if (route === '/konto/abmelden-ueberall' && req.method === 'POST') {
+      const ich = await werIstDas(req);
+      if (!ich || !ich.uid) return antwort(401, { error: 'Nicht angemeldet' });
+      const weg = await sitzungenLoeschenFuer(ich.uid);
+      const frisch = await neueSitzung(ich.uid);
+      log('überall abgemeldet:', ich.uid.slice(0, 8), '·', weg, 'Sitzung(en)');
+      return antwort(200, { ok: true, beendeteSitzungen: weg }, { 'Set-Cookie': keksSetzen(req, frisch) });
+    }
+
     if (route === '/konto/passwort' && req.method === 'POST') {
       const ich = await werIstDas(req);
       if (!ich || !ich.uid) return antwort(401, { error: 'Nicht angemeldet' });
@@ -514,11 +647,18 @@ const server = http.createServer(async (req, res) => {
         k.benutzer[ich.uid].hash = hash;
         await speichereKonten(k);
       });
-      log('Passwort geändert:', b.email);
-      return antwort(200, { ok: true });
+      // Wer sein Passwort ändert, will meist genau eines: dass ein anderer
+      // nicht mehr hineinkommt. Also alle Sitzungen beenden – und für das
+      // Gerät, das gerade fragt, sofort eine neue ausstellen, damit es nicht
+      // ausgerechnet den rauswirft, der aufgeräumt hat.
+      const weg = await sitzungenLoeschenFuer(ich.uid);
+      const frisch = await neueSitzung(ich.uid);
+      log('Passwort geändert:', b.email, '·', weg, 'Sitzung(en) beendet');
+      return antwort(200, { ok: true, beendeteSitzungen: weg }, { 'Set-Cookie': keksSetzen(req, frisch) });
     }
   } catch (e) {
     if (e.code === 'BAD_JSON') return antwort(400, { error: 'Kein gültiges JSON' });
+    if (e.code === 'BAD_TYPE') return antwort(415, { error: 'Nur application/json' });
     if (e.code === 'TOO_LARGE') return antwort(413, { error: 'Zu viele Daten' });
     log('Kontofehler:', e.stack || e.message);
     return antwort(500, { error: 'Serverfehler' });
@@ -635,6 +775,7 @@ const server = http.createServer(async (req, res) => {
   } catch (e) {
     if (e.code === 'TOO_LARGE') return antwort(413, { error: 'Zu viele Daten' });
     if (e.code === 'BAD_JSON') return antwort(400, { error: 'Kein gültiges JSON' });
+    if (e.code === 'BAD_TYPE') return antwort(415, { error: 'Nur application/json' });
     if (e.code === 'CORRUPT') return antwort(500, { error: 'Gespeicherter Zustand ist unlesbar – bitte aus backup/ zurückspielen' });
     log('Fehler:', e.stack || e.message);
     return antwort(500, { error: 'Serverfehler' });
