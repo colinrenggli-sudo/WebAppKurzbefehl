@@ -139,54 +139,55 @@ async function klick(page, sel) {
 }
 
 // ================================================================= 1
-// Erststart: die App sagt, dass hier ein Server läuft, und bietet Anmelden an.
+// Erststart: die Anmeldung ist das Erste, was man sieht – nicht etwas,
+// das man in den Einstellungen suchen muss.
 let { ctx, page } = await neuerKontext();
 await page.goto(BASE, { waitUntil: 'networkidle' });
-await einstellungen(page);
-pruefe('vor dem Anmelden steht «Nicht angemeldet»', await zuText(page, '#syncTitle'), 'Nicht angemeldet');
-pruefe('und der Weg hinein wird angeboten', await page.isVisible('[data-act="kontoOeffnen"]'), true);
+await page.waitForSelector('#kontoScreen.show', { timeout: 15000 });
+ok('beim ersten Start steht die Anmeldung von selbst da');
+pruefe('sie liegt nicht über den Einstellungen', await page.isVisible('#settingsSheet.show'), false);
+pruefe('der Umschalter sieht aus wie einer', await page.evaluate(() => {
+  const an = document.querySelector('#kontoSeg .seg.on');
+  return !!an && an.dataset.modus === 'anmelden';
+}), true);
+pruefe('und es gibt kein Feld für irgendeinen Code', await page.locator('#kontoCode').count(), 0);
 
 // ================================================================= 2
-// Konto anlegen – beim ersten Mal mit dem SYNC_TOKEN als Code.
-await klick(page, '[data-act="kontoOeffnen"]');
-await page.waitForSelector('#kontoSheet.open, #kontoSheet', { state: 'visible' });
+// Konto anlegen – ohne Code, wie bei jeder App.
 await klick(page, '#kontoSeg button[data-modus="neu"]');
-pruefe('im Modus «Konto erstellen» erscheint das Codefeld', await page.isVisible('#kontoCode'), true);
+pruefe('der Umschalter springt um', await page.evaluate(() => {
+  const an = document.querySelector('#kontoSeg .seg.on');
+  return !!an && an.dataset.modus === 'neu';
+}), true);
 await page.fill('#kontoEmail', 'colin@example.ch');
 await page.fill('#kontoPass', 'meinpasswort1');
-await page.fill('#kontoCode', TOK);
 await klick(page, '#kontoSendBtn');
 await page.waitForFunction(() => !!(typeof S !== 'undefined' && S.device && S.device.angemeldetAls), null, { timeout: 15000 });
 pruefe('nach dem Anlegen ist das Gerät angemeldet', await page.evaluate(() => S.device.angemeldetAls), 'colin@example.ch');
+pruefe('und die Anmeldeseite ist weg', await page.isVisible('#kontoScreen.show'), false);
 
 // ================================================================= 3
-// Ein falscher Code darf kein Konto anlegen.
+// Ein zu kurzes Passwort wird verständlich abgelehnt.
 {
   const { ctx: c2, page: p2 } = await neuerKontext();
   await p2.goto(BASE, { waitUntil: 'networkidle' });
-  await einstellungen(p2);
-  await klick(p2, '[data-act="kontoOeffnen"]');
+  await p2.waitForSelector('#kontoScreen.show', { timeout: 15000 });
   await klick(p2, '#kontoSeg button[data-modus="neu"]');
-  await p2.fill('#kontoEmail', 'fremd@example.ch');
-  await p2.fill('#kontoPass', 'irgendwas12');
-  await p2.fill('#kontoCode', 'falscher-code');
+  await p2.fill('#kontoEmail', 'zuvorschnell@example.ch');
+  await p2.fill('#kontoPass', 'kurz');
   await klick(p2, '#kontoSendBtn');
-  // Auf den Text warten, nicht auf «sichtbar»: die Meldung erscheint erst,
-  // wenn die Antwort da ist, und das dauert einen Augenblick.
   await p2.waitForFunction(() => {
     const f = document.getElementById('kontoFehler');
     return !!(f && f.textContent.trim());
   }, null, { timeout: 15000 }).catch(() => {});
-  const t = await zuText(p2, '#kontoFehler');
-  pruefe('falscher Einladungscode wird abgewiesen', /stimmt nicht/.test(t), true);
-  pruefe('die Meldung steht auch sichtbar da', await p2.isVisible('#kontoFehler'), true);
+  pruefe('zu kurzes Passwort wird erklärt', /8 Zeichen/.test(await zuText(p2, '#kontoFehler')), true);
+  pruefe('die Meldung ist auch sichtbar', await p2.isVisible('#kontoFehler'), true);
   pruefe('und niemand ist dadurch angemeldet', await p2.evaluate(() => S.device.angemeldetAls), null);
   await c2.close();
 }
 
 // ================================================================= 4
 // Daten anlegen und prüfen, dass sie wirklich auf dem Server landen.
-await page.evaluate(() => closeSheet('settingsSheet'));
 await page.evaluate(async () => {
   S.tasks.push({ id: 'ui1', label: 'Meditieren', emoji: '🧘', order: 0, days: [0,1,2,3,4,5,6], steps: [], updatedAt: Date.now(), completed: false });
   saveAll();
@@ -214,15 +215,14 @@ await einstellungen(page);
   pruefe('und die E-Mail steht darunter', /colin@example\.ch/.test(unter) ? true : unter, true);
 }
 pruefe('Abmelden wird angeboten', await page.isVisible('[data-act="kontoAbmelden"]'), true);
-pruefe('Einladen auch', await page.isVisible('[data-act="kontoEinladen"]'), true);
+pruefe('Passwort ändern auch', await page.isVisible('[data-act="kontoPasswort"]'), true);
 
 // ================================================================= 6
 // Ein zweites Gerät: anmelden genügt, die Daten kommen von selbst.
 {
   const { ctx: c3, page: p3 } = await neuerKontext();
   await p3.goto(BASE, { waitUntil: 'networkidle' });
-  await einstellungen(p3);
-  await klick(p3, '[data-act="kontoOeffnen"]');
+  await p3.waitForSelector('#kontoScreen.show', { timeout: 15000 });
   await p3.fill('#kontoEmail', 'colin@example.ch');
   await p3.fill('#kontoPass', 'meinpasswort1');
   await klick(p3, '#kontoSendBtn');
@@ -264,6 +264,7 @@ pruefe('die Routine bleibt aber auf dem Gerät', await page.evaluate(() => S.tas
 // Wieder anmelden – und alles ist zurück.
 await einstellungen(page);
 await klick(page, '[data-act="kontoOeffnen"]');
+await page.waitForSelector('#kontoScreen.show', { timeout: 10000 });
 await page.fill('#kontoEmail', 'colin@example.ch');
 await page.fill('#kontoPass', 'meinpasswort1');
 await klick(page, '#kontoSendBtn');

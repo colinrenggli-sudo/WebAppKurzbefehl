@@ -216,22 +216,21 @@ also mitdenken.
 
 ## Konten
 
-Die App meldet sich mit **E-Mail und Passwort** an. Jede Person hat ihre
-eigenen Routinen, To-Dos, Tokens, Erinnerungen und Tageskopien – unter
-`k/<uid>/` im Datenordner.
+Die App meldet sich mit **E-Mail und Passwort** an. Beim ersten Start ist
+die Anmeldung das Erste, was man sieht – **Konto erstellen** steht direkt
+daneben. Kein Code, kein Schlüssel, nichts abzutippen.
 
-**Das erste Konto** (das des Besitzers) wird mit dem `SYNC_TOKEN` aus
-`deploy/.env` als Einladungscode angelegt. Was vorher ohne Konto auf dem
-Server lag, zieht dabei automatisch mit hinüber.
+Jede Person hat ihre eigenen Routinen, To-Dos, Tokens, Erinnerungen und
+Tageskopien, unter `k/<uid>/` im Datenordner. Niemand sieht die Daten
+eines anderen.
 
-**Weitere Personen** brauchen eine Einladung: in der App unter
-Einstellungen → *Jemanden einladen*. Der Code gilt genau einmal und 30
-Tage. Der `SYNC_TOKEN` taugt dafür bewusst **nicht** mehr – er öffnet ab
-dem ersten Konto gar nichts mehr. Sonst kennte jede eingeladene Person
-den Schlüssel zu den Daten des Besitzers.
+**Das erste Konto** erbt, was vorher ohne Konto auf dem Server lag. Wer
+den Server aufsetzt, legt sich also als Erstes sein Konto an – dann zieht
+der bestehende Bestand mit hinüber.
 
-Optional lässt sich in `.env` ein fester Code hinterlegen, der immer
-gilt: `EINLADUNGSCODE=…`.
+**Ohne Konto** läuft die App vollständig weiter, nur eben nur auf diesem
+Gerät: *Erst mal ohne Konto* auf der Anmeldeseite, oder gar nicht erst
+anmelden. Nachholen geht jederzeit in den Einstellungen.
 
 Weiter in den Einstellungen: *Passwort ändern* (meldet alle anderen
 Geräte ab), *Auf allen Geräten abmelden*, *Abmelden*.
@@ -240,6 +239,12 @@ Passwörter liegen als scrypt-Hash mit eigenem Salz in `konten.json`, die
 Anmeldung als Keks, von dem nur der Hash in `sitzungen.json` steht. Die
 Anmeldung hält ein Jahr – eine, die nach Tagen abläuft, wäre auf dem
 Handy die häufigste Ursache für einen still stehenden Abgleich.
+
+> **Registrieren steht offen.** Wer die Adresse kennt, kann sich ein Konto
+> anlegen. Das ist so gewollt: sonst müsste für jede Person von Hand ein
+> Code erzeugt und verschickt werden. Eine Bremse gegen massenhaftes
+> Anlegen ist drin. Soll doch einmal Schluss sein, in `.env`:
+> `REGISTRIERUNG=zu` – bestehende Konten merken davon nichts.
 
 ## Der eine Befehl, wenn etwas hakt
 

@@ -740,6 +740,24 @@ input[type="time"].input, input[type="date"].input { width: auto; min-width: 120
 :root[data-theme="dark"] .seg.on { background: var(--bg-3); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg.on { background: var(--bg-3); } }
 
+/* Anmeldeseite: eine eigene Seite, kein Blatt über einem anderen Blatt.
+   Beim ersten Start ist sie das Erste, was man sieht – so wie überall sonst. */
+#kontoScreen { position: fixed; inset: 0; z-index: 1200; background: var(--bg); display: none; overflow-y: auto;
+  padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom)); }
+#kontoScreen.show { display: block; }
+#kontoScreen .konto-mitte { max-width: 380px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 18px; }
+#kontoScreen .konto-marke { text-align: center; margin-bottom: 4px; }
+#kontoScreen .konto-marke b { display: block; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+#kontoScreen .konto-marke span { display: block; margin-top: 6px; color: var(--label-2); font-size: 0.94rem; line-height: 1.45; }
+#kontoScreen .konto-fehler { color: var(--red); font-size: 0.88rem; line-height: 1.4; display: none; }
+#kontoScreen .konto-fehler.da { display: block; }
+#kontoScreen .konto-spaeter { background: none; border: 0; color: var(--blue); font-size: 0.94rem; font-weight: 600; min-height: 44px; }
+/* «.btn.primary» ist für eine Reihe nebeneinander gemacht und trägt dort
+   flex:1. In dieser Spalte wüchse der Knopf dadurch über den halben
+   Bildschirm – hier also ausdrücklich nicht wachsen. */
+#kontoScreen .btn { flex: none; width: 100%; }
+#kontoScreen .field { margin: 0; }
+
 .hint { font-size: 0.765rem; color: var(--label-2); line-height: 1.45; padding: 0 4px; }
 
 /* Action Sheet */
@@ -1149,18 +1167,15 @@ body.quiet .q { display: none !important; }
   </div>
 </div>
 
-<div class="sheet" id="kontoSheet" role="dialog" aria-modal="true" aria-labelledby="kontoSheetTitle">
-  <div class="sheet-grab" data-grab><i></i></div>
-  <div class="sheet-head">
-    <span class="sheet-title" id="kontoSheetTitle">Anmelden</span>
-    <button class="sheet-close-hit" type="button" data-close aria-label="Schliessen"><span class="sheet-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>
-  </div>
-  <div class="sheet-body">
-    <div class="field">
-      <div class="segmented" id="kontoSeg" role="radiogroup" aria-label="Anmelden oder Konto erstellen">
-        <button type="button" role="radio" aria-checked="true" class="active" data-modus="anmelden">Anmelden</button>
-        <button type="button" role="radio" aria-checked="false" data-modus="neu">Konto erstellen</button>
-      </div>
+<div id="kontoScreen" role="dialog" aria-modal="true" aria-labelledby="kontoTitel">
+  <div class="konto-mitte">
+    <div class="konto-marke">
+      <b>HIGH</b>
+      <span id="kontoTitel">Melde dich an – deine Routinen, To-Dos und Tokens sind dann auf jedem Gerät da.</span>
+    </div>
+    <div class="segmented" id="kontoSeg" role="radiogroup" aria-label="Anmelden oder Konto erstellen">
+      <button type="button" role="radio" aria-checked="true" class="seg on" data-modus="anmelden">Anmelden</button>
+      <button type="button" role="radio" aria-checked="false" class="seg" data-modus="neu">Konto erstellen</button>
     </div>
     <div class="field">
       <div class="field-label">E-Mail</div>
@@ -1168,17 +1183,11 @@ body.quiet .q { display: none !important; }
     </div>
     <div class="field">
       <div class="field-label">Passwort</div>
-      <input class="input" id="kontoPass" type="password" autocomplete="current-password" placeholder="mindestens 8 Zeichen">
+      <input class="input" id="kontoPass" type="password" autocomplete="current-password" placeholder="dein Passwort">
     </div>
-    <div class="field" id="kontoCodeFeld" hidden>
-      <div class="field-label">Einladungscode</div>
-      <input class="input" id="kontoCode" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Code">
-      <div class="field-hint" id="kontoCodeHinweis">Beim allerersten Konto ist das der <b>SYNC_TOKEN</b> aus deploy/.env. Danach stellt ein angemeldetes Konto Einladungen aus.</div>
-    </div>
-    <div class="field-hint" id="kontoFehler" style="color:var(--red);display:none"></div>
-    <div class="sheet-actions">
-      <button class="btn primary" type="button" id="kontoSendBtn">Anmelden</button>
-    </div>
+    <div class="konto-fehler" id="kontoFehler" role="alert"></div>
+    <button class="btn primary" type="button" id="kontoSendBtn">Anmelden</button>
+    <button class="konto-spaeter" type="button" id="kontoSpaeterBtn">Erst mal ohne Konto</button>
   </div>
 </div>
 
@@ -1301,7 +1310,7 @@ body.quiet .q { display: none !important; }
 'use strict';
 
 // ---------- 0. Konfiguration ----------
-const APP_VERSION = '3.6.0';
+const APP_VERSION = '3.7.0';
 
 const EMOJIS = ['🧘','📚','💪','🏃','🧠','💻','🎨','🎵','✍️','🏋️','🚀','☕','🌅','💤','🥗','💧','🚶','🧹','📝','🎯','🔭','🔥','🤸','🌿','🛏️','📵','🧴','🍎','🐕','🦷'];
 
@@ -1492,6 +1501,7 @@ const DEFAULT_DEVICE = {
   // in einem Keks, den nur der Browser kennt – hier steht nur, wem sie gehört,
   // damit die App weiss, was sie anzeigen soll.
   angemeldetAls: null,
+  kontoSpaeter: false,   // «erst mal ohne Konto» – nicht bei jedem Start wieder fragen
 };
 
 const S = { tasks: [], todos: [], settings: {}, history: {}, game: {}, device: {}, tokens: { entries: [], rewards: [] } };
@@ -3895,7 +3905,6 @@ function renderSettings() {
         <button class="row link" type="button" data-act="syncNow"><span class="row-text"><span class="row-title">Jetzt abgleichen</span></span></button>
         ${S.device.pushEnabled ? `<button class="row link" type="button" data-act="pushTest"><span class="row-text"><span class="row-title">Probe-Erinnerung vom Server</span><span class="row-sub">Kommt auch bei gesperrtem Bildschirm</span></span></button>` : ''}` : ''}
         ${kontoModus() ? `
-        <button class="row link" type="button" data-act="kontoEinladen"><span class="row-text"><span class="row-title">Jemanden einladen</span><span class="row-sub">Einmal gültiger Code – dein Passwort bleibt bei dir</span></span></button>
         <button class="row link" type="button" data-act="kontoPasswort"><span class="row-text"><span class="row-title">Passwort ändern</span><span class="row-sub">Meldet alle anderen Geräte ab</span></span></button>
         <button class="row link" type="button" data-act="kontoUeberall"><span class="row-text"><span class="row-title">Auf allen Geräten abmelden</span><span class="row-sub">Dieses bleibt angemeldet</span></span></button>
         <button class="row link" type="button" data-act="kontoAbmelden"><span class="row-text"><span class="row-title" style="color:var(--red)">Abmelden</span></span></button>`
@@ -3991,7 +4000,6 @@ function renderSettings() {
   bind('kontoOeffnen', () => openKonto(false));
   bind('kontoAbmelden', kontoAbmelden);
   bind('kontoPasswort', kontoPasswortAendern);
-  bind('kontoEinladen', kontoEinladen);
   bind('kontoUeberall', kontoUeberallAbmelden);
   bind('pushTest', async () => {
     try {
@@ -4946,7 +4954,7 @@ function kontoFehlerZeigen(text) {
   const f = $('kontoFehler');
   if (!f) return;
   f.textContent = text || '';
-  f.style.display = text ? '' : 'none';
+  f.classList.toggle('da', !!text);
 }
 
 function openKonto(modusNeu) {
@@ -4954,21 +4962,42 @@ function openKonto(modusNeu) {
   kontoFehlerZeigen('');
   $('kontoEmail').value = '';
   $('kontoPass').value = '';
-  $('kontoCode').value = '';
-  kontoSheetModus();
-  openSheet('kontoSheet');
-  setTimeout(() => $('kontoEmail').focus(), 120);
+  kontoModusSetzen();
+  // Liegt noch ein Blatt offen, muss es weg – sonst stünde die Anmeldung
+  // darüber, und genau so sah es vorher aus.
+  ['settingsSheet', 'taskSheet', 'todoSheet'].forEach(id => { if ($(id)) closeSheet(id); });
+  $('kontoScreen').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $('kontoEmail').focus(), 150);
 }
 
-function kontoSheetModus() {
+function closeKonto() {
+  $('kontoScreen').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// Ohne Konto weitermachen: die App funktioniert lokal vollständig. Wer das
+// wählt, soll nicht bei jedem Start wieder gefragt werden.
+function kontoSpaeter() {
+  S.device.kontoSpaeter = true;
+  saveAll({ silent: true });
+  closeKonto();
+  toast('👌', 'Alles bleibt auf diesem Gerät. Anmelden geht jederzeit in den Einstellungen.');
+}
+
+function kontoModusSetzen() {
   const neu = kontoModusNeu;
-  $('kontoSheetTitle').textContent = neu ? 'Konto erstellen' : 'Anmelden';
+  $('kontoTitel').textContent = neu
+    ? 'Ein Konto, und deine Routinen, To-Dos und Tokens sind auf jedem Gerät da.'
+    : 'Melde dich an – deine Routinen, To-Dos und Tokens sind dann auf jedem Gerät da.';
   $('kontoSendBtn').textContent = neu ? 'Konto erstellen' : 'Anmelden';
-  $('kontoCodeFeld').hidden = !neu;
   $('kontoPass').setAttribute('autocomplete', neu ? 'new-password' : 'current-password');
-  document.querySelectorAll('#kontoSeg button').forEach(b => {
+  $('kontoPass').placeholder = neu ? 'mindestens 8 Zeichen' : 'dein Passwort';
+  // «on», nicht «active»: so heisst die Klasse, die diesen Umschalter im
+  // ganzen Rest der App aussehen lässt wie einen.
+  document.querySelectorAll('#kontoSeg .seg').forEach(b => {
     const an = (b.dataset.modus === 'neu') === neu;
-    b.classList.toggle('active', an);
+    b.classList.toggle('on', an);
     b.setAttribute('aria-checked', an);
   });
 }
@@ -4976,16 +5005,15 @@ function kontoSheetModus() {
 async function kontoAbschicken() {
   const email = $('kontoEmail').value.trim();
   const passwort = $('kontoPass').value;
-  const code = $('kontoCode').value.trim();
   if (!email || !passwort) { kontoFehlerZeigen('E-Mail und Passwort ausfüllen.'); return; }
   if (kontoModusNeu && passwort.length < 8) { kontoFehlerZeigen('Das Passwort braucht mindestens 8 Zeichen.'); return; }
   kontoFehlerZeigen('');
   const btn = $('kontoSendBtn');
   btn.disabled = true; btn.textContent = kontoModusNeu ? 'Wird angelegt …' : 'Wird geprüft …';
   const r = kontoModusNeu
-    ? await kontoRuf('/konto/registrieren', { email, passwort, code, tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || null })
+    ? await kontoRuf('/konto/registrieren', { email, passwort, tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || null })
     : await kontoRuf('/konto/anmelden', { email, passwort });
-  btn.disabled = false; kontoSheetModus();
+  btn.disabled = false; kontoModusSetzen();
   if (!r.ok) {
     kontoFehlerZeigen(r.status === 0
       ? 'Der Server antwortet nicht. Später noch einmal versuchen.'
@@ -4997,7 +5025,7 @@ async function kontoAbschicken() {
   S.device.angemeldetAls = r.daten.email || email;
   S.device.syncUrl = null; S.device.syncToken = null;
   saveAll({ silent: true });
-  closeSheet('kontoSheet');
+  closeKonto();
   toast('👤', kontoModusNeu ? 'Konto angelegt. Du bist angemeldet.' : 'Angemeldet.');
   setSyncStatus('Gleiche ab …');
   renderSettings();
@@ -5033,15 +5061,6 @@ async function kontoPasswortAendern() {
     : (r.daten.error || 'Das hat nicht geklappt.'));
 }
 
-async function kontoEinladen() {
-  const r = await kontoRuf('/konto/einladung', {});
-  if (!r.ok) { toast('⚠️', r.daten.error || 'Einladung nicht möglich.'); return; }
-  const code = r.daten.code;
-  const fertig = () => toast('✉️', 'Einladungscode kopiert. Er gilt genau einmal.');
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(fertig, () => prompt('Einladungscode (gilt einmal):', code));
-  else prompt('Einladungscode (gilt einmal):', code);
-}
-
 async function kontoUeberallAbmelden() {
   confirmSheet('Überall abmelden?', 'Alle anderen Geräte werden abgemeldet. Dieses bleibt angemeldet.', 'Abmelden', async () => {
     const r = await kontoRuf('/konto/abmelden-ueberall', {});
@@ -5050,9 +5069,10 @@ async function kontoUeberallAbmelden() {
 }
 
 $('kontoSendBtn').addEventListener('click', kontoAbschicken);
+$('kontoSpaeterBtn').addEventListener('click', kontoSpaeter);
+$('kontoEmail').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('kontoPass').focus(); } });
 $('kontoPass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kontoAbschicken(); } });
-$('kontoCode').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kontoAbschicken(); } });
-document.querySelectorAll('#kontoSeg button').forEach(b => b.addEventListener('click', () => { kontoModusNeu = b.dataset.modus === 'neu'; kontoFehlerZeigen(''); kontoSheetModus(); }));
+document.querySelectorAll('#kontoSeg .seg').forEach(b => b.addEventListener('click', () => { kontoModusNeu = b.dataset.modus === 'neu'; kontoFehlerZeigen(''); kontoModusSetzen(); }));
 
 // ---------- 14. Start ----------
 function boot() {
@@ -5072,8 +5092,15 @@ function boot() {
   setTimeout(flushNotices, 900);
   // Der Keks kann abgelaufen sein, ohne dass die App etwas davon weiss. Ohne
   // diese Frage stünde «Angemeldet», während längst nichts mehr abgeglichen wird.
-  kontoPruefen().then(k => {
-    if (k && k.angemeldet) { startSyncPolling(); syncNow(); refreshPushSubscription(); }
+  kontoPruefen().then(async (k) => {
+    if (k && k.angemeldet) { startSyncPolling(); syncNow(); refreshPushSubscription(); return; }
+    // Nicht angemeldet: die Anmeldung gehört an den Anfang, nicht in die
+    // Einstellungen. Aber nur, wenn hier überhaupt ein Server läuft, und
+    // nicht, wenn jemand ausdrücklich ohne Konto weitermachen wollte oder
+    // dieses Gerät noch mit dem alten Schlüssel läuft.
+    if (S.device.kontoSpaeter || S.device.syncToken) return;
+    if (serverHier === null) await pruefeServerHier();
+    if (serverHier) openKonto(false);
   }).catch(() => {});
 
   // Bildschirmtastatur: Sheets und Toasts über die Tastatur heben (iOS verschiebt fixed-Elemente sonst nicht)
