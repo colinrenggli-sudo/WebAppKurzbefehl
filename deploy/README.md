@@ -214,6 +214,33 @@ Der Token liegt in `daten/token.json` mit Rechten 600. Wer ihn hat,
 kommt an deine Fitbit-Daten – bei einem Backup dieses Verzeichnisses
 also mitdenken.
 
+## Konten
+
+Die App meldet sich mit **E-Mail und Passwort** an. Jede Person hat ihre
+eigenen Routinen, To-Dos, Tokens, Erinnerungen und Tageskopien – unter
+`k/<uid>/` im Datenordner.
+
+**Das erste Konto** (das des Besitzers) wird mit dem `SYNC_TOKEN` aus
+`deploy/.env` als Einladungscode angelegt. Was vorher ohne Konto auf dem
+Server lag, zieht dabei automatisch mit hinüber.
+
+**Weitere Personen** brauchen eine Einladung: in der App unter
+Einstellungen → *Jemanden einladen*. Der Code gilt genau einmal und 30
+Tage. Der `SYNC_TOKEN` taugt dafür bewusst **nicht** mehr – er öffnet ab
+dem ersten Konto gar nichts mehr. Sonst kennte jede eingeladene Person
+den Schlüssel zu den Daten des Besitzers.
+
+Optional lässt sich in `.env` ein fester Code hinterlegen, der immer
+gilt: `EINLADUNGSCODE=…`.
+
+Weiter in den Einstellungen: *Passwort ändern* (meldet alle anderen
+Geräte ab), *Auf allen Geräten abmelden*, *Abmelden*.
+
+Passwörter liegen als scrypt-Hash mit eigenem Salz in `konten.json`, die
+Anmeldung als Keks, von dem nur der Hash in `sitzungen.json` steht. Die
+Anmeldung hält ein Jahr – eine, die nach Tagen abläuft, wäre auf dem
+Handy die häufigste Ursache für einen still stehenden Abgleich.
+
 ## Der eine Befehl, wenn etwas hakt
 
 Im Terminal der Unraid-Oberfläche (Symbol `>_` oben rechts – dort ist
